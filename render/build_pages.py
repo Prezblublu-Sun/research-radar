@@ -22,6 +22,8 @@ def _paper_card(p: dict, dir_color: str) -> str:
     priority = llm.get("priority", "Low")
     bg, fg = PRIORITY_COLOR.get(priority, PRIORITY_COLOR["Low"])
     s = llm.get("summary_zh", {})
+    s_en = llm.get("summary_en", {})
+    key_terms = llm.get("key_terms", [])
     flags = llm.get("flags", {})
 
     badge_flags = []
@@ -68,6 +70,18 @@ def _paper_card(p: dict, dir_color: str) -> str:
     <div><b>结果·</b> {_esc(s.get('result',''))}</div>
     <div><b>验证·</b> {_esc(s.get('validation',''))}</div>
   </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> {_esc(s_en.get('motivation',''))}</div>
+      <div><b>Method·</b> {_esc(s_en.get('method',''))}</div>
+      <div><b>Result·</b> {_esc(s_en.get('result',''))}</div>
+      <div><b>Validation·</b> {_esc(s_en.get('validation',''))}</div>
+    </div>
+    <div class="key-terms">
+      {''.join(f'<span class="term"><b>{_esc(t.get("en",""))}</b> · {_esc(t.get("zh",""))}</span>' for t in key_terms)}
+    </div>
+  </details>
   <div class="tags-row">{tags_html}</div>
 </article>"""
 
@@ -182,6 +196,14 @@ footer.run-info summary{cursor:pointer;color:#444}
 footer.run-info table{margin-top:8px;font-family:ui-monospace,monospace;font-size:11px}
 footer.run-info td{padding:2px 12px 2px 0;vertical-align:top}
 footer.run-info td:first-child{color:#888;width:140px}
+details.summary-en{margin-top:8px;background:#f8f8f3;border-radius:8px;padding:6px 12px;border:.5px solid #e2e0d8}
+details.summary-en summary{cursor:pointer;font-size:12px;color:#555;font-weight:500}
+details.summary-en[open] summary{margin-bottom:8px}
+.summary.en{font-size:13px;color:#333;line-height:1.55}
+.summary.en>div{margin-bottom:3px}
+.key-terms{margin-top:8px;display:flex;flex-wrap:wrap;gap:6px}
+.term{font-size:11px;background:#fff;border:.5px solid #ddd;padding:3px 8px;border-radius:6px;color:#444}
+.term b{color:#222;font-weight:500}
 """
 
 
