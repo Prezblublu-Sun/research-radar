@@ -1,4 +1,4 @@
-"""Render daily HTML pages with version footer for traceability."""
+"""Render daily HTML pages with top-bar navigation and version footer."""
 
 from __future__ import annotations
 import html
@@ -98,6 +98,34 @@ def _priority_filter() -> str:
             '</div>')
 
 
+def _topbar(date: str, archive_dates: list[str]) -> str:
+    """Top navigation: prev/next day buttons + Archive dropdown."""
+    if not archive_dates:
+        archive_dates = [date]
+    sorted_dates = sorted(archive_dates)
+    try:
+        idx = sorted_dates.index(date)
+    except ValueError:
+        idx = len(sorted_dates) - 1
+    prev_date = sorted_dates[idx - 1] if idx > 0 else None
+    next_date = sorted_dates[idx + 1] if idx < len(sorted_dates) - 1 else None
+
+    prev_btn = (f'<a class="navbtn" href="{prev_date}.html">← {prev_date}</a>'
+                if prev_date else '<span class="navbtn disabled">← oldest</span>')
+    next_btn = (f'<a class="navbtn" href="{next_date}.html">{next_date} →</a>'
+                if next_date else '<span class="navbtn disabled">latest →</span>')
+
+    options = "".join(
+        f'<option value="{d}.html"{" selected" if d == date else ""}>{d}</option>'
+        for d in reversed(sorted_dates)
+    )
+    dropdown = f'<select class="archive-select" onchange="if(this.value)window.location.href=this.value">{options}</select>'
+
+    weekly_link = '<a class="navbtn" href="weekly/index.html">📅 Weekly</a>'
+
+    return f'<div class="topbar">{prev_btn}{dropdown}{next_btn}{weekly_link}</div>'
+
+
 def _version_footer(manifest: dict | None) -> str:
     if not manifest:
         return ""
@@ -122,6 +150,11 @@ CSS = """
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:980px;margin:2rem auto;padding:0 1rem;color:#222;line-height:1.5}
 h1{font-size:24px;font-weight:500;margin:0 0 .25rem}
 .subtitle{color:#666;font-size:14px;margin-bottom:1.5rem}
+.topbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 0;margin-bottom:1.25rem;border-bottom:.5px solid #e2e0d8}
+.navbtn{font-size:13px;background:#f5f4ef;color:#444;padding:6px 12px;border-radius:8px;text-decoration:none}
+.navbtn:hover{background:#e9e7df}
+.navbtn.disabled{color:#bbb;background:#fafaf6;cursor:default}
+.archive-select{font-size:13px;padding:6px 10px;border:.5px solid #ccc;border-radius:8px;background:#fff;color:#444;cursor:pointer}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1.5rem}
 .stat{background:#f5f4ef;border-radius:8px;padding:.75rem 1rem}
 .stat-label{font-size:12px;color:#666}
@@ -143,8 +176,6 @@ h1{font-size:24px;font-weight:500;margin:0 0 .25rem}
 .summary>div{margin-bottom:4px}
 .tags-row{margin-top:8px}
 .tag{font-size:10px;background:#f1efe8;color:#555;padding:2px 7px;border-radius:6px;margin-right:4px}
-nav.archive{margin-top:2rem;font-size:13px;color:#666}
-nav.archive a{margin-right:10px}
 .paper[data-hidden="1"]{display:none}
 footer.run-info{margin-top:3rem;padding-top:1rem;border-top:.5px solid #e2e0d8;font-size:12px;color:#666}
 footer.run-info summary{cursor:pointer;color:#444}
@@ -189,21 +220,17 @@ def _render_daily(papers, date, directions_cfg, archive_dates, manifest):
         color = directions_cfg[d]["color"] if d in directions_cfg else "#888"
         cards.append(_paper_card(p, color))
 
-    archive_links = " · ".join(
-        f'<a href="{d}.html">{d}</a>' for d in reversed(archive_dates) if d != date
-    )
-
     return f"""<!doctype html><html lang="zh"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Research Radar — {_esc(date)}</title>
 <style>{CSS}</style></head><body>
 <h1>Research Radar</h1>
 <div class="subtitle">{_esc(date)} · AI Bioprinting / Hip Implant / FEA Surrogate / AM Biomedical</div>
+{_topbar(date, archive_dates)}
 {_stats_row(papers, directions_cfg)}
 {_direction_tabs(directions_cfg)}
 {_priority_filter()}
 {''.join(cards) if cards else '<p style="color:#888">No papers today.</p>'}
-<nav class="archive">Archive: {archive_links}</nav>
 {_version_footer(manifest)}
 <script>{JS}</script>
 </body></html>"""
