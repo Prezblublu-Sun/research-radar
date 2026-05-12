@@ -346,3 +346,40 @@ abstract。LLM 建议这条是没仔细看代码就提的。
 
 教训: LLM 用于"全面审项目"时容易脑补缺失上下文。后续若再用 LLM
 辅助审议,应给具体代码 + 具体问题,不要让它"全面审视"。
+---
+
+## W1.8 期刊 RSS 兜底 fetcher (~1-2 小时, 待 Phase 1 稳定后做)
+
+**目的**: 关键词搜索可能漏掉顶刊论文(标题/abstract 没出现关键词)。
+用 RSS 订阅作为召回兜底,不影响 LLM 评分逻辑。
+
+**设计原则**:
+- 期刊订阅只做召回(捞到论文),不参与 priority 评分
+- 论文走完整路由 + LLM 评分,跟其他来源平等
+- 失败重试: 期刊 RSS 不通时记 warning 不报错
+
+**实施步骤**:
+1. 确认期刊 RSS URL (大部分用 IOP/Elsevier/Wiley/Nature 标准 RSS)
+2. 新建 fetchers/journal_rss_fetcher.py 用 feedparser
+3. RSS 只给标题时,用 DOI 去 OpenAlex 补 abstract
+4. directions.yaml 加 journal_subscriptions 列表
+5. aggregator.py 把 RSS 来源合进去
+
+**候选期刊清单** (LLM 推荐, 待真实数据验证):
+- Biofabrication
+- Biomaterials
+- Acta Biomaterialia
+- Bioactive Materials
+- Journal of Biomechanics
+- Journal of the Mechanical Behavior of Biomedical Materials
+- Additive Manufacturing
+- Acta Materialia
+- Materials & Design
+- Journal of Arthroplasty
+
+注意: 这是 LLM 推荐的清单,不是用户自己确认的。
+在真正订阅前,应该让自动跑 2 周,看哪些期刊在现有 fetcher 下漏报,
+再有针对性地添加(基于真实漏报数据)。
+
+**预期增量**: 每天多 30-100 篇候选论文进流水线。
+LLM 评分成本增加 ~¥0.2/天,可接受。
