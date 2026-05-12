@@ -302,3 +302,47 @@ Add a row whenever making a substantive change.
 ### M1.3 周报 Phase C: LLM 元
 综述
 DeepSeek 读一周 High+Medium 写
+---
+
+## 明确不做 (Rejected)
+
+### Rejected 1: "Very High" 优先级 + 自动下载 OA PDF
+**理由**:
+1. 当前 prompt 只有 4 级 (High/Medium/Low/Exclude),不需要 5 级
+2. 自动 PDF 跟 Zotero quota 直接冲突 (2GB 也撑不久)
+3. 让用户在 Zotero 客户端手动用 "Find Available PDF" 更可控
+
+### Rejected 2: 4 种运行模式 (normal/manual/backfill/debug)
+**理由**: 过度设计。`--force` + `--skip-zotero` + 日期参数已覆盖
+所有真实场景。多种模式会增加代码复杂度但不增加价值。
+
+### Rejected 3: 100 篇人工 ground truth (一次性建)
+**理由**: 8-16 小时工作,不是"尽快"能完成的。改为 10 篇 mini set
++ 每周渐进补充 (见 W2.2)。
+
+### Rejected 4: "重新定位为 lit-system 文献发现层"
+**理由**: 当前架构本来就是文献发现层。LLM 建议担心"Radar 扩张成
+RAG"——但没有任何代码或计划朝这个方向走。担忧不存在的问题不是
+合理的优先级。改为写 SCOPE.md 明确边界即可 (见 W1.6)。
+
+### Rejected 5: "公开页面不展示完整 abstract"
+**理由**: 当前 HTML 已经只显示 LLM 重写的中文总结,不复制原文
+abstract。LLM 建议这条是没仔细看代码就提的。
+
+### Rejected 6: 立即收紧 Zotero 同步策略 (分级 PDF)
+**理由**: 当前所有 Medium+ 同步 metadata 不带 PDF,已经是
+"分级"——只是分了 2 档 (同步/不同步) 而不是 4 档。
+档位继续细分需要先看实际数据决定,不要预先优化。
+---
+
+## 审议方法说明
+
+这次审议的输入是一份 LLM 生成的建议文档,审议中识别出几类问题:
+
+1. **虚构事实**: "Very High" 5 级优先级、Docling/RAG 模块——不存在
+2. **过度规划**: 14 条改动 + 全面架构重排,对刚上线项目过激
+3. **没看代码就提建议**: 担心 abstract 全文复制等问题,但当前代码已避免
+4. **"标准做法"填充**: 用通用最佳实践代替项目特异性分析
+
+教训: LLM 用于"全面审项目"时容易脑补缺失上下文。后续若再用 LLM
+辅助审议,应给具体代码 + 具体问题,不要让它"全面审视"。
