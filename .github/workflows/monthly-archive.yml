@@ -1,0 +1,65 @@
+name: monthly-archive
+
+on:
+  schedule:
+    - cron: "0 4 1 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Identify last month
+        id: month
+        run: |
+          LAST_MONTH=$(date -u -d "last month" +%Y-%m)
+          echo "tag=${LAST_MONTH}" >> "$GITHUB_OUTPUT"
+
+      - name: Bundle data
+        id: bundle
+        run: |
+          LAST_MONTH="${{ steps.month.outputs.tag }}"
+          mkdir -p _archive
+          shopt -s nullglob
+          DAILY_FILES=( data/daily/${LAST_MONTH}-*.json )
+          MANIFEST_FILES=( data/manifests/${LAST_MONTH}-*.json )
+          HTML_FILES=( docs/${LAST_MONTH}-*.html )
+          ALL=( "${DAILY_FILES[@]}" "${MANIFEST_FILES[@]}" "${HTML_FILES[@]}" )
+          if [ ${#ALL[@]} -eq 0 ]; then
+            echo "Nothing to archive for ${LAST_MONTH}"
+            echo "has_data=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          tar -czf "_archive/research-radar-${LAST_MONTH}.tar.gz" "${ALL[@]}"
+          echo "has_data=true" >> "$GITHUB_OUTPUT"
+
+      - name: Create Release
+        if: steps.bundle.outputs.has_data == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: "archive-${{ steps.month.outputs.tag }}"
+          name: "Archive ${{ steps.month.outputs.tag }}"
+          body: |
+            Monthly archive of Research Radar daily digests.
+            Includes daily JSON, run manifests, and rendered HTML.
+          files: _archive/*.tar.gz
+
+      - name: Prune archived files from main
+        if: steps.bundle.outputs.has_data == 'true'
+        run: |
+          LAST_MONTH="${{ steps.month.outputs.tag }}"
+          git config user.name "research-radar-bot"
+          git config user.email "actions@github.com"
+          shopt -s nullglob
+          rm -f data/daily/${LAST_MONTH}-*.json
+          rm -f data/manifests/${LAST_MONTH}-*.json
+          git add data/
+          git diff --staged --quiet || git commit -m "archive: prune ${LAST_MONTH} after release"
+          git push

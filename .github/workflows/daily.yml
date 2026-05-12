@@ -1,0 +1,47 @@
+name: daily-research-radar
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - run: pip install -e .
+
+      - name: Fetch and process papers
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_BASE_URL: ${{ secrets.OPENAI_BASE_URL }}
+          MODEL_NAME: ${{ vars.MODEL_NAME }}
+          OPENALEX_EMAIL: ${{ vars.OPENALEX_EMAIL }}
+          PUBMED_EMAIL: ${{ vars.PUBMED_EMAIL }}
+          ZOTERO_USER_ID: ${{ secrets.ZOTERO_USER_ID }}
+          ZOTERO_API_KEY: ${{ secrets.ZOTERO_API_KEY }}
+          ZOT_COL_BIOPRINTING: ${{ vars.ZOT_COL_BIOPRINTING }}
+          ZOT_COL_HIP: ${{ vars.ZOT_COL_HIP }}
+          ZOT_COL_FEA: ${{ vars.ZOT_COL_FEA }}
+          ZOT_COL_AM: ${{ vars.ZOT_COL_AM }}
+        run: python -m pipeline.run_daily
+
+      - name: Commit results
+        run: |
+          git config user.name "research-radar-bot"
+          git config user.email "actions@github.com"
+          git add data/ docs/ CHANGELOG.md 2>/dev/null || true
+          git diff --staged --quiet || git commit -m "daily: $(date -u +%Y-%m-%d)"
+          git push
