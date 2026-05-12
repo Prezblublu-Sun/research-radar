@@ -20,12 +20,14 @@ def fetch(categories: list[str], days_back: int = 1, max_results: int = 500) -> 
         sort_order=arxiv.SortOrder.Descending,
     )
 
-    cutoff = dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=days_back)
+    # cutoff is a DATE, not a timestamp: include all papers from
+    # (today - days_back) onwards. This is more intuitive than "last N*24 hours".
+    cutoff_date = dt.date.today() - dt.timedelta(days=days_back)
     client = arxiv.Client(page_size=100, delay_seconds=3, num_retries=3)
 
     out: list[dict] = []
     for result in client.results(search):
-        if result.published < cutoff:
+        if result.published.date() < cutoff_date:
             break
         out.append(_normalize(result))
     return out

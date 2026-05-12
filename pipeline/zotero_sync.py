@@ -20,6 +20,12 @@ COLLECTION_MAP = {
 def _get_client():
     if not ZOT_USER_ID or not ZOT_API_KEY:
         raise RuntimeError("ZOTERO_USER_ID and ZOTERO_API_KEY must be set")
+    missing_cols = [k for k, v in COLLECTION_MAP.items() if not v]
+    if missing_cols:
+        raise RuntimeError(
+            f"Missing ZOT_COL_* env vars for directions: {missing_cols}. "
+            "Set them all, or items will silently go to library root."
+        )
     return zotero.Zotero(ZOT_USER_ID, ZOT_LIBRARY_TYPE, ZOT_API_KEY)
 
 
