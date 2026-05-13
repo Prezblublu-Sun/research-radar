@@ -3,6 +3,8 @@ Items are tagged with LLM-generated tags + priority. Uses pyzotero."""
 
 from __future__ import annotations
 import os
+import json
+import pathlib
 from pyzotero import zotero
 
 ZOT_USER_ID = os.environ.get("ZOTERO_USER_ID", "")
@@ -92,6 +94,7 @@ def _to_zotero_item(paper: dict) -> dict:
 
 
 def sync(papers: list[dict], min_priority: str = "Medium") -> dict:
+    import datetime as _dt
     rank = {"High": 3, "Medium": 2, "Low": 1, "Exclude": 0}
     threshold = rank[min_priority]
 
@@ -104,17 +107,70 @@ def sync(papers: list[dict], min_priority: str = "Medium") -> dict:
 
     zot = _get_client()
     created, failed = 0, 0
+
+    # W1.2 audit log: one JSONL row per paper attempt
+    audit_dir = pathlib.Path(__file__).resolve().parent.parent / "data" / "zotero_sync_log"
+    audit_dir.mkdir(parents=True, exist_ok=True)
+    today = _dt.date.today().isoformat()
+    audit_file = audit_dir / f"{today}.jsonl"
+    audit_rows = []
+
     for i in range(0, len(items), 50):
+        batch_papers = eligible[i:i+50]
         batch = items[i:i+50]
         try:
             resp = zot.create_items(batch)
-            created += len(resp.get("successful", {}))
-            failed += len(resp.get("failed", {}))
+            successful = resp.get("successful", {})
+            failed_resp = resp.get("failed", {})
+            created += len(successful)
+            failed += len(failed_resp)
+
+            for idx_in_batch, paper in enumerate(batch_papers):
+                str_idx = str(idx_in_batch)
+                if str_idx in successful:
+                    item_key = successful[str_idx].get("key", "")
+                    status = "created"
+                    error = None
+                elif str_idx in failed_resp:
+                    item_key = ""
+                    status = "failed"
+                    error = str(failed_resp[str_idx])
+                else:
+                    item_key = ""
+                    status = "unchanged_or_unknown"
+                    error = None
+                col_list = batch[idx_in_batch].get("collections", [])
+                audit_rows.append({
+                    "doi": paper.get("doi"),
+                    "title": (paper.get("title") or "")[:120],
+                    "priority": paper.get("llm", {}).get("priority"),
+                    "direction": paper.get("direction"),
+                    "target_collection": col_list[0] if col_list else None,
+                    "item_key": item_key,
+                    "status": status,
+                    "error": error,
+                })
         except Exception as e:
             failed += len(batch)
             print(f"Zotero batch {i} failed: {e}")
+            for paper in batch_papers:
+                audit_rows.append({
+                    "doi": paper.get("doi"),
+                    "title": (paper.get("title") or "")[:120],
+                    "priority": paper.get("llm", {}).get("priority"),
+                    "direction": paper.get("direction"),
+                    "target_collection": None,
+                    "item_key": "",
+                    "status": "batch_exception",
+                    "error": str(e),
+                })
 
-    return {"eligible": len(eligible), "created": created, "failed": failed}
+    with audit_file.open("a") as fh:
+        for row in audit_rows:
+            fh.write(json.dumps(row, ensure_ascii=False) + "\n")
+    print(f"Wrote {len(audit_rows)} audit rows to {audit_file}")
+
+    return {"eligible": len(eligible), "created": created, "failed": failed, "audit_file": str(audit_file)}
 
 
 def list_collections_helper():
