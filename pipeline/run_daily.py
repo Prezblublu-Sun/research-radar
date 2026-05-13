@@ -37,7 +37,7 @@ def _print(msg: str):
     print(f"[{dt.datetime.now().strftime('%H:%M:%S')}] {msg}", flush=True)
 
 
-def run(days_back: int = 1, skip_zotero: bool = False) -> dict:
+def run(days_back: int = 1, skip_zotero: bool = False, force: bool = False) -> dict:
     cfg = yaml.safe_load(CONFIG.read_text())
     directions = cfg["directions"]
     exclusions = cfg.get("exclusions", {})
@@ -92,7 +92,7 @@ def run(days_back: int = 1, skip_zotero: bool = False) -> dict:
     fetched_total = sum(len(l) for l in all_lists)
 
     _print("Aggregating + dedup by DOI")
-    papers, updated_seen = aggregator.aggregate(all_lists, SEEN_STATE)
+    papers, updated_seen = aggregator.aggregate(all_lists, SEEN_STATE, force=force)
     _print(f"  -> {len(papers)} unique new papers")
 
     _print("Routing papers to directions")
@@ -254,8 +254,12 @@ def run(days_back: int = 1, skip_zotero: bool = False) -> dict:
 
 
 if __name__ == "__main__":
-    days = int(sys.argv[1]) if len(sys.argv) > 1 else 1
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    days = int(args[0]) if args else 1
     skip_zot = "--skip-zotero" in sys.argv
-    report = run(days_back=days, skip_zotero=skip_zot)
+    force = "--force" in sys.argv
+    if force:
+        print("[!] --force enabled: dedup will be bypassed")
+    report = run(days_back=days, skip_zotero=skip_zot, force=force)
     print("\n=== Daily report ===")
     print(json.dumps(report, indent=2, ensure_ascii=False))

@@ -27,9 +27,10 @@ def _dedup_key(paper: dict) -> str:
 def aggregate(
     paper_lists: Iterable[list[dict]],
     seen_state_path: pathlib.Path | None = None,
+    force: bool = False,
 ) -> tuple[list[dict], set[str]]:
     seen: set[str] = set()
-    if seen_state_path and seen_state_path.exists():
+    if seen_state_path and seen_state_path.exists() and not force:
         seen = set(json.loads(seen_state_path.read_text()).get("keys", []))
 
     keep: dict[str, dict] = {}
