@@ -405,10 +405,31 @@ code{{font-family:ui-monospace,monospace;font-size:11px;color:#888;background:#f
 
 def build(papers, date, docs_dir, directions_cfg, manifest=None):
     docs_dir.mkdir(parents=True, exist_ok=True)
-    archive = sorted(p.stem for p in docs_dir.glob("20*.html"))
+    # Collect all existing daily JSON files as archive sources
+    data_daily_dir = docs_dir.parent / "data" / "daily"
+    archive = sorted(p.stem for p in data_daily_dir.glob("20*.json")) if data_daily_dir.exists() else []
     if date not in archive:
         archive.append(date)
         archive.sort()
+
+    # Re-render every historical daily page so its archive list stays current.
+    # This costs ~10 ms per page; for 14 days = 140 ms. Worth it for navigation correctness.
+    import json as _json
+    for hist_date in archive:
+        if hist_date == date:
+            continue  # current run will write this below
+        hist_json = data_daily_dir / f"{hist_date}.json"
+        hist_html = docs_dir / f"{hist_date}.html"
+        if not hist_json.exists():
+            continue
+        try:
+            hist_papers = _json.loads(hist_json.read_text())
+            hist_html.write_text(
+                _render_daily(hist_papers, hist_date, directions_cfg, archive, None),
+                encoding="utf-8",
+            )
+        except Exception as e:
+            print(f"  (skip re-render {hist_date}: {e})")
 
     (docs_dir / f"{date}.html").write_text(
         _render_daily(papers, date, directions_cfg, archive, manifest),
