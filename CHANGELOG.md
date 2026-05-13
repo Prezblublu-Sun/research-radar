@@ -6,6 +6,13 @@ auto-update marker are preserved.
 
 <!-- AUTO-UPDATE-BELOW -->
 
+## 2026-05-13 (run 2026-05-13T06:29:45+00:00)
+
+Counts: fetched=476, after_dedup=449, after_routing=19, High=2, Medium=7
+
+- scorer prompt changed: file=`scorer_v2.txt`, hash sha256:c269a0a10aba4600 -> sha256:42a1f4a39a99c5d6
+
+
 ## 2026-05-12 (run 2026-05-12T18:53:51+00:00)
 
 Counts: fetched=570, after_dedup=0, after_routing=0, High=0, Medium=0
