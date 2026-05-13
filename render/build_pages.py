@@ -144,8 +144,9 @@ def _topbar(date: str, archive_dates: list[str]) -> str:
     dropdown = f'<select class="archive-select" onchange="if(this.value)window.location.href=this.value">{options}</select>'
 
     weekly_link = '<a class="navbtn" href="weekly/index.html">📅 Weekly</a>'
+    status_link = '<a class="navbtn" href="status.html">📊 Status</a>'
 
-    return f'<div class="topbar">{prev_btn}{dropdown}{next_btn}{weekly_link}</div>'
+    return f'<div class="topbar">{prev_btn}{dropdown}{next_btn}{weekly_link}{status_link}</div>'
 
 
 def _version_footer(manifest: dict | None) -> str:
@@ -293,6 +294,115 @@ def _render_index(archive_dates):
 </body></html>"""
 
 
+def _render_status_page(docs_dir, data_dir):
+    """Generate docs/status.html showing recent run history from manifests."""
+    import json
+    import datetime as _dt
+
+    manifests_dir = data_dir / "manifests"
+    if not manifests_dir.exists():
+        return
+
+    # Collect all manifests, newest first
+    manifests = sorted(manifests_dir.glob("20*.json"), reverse=True)[:14]  # last 14 days
+
+    rows = []
+    for m_path in manifests:
+        try:
+            m = json.loads(m_path.read_text())
+        except Exception:
+            continue
+        date = m_path.stem
+        counts = m.get("counts", {})
+        zotero = m.get("zotero", {})
+        run_status = m.get("run_status", "—")
+        quality_flags = m.get("quality_flags", [])
+        commit = (m.get("git_commit") or "")[:7]
+
+        status_color = {
+            "success": "#27500A",
+            "partial_success": "#A07000",
+            "suspicious_empty": "#A03A1A",
+            "failed": "#791F1F",
+            "—": "#888",
+        }.get(run_status, "#888")
+
+        flags_html = "".join(
+            f'<span class="qflag">{_esc(q)}</span>' for q in quality_flags
+        ) or '<span class="ok">—</span>'
+
+        rows.append(f"""
+        <tr>
+          <td><a href="{_esc(date)}.html">{_esc(date)}</a></td>
+          <td><span style="color:{status_color};font-weight:500">{_esc(run_status)}</span></td>
+          <td>{counts.get("fetched", "—")}</td>
+          <td>{counts.get("after_dedup", "—")}</td>
+          <td>{counts.get("after_routing", "—")}</td>
+          <td>{counts.get("priority_counts", {}).get("High", "—")}/{counts.get("priority_counts", {}).get("Medium", "—")}</td>
+          <td>{zotero.get("created", "—")}/{zotero.get("eligible", "—")}</td>
+          <td>{flags_html}</td>
+          <td><code>{_esc(commit)}</code></td>
+        </tr>""")
+
+    html = f"""<!doctype html><html lang="zh"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Research Radar — Run status</title>
+<style>
+body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:1100px;margin:2rem auto;padding:0 1rem;color:#222;line-height:1.5}}
+h1{{font-size:24px;font-weight:500;margin:0 0 .25rem}}
+.subtitle{{color:#666;font-size:14px;margin-bottom:1.5rem}}
+.navbtn{{font-size:13px;background:#f5f4ef;color:#444;padding:6px 12px;border-radius:8px;text-decoration:none;display:inline-block;margin-bottom:1rem}}
+table{{width:100%;border-collapse:collapse;font-size:13px}}
+th{{text-align:left;padding:8px 10px;background:#f5f4ef;border-bottom:1px solid #ccc;font-weight:500;color:#555;font-size:12px}}
+td{{padding:8px 10px;border-bottom:.5px solid #eee}}
+td a{{color:#1F4A6B;text-decoration:none}}
+td a:hover{{text-decoration:underline}}
+.ok{{color:#999;font-size:11px}}
+.qflag{{display:inline-block;background:#FCEBEB;color:#791F1F;font-size:10px;padding:2px 6px;border-radius:5px;margin-right:3px}}
+code{{font-family:ui-monospace,monospace;font-size:11px;color:#888;background:#fafaf6;padding:1px 4px;border-radius:3px}}
+.legend{{margin-top:2rem;padding:1rem;background:#fafaf6;border-radius:8px;font-size:12px;color:#555}}
+.legend h3{{margin:0 0 8px;font-size:13px;color:#222}}
+</style></head><body>
+<h1>Research Radar — Run status</h1>
+<div class="subtitle">Daily run health, last 14 days. Auto-generated from manifests.</div>
+<a class="navbtn" href="index.html">← Back to daily</a>
+
+<table>
+<thead>
+<tr>
+  <th>Date</th>
+  <th>Status</th>
+  <th>Fetched</th>
+  <th>After dedup</th>
+  <th>Routed</th>
+  <th>High/Med</th>
+  <th>Zotero ✓/eligible</th>
+  <th>Quality flags</th>
+  <th>Commit</th>
+</tr>
+</thead>
+<tbody>
+{''.join(rows) if rows else '<tr><td colspan="9" style="color:#888">No manifests yet.</td></tr>'}
+</tbody>
+</table>
+
+<div class="legend">
+<h3>Status meanings</h3>
+<ul style="margin:0;padding-left:20px">
+<li><b>success</b>: normal run, data written</li>
+<li><b>suspicious_empty</b>: would have overwritten existing data with empty result, run aborted (W1.1 guard)</li>
+<li><b>failed</b>: fetcher or downstream error</li>
+<li>Quality flags signal anomalies even when status=success:
+  fetched_zero / zero_routed / low_fetch_count / zero_high_medium</li>
+</ul>
+</div>
+
+</body></html>"""
+
+    out = docs_dir / "status.html"
+    out.write_text(html, encoding="utf-8")
+
+
 def build(papers, date, docs_dir, directions_cfg, manifest=None):
     docs_dir.mkdir(parents=True, exist_ok=True)
     archive = sorted(p.stem for p in docs_dir.glob("20*.html"))
@@ -308,3 +418,8 @@ def build(papers, date, docs_dir, directions_cfg, manifest=None):
         _render_index(archive),
         encoding="utf-8",
     )
+
+    # W1.x: also render run status page from manifests
+    data_dir = docs_dir.parent / "data"
+    if data_dir.exists():
+        _render_status_page(docs_dir, data_dir)
