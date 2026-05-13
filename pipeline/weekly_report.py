@@ -258,7 +258,13 @@ def _render_index(all_week_ids):
 
 def build_weekly(end_date: dt.date | None = None) -> dict:
     if end_date is None:
-        end_date = dt.date.today()
+        # Report on the most recently completed ISO week (last Mon-Sun).
+        # If today is Monday, we still want LAST week, not this week.
+        today = dt.date.today()
+        # Go back to last Sunday (the day before the most recent Monday).
+        # weekday(): Mon=0..Sun=6
+        days_to_last_sunday = today.weekday() + 1  # Mon=1, Tue=2, ..., Sun=7
+        end_date = today - dt.timedelta(days=days_to_last_sunday)
     cfg = yaml.safe_load(CONFIG.read_text())
     directions_cfg = cfg["directions"]
 
