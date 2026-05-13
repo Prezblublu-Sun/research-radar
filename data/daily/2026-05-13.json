@@ -33,32 +33,35 @@
     },
     "llm": {
       "priority": "High",
-      "relevance_to_user": "该论文提出了一种局部到全局的神经求解器框架，通过局部物理学习与域分解结合，显著提升了仿真效率，并具备不确定性量化潜力，可直接迁移至植入物/生物力学设计中的复杂几何与边界条件问题。",
+      "relevance_level": "Transferable",
+      "read_action": "Save for project",
+      "relevance_to_user": "该论文提出的局部到全局的神经求解器框架可迁移至生物力学有限元代理建模，提高大规模复杂几何域上的求解效率。",
+      "why_not_core": "The paper does not address implant-specific mechanics, stress shielding, or biomedical constraints, and lacks experimental validation in a biomechanical context.",
+      "validation_kind": "simulation_case",
       "flags": {
-        "has_experimental_validation": true,
+        "has_experimental_validation": false,
         "has_uncertainty_quantification": false,
         "is_patient_specific": false,
         "is_review": false
       },
       "tags": [
-        "learned PDE solver",
-        "domain decomposition",
         "neural operator",
-        "finite element method",
-        "surrogate modeling",
+        "domain decomposition",
+        "PDE solving",
+        "finite element surrogate",
         "geometry generalization"
       ],
       "summary_zh": {
-        "motivation": "全局神经求解器难以泛化到新几何和大规模问题，需要大量数据生成。",
-        "method": "学习局部3×3×3体素块上的神经算子，通过Schwarz迭代组合成全局解。",
-        "result": "在非线性超弹性固体问题上，该方法能泛化到训练未见的大尺度复杂几何和边界条件。",
-        "validation": "在3D neo-Hookean固体静力平衡问题上进行数值实验，评估域大小、形状和边界条件的泛化能力。"
+        "motivation": "现有全局神经求解器难以泛化到新几何域，需大量数据生成。",
+        "method": "提出NEST框架，学习局部物理求解器并通过Schwarz迭代组合成全局解。",
+        "result": "在非线性超弹性固体问题上，方法能泛化到远大于训练域尺寸的复杂3D几何。",
+        "validation": "通过数值模拟验证局部-全局组合求解的精度和泛化能力。"
       },
       "summary_en": {
-        "motivation": "Global neural PDE solvers suffer from poor generalization to unseen geometries and high data generation costs, limiting their scalability.",
-        "method": "NEST learns a neural operator on minimal 3×3×3 voxel patches and assembles global solutions via Schwarz iteration with partition-of-unity.",
-        "result": "The method generalizes to large, geometrically complex 3D domains far beyond training patch scale for nonlinear hyperelastic problems.",
-        "validation": "Numerical experiments on compressible neo-Hookean solids demonstrate generalization across domain size, shape, and boundary conditions."
+        "motivation": "Global neural PDE solvers suffer from poor generalization to unseen geometries and require expensive problem-specific data generation.",
+        "method": "NEST learns a local neural operator on minimal voxel patches and assembles global solutions via Schwarz domain decomposition with partition-of-unity.",
+        "result": "The method generalizes to large, geometrically complex 3D domains far beyond training patch scale for nonlinear neo-Hookean elasticity.",
+        "validation": "Numerical simulation cases on static equilibrium of compressible neo-Hookean solids demonstrate accuracy and scalability."
       },
       "key_terms": [
         {
@@ -74,28 +77,24 @@
           "zh": "Schwarz迭代"
         },
         {
-          "en": "local-to-global framework",
-          "zh": "局部到全局框架"
+          "en": "local-to-global",
+          "zh": "局部到全局"
+        },
+        {
+          "en": "PDE solving",
+          "zh": "偏微分方程求解"
+        },
+        {
+          "en": "geometry generalization",
+          "zh": "几何泛化"
         },
         {
           "en": "voxel patch",
           "zh": "体素块"
         },
         {
-          "en": "partition of unity",
-          "zh": "单位分解"
-        },
-        {
           "en": "neo-Hookean solid",
           "zh": "neo-Hookean固体"
-        },
-        {
-          "en": "learned PDE solver",
-          "zh": "学习型PDE求解器"
-        },
-        {
-          "en": "geometry generalization",
-          "zh": "几何泛化"
         }
       ]
     }
@@ -137,9 +136,13 @@
     },
     "llm": {
       "priority": "Medium",
-      "relevance_to_user": "该方法聚焦于预测集优化与校准，未直接解决昂贵仿真采样效率或生物力学设计约束问题，但其无数据分割的校准框架可能间接提升代理模型不确定性量化效率。",
+      "relevance_level": "Transferable",
+      "read_action": "Save for project",
+      "relevance_to_user": "该论文提出了一种无需数据分割的多变量共形预测方法，可应用于代理模型的不确定性量化，但未涉及FEA或生物力学设计。",
+      "why_not_core": "This paper does not address FEA surrogate modeling, implant biomechanics, or any biomedical design context; it focuses purely on conformal prediction methodology.",
+      "validation_kind": "numerical_benchmark",
       "flags": {
-        "has_experimental_validation": true,
+        "has_experimental_validation": false,
         "has_uncertainty_quantification": true,
         "is_patient_specific": false,
         "is_review": false
@@ -147,20 +150,20 @@
       "tags": [
         "conformal prediction",
         "uncertainty quantification",
-        "optimization",
-        "scenario theory"
+        "scenario theory",
+        "optimization"
       ],
       "summary_zh": {
-        "motivation": "传统共形预测需数据分割，导致校准效率低且预测集形状固定。",
-        "method": "提出多变量共形预测框架，将预测集设计与校准统一为单优化问题。",
+        "motivation": "现有共形预测需数据分割且预测集形状固定，效率低。",
+        "method": "提出多变量共形预测框架，将预测集设计与校准统一为优化问题。",
         "result": "无需数据分割即可达到目标覆盖率，且预测集更小、方差更低。",
-        "validation": "通过椭球和多模态预测集数值实验验证。"
+        "validation": "在椭球和多模态预测集上数值验证。"
       },
       "summary_en": {
-        "motivation": "Conformal prediction suffers from data splitting and fixed prediction set shapes due to scalar score functions.",
+        "motivation": "Standard conformal prediction requires data splitting and fixes prediction set shapes before calibration, limiting efficiency.",
         "method": "We propose multi-variable conformal prediction (MCP) that unifies prediction set design and calibration into a single optimization problem using scenario theory.",
-        "result": "MCP achieves target coverage with smaller or comparable prediction set sizes and reduced variance without data splitting.",
-        "validation": "Numerical experiments on ellipsoidal and multi-modal prediction sets validate the approach."
+        "result": "MCP achieves target coverage without data splitting, with smaller or comparable prediction set sizes and reduced variance across calibration runs.",
+        "validation": "Numerical experiments on ellipsoidal and multi-modal prediction sets demonstrate the effectiveness of the proposed methods."
       },
       "key_terms": [
         {
@@ -168,8 +171,8 @@
           "zh": "共形预测"
         },
         {
-          "en": "multi-variable score function",
-          "zh": "多变量评分函数"
+          "en": "uncertainty quantification",
+          "zh": "不确定性量化"
         },
         {
           "en": "scenario theory",
@@ -178,18 +181,6 @@
         {
           "en": "data splitting",
           "zh": "数据分割"
-        },
-        {
-          "en": "coverage guarantee",
-          "zh": "覆盖保证"
-        },
-        {
-          "en": "constraint removal",
-          "zh": "约束移除"
-        },
-        {
-          "en": "constraint relaxation",
-          "zh": "约束松弛"
         },
         {
           "en": "prediction set",
@@ -234,31 +225,35 @@
     },
     "llm": {
       "priority": "Medium",
-      "relevance_to_user": "该方法关注约束采样效率，但未直接涉及FEA代理建模或生物力学设计中的昂贵仿真采样问题。",
+      "relevance_level": "Transferable",
+      "read_action": "Save for project",
+      "relevance_to_user": "该论文提出了一种在约束流形上高效采样的方法，可迁移至生物力学设计中的约束优化或不确定性量化问题。",
+      "why_not_core": "This paper does not address FEA surrogate modeling, implant biomechanics, or any biomedical application; it focuses on general constrained sampling with no validation on engineering design problems.",
+      "validation_kind": "numerical_benchmark",
       "flags": {
-        "has_experimental_validation": true,
+        "has_experimental_validation": false,
         "has_uncertainty_quantification": false,
         "is_patient_specific": false,
         "is_review": false
       },
       "tags": [
         "constrained sampling",
-        "manifold sampling",
         "entropy maximization",
-        "disconnected components",
-        "Bayesian optimization"
+        "manifold sampling",
+        "Bayesian optimization",
+        "robotics"
       ],
       "summary_zh": {
-        "motivation": "解决可行集由多个不连通分量组成时的约束采样效率问题。",
-        "method": "提出基于熵最大化的流形采样方法，利用重采样和k近邻密度估计。",
-        "result": "在合成和机器人基准测试中，Sinkhorn距离提升一个数量级，运行时间有竞争力。",
-        "validation": "通过合成和机器人基准测试验证，与替代方法比较Sinkhorn距离和运行时间。"
+        "motivation": "解决可行集由多个不连通分量组成时的约束采样难题。",
+        "method": "提出基于熵最大化的重采样方案，结合k近邻密度估计。",
+        "result": "在合成和机器人基准测试中，Sinkhorn距离提升一个数量级。",
+        "validation": "通过数值基准测试和机器人运动规划案例验证。"
       },
       "summary_en": {
-        "motivation": "Efficient sampling from constrained distributions with disconnected feasible components remains challenging in Bayesian optimization and robotics.",
-        "method": "MASEM employs a resampling scheme maximizing entropy via k-nearest neighbor density estimation to sample on manifolds with unknown disconnected components.",
-        "result": "MASEM achieves an order-of-magnitude improvement in Sinkhorn distance over alternatives with competitive runtime on synthetic and robotics benchmarks.",
-        "validation": "Validation is performed on synthetic and robotics-based benchmarks, comparing Sinkhorn distance and runtime against alternative methods."
+        "motivation": "Efficient sampling from disconnected feasible sets under constraints remains challenging in Bayesian optimization and robotics.",
+        "method": "MASEM employs a resampling scheme that maximizes entropy via k-nearest neighbor density estimation to sample on implicitly defined manifolds.",
+        "result": "MASEM achieves an order-of-magnitude improvement in Sinkhorn distance over alternatives on synthetic and robotics benchmarks.",
+        "validation": "Validation is performed on numerical benchmarks and robotics motion planning problems."
       },
       "key_terms": [
         {
@@ -266,20 +261,16 @@
           "zh": "约束采样"
         },
         {
-          "en": "manifold sampling",
-          "zh": "流形采样"
-        },
-        {
           "en": "entropy maximization",
           "zh": "熵最大化"
         },
         {
-          "en": "disconnected components",
-          "zh": "不连通分量"
+          "en": "manifold sampling",
+          "zh": "流形采样"
         },
         {
-          "en": "k-nearest neighbor density estimation",
-          "zh": "k近邻密度估计"
+          "en": "k-nearest neighbor",
+          "zh": "k近邻"
         },
         {
           "en": "Sinkhorn distance",
@@ -288,6 +279,14 @@
         {
           "en": "Bayesian optimization",
           "zh": "贝叶斯优化"
+        },
+        {
+          "en": "feasible set",
+          "zh": "可行集"
+        },
+        {
+          "en": "disconnected components",
+          "zh": "不连通分量"
         }
       ]
     }
@@ -329,65 +328,65 @@
       ]
     },
     "llm": {
-      "priority": "High",
-      "relevance_to_user": "该论文提出了一种高效的贝叶斯不确定性量化方法，可显著提升有限元代理模型的预测可靠性，且计算成本低，适用于植入物设计中的多约束优化问题。",
+      "priority": "Medium",
+      "relevance_level": "Transferable",
+      "read_action": "Save for project",
+      "relevance_to_user": "该论文提出的自监督拉普拉斯近似方法可用于贝叶斯不确定性量化，可迁移至有限元代理模型中的预测不确定性评估。",
+      "why_not_core": "This paper does not address FEA surrogate modeling, constraint handling, or implant/biomechanics design; it focuses on general Bayesian inference for regression models.",
+      "validation_kind": "numerical_benchmark",
       "flags": {
-        "has_experimental_validation": true,
+        "has_experimental_validation": false,
         "has_uncertainty_quantification": true,
         "is_patient_specific": false,
         "is_review": false
       },
       "tags": [
-        "uncertainty quantification",
+        "Bayesian uncertainty quantification",
         "Laplace approximation",
-        "Bayesian neural networks",
-        "surrogate modelling",
-        "self-supervised learning"
+        "self-supervised learning",
+        "predictive distribution",
+        "neural networks"
       ],
       "summary_zh": {
-        "motivation": "绕过参数后验，直接近似预测后验分布以高效量化不确定性。",
-        "method": "通过自预测数据重新拟合模型，结合Laplace近似实现无采样的预测不确定性量化。",
-        "result": "在回归任务中优于经典Laplace近似，校准性能提升且计算高效。",
-        "validation": "在贝叶斯线性模型和神经网络上，使用模拟和真实数据集进行理论分析与实验验证。"
+        "motivation": "绕过参数后验直接近似预测后验，高效量化不确定性。",
+        "method": "通过自预测数据重新拟合模型，提出自监督拉普拉斯近似（SSLA）。",
+        "result": "在回归任务中优于经典拉普拉斯近似，计算高效且校准良好。",
+        "validation": "在模拟和真实数据集上对贝叶斯线性模型和神经网络进行实证验证。"
       },
       "summary_en": {
-        "motivation": "To directly approximate the posterior predictive distribution for efficient Bayesian uncertainty quantification without computing the parameter posterior.",
-        "method": "A self-supervised Laplace approximation that refits the model on self-predicted data, yielding a deterministic and sampling-free predictive uncertainty estimate.",
+        "motivation": "To efficiently quantify predictive uncertainty in Bayesian models without computing the full posterior parameter distribution.",
+        "method": "Proposes Self-Supervised Laplace Approximation (SSLA) that refits the model on self-predicted data to approximate the posterior predictive distribution.",
         "result": "Outperforms classical Laplace approximations in predictive calibration across various regression tasks while maintaining computational efficiency.",
-        "validation": "Theoretical analysis and empirical validation on Bayesian linear models and neural networks using both simulated and real-world datasets."
+        "validation": "Empirically validated on simulated and real-world datasets using Bayesian linear models and Bayesian neural networks."
       },
       "key_terms": [
         {
+          "en": "Bayesian uncertainty quantification",
+          "zh": "贝叶斯不确定性量化"
+        },
+        {
           "en": "Laplace approximation",
           "zh": "拉普拉斯近似"
-        },
-        {
-          "en": "uncertainty quantification",
-          "zh": "不确定性量化"
-        },
-        {
-          "en": "posterior predictive distribution",
-          "zh": "后验预测分布"
         },
         {
           "en": "self-supervised learning",
           "zh": "自监督学习"
         },
         {
-          "en": "Bayesian neural network",
-          "zh": "贝叶斯神经网络"
+          "en": "posterior predictive distribution",
+          "zh": "后验预测分布"
         },
         {
           "en": "predictive calibration",
           "zh": "预测校准"
         },
         {
-          "en": "sampling-free",
-          "zh": "无采样"
+          "en": "sampling-free approximation",
+          "zh": "无采样近似"
         },
         {
-          "en": "prior sensitivity",
-          "zh": "先验敏感性"
+          "en": "Bayesian neural networks",
+          "zh": "贝叶斯神经网络"
         }
       ]
     }
@@ -431,9 +430,13 @@
     },
     "llm": {
       "priority": "Exclude",
-      "relevance_to_user": "该论文聚焦于公平性机器学习中的共形预测，与FEA及替代建模方向无关。",
+      "relevance_level": "Peripheral",
+      "read_action": "Ignore",
+      "relevance_to_user": "该论文关注公平性约束下的共形预测，与FEA替代模型或生物力学设计无直接关联。",
+      "why_not_core": "This paper focuses on fair conformal prediction for classification, with no connection to surrogate modeling, expensive simulation sampling, uncertainty quantification for FEA, or biomechanical design optimization.",
+      "validation_kind": "numerical_benchmark",
       "flags": {
-        "has_experimental_validation": true,
+        "has_experimental_validation": false,
         "has_uncertainty_quantification": true,
         "is_patient_specific": false,
         "is_review": false
@@ -442,19 +445,19 @@
         "conformal prediction",
         "fairness",
         "classification",
-        "machine learning"
+        "uncertainty quantification"
       ],
       "summary_zh": {
-        "motivation": "共形预测的边际覆盖保证无法消除算法偏见，需公平性保障。",
-        "method": "提出基于表示学习的自适应子组条件覆盖共形预测框架。",
-        "result": "在合成和真实数据集上实现了自适应均衡覆盖和紧凑预测集。",
-        "validation": "通过合成与真实数据集的广泛实验验证有效性。"
+        "motivation": "解决共形预测中忽视算法偏见导致的公平性问题",
+        "method": "提出基于学习表示的自适应子组条件覆盖共形推理框架",
+        "result": "在合成和真实数据集上实现了公平且紧凑的预测集",
+        "validation": "通过合成与真实数据集实验验证有效性"
       },
       "summary_en": {
-        "motivation": "Conformal prediction's marginal coverage guarantees fail to address algorithmic biases, necessitating fairness-aware methods.",
-        "method": "A fair conformal inference framework is proposed that constructs prediction sets with conditional coverage on adaptively identified subgroups via representation learning.",
-        "result": "The framework achieves adaptive equalized coverage and compact prediction sets on synthetic and real-world datasets.",
-        "validation": "Extensive experiments on both synthetic and real-world datasets demonstrate the effectiveness of the approach."
+        "motivation": "To address algorithmic biases in conformal prediction by ensuring conditional coverage guarantees for adaptively identified subgroups.",
+        "method": "A fair conformal inference framework that constructs prediction sets with adaptive equalized coverage across implicitly defined subgroups via nonlinear feature combinations.",
+        "result": "The method produces compact and informative prediction sets while maintaining fairness, as demonstrated on synthetic and real-world datasets.",
+        "validation": "Validation on synthetic and real-world classification datasets."
       },
       "key_terms": [
         {
@@ -470,12 +473,12 @@
           "zh": "条件覆盖"
         },
         {
-          "en": "representation learning",
-          "zh": "表示学习"
+          "en": "subgroup identification",
+          "zh": "子组识别"
         },
         {
-          "en": "subgroups",
-          "zh": "子组"
+          "en": "classification",
+          "zh": "分类"
         }
       ]
     }
@@ -514,7 +517,11 @@
     },
     "llm": {
       "priority": "Low",
-      "relevance_to_user": "该论文研究序列决策的信息论泛化界，与FEA代理模型和植入物设计无直接关联。",
+      "relevance_level": "Peripheral",
+      "read_action": "Background only",
+      "relevance_to_user": "该论文研究序列决策的信息论泛化界，与FEA替代建模或生物力学设计无直接关联。",
+      "why_not_core": "This paper does not address FEA surrogate modeling, expensive simulation sampling, constraint handling, uncertainty quantification, or implant/biomechanics design.",
+      "validation_kind": "theoretical",
       "flags": {
         "has_experimental_validation": false,
         "has_uncertainty_quantification": false,
@@ -525,47 +532,40 @@
         "information theory",
         "generalization bounds",
         "sequential decision making",
-        "online learning"
+        "online learning",
+        "bandits"
       ],
       "summary_zh": {
         "motivation": "现有信息论泛化界不适用于序列决策问题。",
         "method": "提出序列超样本框架，用序列条件互信息控制泛化差距。",
-        "result": "建立了序列CMI界和Bernstein型精细界，适用于在线学习、流式主动学习和多臂老虎机。",
+        "result": "建立了序列决策的泛化界，包括伯恩斯坦型改进。",
         "validation": "理论证明，无实验验证。"
       },
       "summary_en": {
         "motivation": "Existing information-theoretic generalization bounds do not apply to sequential decision-making problems where data are revealed adaptively.",
-        "method": "A sequential supersample framework is developed, controlling the generalization gap via sequential conditional mutual information (CMI).",
-        "result": "Sequential CMI bounds and Bernstein-type refinements are established, applicable to online learning, streaming active learning, and multi-armed bandits.",
-        "validation": "Theoretical proofs are provided without experimental validation."
+        "method": "A sequential supersample framework is developed, controlling the generalization gap via sequential conditional mutual information (SCMI).",
+        "result": "Generalization bounds for online learning, streaming active learning, and bandits are established, including a Bernstein-type refinement for faster rates.",
+        "validation": "Theoretical proofs only; no experimental validation is provided."
       },
       "key_terms": [
         {
-          "en": "information-theoretic generalization bounds",
-          "zh": "信息论泛化界"
-        },
-        {
-          "en": "supersample construction",
-          "zh": "超样本构造"
-        },
-        {
-          "en": "conditional mutual information",
-          "zh": "条件互信息"
+          "en": "generalization bound",
+          "zh": "泛化界"
         },
         {
           "en": "sequential decision making",
           "zh": "序列决策"
         },
         {
+          "en": "conditional mutual information",
+          "zh": "条件互信息"
+        },
+        {
           "en": "online learning",
           "zh": "在线学习"
         },
         {
-          "en": "streaming active learning",
-          "zh": "流式主动学习"
-        },
-        {
-          "en": "multi-armed bandits",
+          "en": "bandits",
           "zh": "多臂老虎机"
         }
       ]
@@ -605,10 +605,14 @@
     },
     "llm": {
       "priority": "Medium",
-      "relevance_to_user": "该方法通过成对比较降低采样成本，但未涉及约束处理、不确定性量化或生物力学设计转移。",
+      "relevance_level": "Transferable",
+      "read_action": "Save for project",
+      "relevance_to_user": "该方法通过成对比较引入人类专家知识，可提高贝叶斯优化的样本效率，适用于植入物设计中的昂贵仿真优化。",
+      "why_not_core": "This paper does not address FEA surrogate modeling, constraint handling, or uncertainty quantification for implant biomechanics; it focuses on human-in-the-loop optimization with pairwise comparisons.",
+      "validation_kind": "numerical_benchmark",
       "flags": {
         "has_experimental_validation": false,
-        "has_uncertainty_quantification": false,
+        "has_uncertainty_quantification": true,
         "is_patient_specific": false,
         "is_review": false
       },
@@ -620,16 +624,16 @@
         "value of information"
       ],
       "summary_zh": {
-        "motivation": "利用人类专家知识提高贝叶斯优化的采样效率，但专家知识常难以量化。",
-        "method": "通过成对比较获取专家偏好，结合直接观测与成对查询的信息，提出成本感知的信息价值采集函数。",
-        "result": "在成对查询廉价时显著提升采样效率，昂贵或噪声大时恢复标准BO性能。",
-        "validation": "在合成函数和超参数调优任务上验证，未涉及实际工程或生物力学问题。"
+        "motivation": "人类专家知识难以量化，但可提高贝叶斯优化效率。",
+        "method": "通过成对比较获取专家知识，结合直接观测与成对查询的价值信息采集函数。",
+        "result": "方法在成对查询廉价时显著提升样本效率，昂贵时恢复标准BO性能。",
+        "validation": "在数值基准上验证，未涉及实际工程或生物力学问题。"
       },
       "summary_en": {
-        "motivation": "To leverage tacit human expertise in Bayesian optimization without requiring explicit quantification, by eliciting pairwise comparisons. ",
-        "method": "A cost-aware value-of-information acquisition function that combines direct observations with pairwise queries, interpreting pairwise judgments as noisy evidence of objective function values. ",
-        "result": "The method approaches the convex hull of individual information source trajectories, improving sample efficiency when pairwise queries are cheap and matching standard BO otherwise. ",
-        "validation": "Validated on synthetic functions and hyperparameter tuning tasks, without application to engineering design or biomechanics. "
+        "motivation": "To leverage tacit human expertise in Bayesian optimization without requiring explicit quantification, using pairwise comparisons.",
+        "method": "A cost-aware value-of-information acquisition function that combines direct observations and pairwise queries from an expert.",
+        "result": "The proposed method approaches the convex hull of individual information source trajectories, improving sample efficiency when pairwise queries are cheap.",
+        "validation": "Validated on numerical benchmark functions, not on real-world engineering or biomechanical design problems."
       },
       "key_terms": [
         {
@@ -654,11 +658,15 @@
         },
         {
           "en": "sample efficiency",
-          "zh": "采样效率"
+          "zh": "样本效率"
         },
         {
-          "en": "tacit knowledge",
-          "zh": "隐性知识"
+          "en": "surrogate model",
+          "zh": "代理模型"
+        },
+        {
+          "en": "Gaussian process",
+          "zh": "高斯过程"
         }
       ]
     }
@@ -698,9 +706,13 @@
     },
     "llm": {
       "priority": "Low",
-      "relevance_to_user": "该论文主要关注反应扩散系统的神经算子逼近理论，未涉及有限元分析、代理模型采样效率或不确定性量化，且方法未在植入物/生物力学设计中验证。",
+      "relevance_level": "Peripheral",
+      "read_action": "Background only",
+      "relevance_to_user": "该论文研究反应扩散系统的神经算子逼近理论，与生物力学有限元代理建模无直接关联。",
+      "why_not_core": "No implant or biomechanics context, no FEA surrogate application, no constraint handling or UQ.",
+      "validation_kind": "numerical_benchmark",
       "flags": {
-        "has_experimental_validation": true,
+        "has_experimental_validation": false,
         "has_uncertainty_quantification": false,
         "is_patient_specific": false,
         "is_review": false
@@ -709,19 +721,20 @@
         "neural operator",
         "reaction-diffusion",
         "approximation theory",
-        "Laplacian spectral representation"
+        "Laplacian",
+        "spectral method"
       ],
       "summary_zh": {
-        "motivation": "现有神经算子逼近理论缺乏对非线性反应扩散系统的具体分析。",
-        "method": "利用拉普拉斯谱表示建立神经算子逼近误差界，分析网络深度、宽度和谱秩的影响。",
-        "result": "证明所需参数复杂度随目标精度多项式增长，缓解了参数复杂度灾难。",
-        "validation": "在Gierer-Meinhardt系统上进行数值实验验证理论结果。"
+        "motivation": "为反应扩散系统建立神经算子的逼近误差界。",
+        "method": "利用拉普拉斯谱表示推导Green函数的逼近误差。",
+        "result": "参数复杂度随精度多项式增长，缓解维数灾难。",
+        "validation": "在Gierer-Meinhardt系统上进行数值验证。"
       },
       "summary_en": {
-        "motivation": "Existing universal approximation results for neural operators lack specific analysis for nonlinear reaction-diffusion systems.",
-        "method": "Exploiting the Laplacian spectral representation of the Green's function, explicit approximation error bounds are derived in terms of network depth, width, and spectral rank.",
-        "result": "The required parameter complexity grows at most polynomially with target accuracy, alleviating the curse of parametric complexity.",
-        "validation": "Numerical experiments on the Gierer-Meinhardt system support the theoretical findings."
+        "motivation": "To establish explicit approximation error bounds for neural operators applied to nonlinear reaction-diffusion systems.",
+        "method": "Exploiting the Laplacian spectral representation of the Green's function to derive error bounds in terms of network depth, width, and spectral rank.",
+        "result": "The required parameter complexity grows at most polynomially with target accuracy, mitigating the curse of parametric complexity.",
+        "validation": "Numerical experiments on the Gierer-Meinhardt system confirm the theoretical bounds."
       },
       "key_terms": [
         {
@@ -792,8 +805,12 @@
       ]
     },
     "llm": {
-      "priority": "Low",
-      "relevance_to_user": "该论文研究野火传播的不确定性量化，与植入物/生物力学设计中的有限元代理建模无直接关联。",
+      "priority": "Medium",
+      "relevance_level": "Transferable",
+      "read_action": "Save for project",
+      "relevance_to_user": "该论文提出的几何对齐多保真代理框架可迁移至植入物力学仿真中的不确定性量化，但未涉及生物力学或植入物设计。",
+      "why_not_core": "This paper does not address implant biomechanics, FEA surrogate for stress/strain, or any biomedical context; it focuses on wildfire spread simulation.",
+      "validation_kind": "simulation_case",
       "flags": {
         "has_experimental_validation": false,
         "has_uncertainty_quantification": true,
@@ -801,28 +818,28 @@
         "is_review": false
       },
       "tags": [
-        "multi-fidelity",
-        "surrogate modeling",
+        "multi-fidelity surrogate",
         "uncertainty quantification",
+        "geometry alignment",
         "wildfire spread",
-        "geometry alignment"
+        "reduced order model"
       ],
       "summary_zh": {
-        "motivation": "物理野火模型计算昂贵，难以用于风险评估中的不确定性量化。",
-        "method": "提出几何对齐的双保真度代理框架，通过映射高低保真解到共同参考域来对齐传播前沿。",
-        "result": "几何对齐代理在温度场和燃料组成预测中误差更低，消除吉布斯振荡，且在线预测成本降低三个数量级。",
-        "validation": "在1D和2D测试案例中，使用ADfiRe模拟器验证，比较不同网格分辨率和物理完整性的模型。"
+        "motivation": "物理模型火灾模拟计算昂贵，需高效不确定性量化代理。",
+        "method": "提出几何对齐双保真代理，通过映射对齐高低保真解的前沿几何。",
+        "result": "代理误差显著降低，消除吉布斯振荡，在线计算加速约三个数量级。",
+        "validation": "基于ADfiRe模拟器在1D和2D算例中验证。"
       },
       "summary_en": {
-        "motivation": "Forward propagation of input uncertainties in physics-based wildfire models is computationally prohibitive, limiting their use in risk assessment.",
-        "method": "A geometry-aligned bi-fidelity surrogate framework maps low- and high-fidelity solution snapshots onto a common reference domain to align dominant front geometry before basis selection.",
-        "result": "The aligned surrogate reduces full-field errors, eliminates Gibbs oscillations, and recovers high-fidelity probability density functions for key quantities of interest, with online predictions three orders of magnitude cheaper.",
-        "validation": "The method is validated on 1D and 2D test cases using the ADfiRe simulator, comparing models with different mesh resolutions and physical completeness."
+        "motivation": "Forward propagation of input uncertainties in physics-based wildfire models is computationally prohibitive, motivating efficient surrogate frameworks for many-query UQ.",
+        "method": "A geometry-aligned bi-fidelity surrogate maps low- and high-fidelity solution snapshots onto a common reference domain via per-variable shift/stretch transforms and activity indicator-based affine alignment.",
+        "result": "The aligned surrogate reduces errors, eliminates Gibbs oscillations, and achieves online predictions roughly three orders of magnitude cheaper than high-fidelity evaluations.",
+        "validation": "Validation is performed on 1D and 2D test cases using the ADfiRe simulator with varying mesh resolution and physical completeness."
       },
       "key_terms": [
         {
           "en": "multi-fidelity surrogate",
-          "zh": "多保真度代理"
+          "zh": "多保真代理"
         },
         {
           "en": "uncertainty quantification",
@@ -833,24 +850,32 @@
           "zh": "几何对齐"
         },
         {
-          "en": "convection-dominated",
-          "zh": "对流主导"
+          "en": "reduced order model",
+          "zh": "降阶模型"
         },
         {
-          "en": "reduced basis",
-          "zh": "缩减基"
+          "en": "wildfire spread",
+          "zh": "野火蔓延"
+        },
+        {
+          "en": "convection-dominated",
+          "zh": "对流主导"
         },
         {
           "en": "Gibbs oscillations",
           "zh": "吉布斯振荡"
         },
         {
-          "en": "wildfire spread",
-          "zh": "野火传播"
+          "en": "bi-fidelity",
+          "zh": "双保真"
         },
         {
-          "en": "physics-based simulator",
-          "zh": "基于物理的模拟器"
+          "en": "surrogate model",
+          "zh": "代理模型"
+        },
+        {
+          "en": "many-query",
+          "zh": "多查询"
         }
       ]
     }
@@ -894,35 +919,39 @@
     },
     "llm": {
       "priority": "Medium",
-      "relevance_to_user": "该论文提出了一种基于随机集的图神经网络不确定性量化方法，但未涉及有限元仿真或代理模型，且应用场景为自动驾驶而非植入物/生物力学设计。",
+      "relevance_level": "Transferable",
+      "read_action": "Save for project",
+      "relevance_to_user": "该论文提出的随机集图神经网络不确定性量化方法可迁移至代理模型，用于评估植入物设计中的预测不确定性。",
+      "why_not_core": "This paper does not address expensive simulation sampling efficiency, constraint handling, or biomechanics/implant design applications.",
+      "validation_kind": "numerical_benchmark",
       "flags": {
-        "has_experimental_validation": true,
+        "has_experimental_validation": false,
         "has_uncertainty_quantification": true,
         "is_patient_specific": false,
         "is_review": false
       },
       "tags": [
-        "Graph Neural Networks",
-        "Uncertainty Quantification",
-        "Epistemic Uncertainty",
-        "Belief Functions",
-        "Random Sets"
+        "graph neural networks",
+        "uncertainty quantification",
+        "epistemic uncertainty",
+        "belief functions",
+        "random sets"
       ],
       "summary_zh": {
-        "motivation": "图神经网络预测存在不确定性，需量化节点级认知不确定性。",
-        "method": "提出随机集图神经网络，用信念函数头预测类别上的随机集。",
+        "motivation": "图神经网络预测不确定性限制了其工业应用，需有效量化。",
+        "method": "提出随机集图神经网络，用信念函数头建模节点级认知不确定性。",
         "result": "在9个图学习数据集上展示了优越的不确定性量化能力。",
-        "validation": "在包括自动驾驶基准的多个数据集上进行实验验证。"
+        "validation": "在标准图学习基准和自动驾驶数据集上验证。"
       },
       "summary_en": {
-        "motivation": "Graph neural networks suffer from inherent uncertainty due to noisy data and incomplete knowledge, necessitating effective uncertainty quantification.",
-        "method": "We propose Random-Set Graph Neural Networks (RS-GNN) that model node-level epistemic uncertainty via a belief-function head predicting a random set over classes.",
-        "result": "RS-GNN achieves superior uncertainty quantification performance on nine graph learning datasets, including real-world autonomous driving benchmarks.",
-        "validation": "Extensive experiments on diverse graph datasets, including Nuscenes and ROAD, validate the method's effectiveness."
+        "motivation": "Uncertainty in GNN predictions hinders industrial adoption, necessitating a principled quantification framework.",
+        "method": "Proposes Random-Set Graph Neural Networks with a belief-function head that models epistemic uncertainty as random sets over class labels.",
+        "result": "RS-GNN achieves superior uncertainty quantification on 9 graph learning datasets, including autonomous driving benchmarks.",
+        "validation": "Validated on standard graph learning benchmarks and real-world autonomous driving datasets (Nuscenes, ROAD)."
       },
       "key_terms": [
         {
-          "en": "Graph Neural Networks",
+          "en": "graph neural networks",
           "zh": "图神经网络"
         },
         {
@@ -934,16 +963,16 @@
           "zh": "认知不确定性"
         },
         {
-          "en": "belief function",
+          "en": "belief functions",
           "zh": "信念函数"
         },
         {
-          "en": "random set",
+          "en": "random sets",
           "zh": "随机集"
         },
         {
-          "en": "node-level prediction",
-          "zh": "节点级预测"
+          "en": "node-level uncertainty",
+          "zh": "节点级不确定性"
         },
         {
           "en": "autonomous driving",
@@ -992,9 +1021,13 @@
     },
     "llm": {
       "priority": "Low",
-      "relevance_to_user": "该论文主要关注连续域降维方法，与有限元代理建模和植入物设计的直接相关性较低。",
+      "relevance_level": "Peripheral",
+      "read_action": "Background only",
+      "relevance_to_user": "该论文提出了一种连续域降维方法，但未涉及有限元分析或生物力学设计，与用户研究方向关联度低。",
+      "why_not_core": "This paper focuses on continuous dimensionality reduction for general data, with no application to FEA, surrogate modeling, uncertainty quantification, or biomedical implant design.",
+      "validation_kind": "numerical_benchmark",
       "flags": {
-        "has_experimental_validation": true,
+        "has_experimental_validation": false,
         "has_uncertainty_quantification": false,
         "is_patient_specific": false,
         "is_review": false
@@ -1002,21 +1035,20 @@
       "tags": [
         "dimensionality reduction",
         "neural operator",
-        "continuous domain",
-        "graph kernel operator",
-        "sheaf neural network"
+        "continuous embedding",
+        "graph kernel operator"
       ],
       "summary_zh": {
-        "motivation": "现有降维方法将数据视为离散点云，忽略了连续域结构。",
-        "method": "提出神经算子函数嵌入（NOFE），通过图核算子学习函数到函数的映射。",
-        "result": "NOFE在局部结构保持上显著优于PCA、t-SNE和UMAP，且具有采样独立性。",
-        "validation": "在ERA5气候再分析数据集上对比基线方法，评估局部和全局结构保持指标。"
+        "motivation": "现有降维方法忽略数据的连续域结构，需提出域感知的连续降维方法。",
+        "method": "提出神经算子函数嵌入（NOFE），通过图核算子学习函数到函数映射，实现网格无关评估。",
+        "result": "NOFE在局部结构保持上显著优于PCA、t-SNE和UMAP，且具有鲁棒的采样独立性。",
+        "validation": "在ERA5气候再分析数据集上对比基线方法，计算局部Stress和Patch Stitching Error。"
       },
       "summary_en": {
-        "motivation": "Existing dimensionality reduction methods treat data as discrete point clouds, ignoring the continuous domain structure inherent in many real-world processes.",
-        "method": "We propose Neural Operator Function Embedding (NOFE), a domain-aware framework that learns function-to-function mappings via a Graph Kernel Operator for continuous dimensionality reduction.",
-        "result": "NOFE significantly outperforms PCA, t-SNE, and UMAP in local structure preservation, achieving a local Stress of 0.111 and reducing Patch Stitching Error by up to 20x compared to UMAP.",
-        "validation": "The method is validated on the ERA5 climate reanalysis dataset, comparing local and global structure preservation metrics against baseline methods."
+        "motivation": "Existing dimensionality reduction methods treat data as discrete point clouds, ignoring continuous domain structure, motivating a domain-aware continuous approach.",
+        "method": "Neural Operator Function Embedding (NOFE) learns function-to-function mappings via a Graph Kernel Operator, enabling mesh-free evaluation at arbitrary query locations.",
+        "result": "NOFE achieves superior local structure preservation (local Stress 0.111 vs. 0.398 for PCA) and reduces Patch Stitching Error by up to 20x compared to UMAP.",
+        "validation": "Validation is performed on the ERA5 climate reanalysis dataset against PCA, t-SNE, and UMAP using local Stress and Patch Stitching Error metrics."
       },
       "key_terms": [
         {
@@ -1024,16 +1056,20 @@
           "zh": "神经算子"
         },
         {
-          "en": "function embedding",
-          "zh": "函数嵌入"
+          "en": "dimensionality reduction",
+          "zh": "降维"
         },
         {
-          "en": "continuous dimensionality reduction",
-          "zh": "连续降维"
+          "en": "continuous embedding",
+          "zh": "连续嵌入"
         },
         {
           "en": "graph kernel operator",
           "zh": "图核算子"
+        },
+        {
+          "en": "mesh-free evaluation",
+          "zh": "网格无关评估"
         },
         {
           "en": "sheaf neural network",
@@ -1042,10 +1078,6 @@
         {
           "en": "local structure preservation",
           "zh": "局部结构保持"
-        },
-        {
-          "en": "sampling independence",
-          "zh": "采样独立性"
         }
       ]
     }
@@ -1083,32 +1115,36 @@
       ]
     },
     "llm": {
-      "priority": "Medium",
-      "relevance_to_user": "该论文提出了一种模块化神经算子框架，可提高仿真效率，但未直接处理约束优化、不确定性量化或植入物设计问题。",
+      "priority": "High",
+      "relevance_level": "Transferable",
+      "read_action": "Save for project",
+      "relevance_to_user": "该论文提出的组合式神经算子框架可分解复杂PDE为基本模块，有望迁移至生物力学FEA代理建模，提高采样效率和可解释性。",
+      "why_not_core": "This paper focuses on fluid dynamics PDEs and does not include solid mechanics, implant design, or biomedical validation.",
+      "validation_kind": "numerical_benchmark",
       "flags": {
-        "has_experimental_validation": true,
+        "has_experimental_validation": false,
         "has_uncertainty_quantification": false,
         "is_patient_specific": false,
         "is_review": false
       },
       "tags": [
         "neural operator",
+        "compositional",
         "PDE surrogate",
-        "modular framework",
-        "fluid dynamics",
-        "foundation model"
+        "foundation model",
+        "fluid dynamics"
       ],
       "summary_zh": {
-        "motivation": "高保真数值求解PDE计算昂贵，现有ML方法泛化性差。",
-        "method": "将复杂PDE分解为基础物理模块，每个模块预训练为神经算子，通过聚合器组合。",
-        "result": "在多个方程上验证，模块化方法提升了适应性和可解释性。",
-        "validation": "在Convection-Diffusion、Burgers和Navier-Stokes方程上测试。"
+        "motivation": "高保真数值求解计算昂贵，现有ML方法泛化性差。",
+        "method": "将复杂PDE分解为预训练的基础算子模块，通过聚合器学习非线性交互。",
+        "result": "在多个流体方程上验证了模块化方法的适应性和可解释性。",
+        "validation": "在标准PDE基准（对流扩散、Burgers、不可压Navier-Stokes）上数值验证。"
       },
       "summary_en": {
-        "motivation": "High-fidelity numerical solutions of PDEs are computationally expensive, and existing ML approaches lack generalization.",
-        "method": "CompNO decomposes complex PDEs into a library of pretrained neural operator blocks for elementary physics, assembled via an adaptation block with an aggregator.",
-        "result": "The modular approach improves adaptability, interpretability, and enables reuse of pretrained blocks on new physical systems.",
-        "validation": "Evaluated on Convection-Diffusion, Burgers', and Incompressible Navier-Stokes equations."
+        "motivation": "High-fidelity numerical PDE solvers are computationally expensive, and existing ML surrogates lack generalization and interpretability.",
+        "method": "CompNO decomposes complex PDEs into a library of pretrained Foundation Blocks (e.g., convection, diffusion) and assembles them via an Adaptation Block with physics-informed loss.",
+        "result": "The modular approach improves adaptability, interpretability, and enables reuse of pretrained blocks across different physical systems.",
+        "validation": "Numerical benchmarks on Convection-Diffusion, Burgers', and Incompressible Navier-Stokes equations."
       },
       "key_terms": [
         {
@@ -1117,31 +1153,35 @@
         },
         {
           "en": "compositional framework",
-          "zh": "组合框架"
+          "zh": "组合式框架"
         },
         {
-          "en": "foundation block",
-          "zh": "基础模块"
-        },
-        {
-          "en": "physics-informed loss",
-          "zh": "物理信息损失"
+          "en": "foundation model",
+          "zh": "基础模型"
         },
         {
           "en": "PDE surrogate",
           "zh": "PDE代理模型"
         },
         {
+          "en": "physics-informed loss",
+          "zh": "物理信息损失"
+        },
+        {
           "en": "modular library",
           "zh": "模块化库"
         },
         {
-          "en": "adaptation block",
-          "zh": "自适应模块"
+          "en": "convection-diffusion",
+          "zh": "对流扩散"
         },
         {
-          "en": "aggregator",
-          "zh": "聚合器"
+          "en": "Burgers' equation",
+          "zh": "Burgers方程"
+        },
+        {
+          "en": "Navier-Stokes",
+          "zh": "Navier-Stokes方程"
         }
       ]
     }
@@ -1184,9 +1224,13 @@
     },
     "llm": {
       "priority": "Exclude",
-      "relevance_to_user": "该论文研究联邦学习中的拜占庭鲁棒性，与FEA及代理模型在植入物/生物力学设计中的采样效率、约束处理、不确定性量化等方向无关。",
+      "relevance_level": "Peripheral",
+      "read_action": "Ignore",
+      "relevance_to_user": "该论文研究联邦学习中的拜占庭鲁棒性，与FEA代理模型或生物力学设计无关。",
+      "why_not_core": "This paper focuses on federated conformal prediction robustness, not on surrogate modeling, finite element analysis, or biomechanical design optimization.",
+      "validation_kind": "none",
       "flags": {
-        "has_experimental_validation": true,
+        "has_experimental_validation": false,
         "has_uncertainty_quantification": true,
         "is_patient_specific": false,
         "is_review": false
@@ -1194,20 +1238,20 @@
       "tags": [
         "federated learning",
         "conformal prediction",
-        "Byzantine resilience",
+        "Byzantine robustness",
         "uncertainty quantification"
       ],
       "summary_zh": {
-        "motivation": "联邦学习中拜占庭攻击威胁模型训练与校准阶段，现有方法仅加固校准阶段。",
-        "method": "提出部分模型共享与直方图特征向量检测恶意客户端，保护训练和校准两阶段。",
-        "result": "在多种攻击下实现更接近名义覆盖率的预测区间，且通信高效。",
-        "validation": "在多种拜占庭攻击场景下进行实验验证。"
+        "motivation": "提升联邦学习中不确定性量化的鲁棒性和通信效率",
+        "method": "提出部分模型共享和直方图特征向量的拜占庭鲁棒联邦共形预测方法",
+        "result": "在多种攻击下实现更接近名义覆盖率和更窄的预测区间",
+        "validation": "在多种拜占庭攻击场景下进行数值实验验证"
       },
       "summary_en": {
-        "motivation": "Byzantine attacks threaten both training and calibration in federated learning, but existing robust methods only harden the calibration stage.",
-        "method": "We propose partial model sharing to limit attack surface and histogram-based characterization vectors for detecting malicious clients, protecting both phases.",
-        "result": "The method achieves closer-to-nominal coverage with tighter prediction intervals under diverse Byzantine attacks.",
-        "validation": "Experiments are conducted across multiple Byzantine attack scenarios to demonstrate robustness and communication efficiency."
+        "motivation": "To improve robustness and communication efficiency of uncertainty quantification in federated learning under Byzantine attacks.",
+        "method": "Proposes a Byzantine-resilient federated conformal prediction method using partial model sharing and histogram-based characterization vectors for malicious client detection.",
+        "result": "Achieves closer-to-nominal coverage and tighter prediction intervals than standard FCP under diverse attack scenarios.",
+        "validation": "Validated through numerical experiments across multiple Byzantine attack scenarios."
       },
       "key_terms": [
         {
@@ -1227,20 +1271,8 @@
           "zh": "非一致性分数"
         },
         {
-          "en": "histogram-based characterization",
-          "zh": "基于直方图的特征化"
-        },
-        {
-          "en": "maliciousness score",
-          "zh": "恶意度分数"
-        },
-        {
-          "en": "conformal quantile",
-          "zh": "共形分位数"
-        },
-        {
-          "en": "prediction interval",
-          "zh": "预测区间"
+          "en": "uncertainty quantification",
+          "zh": "不确定性量化"
         }
       ]
     }
@@ -1282,31 +1314,35 @@
     },
     "llm": {
       "priority": "Low",
-      "relevance_to_user": "该论文主要关注图像领域的分布外检测，与FEA代理模型和植入物设计的直接相关性较低。",
+      "relevance_level": "Peripheral",
+      "read_action": "Background only",
+      "relevance_to_user": "该论文研究基于信息瓶颈的OOD检测，与FEA代理模型或生物力学设计无直接关联。",
+      "why_not_core": "This paper does not address expensive simulation sampling, constraint handling, or implant/biomechanics design; it focuses on image-based OOD detection with no FEA or surrogate modeling context.",
+      "validation_kind": "numerical_benchmark",
       "flags": {
-        "has_experimental_validation": true,
+        "has_experimental_validation": false,
         "has_uncertainty_quantification": true,
         "is_patient_specific": false,
         "is_review": false
       },
       "tags": [
         "novelty detection",
-        "uncertainty quantification",
         "variational information bottleneck",
+        "uncertainty quantification",
         "OOD detection",
-        "active learning"
+        "MNIST"
       ],
       "summary_zh": {
-        "motivation": "提高神经网络在安全关键应用中的分布外检测可靠性。",
-        "method": "利用深度变分信息瓶颈约束表示学习，结合KL散度和预测熵进行检测。",
+        "motivation": "安全关键应用中神经网络OOD检测需要理论支撑和校准。",
+        "method": "使用深度变分信息瓶颈约束表示学习，结合KL散度和预测熵进行OOD检测。",
         "result": "KL散度在远OOD上达100% AUROC，预测熵在近OOD上达94.7% AUROC。",
-        "validation": "在MNIST数据集上使用留出类进行OOD检测评估。"
+        "validation": "在MNIST留出类、噪声和域偏移上评估AUROC和校准误差。"
       },
       "summary_en": {
-        "motivation": "To improve out-of-distribution detection reliability for neural networks in safety-critical applications.",
-        "method": "Proposes VNDUQE using Deep Variational Information Bottleneck to constrain representation learning, combining KL divergence and prediction entropy for OOD detection.",
-        "result": "KL divergence achieves 100% AUROC on far-OOD samples, while prediction entropy achieves 94.7% AUROC on near-OOD samples.",
-        "validation": "Evaluated on MNIST with held-out digit classes for OOD detection."
+        "motivation": "Safe deployment of neural networks requires theoretically grounded and well-calibrated out-of-distribution detection.",
+        "method": "The deep variational information bottleneck is employed to constrain representation learning, and KL divergence and prediction entropy are used as complementary OOD detection metrics.",
+        "result": "KL divergence achieves perfect far-OOD detection (100% AUROC on noise), while prediction entropy excels at near-OOD detection (94.7% AUROC on novel digits), with a combined strategy improving AUROC by 32 percentage points over MSP.",
+        "validation": "Validation is performed on MNIST with held-out classes, noise, and domain shift, evaluating AUROC and expected calibration error."
       },
       "key_terms": [
         {
@@ -1318,20 +1354,16 @@
           "zh": "变分信息瓶颈"
         },
         {
+          "en": "uncertainty quantification",
+          "zh": "不确定性量化"
+        },
+        {
           "en": "KL divergence",
           "zh": "KL散度"
         },
         {
           "en": "prediction entropy",
           "zh": "预测熵"
-        },
-        {
-          "en": "uncertainty quantification",
-          "zh": "不确定性量化"
-        },
-        {
-          "en": "active learning",
-          "zh": "主动学习"
         },
         {
           "en": "expected calibration error",
@@ -1373,30 +1405,35 @@
     },
     "llm": {
       "priority": "Low",
-      "relevance_to_user": "该论文研究单模型集成中的网络宽度与分支数量权衡，与有限元代理建模、不确定性量化或植入物设计优化无直接关联。",
+      "relevance_level": "Peripheral",
+      "read_action": "Background only",
+      "relevance_to_user": "该论文研究单模型集成中的多窄分支变换，与FEA替代建模或生物力学设计无直接关联。",
+      "why_not_core": "This paper focuses on CNN ensemble architectures for image classification, with no application to surrogate modeling, finite element analysis, uncertainty quantification, or biomechanical design.",
+      "validation_kind": "numerical_benchmark",
       "flags": {
-        "has_experimental_validation": true,
+        "has_experimental_validation": false,
         "has_uncertainty_quantification": false,
         "is_patient_specific": false,
         "is_review": false
       },
       "tags": [
         "single-model ensemble",
-        "CNN architecture",
-        "data regime",
-        "model capacity"
+        "multi-narrow transformation",
+        "CNN",
+        "image classification",
+        "low-data regime"
       ],
       "summary_zh": {
-        "motivation": "探索在参数预算有限时，单模型集成应如何分配宽度与分支数量。",
-        "method": "提出Multi-Narrow变换，将基线CNN转化为多个窄分支的集成，并系统比较不同数据量下的性能。",
-        "result": "低数据量下高分支数模型优于基线，高数据量下则相反。",
-        "validation": "在多种CNN架构和图像分类数据集上验证，并分析内部表征多样性。"
+        "motivation": "探索在参数预算有限时，模型容量应集中于单宽路径还是分散为多窄分支。",
+        "method": "通过多窄变换将基线CNN转化为多个窄独立分支的集成，比较不同数据量下的性能。",
+        "result": "低数据量下多窄模型优于基线，高数据量下则相反。",
+        "validation": "在多个CNN架构和图像分类数据集上验证。"
       },
       "summary_en": {
-        "motivation": "To investigate whether model capacity should be concentrated in a single wide pathway or distributed into many narrow independent branches under a limited parameter budget for single-model ensembles.",
-        "method": "Proposes the Multi-Narrow transformation that converts a baseline CNN into an ensemble of narrow, path-wise independent branches while preserving the dominant parameter budget.",
-        "result": "Highly partitioned Multi-Narrow models consistently outperform the baseline in low-data settings, while baseline-wide models are preferable in data-rich settings.",
-        "validation": "Validated across multiple CNN architectures and image classification datasets, with analysis of internal representations showing diverse path-wise features in high-MN models."
+        "motivation": "To determine whether model capacity under a fixed parameter budget should be concentrated in a single wide pathway or distributed into many narrow independent branches in single-model ensembles.",
+        "method": "The Multi-Narrow transformation converts a baseline CNN into an ensemble of narrow, path-wise independent branches while preserving the dominant parameter budget, and compares performance across data regimes.",
+        "result": "Highly partitioned Multi-Narrow models consistently outperform the baseline in low-data settings but underperform in data-rich settings, due to imbalanced training and path dominance.",
+        "validation": "Validated on multiple CNN architectures and image classification datasets (e.g., CIFAR, ImageNet subsets)."
       },
       "key_terms": [
         {
@@ -1404,24 +1441,24 @@
           "zh": "单模型集成"
         },
         {
-          "en": "Multi-Narrow transformation",
+          "en": "multi-narrow transformation",
           "zh": "多窄变换"
         },
         {
-          "en": "model capacity",
-          "zh": "模型容量"
-        },
-        {
-          "en": "data regime",
-          "zh": "数据体制"
+          "en": "parameter budget",
+          "zh": "参数预算"
         },
         {
           "en": "path-wise independence",
           "zh": "路径独立性"
         },
         {
-          "en": "internal representation diversity",
-          "zh": "内部表征多样性"
+          "en": "low-data regime",
+          "zh": "低数据量场景"
+        },
+        {
+          "en": "model capacity",
+          "zh": "模型容量"
         }
       ]
     }
@@ -1460,9 +1497,13 @@
     },
     "llm": {
       "priority": "Low",
-      "relevance_to_user": "该论文专注于PDE识别中的符号回归与对称性约简，未涉及有限元仿真、代理模型或不确定性量化，与用户的研究方向关联较弱。",
+      "relevance_level": "Peripheral",
+      "read_action": "Background only",
+      "relevance_to_user": "该论文专注于PDE识别中的符号回归方法，与FEA代理模型或生物力学设计无直接关联。",
+      "why_not_core": "This paper does not address expensive simulation sampling, constraint handling, uncertainty quantification, or implant/biomechanics design; it focuses on PDE discovery from data.",
+      "validation_kind": "numerical_benchmark",
       "flags": {
-        "has_experimental_validation": true,
+        "has_experimental_validation": false,
         "has_uncertainty_quantification": false,
         "is_patient_specific": false,
         "is_review": false
@@ -1470,21 +1511,21 @@
       "tags": [
         "PDE identification",
         "sparse regression",
-        "symmetry reduction",
+        "symmetry",
         "stability selection",
         "Galilean invariance"
       ],
       "summary_zh": {
-        "motivation": "数据驱动PDE识别中候选库过大导致假阳性，过小则遗漏真项。",
-        "method": "提出EqOD方法，结合伽利略对称性约简与随机LASSO稳定性选择自动降库。",
-        "result": "在8个PDE和4个噪声水平下，EqOD在多数情况下优于现有方法，F1分数显著提升。",
-        "validation": "在多个基准数据集和扩展案例上验证，包括弱形式识别和PINN-SR数据集。"
+        "motivation": "提高含噪数据下PDE识别的准确性和鲁棒性",
+        "method": "结合伽利略对称性约简和随机LASSO稳定性选择的自动方法",
+        "result": "在多个基准测试中F1分数显著优于现有方法",
+        "validation": "在8个PDE和4个噪声水平下进行数值实验验证"
       },
       "summary_en": {
-        "motivation": "Data-driven PDE identification suffers from false positives due to large candidate libraries and missing true terms with small libraries.",
-        "method": "EqOD automatically reduces the library by detecting Galilean invariance via a weak-form test or applying randomized LASSO stability selection with false-positive bounds.",
-        "result": "EqOD achieves superior F1 scores on 8 PDEs across 4 noise levels, outperforming WF-LASSO, PySINDy, and WSINDy in most cases.",
-        "validation": "Validated on WeakIdent and PINN-SR benchmarks, with extensions to NLS, 2D, coupled systems, and cylinder wake flows."
+        "motivation": "To improve the accuracy and robustness of PDE identification from noisy observational data by reducing false positives in sparse regression.",
+        "method": "Introduces Equivariant Operator Discovery (EqOD), which automatically reduces the candidate library via Galilean symmetry detection or randomized LASSO stability selection with a residual-based fallback.",
+        "result": "EqOD achieves perfect F1 scores on several benchmarks and outperforms existing methods like PySINDy and WSINDy under noisy conditions.",
+        "validation": "Validated on 8 PDEs at 4 noise levels, external benchmarks, and extensions to NLS, 2D, coupled systems, and cylinder wake."
       },
       "key_terms": [
         {
@@ -1496,28 +1537,16 @@
           "zh": "稀疏回归"
         },
         {
-          "en": "symmetry reduction",
-          "zh": "对称性约简"
+          "en": "Galilean invariance",
+          "zh": "伽利略不变性"
         },
         {
           "en": "stability selection",
           "zh": "稳定性选择"
         },
         {
-          "en": "Galilean invariance",
-          "zh": "伽利略不变性"
-        },
-        {
-          "en": "false-positive control",
+          "en": "false positive control",
           "zh": "假阳性控制"
-        },
-        {
-          "en": "weak-form test",
-          "zh": "弱形式检验"
-        },
-        {
-          "en": "candidate library",
-          "zh": "候选库"
         }
       ]
     }
@@ -1557,10 +1586,14 @@
       ]
     },
     "llm": {
-      "priority": "Medium",
-      "relevance_to_user": "该论文关注主动数据收集后的统计推断，与FEA代理模型中的采样效率问题间接相关，但未直接解决昂贵仿真采样或约束优化问题。",
+      "priority": "Low",
+      "relevance_level": "Peripheral",
+      "read_action": "Background only",
+      "relevance_to_user": "该论文关注主动数据收集后的统计推断，而非解决有限元代理模型中的采样效率或约束优化问题。",
+      "why_not_core": "This paper does not address surrogate modeling for expensive simulations, constraint handling, uncertainty quantification for point predictions, or transferability to implant/biomechanics design.",
+      "validation_kind": "numerical_benchmark",
       "flags": {
-        "has_experimental_validation": true,
+        "has_experimental_validation": false,
         "has_uncertainty_quantification": true,
         "is_patient_specific": false,
         "is_review": false
@@ -1568,21 +1601,21 @@
       "tags": [
         "active data collection",
         "selective inference",
-        "surrogate model",
-        "uncertainty quantification",
-        "black-box optimization"
+        "black-box optimization",
+        "GP-UCB",
+        "TPE"
       ],
       "summary_zh": {
-        "motivation": "主动数据收集后复用数据进行推断时，传统方法因采样偏差失效。",
+        "motivation": "主动数据收集后统计推断失效，需校正采样偏差。",
         "method": "提出后ADC推断框架，基于选择性推断校正数据收集和目标构建的双重偏差。",
-        "result": "在GP-UCB和TPE收集的数据上提供有效的p值和置信区间。",
-        "validation": "通过模拟实验验证推断的有效性。"
+        "result": "提供有效的p值和置信区间，适用于GP-UCB和TPE等算法。",
+        "validation": "数值基准测试验证推断有效性。"
       },
       "summary_en": {
-        "motivation": "Statistical inference fails when data from active collection are reused for post-hoc tasks due to adaptive sampling bias.",
-        "method": "A post-ADC inference framework is proposed that corrects biases from both the data collection process and data-driven target construction using selective inference.",
-        "result": "Valid p-values and confidence intervals are obtained for data collected by GP-UCB and TPE.",
-        "validation": "Empirical simulations demonstrate the validity of the proposed inference method."
+        "motivation": "Statistical inference fails when data are actively collected due to adaptive sampling bias, necessitating a correction framework.",
+        "method": "A post-ADC inference framework is proposed, leveraging selective inference to correct biases from both the active data collection process and data-dependent target construction.",
+        "result": "Valid p-values and confidence intervals are obtained for data collected by GP-UCB and TPE without assumptions on the black-box function.",
+        "validation": "Numerical benchmarks demonstrate the validity of the proposed inference method."
       },
       "key_terms": [
         {
@@ -1594,16 +1627,8 @@
           "zh": "选择性推断"
         },
         {
-          "en": "post-hoc inference",
-          "zh": "事后推断"
-        },
-        {
           "en": "black-box optimization",
           "zh": "黑箱优化"
-        },
-        {
-          "en": "surrogate model",
-          "zh": "代理模型"
         },
         {
           "en": "GP-UCB",
@@ -1614,8 +1639,12 @@
           "zh": "树结构Parzen估计器"
         },
         {
-          "en": "uncertainty quantification",
-          "zh": "不确定性量化"
+          "en": "p-value",
+          "zh": "p值"
+        },
+        {
+          "en": "confidence interval",
+          "zh": "置信区间"
         }
       ]
     }
@@ -1654,9 +1683,13 @@
     },
     "llm": {
       "priority": "Medium",
-      "relevance_to_user": "该论文提出区间神经网络用于不确定性量化，但未涉及有限元仿真或代理模型采样效率问题，且方法未在植入物/生物力学设计中验证。",
+      "relevance_level": "Transferable",
+      "read_action": "Save for project",
+      "relevance_to_user": "该论文提出的区间神经网络方法可用于生物力学代理模型的不确定性量化，但未涉及有限元仿真或植入物设计。",
+      "why_not_core": "No FEA validation, no implant or biomechanics context, no constraint handling or multi-objective optimization.",
+      "validation_kind": "numerical_benchmark",
       "flags": {
-        "has_experimental_validation": true,
+        "has_experimental_validation": false,
         "has_uncertainty_quantification": true,
         "is_patient_specific": false,
         "is_review": false
@@ -1665,18 +1698,19 @@
         "uncertainty quantification",
         "interval neural network",
         "system identification",
-        "surrogate modeling"
+        "surrogate modeling",
+        "deep learning"
       ],
       "summary_zh": {
         "motivation": "传统系统辨识方法难以捕捉非线性行为且缺乏不确定性量化。",
-        "method": "提出区间神经网络框架，扩展LSTM和NODE模型，通过区间算术传播不确定性。",
-        "result": "C-INN提升点预测精度，J-INN生成更准确校准的预测区间。",
-        "validation": "在多个系统辨识数据集上对比基线方法验证有效性。"
+        "method": "提出区间神经网络框架，包括级联和联合训练策略，通过区间算术传播不确定性。",
+        "result": "级联方法点预测精度高，联合方法区间预测更准确且校准更好。",
+        "validation": "在多个系统辨识数据集上对比基准方法验证有效性。"
       },
       "summary_en": {
-        "motivation": "Traditional system identification methods struggle with nonlinear dynamics and lack uncertainty quantification for reliable predictions.",
-        "method": "A systematic framework for interval neural networks (INNs) is proposed, extending LSTM and NODE models to propagate uncertainty via interval arithmetic without probabilistic assumptions.",
-        "result": "Cascade INN achieves superior point prediction accuracy, while Joint INN yields more accurate and better-calibrated prediction intervals.",
+        "motivation": "Traditional system identification struggles with nonlinear dynamics and lacks uncertainty quantification for reliable predictions.",
+        "method": "A framework for interval neural networks (INNs) is proposed, including Cascade INN and Joint INN, which propagate uncertainty via interval arithmetic without probabilistic assumptions.",
+        "result": "C-INN achieves superior point prediction accuracy, while J-INN yields more accurate and better-calibrated prediction intervals.",
         "validation": "Comprehensive experiments on multiple system identification datasets benchmark against established uncertainty-aware baselines."
       },
       "key_terms": [
@@ -1693,7 +1727,7 @@
           "zh": "不确定性量化"
         },
         {
-          "en": "prediction interval",
+          "en": "prediction intervals",
           "zh": "预测区间"
         },
         {
@@ -1705,12 +1739,8 @@
           "zh": "长短期记忆网络"
         },
         {
-          "en": "NODE",
+          "en": "neural ODE",
           "zh": "神经常微分方程"
-        },
-        {
-          "en": "channel-wise elasticity",
-          "zh": "通道弹性"
         }
       ]
     }
@@ -1754,31 +1784,35 @@
     },
     "llm": {
       "priority": "Low",
-      "relevance_to_user": "该论文关注通用空间残差建模，未涉及有限元仿真或生物力学设计优化，与用户研究方向间接相关。",
+      "relevance_level": "Peripheral",
+      "read_action": "Background only",
+      "relevance_to_user": "该论文关注通用空间残差建模和协方差估计，未涉及生物力学或植入物设计中的有限元代理建模。",
+      "why_not_core": "No FEA surrogate modeling, no implant/biomechanics context, no constraint handling or multi-objective optimization.",
+      "validation_kind": "numerical_benchmark",
       "flags": {
-        "has_experimental_validation": true,
+        "has_experimental_validation": false,
         "has_uncertainty_quantification": true,
         "is_patient_specific": false,
         "is_review": false
       },
       "tags": [
         "spatial adapter",
-        "surrogate modeling",
-        "uncertainty quantification",
-        "frozen predictor",
-        "closed-form covariance"
+        "covariance estimation",
+        "frozen predictors",
+        "kriging",
+        "uncertainty quantification"
       ],
       "summary_zh": {
-        "motivation": "为冻结的预测器提供结构化空间残差表示和闭式协方差，实现空间预测与不确定性量化。",
-        "method": "提出空间适配器，通过可微ADMM学习正交基和分数，构建低秩加噪声协方差估计器。",
-        "result": "在合成数据、天气和作物病害数据集上，适配器有效恢复残差空间结构，参数效率高。",
-        "validation": "在空间留出预测和基可迁移性诊断任务上验证，与多种冻结骨干结合。"
+        "motivation": "为冻结的预测器提供结构化空间残差表示和闭式协方差。",
+        "method": "提出空间适配器，通过ADMM学习正交基和分数，实现低秩加噪声协方差估计。",
+        "result": "在合成数据和真实数据集上恢复空间结构，支持克里金预测和不确定性量化。",
+        "validation": "在合成数据、Weather2K和GWHD上验证空间预测性能。"
       },
       "summary_en": {
-        "motivation": "To equip any frozen first-stage predictor with a structured spatial representation of its residual field and a closed-form covariance for spatial prediction and uncertainty quantification.",
-        "method": "The Spatial Adapter learns a spatially regularized orthonormal basis and per-sample scores via a tractable mini-batch ADMM procedure, yielding a closed-form low-rank-plus-noise covariance estimator.",
-        "result": "On synthetic data, Weather2K, and GWHD patch grids, the adapter recovers residual spatial structure with fewer than K(N+T) parameters when paired with frozen backbones from linear models to deep spatiotemporal and vision networks.",
-        "validation": "Validation is performed on spatial holdout prediction tasks and basis-transferability diagnostics, demonstrating effectiveness across diverse frozen predictors."
+        "motivation": "To equip any frozen first-stage predictor with a structured spatial representation of its residual field and a closed-form covariance for uncertainty quantification.",
+        "method": "The Spatial Adapter learns a spatially regularized orthonormal basis and per-sample scores via mini-batch ADMM, yielding a low-rank-plus-noise covariance estimator.",
+        "result": "The adapter recovers residual spatial structure across synthetic and real datasets, enabling kriging-style prediction with plug-in uncertainty.",
+        "validation": "Validated on synthetic data, Weather2K spatial holdout prediction, and GWHD patch grids."
       },
       "key_terms": [
         {
@@ -1786,32 +1820,28 @@
           "zh": "空间适配器"
         },
         {
-          "en": "frozen predictor",
-          "zh": "冻结预测器"
-        },
-        {
           "en": "closed-form covariance",
           "zh": "闭式协方差"
         },
         {
-          "en": "low-rank-plus-noise",
-          "zh": "低秩加噪声"
+          "en": "frozen predictor",
+          "zh": "冻结预测器"
+        },
+        {
+          "en": "kriging",
+          "zh": "克里金"
+        },
+        {
+          "en": "uncertainty quantification",
+          "zh": "不确定性量化"
         },
         {
           "en": "ADMM",
           "zh": "交替方向乘子法"
         },
         {
-          "en": "residual field",
-          "zh": "残差场"
-        },
-        {
-          "en": "kriging",
-          "zh": "克里金法"
-        },
-        {
-          "en": "uncertainty quantification",
-          "zh": "不确定性量化"
+          "en": "low-rank factorization",
+          "zh": "低秩分解"
         }
       ]
     }
