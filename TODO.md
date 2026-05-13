@@ -383,3 +383,55 @@ abstract。LLM 建议这条是没仔细看代码就提的。
 
 **预期增量**: 每天多 30-100 篇候选论文进流水线。
 LLM 评分成本增加 ~¥0.2/天,可接受。
+---
+
+# 2026-05-13 优化方向校准
+
+经用户明确,Research Radar 的优化函数是:
+
+**最大化召回**(不漏掉有价值的论文),不是最小化精确度或 LLM 成本。
+
+具体含义:
+- DeepSeek ¥0.5-2/天 的调用成本不是问题,完全可接受
+- LLM 评分能正确筛选噪音,所以路由层应该宽松而非收紧
+- "相关领域启发"也算有价值——hip 临床论文的方法启示、纯 ML 论文
+  在 surrogate 方向的可迁移性等,都不应被路由排除
+- 比起"路由通过 19 篇 90% 相关",更想要"路由通过 80 篇 40% 相关
+  + LLM 准确分级"
+
+## 这改变了之前几条 TODO 的判断
+
+### Revised: W2.1 调整 must_pair_with 规则
+原计划:基于一周数据"降噪"。
+修订:不再优先"降噪",改为"召回评估"——一周后看是否有方向命中过低,
+有针对性地加关键词/concept,而非减。
+
+### Revised: 关于 hip_implant 临床论文
+原本担心:hip arthroplasty concept 拉到的临床论文是噪音。
+修订:不处理。LLM 会打 Low/Exclude,但偶尔的方法启示有价值。
+
+### Revised: 关于 fea_surrogate 通用 ML 关键词
+原本担心:conformal prediction / Bayesian optimization 等过宽,
+拉来纯 ML 论文。
+修订:不处理。这些论文里可能有可迁移到 surrogate modelling 的方法。
+
+## 这没改变的事
+
+- 数据质量闸门(W1.1 空跑闸门)仍然必要
+- 版本治理(manifest, CHANGELOG)仍然必要
+- SCOPE.md 边界(不做 RAG)仍然不变
+- Zotero 同步只 Medium+ 仍然合理(避免低优先级污染阅读队列)
+
+## 新增的潜在 TODO (待数据驱动决策)
+
+- W2.x 加 fea_surrogate 的 OpenAlex concept IDs (即使会拉来更多
+  泛 ML 论文,因为可能有方法启示)
+- W2.x 加 negative_keywords 字段时,要严格——只排除明确无关的
+  (土木桥梁、纯药物、纯影像诊断),不排除"看起来不直接相关"的
+
+## 日报视觉策略的影响
+
+默认 "High+Medium" 过滤的设计仍然合适:
+- 你不会被 80 篇 Low 淹没
+- 但 80 篇 Low 仍然存在于 JSON,LLM 评过分,如果某天 High/Medium
+  很少,你可以点 "Show all" 看 Low 里有没有遗珠
