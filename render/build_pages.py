@@ -25,6 +25,10 @@ def _paper_card(p: dict, dir_color: str) -> str:
     s_en = llm.get("summary_en", {})
     key_terms = llm.get("key_terms", [])
     flags = llm.get("flags", {})
+    relevance_level = llm.get("relevance_level", "")
+    read_action = llm.get("read_action", "")
+    why_not_core = llm.get("why_not_core", "")
+    validation_kind = llm.get("validation_kind", "")
 
     badge_flags = []
     if flags.get("has_experimental_validation"):
@@ -54,6 +58,9 @@ def _paper_card(p: dict, dir_color: str) -> str:
     <span class="priority" style="background:{bg};color:{fg}">{_esc(priority)}</span>
     <span class="direction-pill" style="background:{dir_color}20;color:{dir_color}">{_esc(p.get('direction_name',''))}</span>
     <span class="source">{_esc(p.get('source',''))}</span>
+    {f'<span class="relevance-level lvl-{relevance_level.lower()}">{_esc(relevance_level)}</span>' if relevance_level else ''}
+    {f'<span class="read-action act-{read_action.lower().replace(" ", "-")}">{_esc(read_action)}</span>' if read_action else ''}
+    {f'<span class="validation-kind">{_esc(validation_kind)}</span>' if validation_kind else ''}
     {flag_html}
   </div>
   <h3 class="paper-title">{_esc(p.get('title',''))}</h3>
@@ -64,6 +71,7 @@ def _paper_card(p: dict, dir_color: str) -> str:
     <span class="doi">{doi_link}</span>
   </div>
   <div class="relevance"><b>相关性:</b> {_esc(llm.get('relevance_to_user',''))}</div>
+  {f'<div class="why-not-core"><b>边界:</b> {_esc(why_not_core)}</div>' if why_not_core else ''}
   <div class="summary">
     <div><b>动机·</b> {_esc(s.get('motivation',''))}</div>
     <div><b>方法·</b> {_esc(s.get('method',''))}</div>
@@ -204,6 +212,18 @@ details.summary-en[open] summary{margin-bottom:8px}
 .key-terms{margin-top:8px;display:flex;flex-wrap:wrap;gap:6px}
 .term{font-size:11px;background:#fff;border:.5px solid #ddd;padding:3px 8px;border-radius:6px;color:#444}
 .term b{color:#222;font-weight:500}
+.relevance-level{font-size:11px;padding:3px 8px;border-radius:8px;font-weight:500}
+.lvl-direct{background:#D4EBC4;color:#2D5A14}
+.lvl-transferable{background:#E0DDF4;color:#3F2E7E}
+.lvl-peripheral{background:#F1EFE8;color:#666}
+.read-action{font-size:11px;padding:3px 8px;border-radius:8px;font-weight:500;font-style:italic}
+.act-read-now{background:#FFE8D6;color:#7D4515}
+.act-save-for-project{background:#E6E1F5;color:#3A2C7A}
+.act-skim-only{background:#F0F0E8;color:#5C5C50}
+.act-background-only{background:#F5F5F0;color:#777}
+.act-ignore{background:#F5E8E8;color:#7A3A3A}
+.validation-kind{font-size:10px;background:#EDF4FA;color:#1F4A6B;padding:2px 7px;border-radius:6px}
+.why-not-core{font-size:12px;background:#FCF5E8;border-left:3px solid #D8A045;padding:5px 10px;margin-top:4px;color:#5A4318;border-radius:0 6px 6px 0}
 """
 
 
