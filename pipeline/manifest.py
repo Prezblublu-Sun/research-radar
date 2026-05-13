@@ -45,6 +45,8 @@ def build_manifest(
     sources_used: dict,
     counts: dict,
     llm_responses: list[dict] | None = None,
+    run_status: str = "success",
+    quality_flags: list[str] | None = None,
 ) -> dict:
     snapshot = ""
     if llm_responses:
@@ -56,6 +58,8 @@ def build_manifest(
     return {
         "run_id": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
         "git_commit": _git_commit(),
+        "run_status": run_status,
+        "quality_flags": quality_flags or [],
         "config": {
             "directions_yaml": _file_hash(config_path),
             "scorer_prompt": _file_hash(prompt_path),

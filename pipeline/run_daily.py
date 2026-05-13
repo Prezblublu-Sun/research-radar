@@ -124,9 +124,66 @@ def run(days_back: int = 1, skip_zotero: bool = False) -> dict:
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     (DATA_DIR / "daily").mkdir(exist_ok=True)
     daily_file = DATA_DIR / "daily" / f"{today}.json"
-    daily_file.write_text(json.dumps(scored, ensure_ascii=False, indent=2))
-    aggregator.save_state(updated_seen, SEEN_STATE)
-    _print(f"Saved {daily_file}")
+
+    # ===== W1.1 Empty-run guard =====
+    # Refuse to overwrite a non-empty existing daily JSON with an empty one.
+    # This prevents the failure mode where Actions dedup-cleans every paper
+    # and would otherwise write [] over yesterday's good data.
+    run_status = "success"
+    quality_flags = []
+
+    if fetched_total == 0:
+        _print("ABORT: fetched_total == 0. All three sources returned nothing.")
+        _print("  Refusing to write daily JSON. This may be a network or API issue.")
+        run_status = "failed"
+        quality_flags.append("fetched_zero")
+        # Still write a marker file in a separate location for diagnostics
+        marker = DATA_DIR / "daily" / f"{today}.SKIPPED.json"
+        marker.write_text(json.dumps({
+            "date": today, "reason": "fetched_zero",
+            "fetched_total": 0
+        }, indent=2))
+        _print(f"  Wrote skip marker: {marker}")
+    elif len(scored) == 0 and daily_file.exists():
+        try:
+            existing = json.loads(daily_file.read_text())
+            if isinstance(existing, list) and len(existing) > 0:
+                _print(f"ABORT: would overwrite {len(existing)} existing papers with 0.")
+                _print("  Refusing to write empty JSON over non-empty existing data.")
+                run_status = "suspicious_empty"
+                quality_flags.append("zero_scored_with_existing_data")
+                marker = DATA_DIR / "daily" / f"{today}.SKIPPED.json"
+                marker.write_text(json.dumps({
+                    "date": today,
+                    "reason": "zero_scored_would_overwrite",
+                    "fetched_total": fetched_total,
+                    "after_routing": len(routed),
+                    "existing_count": len(existing)
+                }, indent=2))
+                _print(f"  Wrote skip marker: {marker}")
+            else:
+                daily_file.write_text(json.dumps(scored, ensure_ascii=False, indent=2))
+                aggregator.save_state(updated_seen, SEEN_STATE)
+                _print(f"Saved {daily_file} (empty, no prior data to preserve)")
+        except (json.JSONDecodeError, OSError) as e:
+            _print(f"Warning: couldn't read existing JSON ({e}); writing fresh.")
+            daily_file.write_text(json.dumps(scored, ensure_ascii=False, indent=2))
+            aggregator.save_state(updated_seen, SEEN_STATE)
+            _print(f"Saved {daily_file}")
+    else:
+        daily_file.write_text(json.dumps(scored, ensure_ascii=False, indent=2))
+        aggregator.save_state(updated_seen, SEEN_STATE)
+        _print(f"Saved {daily_file}")
+
+    # Quality flags for downstream (manifest, report)
+    if fetched_total > 0 and fetched_total < 50:
+        quality_flags.append("low_fetch_count")
+    if len(routed) == 0 and fetched_total > 0:
+        quality_flags.append("zero_routed")
+    if priority_counts.get("High", 0) + priority_counts.get("Medium", 0) == 0 and len(routed) > 0:
+        quality_flags.append("zero_high_medium")
+    # =================================
+
 
     manifest = mf.build_manifest(
         config_path=CONFIG,
@@ -134,6 +191,8 @@ def run(days_back: int = 1, skip_zotero: bool = False) -> dict:
         sources_used=sources_used,
         counts=counts,
         llm_responses=raw_responses,
+        run_status=run_status,
+        quality_flags=quality_flags,
     )
     MANIFESTS_DIR.mkdir(parents=True, exist_ok=True)
     manifest_path = MANIFESTS_DIR / f"{today}.json"
@@ -186,6 +245,8 @@ def run(days_back: int = 1, skip_zotero: bool = False) -> dict:
         "date": today,
         "run_id": manifest["run_id"],
         "git_commit": manifest["git_commit"],
+        "run_status": run_status,
+        "quality_flags": quality_flags,
         "counts": counts,
         "zotero": zot_report,
         "changelog_updated": drift,
