@@ -95,6 +95,55 @@ responsibilities back upstream.
 
 ---
 
+## Resource division of labor: GPU vs API
+
+This boundary is **resource-aware**, not just functional. The two systems
+run on the same physical machine but consume different scarce resources.
+
+### Resource allocation
+
+- **Radar uses DeepSeek API exclusively** for all LLM scoring (daily +
+  backfill). Cost is ~¥0.0023/paper, ~¥0.5/day for daily, ~¥10-70 for a
+  one-time historical backfill. This is treated as effectively free.
+- **lit-system owns the local GPU** (RTX 5060 Ti 16GB on prezlinuxstation).
+  GPU is reserved for Docling parsing, Qwen2.5-14B SOP extraction (deep
+  per-paper analysis ~75-200s/paper), and bge-m3 embedding for the
+  Chroma vector store.
+
+### Why this split
+
+The two systems have asymmetric workload shapes:
+- Radar's per-paper work is **shallow but broad** (score 4 fields,
+  ~200 tokens output, classification-grade). DeepSeek-V3 handles this
+  trivially at scale and rate-limit (~60 req/min, suitable for batching
+  thousands).
+- lit-system's per-paper work is **narrow but deep** (5 SOP prompts,
+  1000-2000 tokens each output, requires structured prose). Local Qwen
+  is appropriate here because (a) latency/cost per call is high but
+  per-paper count is bounded (~124 papers), (b) data sensitivity is
+  higher, (c) iteration is on prompt design not paper volume.
+
+### Hard rules
+
+- **Radar must not consume GPU.** No local model fallback, no embedding
+  generation, no fine-tuning experiments routed through Ollama.
+- **lit-system must not assume API LLM access.** Its design must remain
+  viable without DeepSeek (e.g., for sensitive documents or offline
+  use).
+- **No silent resource borrowing.** If Radar genuinely needs GPU later
+  (e.g., a re-ranker that must be local), this requires updating SCOPE.md
+  with a documented exception. Default is no sharing.
+
+### Cost accounting
+
+The ~¥0.5-2/day Radar bill is acceptable indefinitely. Backfill costs
+are one-time and bounded (~¥70 worst case for full 2024-2026 sweep).
+These costs are explicitly cheaper than the alternative -- using GPU
+time that should go to lit-system would slow deep parsing by 50%+ and
+create scheduling conflicts.
+
+---
+
 ## How to evaluate future feature requests
 
 When considering adding a new feature, ask in order:
