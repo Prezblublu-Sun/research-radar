@@ -11,7 +11,7 @@ client = OpenAI(
     api_key=os.environ["OPENAI_API_KEY"],
     base_url=os.environ.get("OPENAI_BASE_URL", "https://api.deepseek.com"),
 )
-MODEL = os.environ.get("MODEL_NAME", "deepseek-chat")
+MODEL = os.environ.get("MODEL_NAME", "deepseek-v4-flash")
 TEMPERATURE = float(os.environ.get("LLM_TEMPERATURE", "0.2"))
 
 ACTIVE_PROMPT_FILE = os.environ.get("SCORER_PROMPT_FILE", "scorer_v1.txt")

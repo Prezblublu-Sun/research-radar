@@ -26,7 +26,7 @@ Quick reference:
 
 ## Required GitHub Variables
 
-- `MODEL_NAME` — `deepseek-chat`
+- `MODEL_NAME` — `deepseek-v4-flash`
 - `OPENALEX_EMAIL` — Your email (polite pool)
 - `PUBMED_EMAIL` — Your email (NCBI required)
 - `ZOT_COL_BIOPRINTING`, `ZOT_COL_HIP`, `ZOT_COL_FEA`, `ZOT_COL_AM` — Zotero collection keys

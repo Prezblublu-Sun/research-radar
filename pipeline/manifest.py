@@ -66,7 +66,7 @@ def build_manifest(
             "scorer_prompt_file": prompt_path.name,
         },
         "llm": {
-            "model_alias": os.environ.get("MODEL_NAME", "deepseek-chat"),
+            "model_alias": os.environ.get("MODEL_NAME", "deepseek-v4-flash"),
             "model_snapshot_observed": snapshot,
             "base_url": os.environ.get("OPENAI_BASE_URL", ""),
             "temperature": float(os.environ.get("LLM_TEMPERATURE", "0.2")),
