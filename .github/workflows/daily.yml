@@ -39,6 +39,16 @@ jobs:
           SCORER_PROMPT_FILE: scorer_v3.txt
         run: python -m pipeline.run_daily
 
+      - name: SCOPE.md boundary audit
+        id: scope_audit
+        continue-on-error: true
+        run: |
+          python -m pipeline.scope_audit \
+            --output "data/audit/scope_audit_$(date -u +%Y-%m-%d).json"
+
+      - name: Export candidates for lit-system
+        run: python -m pipeline.export_candidates
+
       - name: Commit results
         run: |
           git config user.name "research-radar-bot"
@@ -46,3 +56,9 @@ jobs:
           git add data/ docs/ CHANGELOG.md 2>/dev/null || true
           git diff --staged --quiet || git commit -m "daily: $(date -u +%Y-%m-%d)"
           git push
+
+      - name: Fail if scope_audit reported errors
+        if: steps.scope_audit.outcome == 'failure'
+        run: |
+          echo "::error::scope_audit detected SCOPE.md boundary violations. See data/audit/scope_audit_$(date -u +%Y-%m-%d).json in the latest commit."
+          exit 1
