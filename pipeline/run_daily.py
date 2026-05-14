@@ -61,30 +61,34 @@ def run(days_back: int = 2, skip_zotero: bool = False, force: bool = False) -> d
         "pubmed":   {"terms": sorted(pubmed_terms), "days_back": days_back},
     }
 
+    arxiv_lookback = days_back
+    openalex_lookback = max(days_back, 14)
+    pubmed_lookback = days_back
+
     if arxiv_cats:
-        _print(f"Fetching arxiv: {sorted(arxiv_cats)}")
+        _print(f"Fetching arxiv (lookback={arxiv_lookback}d): {sorted(arxiv_cats)}")
         try:
-            all_lists.append(arxiv_fetcher.fetch(sorted(arxiv_cats), days_back=days_back))
+            all_lists.append(arxiv_fetcher.fetch(sorted(arxiv_cats), days_back=arxiv_lookback))
             _print(f"  -> {len(all_lists[-1])} papers")
         except Exception as e:
             _print(f"  ! arxiv failed: {e}")
 
     if openalex_kws or openalex_concepts:
-        _print(f"Fetching OpenAlex: {len(openalex_kws)} keywords, {len(openalex_concepts)} concepts")
+        _print(f"Fetching OpenAlex (lookback={openalex_lookback}d): {len(openalex_kws)} keywords, {len(openalex_concepts)} concepts")
         try:
             all_lists.append(openalex_fetcher.fetch(
                 concepts=sorted(openalex_concepts),
                 keywords=sorted(openalex_kws),
-                days_back=days_back,
+                days_back=openalex_lookback,
             ))
             _print(f"  -> {len(all_lists[-1])} papers")
         except Exception as e:
             _print(f"  ! OpenAlex failed: {e}")
 
     if pubmed_terms:
-        _print(f"Fetching PubMed: {sorted(pubmed_terms)}")
+        _print(f"Fetching PubMed (lookback={pubmed_lookback}d): {sorted(pubmed_terms)}")
         try:
-            all_lists.append(pubmed_fetcher.fetch(sorted(pubmed_terms), days_back=days_back))
+            all_lists.append(pubmed_fetcher.fetch(sorted(pubmed_terms), days_back=pubmed_lookback))
             _print(f"  -> {len(all_lists[-1])} papers")
         except Exception as e:
             _print(f"  ! PubMed failed: {e}")
