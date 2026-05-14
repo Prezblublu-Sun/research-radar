@@ -6,7 +6,7 @@ import time
 import arxiv
 
 
-def fetch(categories: list[str], days_back: int = 1, max_results: int = 500) -> list[dict]:
+def fetch(categories: list[str], days_back: int = 1, max_results: int = 2000) -> list[dict]:
     """Returns a list of normalized paper dicts for papers in the given
     arxiv categories submitted within the last `days_back` days.
 

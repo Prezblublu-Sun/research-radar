@@ -37,7 +37,7 @@ def _print(msg: str):
     print(f"[{dt.datetime.now().strftime('%H:%M:%S')}] {msg}", flush=True)
 
 
-def run(days_back: int = 1, skip_zotero: bool = False, force: bool = False) -> dict:
+def run(days_back: int = 2, skip_zotero: bool = False, force: bool = False) -> dict:
     cfg = yaml.safe_load(CONFIG.read_text())
     directions = cfg["directions"]
     exclusions = cfg.get("exclusions", {})
