@@ -22,8 +22,11 @@ def _abstract_from_inverted_index(inv: dict | None) -> str:
     return " ".join(w for _, w in positions)
 
 
-def _build_filter(concepts: list[str], from_date: str) -> str:
+def _build_filter(concepts: list[str], from_date: str,
+                  to_date: str | None = None) -> str:
     parts = [f"from_publication_date:{from_date}", "type:article"]
+    if to_date:
+        parts.append(f"to_publication_date:{to_date}")
     if concepts:
         parts.append("concepts.id:" + "|".join(concepts))
     return ",".join(parts)
@@ -34,16 +37,37 @@ def fetch(
     keywords: list[str],
     days_back: int = 1,
     per_page: int = 50,
-    max_pages: int = 4,
+    max_pages: int | None = None,
+    from_date: str | None = None,
+    to_date: str | None = None,
 ) -> list[dict]:
-    """Returns a list of normalized paper dicts."""
-    from_date = (dt.date.today() - dt.timedelta(days=days_back)).isoformat()
-    flt = _build_filter(concepts, from_date)
+    """Returns a list of normalized paper dicts.
+
+    Two modes:
+      - Daily (default): from_date computed from `days_back`, no upper
+        bound. Default `max_pages` is 4 (~200 papers/day).
+      - Historical (when both from_date and to_date are set as 'YYYY-MM-DD'):
+        both bounds passed to the OpenAlex filter. Default `max_pages` is
+        bumped to 40 internally (~2000 papers/month).
+
+    Callers may always override `max_pages` explicitly.
+    """
+    historical = bool(from_date and to_date)
+    if historical:
+        effective_from = from_date
+        effective_to = to_date
+        effective_max_pages = max_pages if max_pages is not None else 40
+    else:
+        effective_from = (dt.date.today() - dt.timedelta(days=days_back)).isoformat()
+        effective_to = None
+        effective_max_pages = max_pages if max_pages is not None else 4
+
+    flt = _build_filter(concepts, effective_from, effective_to)
     search_query = " OR ".join(f'"{k}"' for k in keywords) if keywords else None
 
     results: list[dict] = []
     cursor = "*"
-    for _ in range(max_pages):
+    for _ in range(effective_max_pages):
         params = {
             "filter": flt,
             "per-page": per_page,

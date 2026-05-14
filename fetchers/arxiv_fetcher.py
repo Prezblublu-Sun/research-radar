@@ -6,9 +6,17 @@ import time
 import arxiv
 
 
-def fetch(categories: list[str], days_back: int = 1, max_results: int = 2000) -> list[dict]:
+def fetch(categories: list[str], days_back: int = 1, max_results: int = 2000,
+          from_date: str | None = None, to_date: str | None = None) -> list[dict]:
     """Returns a list of normalized paper dicts for papers in the given
-    arxiv categories submitted within the last `days_back` days.
+    arxiv categories.
+
+    Two modes:
+      - Daily (default): submitted within the last `days_back` days, iterating
+        results sorted by date descending until older than the cutoff.
+      - Historical (when both from_date and to_date are set as 'YYYY-MM-DD'):
+        uses an arXiv `submittedDate:[YYYYMMDD0000 TO YYYYMMDD2359]` query
+        and iterates all results in the window (no cutoff break).
 
     Outer retry: if arxiv returns 429 (rate limit), wait 60/180 seconds
     between attempts (3 total). The arxiv package's internal num_retries
@@ -16,8 +24,19 @@ def fetch(categories: list[str], days_back: int = 1, max_results: int = 2000) ->
     """
     if not categories:
         return []
-    query = " OR ".join(f"cat:{c}" for c in categories)
-    cutoff_date = dt.date.today() - dt.timedelta(days=days_back)
+    cat_query = " OR ".join(f"cat:{c}" for c in categories)
+
+    historical = bool(from_date and to_date)
+    if historical:
+        date_query = (
+            f"submittedDate:[{from_date.replace('-', '')}0000"
+            f" TO {to_date.replace('-', '')}2359]"
+        )
+        query = f"({cat_query}) AND {date_query}"
+        cutoff_date = None  # iterate all results in the window
+    else:
+        query = cat_query
+        cutoff_date = dt.date.today() - dt.timedelta(days=days_back)
 
     wait_seconds = [0, 60, 180]
     last_error = None
@@ -36,7 +55,7 @@ def fetch(categories: list[str], days_back: int = 1, max_results: int = 2000) ->
             client = arxiv.Client(page_size=100, delay_seconds=3, num_retries=3)
             out: list[dict] = []
             for result in client.results(search):
-                if result.published.date() < cutoff_date:
+                if cutoff_date is not None and result.published.date() < cutoff_date:
                     break
                 out.append(_normalize(result))
             return out

@@ -21,22 +21,48 @@ def _common_params() -> dict:
     return p
 
 
-def _build_query(terms: list[str], days_back: int) -> str:
+def _build_query(terms: list[str], days_back: int,
+                 from_date: str | None = None,
+                 to_date: str | None = None) -> str:
     if not terms:
         return ""
     or_clause = " OR ".join(f'"{t}"[Title/Abstract]' for t in terms)
+    if from_date and to_date:
+        f = from_date.replace("-", "/")
+        t = to_date.replace("-", "/")
+        return f'({or_clause}) AND ("{f}"[EDAT] : "{t}"[EDAT])'
     return f"({or_clause}) AND \"last {days_back} days\"[EDAT]"
 
 
-def fetch(terms: list[str], days_back: int = 1, retmax: int = 200) -> list[dict]:
+def fetch(terms: list[str], days_back: int = 1,
+          retmax: int | None = None,
+          from_date: str | None = None,
+          to_date: str | None = None) -> list[dict]:
+    """Returns normalized PubMed papers.
+
+    Two modes:
+      - Daily (default): `"last N days"[EDAT]` query, default `retmax`=200.
+      - Historical (when both from_date and to_date are set as 'YYYY-MM-DD'):
+        `"YYYY/MM/DD"[EDAT] : "YYYY/MM/DD"[EDAT]` range query, default
+        `retmax` bumped to 500 internally.
+
+    Callers may always override `retmax` explicitly.
+    """
     if not terms:
         return []
-    query = _build_query(terms, days_back)
+
+    historical = bool(from_date and to_date)
+    if historical:
+        effective_retmax = retmax if retmax is not None else 500
+    else:
+        effective_retmax = retmax if retmax is not None else 200
+
+    query = _build_query(terms, days_back, from_date=from_date, to_date=to_date)
 
     r = requests.get(
         f"{EUTILS}/esearch.fcgi",
         params={**_common_params(), "db": "pubmed", "term": query,
-                "retmax": retmax, "retmode": "json"},
+                "retmax": effective_retmax, "retmode": "json"},
         timeout=30,
     )
     r.raise_for_status()
