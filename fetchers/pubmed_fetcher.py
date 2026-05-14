@@ -65,7 +65,10 @@ def _parse_efetch(xml_text: str) -> list[dict]:
     for art in root.findall(".//PubmedArticle"):
         try:
             papers.append(_extract_one(art))
-        except Exception:
+        except Exception as e:
+            import traceback
+            print(f"  ! _extract_one failed: {type(e).__name__}: {e}")
+            traceback.print_exc()
             continue
     return papers
 
@@ -82,11 +85,32 @@ def _extract_one(art) -> dict:
     abstract = " ".join(abstract_parts)
 
     authors = []
+    author_list = []
     for au in art.findall(".//Author"):
         fn = au.findtext("ForeName") or ""
         ln = au.findtext("LastName") or ""
-        if fn or ln:
-            authors.append(f"{fn} {ln}".strip())
+        name = f"{fn} {ln}".strip()
+        if not name:
+            continue
+        authors.append(name)
+        affs = [a.findtext("Affiliation") or "" for a in au.findall("AffiliationInfo")]
+        affs = [a for a in affs if a]
+        author_list.append({
+            "name": name,
+            "affiliation": "; ".join(affs) if affs else "",
+        })
+
+    first_author_affiliation = author_list[0]["affiliation"] if author_list else ""
+
+    corresponding = []
+    for a in author_list:
+        aff_lower = a["affiliation"].lower()
+        if "corresponding author" in aff_lower or "@" in a["affiliation"]:
+            corresponding.append(a)
+    if not corresponding and len(author_list) > 1:
+        last = author_list[-1]
+        if last["affiliation"]:
+            corresponding = [{"name": last["name"], "affiliation": last["affiliation"], "inferred": True}]
 
     venue = art.findtext(".//Journal/Title") or ""
     year = art.findtext(".//PubDate/Year") or ""
@@ -113,6 +137,8 @@ def _extract_one(art) -> dict:
         "title": title.strip(),
         "abstract": abstract,
         "authors": authors,
+        "first_author_affiliation": first_author_affiliation,
+        "corresponding_authors": corresponding,
         "venue": venue,
         "year": int(year) if year.isdigit() else None,
         "date": date,

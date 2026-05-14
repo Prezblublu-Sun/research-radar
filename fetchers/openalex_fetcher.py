@@ -72,9 +72,29 @@ def _normalize(work: dict) -> dict:
     if doi.startswith("https://doi.org/"):
         doi = doi[len("https://doi.org/"):]
 
-    authors = [
-        a.get("author", {}).get("display_name", "")
-        for a in work.get("authorships", [])
+    # Extract author names + first author affiliation + corresponding author info
+    authorships = work.get("authorships", [])
+    authors = [a.get("author", {}).get("display_name", "") for a in authorships]
+
+    def _aff(a: dict) -> str:
+        """Best-effort affiliation string: prefer raw, fallback to first institution."""
+        raw = a.get("raw_affiliation_strings") or []
+        if raw:
+            return raw[0]
+        insts = a.get("institutions") or []
+        if insts:
+            return insts[0].get("display_name", "")
+        return ""
+
+    first_author_affiliation = _aff(authorships[0]) if authorships else ""
+
+    # Corresponding authors (may be multiple, may be the first author)
+    corresponding = [
+        {
+            "name": a.get("author", {}).get("display_name", ""),
+            "affiliation": _aff(a),
+        }
+        for a in authorships if a.get("is_corresponding")
     ]
 
     concepts = [
@@ -92,6 +112,8 @@ def _normalize(work: dict) -> dict:
         "title": work.get("title", "") or "",
         "abstract": _abstract_from_inverted_index(work.get("abstract_inverted_index")),
         "authors": authors,
+        "first_author_affiliation": first_author_affiliation,
+        "corresponding_authors": corresponding,
         "venue": venue.get("display_name", ""),
         "year": work.get("publication_year"),
         "date": work.get("publication_date", ""),

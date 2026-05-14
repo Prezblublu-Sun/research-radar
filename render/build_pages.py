@@ -45,6 +45,8 @@ def _paper_card(p: dict, dir_color: str) -> str:
     authors = ", ".join(p.get("authors", [])[:5])
     if len(p.get("authors", [])) > 5:
         authors += " et al."
+    first_aff = p.get("first_author_affiliation", "")
+    corresp_list = p.get("corresponding_authors", []) or []
 
     doi_link = ""
     if p.get("doi"):
@@ -70,6 +72,8 @@ def _paper_card(p: dict, dir_color: str) -> str:
     <span class="date">{_esc(p.get('date',''))}</span>
     <span class="doi">{doi_link}</span>
   </div>
+  {f'<div class="affiliations"><b>单位:</b> {_esc(first_aff[:200])}</div>' if first_aff else ''}
+  {('<div class="corresponding"><b>通讯:</b> ' + ' &nbsp;|&nbsp; '.join(f'{_esc(c["name"])} <span class="corresp-aff">@ {_esc(c["affiliation"][:120])}</span>' + (' <i>[推断]</i>' if c.get('inferred') else '') for c in corresp_list) + '</div>') if corresp_list else ''}
   <div class="relevance"><b>相关性:</b> {_esc(llm.get('relevance_to_user',''))}</div>
   {f'<div class="why-not-core"><b>边界:</b> {_esc(why_not_core)}</div>' if why_not_core else ''}
   <div class="summary">
@@ -213,6 +217,12 @@ details.summary-en[open] summary{margin-bottom:8px}
 .key-terms{margin-top:8px;display:flex;flex-wrap:wrap;gap:6px}
 .term{font-size:11px;background:#fff;border:.5px solid #ddd;padding:3px 8px;border-radius:6px;color:#444}
 .term b{color:#222;font-weight:500}
+.affiliations{font-size:12px;color:#666;margin-top:6px;padding-left:6px;border-left:2px solid #ddd}
+.affiliations b{color:#444;font-weight:500}
+.corresponding{font-size:12px;color:#555;margin-top:3px;padding-left:6px;border-left:2px solid #aac}
+.corresponding b{color:#3F2E7E;font-weight:500}
+.corresp-aff{color:#888}
+.corresponding i{color:#888;font-size:11px}
 .relevance-level{font-size:11px;padding:3px 8px;border-radius:8px;font-weight:500}
 .lvl-direct{background:#D4EBC4;color:#2D5A14}
 .lvl-transferable{background:#E0DDF4;color:#3F2E7E}
