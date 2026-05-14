@@ -150,8 +150,9 @@ def _topbar(date: str, archive_dates: list[str]) -> str:
 
     weekly_link = '<a class="navbtn" href="weekly/index.html">📅 Weekly</a>'
     status_link = '<a class="navbtn" href="status.html">📊 Status</a>'
+    search_link = '<a class="navbtn" href="search.html">🔍 Search</a>'
 
-    return f'<div class="topbar">{prev_btn}{dropdown}{next_btn}{weekly_link}{status_link}</div>'
+    return f'<div class="topbar">{prev_btn}{dropdown}{next_btn}{weekly_link}{status_link}{search_link}</div>'
 
 
 def _version_footer(manifest: dict | None) -> str:
@@ -414,6 +415,178 @@ code{{font-family:ui-monospace,monospace;font-size:11px;color:#888;background:#f
     out.write_text(html, encoding="utf-8")
 
 
+def _build_search_index(docs_dir, data_dir):
+    """Scan all daily JSONs and build a search index for client-side search."""
+    import json as _json
+    daily_dir = data_dir / "daily"
+    if not daily_dir.exists():
+        return
+
+    index = []
+    for jpath in sorted(daily_dir.glob("20*.json")):
+        date = jpath.stem
+        try:
+            papers = _json.loads(jpath.read_text())
+        except Exception:
+            continue
+        for p in papers:
+            llm = p.get("llm", {}) or {}
+            s_zh = llm.get("summary_zh", {}) or {}
+            s_en = llm.get("summary_en", {}) or {}
+            # build searchable text blob (lowercased for fast match)
+            blob_parts = [
+                p.get("title", ""),
+                p.get("abstract", "")[:500],  # truncate to keep index small
+                llm.get("relevance_to_user", ""),
+                llm.get("why_not_core", ""),
+                " ".join(s_zh.values()) if isinstance(s_zh, dict) else "",
+                " ".join(s_en.values()) if isinstance(s_en, dict) else "",
+                " ".join(llm.get("tags", []) or []),
+                " ".join(t.get("en", "") + " " + t.get("zh", "") for t in (llm.get("key_terms", []) or [])),
+                ", ".join(p.get("authors", [])[:5]),
+                p.get("venue", ""),
+                p.get("first_author_affiliation", "") or "",
+            ]
+            blob = " ".join(b for b in blob_parts if b).lower()
+            index.append({
+                "date": date,
+                "title": p.get("title", "")[:200],
+                "authors": ", ".join(p.get("authors", [])[:3]) + (" et al." if len(p.get("authors", [])) > 3 else ""),
+                "venue": p.get("venue", "")[:80],
+                "direction": p.get("direction", ""),
+                "direction_name": p.get("direction_name", ""),
+                "priority": llm.get("priority", ""),
+                "relevance_level": llm.get("relevance_level", ""),
+                "read_action": llm.get("read_action", ""),
+                "source": p.get("source", ""),
+                "doi": p.get("doi", ""),
+                "blob": blob,
+            })
+
+    out = docs_dir / "search-index.json"
+    out.write_text(_json.dumps(index, ensure_ascii=False), encoding="utf-8")
+    return len(index)
+
+
+def _render_search_page(docs_dir):
+    """Generate docs/search.html with client-side search UI."""
+    html = """<!doctype html><html lang="zh"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Research Radar — Search</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:1100px;margin:2rem auto;padding:0 1rem;color:#222;line-height:1.5}
+h1{font-size:24px;font-weight:500;margin:0 0 .25rem}
+.subtitle{color:#666;font-size:14px;margin-bottom:1.5rem}
+.navbtn{font-size:13px;background:#f5f4ef;color:#444;padding:6px 12px;border-radius:8px;text-decoration:none;display:inline-block;margin-bottom:1rem;margin-right:8px}
+#q{width:100%;font-size:16px;padding:10px 14px;border:1px solid #ccc;border-radius:8px;box-sizing:border-box}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0;font-size:13px}
+.filter{background:#f5f4ef;padding:6px 12px;border-radius:8px;cursor:pointer;border:1px solid transparent}
+.filter.active{background:#222;color:#fff}
+.count{color:#666;font-size:13px;margin:14px 0}
+.result{padding:10px 0;border-bottom:.5px solid #eee}
+.result a{color:#1F4A6B;text-decoration:none;font-weight:500;font-size:15px}
+.result a:hover{text-decoration:underline}
+.result .meta{font-size:12px;color:#666;margin-top:3px}
+.result .chips{margin-top:5px}
+.chip{display:inline-block;font-size:11px;padding:2px 7px;border-radius:6px;margin-right:4px}
+.c-high{background:#E0DCC2;color:#3A3514}
+.c-medium{background:#F3E1C2;color:#633806}
+.c-low{background:#F1EFE8;color:#5F5E5A}
+.c-direct{background:#D4EBC4;color:#2D5A14}
+.c-transferable{background:#E0DDF4;color:#3F2E7E}
+.c-peripheral{background:#F1EFE8;color:#666}
+.date{color:#888;font-size:12px}
+</style></head><body>
+<h1>Research Radar — Search</h1>
+<div class="subtitle">Client-side search across all dates. Type to filter.</div>
+<a class="navbtn" href="index.html">← Latest daily</a>
+<a class="navbtn" href="status.html">📊 Status</a>
+
+<input id="q" placeholder="Search title, abstract, summary, authors, affiliation, tags..." autofocus>
+
+<div class="filters">
+  <span class="filter active" data-key="direction" data-val="">All directions</span>
+  <span class="filter" data-key="direction" data-val="ai_bioprinting">AI Bioprinting</span>
+  <span class="filter" data-key="direction" data-val="hip_implant">Hip Implant</span>
+  <span class="filter" data-key="direction" data-val="fea_surrogate">FEA Surrogate</span>
+  <span class="filter" data-key="direction" data-val="am_biomedical">AM Biomedical</span>
+</div>
+<div class="filters">
+  <span class="filter active" data-key="priority" data-val="">Any priority</span>
+  <span class="filter" data-key="priority" data-val="High">High only</span>
+  <span class="filter" data-key="priority" data-val="High,Medium">High+Medium</span>
+</div>
+<div class="filters">
+  <span class="filter active" data-key="relevance_level" data-val="">Any relevance</span>
+  <span class="filter" data-key="relevance_level" data-val="Direct">Direct only ⭐</span>
+  <span class="filter" data-key="relevance_level" data-val="Direct,Transferable">Direct+Transferable</span>
+</div>
+
+<div class="count" id="count">Loading…</div>
+<div id="results"></div>
+
+<script>
+let INDEX = [];
+const filters = { direction: '', priority: '', relevance_level: '' };
+
+fetch('search-index.json').then(r => r.json()).then(data => {
+  INDEX = data;
+  render();
+});
+
+function applyFilters(items) {
+  return items.filter(p => {
+    for (const [k, v] of Object.entries(filters)) {
+      if (!v) continue;
+      const allowed = v.split(',');
+      if (!allowed.includes(p[k])) return false;
+    }
+    return true;
+  });
+}
+
+function render() {
+  const q = document.getElementById('q').value.trim().toLowerCase();
+  let items = INDEX;
+  if (q) {
+    items = items.filter(p => p.blob.indexOf(q) >= 0);
+  }
+  items = applyFilters(items);
+  // Sort by date desc, then priority
+  const prioRank = { High: 3, Medium: 2, Low: 1, Exclude: 0, '': 0 };
+  items.sort((a, b) => (b.date.localeCompare(a.date)) || (prioRank[b.priority] - prioRank[a.priority]));
+
+  document.getElementById('count').textContent = `${items.length} results`;
+  const html = items.slice(0, 200).map(p => {
+    const chips = [
+      p.priority ? `<span class=\"chip c-${p.priority.toLowerCase()}\">${p.priority}</span>` : '',
+      p.relevance_level ? `<span class=\"chip c-${p.relevance_level.toLowerCase()}\">${p.relevance_level}</span>` : '',
+    ].join('');
+    return `<div class=\"result\">
+      <a href=\"${p.date}.html\">${p.title}</a>
+      <div class=\"meta\"><span class=\"date\">${p.date}</span> · ${p.direction_name || p.direction} · ${p.source} · ${p.venue}</div>
+      <div class=\"chips\">${chips}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('results').innerHTML = html + (items.length > 200 ? '<p style=\"color:#888;font-size:13px\">(showing first 200; refine search to see more)</p>' : '');
+}
+
+document.getElementById('q').addEventListener('input', render);
+
+document.querySelectorAll('.filter').forEach(el => {
+  el.addEventListener('click', () => {
+    const key = el.dataset.key, val = el.dataset.val;
+    filters[key] = val;
+    document.querySelectorAll(`.filter[data-key="${key}"]`).forEach(s => s.classList.remove('active'));
+    el.classList.add('active');
+    render();
+  });
+});
+</script>
+</body></html>"""
+    (docs_dir / "search.html").write_text(html, encoding="utf-8")
+
+
 def build(papers, date, docs_dir, directions_cfg, manifest=None):
     docs_dir.mkdir(parents=True, exist_ok=True)
     # Collect all existing daily JSON files as archive sources
@@ -455,3 +628,6 @@ def build(papers, date, docs_dir, directions_cfg, manifest=None):
     data_dir = docs_dir.parent / "data"
     if data_dir.exists():
         _render_status_page(docs_dir, data_dir)
+        n_indexed = _build_search_index(docs_dir, data_dir)
+        if n_indexed:
+            _render_search_page(docs_dir)
