@@ -6,6 +6,19 @@ auto-update marker are preserved.
 
 <!-- AUTO-UPDATE-BELOW -->
 
+## 2026-05-14 (run 2026-05-14T10:43:45+00:00)
+
+Counts: fetched=589, after_dedup=588, after_routing=124, High=3, Medium=13
+
+- `ai_bioprinting.sources.arxiv_categories` added: ['q-bio.TO']
+- `ai_bioprinting.sources.openalex_concepts` added: ['C2779718196', 'C49892992']
+- `am_biomedical.sources.arxiv_categories` added: ['physics.med-ph', 'q-bio.TO']
+- `am_biomedical.sources.openalex_concepts` added: ['C26796778', 'C2775868795', 'C2778414984']
+- `fea_surrogate.sources.arxiv_categories` added: ['cs.NA', 'math.NA', 'physics.med-ph']
+- `hip_implant.sources.arxiv_categories` added: ['physics.med-ph', 'q-bio.TO']
+- `hip_implant.sources.openalex_concepts` added: ['C3020736514']
+
+
 ## 2026-05-14 (run 2026-05-14T09:41:50+00:00)
 
 Counts: fetched=160, after_dedup=159, after_routing=106, High=3, Medium=9

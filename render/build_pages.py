@@ -46,7 +46,8 @@ def _paper_card(p: dict, dir_color: str) -> str:
     if len(p.get("authors", [])) > 5:
         authors += " et al."
     first_aff = p.get("first_author_affiliation", "")
-    corresp_list = p.get("corresponding_authors", []) or []
+    # Only keep corresponding entries that actually have an affiliation
+    corresp_list = [c for c in (p.get("corresponding_authors") or []) if c.get("affiliation")]
 
     doi_link = ""
     if p.get("doi"):
