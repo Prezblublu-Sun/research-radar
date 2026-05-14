@@ -31,11 +31,13 @@ Per-month file at data/historical/<YYYY-MM>[_dryrun].json:
 
 Counts dict:
     fetched_total        int   sum across sources, before any dedup
-    by_source            dict  {arxiv, openalex, pubmed}
+    by_source            dict  {arxiv, openalex, pubmed} -- fetched counts
     after_dedup          int   distinct papers after cross-source +
                                 cross-month DOI dedup
     after_routing        int   papers with at least one direction
     by_direction         dict  per-direction routed count
+    routed_by_source     dict  {arxiv, openalex, pubmed} -- routed counts;
+                                values sum to after_routing
     scored               int   0 in dry-run, else == after_routing
     priority_counts      dict | null   High/Medium/Low/Exclude breakdown
 
@@ -265,6 +267,7 @@ def _run_month(month_key: str, window_from: str, window_to: str,
     routed = direction_router.filter_routed(papers)
     after_routing = len(routed)
     by_direction = Counter(p.get("direction") for p in routed)
+    routed_by_source = Counter(p.get("source") for p in routed)
 
     # Score (skipped in dry-run).
     scored_count = 0
@@ -289,6 +292,7 @@ def _run_month(month_key: str, window_from: str, window_to: str,
         "after_dedup": after_dedup,
         "after_routing": after_routing,
         "by_direction": dict(by_direction),
+        "routed_by_source": dict(routed_by_source),
         "scored": scored_count,
         "priority_counts": priority_counts,
     }

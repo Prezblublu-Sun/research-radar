@@ -6,7 +6,8 @@ import time
 import arxiv
 
 
-def fetch(categories: list[str], days_back: int = 1, max_results: int = 2000,
+def fetch(categories: list[str], days_back: int = 1,
+          max_results: int | None = None,
           from_date: str | None = None, to_date: str | None = None) -> list[dict]:
     """Returns a list of normalized paper dicts for papers in the given
     arxiv categories.
@@ -14,9 +15,14 @@ def fetch(categories: list[str], days_back: int = 1, max_results: int = 2000,
     Two modes:
       - Daily (default): submitted within the last `days_back` days, iterating
         results sorted by date descending until older than the cutoff.
+        Default `max_results` is 2000.
       - Historical (when both from_date and to_date are set as 'YYYY-MM-DD'):
         uses an arXiv `submittedDate:[YYYYMMDD0000 TO YYYYMMDD2359]` query
         and iterates all results in the window (no cutoff break).
+        Default `max_results` is bumped to 10000 internally to cover a
+        full calendar month of arxiv traffic.
+
+    Callers may always override `max_results` explicitly.
 
     Outer retry: if arxiv returns 429 (rate limit), wait 60/180 seconds
     between attempts (3 total). The arxiv package's internal num_retries
@@ -34,9 +40,11 @@ def fetch(categories: list[str], days_back: int = 1, max_results: int = 2000,
         )
         query = f"({cat_query}) AND {date_query}"
         cutoff_date = None  # iterate all results in the window
+        effective_max_results = max_results if max_results is not None else 10000
     else:
         query = cat_query
         cutoff_date = dt.date.today() - dt.timedelta(days=days_back)
+        effective_max_results = max_results if max_results is not None else 2000
 
     wait_seconds = [0, 60, 180]
     last_error = None
@@ -48,7 +56,7 @@ def fetch(categories: list[str], days_back: int = 1, max_results: int = 2000,
         try:
             search = arxiv.Search(
                 query=query,
-                max_results=max_results,
+                max_results=effective_max_results,
                 sort_by=arxiv.SortCriterion.SubmittedDate,
                 sort_order=arxiv.SortOrder.Descending,
             )

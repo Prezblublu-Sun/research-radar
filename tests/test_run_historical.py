@@ -405,6 +405,81 @@ def test_progress_file_schema(monkeypatch, tmp_path):
     assert p["dry_run"] is True
 
 
+def test_routed_by_source_present_and_sums_to_after_routing(monkeypatch, tmp_path):
+    # Two papers from arxiv that route, one from openalex that routes, one
+    # from pubmed that does not route (civil engineering exclusion).
+    _mock_three_fetchers(monkeypatch, {
+        "arxiv": [
+            _make_paper("10.1/ax1", "AI bioprinting bioink", source="arxiv"),
+            _make_paper("10.1/ax2", "AI bioprinting closed loop control",
+                        source="arxiv"),
+        ],
+        "openalex": [
+            _make_paper("10.1/oa1", "AI bioprinting", source="openalex"),
+        ],
+        "pubmed": [
+            _make_paper("10.1/pm1", "civil",
+                        "bridge structural civil engineering analysis",
+                        source="pubmed"),
+        ],
+    })
+    monkeypatch.setattr(rh.llm_scorer, "score_batch",
+                        lambda *a, **kw: ([], []))
+    rh.run(from_date="2024-01-15", to_date="2024-01-15",
+           dry_run=True, output_dir=tmp_path, no_resume=True)
+    out = json.loads((tmp_path / "2024-01_dryrun.json").read_text())
+    counts = out["counts"]
+    assert "routed_by_source" in counts
+    rbs = counts["routed_by_source"]
+    assert rbs.get("arxiv", 0) == 2
+    assert rbs.get("openalex", 0) == 1
+    assert rbs.get("pubmed", 0) == 0 or "pubmed" not in rbs
+    assert sum(rbs.values()) == counts["after_routing"]
+
+
+def test_arxiv_historical_default_max_results_is_10000(monkeypatch):
+    captured: dict = {}
+    _install_arxiv_capture(monkeypatch, captured)
+
+    # Capture max_results from arxiv.Search via _arxiv_fake_search
+    original_search = _arxiv_fake_search
+
+    def capturing_search(**kw):
+        captured["max_results"] = kw.get("max_results")
+        return original_search(**kw)
+    monkeypatch.setattr(arxiv_fetcher.arxiv, "Search", capturing_search)
+
+    arxiv_fetcher.fetch(["cs.LG"], from_date="2024-01-01", to_date="2024-01-31")
+    assert captured["max_results"] == 10000
+
+
+def test_arxiv_daily_default_max_results_is_2000(monkeypatch):
+    captured: dict = {}
+    _install_arxiv_capture(monkeypatch, captured)
+
+    def capturing_search(**kw):
+        captured["max_results"] = kw.get("max_results")
+        return SimpleNamespace(**kw)
+    monkeypatch.setattr(arxiv_fetcher.arxiv, "Search", capturing_search)
+
+    arxiv_fetcher.fetch(["cs.LG"], days_back=1)
+    assert captured["max_results"] == 2000
+
+
+def test_arxiv_explicit_max_results_override_respected(monkeypatch):
+    captured: dict = {}
+    _install_arxiv_capture(monkeypatch, captured)
+
+    def capturing_search(**kw):
+        captured["max_results"] = kw.get("max_results")
+        return SimpleNamespace(**kw)
+    monkeypatch.setattr(arxiv_fetcher.arxiv, "Search", capturing_search)
+
+    arxiv_fetcher.fetch(["cs.LG"], from_date="2024-01-01", to_date="2024-01-31",
+                        max_results=500)
+    assert captured["max_results"] == 500
+
+
 def test_dois_seen_dedups_across_months(monkeypatch, tmp_path):
     # Same DOI appears in both January and February fetches.
     def fake_fetch(**kw):
