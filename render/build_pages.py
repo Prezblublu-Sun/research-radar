@@ -2,7 +2,30 @@
 
 from __future__ import annotations
 import html
+import json
 import pathlib
+
+
+def _load_papers_v2_or_v1(path: pathlib.Path) -> tuple[list[dict], dict]:
+    """Return (papers, file_meta) for a daily JSON, v2-dict or stray v1-list.
+
+    v2 (ADR-0015 §4.5): {schema_version, date, date_precision, papers, counts}
+    v1 (pre-migration): top-level list of paper dicts.
+    Backward-compat path tolerates anything else by returning ([], {}).
+    """
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return [], {}
+    if isinstance(data, list):
+        return data, {}
+    if isinstance(data, dict):
+        papers = data.get("papers", [])
+        if not isinstance(papers, list):
+            papers = []
+        meta = {k: v for k, v in data.items() if k != "papers"}
+        return papers, meta
+    return [], {}
 
 
 PRIORITY_COLOR = {
@@ -425,9 +448,8 @@ def _build_search_index(docs_dir, data_dir):
     index = []
     for jpath in sorted(daily_dir.glob("20*.json")):
         date = jpath.stem
-        try:
-            papers = _json.loads(jpath.read_text())
-        except Exception:
+        papers, _meta = _load_papers_v2_or_v1(jpath)
+        if not papers:
             continue
         for p in papers:
             llm = p.get("llm", {}) or {}
@@ -460,6 +482,8 @@ def _build_search_index(docs_dir, data_dir):
                 "read_action": llm.get("read_action", ""),
                 "source": p.get("source", ""),
                 "doi": p.get("doi", ""),
+                "date_precision": p.get("date_precision", "day"),
+                "scorer_version": p.get("scorer_version", ""),
                 "blob": blob,
             })
 
@@ -587,38 +611,35 @@ document.querySelectorAll('.filter').forEach(el => {
     (docs_dir / "search.html").write_text(html, encoding="utf-8")
 
 
-def build(papers, date, docs_dir, directions_cfg, manifest=None):
+def build(docs_dir, directions_cfg, manifest=None, touched_dates=None):
+    """Render every per-publication-date HTML page from disk, refresh index.
+
+    ADR-0015 §4.5: under v2 a single radar run touches many publication-date
+    files. There is no single "today's page" anymore — we re-render every
+    archive page from disk so navigation lists stay coherent. `touched_dates`
+    is the set of bucket dates this run actually modified; pages for those
+    dates get the run manifest footer attached.
+    """
     docs_dir.mkdir(parents=True, exist_ok=True)
-    # Collect all existing daily JSON files as archive sources
     data_daily_dir = docs_dir.parent / "data" / "daily"
     archive = sorted(p.stem for p in data_daily_dir.glob("20*.json")) if data_daily_dir.exists() else []
-    if date not in archive:
-        archive.append(date)
-        archive.sort()
+    touched = set(touched_dates or ())
 
-    # Re-render every historical daily page so its archive list stays current.
-    # This costs ~10 ms per page; for 14 days = 140 ms. Worth it for navigation correctness.
-    import json as _json
     for hist_date in archive:
-        if hist_date == date:
-            continue  # current run will write this below
         hist_json = data_daily_dir / f"{hist_date}.json"
         hist_html = docs_dir / f"{hist_date}.html"
         if not hist_json.exists():
             continue
         try:
-            hist_papers = _json.loads(hist_json.read_text())
+            hist_papers, _meta = _load_papers_v2_or_v1(hist_json)
+            page_manifest = manifest if hist_date in touched else None
             hist_html.write_text(
-                _render_daily(hist_papers, hist_date, directions_cfg, archive, None),
+                _render_daily(hist_papers, hist_date, directions_cfg, archive, page_manifest),
                 encoding="utf-8",
             )
         except Exception as e:
             print(f"  (skip re-render {hist_date}: {e})")
 
-    (docs_dir / f"{date}.html").write_text(
-        _render_daily(papers, date, directions_cfg, archive, manifest),
-        encoding="utf-8",
-    )
     (docs_dir / "index.html").write_text(
         _render_index(archive),
         encoding="utf-8",

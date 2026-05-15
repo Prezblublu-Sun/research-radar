@@ -8,6 +8,7 @@
 from __future__ import annotations
 import datetime as dt
 import json
+import os
 import pathlib
 import sys
 import yaml
@@ -35,6 +36,105 @@ CHANGELOG = ROOT / "CHANGELOG.md"
 
 def _print(msg: str):
     print(f"[{dt.datetime.now().strftime('%H:%M:%S')}] {msg}", flush=True)
+
+
+# ============================================================================
+# ADR-0015 v2 schema helpers
+# ============================================================================
+# Kept consistent with scripts/migrate_to_schema_v2.py — if you change one, change
+# the other.
+
+def _identity_key(paper: dict) -> str:
+    doi = (paper.get("doi") or "").strip()
+    if doi:
+        return f"doi:{doi}"
+    arxiv = (paper.get("arxiv_id") or "").strip()
+    if arxiv:
+        return f"arxiv:{arxiv}"
+    return ""
+
+
+def _infer_date_precision(date_str: str) -> str:
+    if not date_str:
+        return "year"
+    if date_str.endswith("-01-01"):
+        return "year"
+    if date_str.endswith("-01"):
+        return "month"
+    return "day"
+
+
+def _atomic_write_json(path: pathlib.Path, data) -> None:
+    """Write JSON to <path>.tmp then os.replace — atomic on POSIX."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    os.replace(tmp, path)
+
+
+def _load_existing_v2(path: pathlib.Path) -> tuple[list[dict], dict]:
+    """Return (papers, meta) from an existing v2 bucket file, ([], {}) if absent.
+
+    Tolerates a stray v1 list shape for any file that predates migration.
+    """
+    if not path.exists():
+        return [], {}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return [], {}
+    if isinstance(data, list):
+        return data, {}
+    if isinstance(data, dict):
+        papers = data.get("papers", [])
+        meta = {k: v for k, v in data.items() if k != "papers"}
+        if not isinstance(papers, list):
+            papers = []
+        return papers, meta
+    return [], {}
+
+
+def _build_v2_counts(papers: list[dict]) -> dict:
+    by_source: dict[str, int] = {}
+    by_direction: dict[str, int] = {}
+    priority_counts: dict[str, int] = {}
+    scored = 0
+    for p in papers:
+        src = p.get("source", "")
+        by_source[src] = by_source.get(src, 0) + 1
+        d = p.get("direction") or p.get("direction_name")
+        if d:
+            by_direction[d] = by_direction.get(d, 0) + 1
+        llm = p.get("llm")
+        if isinstance(llm, dict):
+            scored += 1
+            pr = llm.get("priority")
+            if pr:
+                priority_counts[pr] = priority_counts.get(pr, 0) + 1
+    return {
+        "fetched_total": len(papers),
+        "by_source": by_source,
+        "after_dedup": len(papers),
+        "after_routing": len(papers),
+        "by_direction": by_direction,
+        "routed_by_source": dict(by_source),
+        "scored": scored,
+        "priority_counts": priority_counts if priority_counts else None,
+    }
+
+
+def _build_v2_file(date_str: str, papers: list[dict]) -> dict:
+    return {
+        "schema_version": "v2",
+        "date": date_str,
+        "date_precision": _infer_date_precision(date_str),
+        "papers": papers,
+        "counts": _build_v2_counts(papers),
+    }
+
+
+def _utc_now_iso() -> str:
+    return dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
 
 
 def run(days_back: int = 2, skip_zotero: bool = False, force: bool = False) -> dict:
@@ -131,61 +231,109 @@ def run(days_back: int = 2, skip_zotero: bool = False, force: bool = False) -> d
         "after_routing": len(routed),
         "by_direction": bucket,
         "priority_counts": priority_counts,
+        # v2 multi-file bucketing diagnostics (ADR-0015 §4.5 / §7(iv)):
+        "touched_dates": None,  # filled in after bucketing below
+        "papers_with_missing_date": None,
     }
 
+    # ===== ADR-0015 v2: per-publication-date bucketing + merge =====
+    # One run touches every publication-date bucket of the papers it scored
+    # (typically many, e.g. with a 14-day OpenAlex lookback). For each bucket
+    # we read the existing v2 file (if any), merge by identity_key with
+    # first-seen-wins, and write back atomically. Empty-run guard simplifies
+    # to: refuse to do anything when fetched_total == 0; otherwise the merge
+    # cannot lose existing papers, so the "would overwrite N with 0" check
+    # from v1 is now obsolete.
     DATA_DIR.mkdir(parents=True, exist_ok=True)
-    (DATA_DIR / "daily").mkdir(exist_ok=True)
-    daily_file = DATA_DIR / "daily" / f"{today}.json"
+    daily_dir = DATA_DIR / "daily"
+    daily_dir.mkdir(exist_ok=True)
+    run_ts = _utc_now_iso()
 
-    # ===== W1.1 Empty-run guard =====
-    # Refuse to overwrite a non-empty existing daily JSON with an empty one.
-    # This prevents the failure mode where Actions dedup-cleans every paper
-    # and would otherwise write [] over yesterday's good data.
     run_status = "success"
     quality_flags = []
+    touched_dates: dict[str, int] = {}
+    missing_date = 0
 
     if fetched_total == 0:
         _print("ABORT: fetched_total == 0. All three sources returned nothing.")
         _print("  Refusing to write daily JSON. This may be a network or API issue.")
         run_status = "failed"
         quality_flags.append("fetched_zero")
-        # Still write a marker file in a separate location for diagnostics
-        marker = DATA_DIR / "daily" / f"{today}.SKIPPED.json"
+        marker = daily_dir / f"{today}.SKIPPED.json"
         marker.write_text(json.dumps({
-            "date": today, "reason": "fetched_zero",
-            "fetched_total": 0
+            "date": today, "reason": "fetched_zero", "fetched_total": 0,
         }, indent=2))
         _print(f"  Wrote skip marker: {marker}")
-    elif len(scored) == 0 and daily_file.exists():
-        try:
-            existing = json.loads(daily_file.read_text())
-            if isinstance(existing, list) and len(existing) > 0:
-                _print(f"ABORT: would overwrite {len(existing)} existing papers with 0.")
-                _print("  Refusing to write empty JSON over non-empty existing data.")
-                run_status = "suspicious_empty"
-                quality_flags.append("zero_scored_with_existing_data")
-                marker = DATA_DIR / "daily" / f"{today}.SKIPPED.json"
-                marker.write_text(json.dumps({
-                    "date": today,
-                    "reason": "zero_scored_would_overwrite",
-                    "fetched_total": fetched_total,
-                    "after_routing": len(routed),
-                    "existing_count": len(existing)
-                }, indent=2))
-                _print(f"  Wrote skip marker: {marker}")
-            else:
-                daily_file.write_text(json.dumps(scored, ensure_ascii=False, indent=2))
-                aggregator.save_state(updated_seen, SEEN_STATE)
-                _print(f"Saved {daily_file} (empty, no prior data to preserve)")
-        except (json.JSONDecodeError, OSError) as e:
-            _print(f"Warning: couldn't read existing JSON ({e}); writing fresh.")
-            daily_file.write_text(json.dumps(scored, ensure_ascii=False, indent=2))
-            aggregator.save_state(updated_seen, SEEN_STATE)
-            _print(f"Saved {daily_file}")
     else:
-        daily_file.write_text(json.dumps(scored, ensure_ascii=False, indent=2))
+        # Bucket scored papers by paper["date"].
+        buckets: dict[str, list[dict]] = {}
+        for p in scored:
+            d = (p.get("date") or "").strip()
+            if not d:
+                missing_date += 1
+                continue
+            buckets.setdefault(d, []).append(p)
+
+        # Merge each bucket with whatever is already on disk; first-seen wins.
+        for bucket_date, new_papers in buckets.items():
+            target = daily_dir / f"{bucket_date}.json"
+            existing_papers, _existing_meta = _load_existing_v2(target)
+            existing_keys = {
+                k for k in (_identity_key(p) for p in existing_papers) if k
+            }
+            added = 0
+            for p in new_papers:
+                k = _identity_key(p)
+                if k and k in existing_keys:
+                    continue  # first-seen wins; do not re-score in place
+                p_out = dict(p)
+                p_out["schema_version"] = "v2"
+                p_out["date_precision"] = _infer_date_precision(p_out.get("date", ""))
+                p_out["scorer_version"] = "v3"
+                p_out["first_seen_at"] = run_ts
+                existing_papers.append(p_out)
+                if k:
+                    existing_keys.add(k)
+                added += 1
+            if added > 0:
+                _atomic_write_json(target, _build_v2_file(bucket_date, existing_papers))
+                touched_dates[bucket_date] = added
+
+        # Discovery log: one record per observed scored paper (ADR-0015 §4.3).
+        discovery_records = []
+        for p in scored:
+            k = _identity_key(p)
+            if not k:
+                continue
+            discovery_records.append({
+                "doi_or_arxiv_id": k,
+                "first_seen_at": run_ts,
+                "run_type": "daily",
+            })
+        if discovery_records:
+            log_path = DATA_DIR / "discovery_log" / f"{today}.json"
+            existing_log: list = []
+            if log_path.exists():
+                try:
+                    loaded = json.loads(log_path.read_text(encoding="utf-8"))
+                    if isinstance(loaded, list):
+                        existing_log = loaded
+                except (json.JSONDecodeError, OSError):
+                    existing_log = []
+            _atomic_write_json(log_path, existing_log + discovery_records)
+
         aggregator.save_state(updated_seen, SEEN_STATE)
-        _print(f"Saved {daily_file}")
+        total_added = sum(touched_dates.values())
+        if total_added == 0 and scored:
+            _print(f"All {len(scored)} scored papers were already on disk; no bucket files updated.")
+        else:
+            _print(f"Wrote {total_added} new papers across {len(touched_dates)} bucket(s): "
+                   f"{sorted(touched_dates.items())}")
+        if missing_date:
+            _print(f"  (skipped {missing_date} paper(s) with empty date field)")
+
+    counts["touched_dates"] = dict(touched_dates)
+    counts["papers_with_missing_date"] = missing_date
 
     # Quality flags for downstream (manifest, report)
     if fetched_total > 0 and fetched_total < 50:
@@ -244,8 +392,12 @@ def run(days_back: int = 2, skip_zotero: bool = False, force: bool = False) -> d
     clu.save_config_snapshot(CONFIG, SNAPSHOTS_DIR / f"{today}.yaml")
 
     _print("Rendering HTML")
-    build_pages.build(scored, today, DOCS_DIR, directions, manifest=manifest)
-    _print(f"  -> docs/{today}.html and updated docs/index.html")
+    build_pages.build(DOCS_DIR, directions, manifest=manifest,
+                      touched_dates=set(touched_dates.keys()))
+    if touched_dates:
+        _print(f"  -> re-rendered {len(touched_dates)} touched page(s) + index.html")
+    else:
+        _print("  -> nothing new to render; refreshed index.html only")
 
     if skip_zotero:
         _print("Skipping Zotero sync (skip_zotero=True)")
