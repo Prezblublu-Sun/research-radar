@@ -96,6 +96,8 @@ def _normalize(r) -> dict:
         "venue": "arXiv preprint",
         "year": r.published.year,
         "date": r.published.date().isoformat(),
+        # arxiv's `published` field is the v1 submission date (verified empirically against multi-version papers, ADR-0015 §7(i))
+        "date_precision": "day",
         "url": r.entry_id,
         "cited_by_count": 0,
         "concepts": [],
