@@ -14,7 +14,7 @@ client = OpenAI(
 MODEL = os.environ.get("MODEL_NAME", "deepseek-v4-flash")
 TEMPERATURE = float(os.environ.get("LLM_TEMPERATURE", "0.2"))
 
-ACTIVE_PROMPT_FILE = os.environ.get("SCORER_PROMPT_FILE", "scorer_v1.txt")
+ACTIVE_PROMPT_FILE = os.environ.get("SCORER_PROMPT_FILE", "scorer_v3.txt")
 
 _PROMPTS_DIR = pathlib.Path(__file__).resolve().parent.parent / "prompts"
 

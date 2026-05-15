@@ -13,7 +13,7 @@ See `TODO.md` for the full first-time setup checklist.
 Quick reference:
 
 - Direction config: `config/directions.yaml`
-- Active scorer prompt: `prompts/scorer_v1.txt`
+- Active scorer prompt: `prompts/scorer_v3.txt`
 - Main entry: `python -m pipeline.run_daily`
 - Local dry-run without Zotero: `python -m pipeline.run_daily 1 --skip-zotero`
 
