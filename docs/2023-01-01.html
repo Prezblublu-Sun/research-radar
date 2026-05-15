@@ -1,0 +1,546 @@
+<!doctype html><html lang="zh"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Research Radar — 2023-01-01</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:980px;margin:2rem auto;padding:0 1rem;color:#222;line-height:1.5}
+h1{font-size:24px;font-weight:500;margin:0 0 .25rem}
+.subtitle{color:#666;font-size:14px;margin-bottom:1.5rem}
+.topbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 0;margin-bottom:1.25rem;border-bottom:.5px solid #e2e0d8}
+.navbtn{font-size:13px;background:#f5f4ef;color:#444;padding:6px 12px;border-radius:8px;text-decoration:none}
+.navbtn:hover{background:#e9e7df}
+.navbtn.disabled{color:#bbb;background:#fafaf6;cursor:default}
+.archive-select{font-size:13px;padding:6px 10px;border:.5px solid #ccc;border-radius:8px;background:#fff;color:#444;cursor:pointer}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1.5rem}
+.stat{background:#f5f4ef;border-radius:8px;padding:.75rem 1rem}
+.stat-label{font-size:12px;color:#666}
+.stat-val{font-size:22px;font-weight:500;margin-top:2px}
+.tabs,.prio-filter{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:.75rem}
+.tab,.pf{background:transparent;border:.5px solid #ccc;border-radius:8px;padding:6px 14px;font-size:13px;cursor:pointer;color:#444}
+.tab.active,.pf.active{background:#222;color:#fff;border-color:#222}
+.paper{background:#fff;border:.5px solid #e2e0d8;border-radius:12px;padding:1rem 1.25rem;margin-bottom:12px}
+.paper-head{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+.priority{font-size:12px;font-weight:500;padding:3px 10px;border-radius:999px}
+.direction-pill{font-size:11px;padding:3px 8px;border-radius:8px}
+.source{font-size:11px;color:#999;text-transform:uppercase}
+.flag{font-size:11px;background:#eef;color:#335;padding:2px 7px;border-radius:6px}
+.paper-title{font-size:15px;font-weight:500;line-height:1.4;margin:4px 0}
+.meta{font-size:12px;color:#666;margin-bottom:10px}
+.meta>span{margin-right:12px}
+.relevance{font-size:13px;background:#fafaf6;padding:6px 10px;border-radius:6px;margin-bottom:8px}
+.summary{font-size:13px;line-height:1.65}
+.summary>div{margin-bottom:4px}
+.tags-row{margin-top:8px}
+.tag{font-size:10px;background:#f1efe8;color:#555;padding:2px 7px;border-radius:6px;margin-right:4px}
+.paper[data-hidden="1"]{display:none}
+footer.run-info{margin-top:3rem;padding-top:1rem;border-top:.5px solid #e2e0d8;font-size:12px;color:#666}
+footer.run-info summary{cursor:pointer;color:#444}
+footer.run-info table{margin-top:8px;font-family:ui-monospace,monospace;font-size:11px}
+footer.run-info td{padding:2px 12px 2px 0;vertical-align:top}
+footer.run-info td:first-child{color:#888;width:140px}
+details.summary-en{margin-top:8px;background:#f8f8f3;border-radius:8px;padding:6px 12px;border:.5px solid #e2e0d8}
+details.summary-en summary{cursor:pointer;font-size:12px;color:#555;font-weight:500}
+details.summary-en[open] summary{margin-bottom:8px}
+.summary.en{font-size:13px;color:#333;line-height:1.55}
+.summary.en>div{margin-bottom:3px}
+.key-terms{margin-top:8px;display:flex;flex-wrap:wrap;gap:6px}
+.term{font-size:11px;background:#fff;border:.5px solid #ddd;padding:3px 8px;border-radius:6px;color:#444}
+.term b{color:#222;font-weight:500}
+.affiliations{font-size:12px;color:#666;margin-top:6px;padding-left:6px;border-left:2px solid #ddd}
+.affiliations b{color:#444;font-weight:500}
+.corresponding{font-size:12px;color:#555;margin-top:3px;padding-left:6px;border-left:2px solid #aac}
+.corresponding b{color:#3F2E7E;font-weight:500}
+.corresp-aff{color:#888}
+.corresponding i{color:#888;font-size:11px}
+.relevance-level{font-size:11px;padding:3px 8px;border-radius:8px;font-weight:500}
+.lvl-direct{background:#D4EBC4;color:#2D5A14}
+.lvl-transferable{background:#E0DDF4;color:#3F2E7E}
+.lvl-peripheral{background:#F1EFE8;color:#666}
+.read-action{font-size:11px;padding:3px 8px;border-radius:8px;font-weight:500;font-style:italic}
+.act-read-now{background:#FFE8D6;color:#7D4515}
+.act-save-for-project{background:#E6E1F5;color:#3A2C7A}
+.act-skim-only{background:#F0F0E8;color:#5C5C50}
+.act-background-only{background:#F5F5F0;color:#777}
+.act-ignore{background:#F5E8E8;color:#7A3A3A}
+.validation-kind{font-size:10px;background:#EDF4FA;color:#1F4A6B;padding:2px 7px;border-radius:6px}
+.why-not-core{font-size:12px;background:#FCF5E8;border-left:3px solid #D8A045;padding:5px 10px;margin-top:4px;color:#5A4318;border-radius:0 6px 6px 0}
+</style></head><body>
+<h1>Research Radar</h1>
+<div class="subtitle">2023-01-01 · AI Bioprinting / Hip Implant / FEA Surrogate / AM Biomedical</div>
+<div class="topbar"><span class="navbtn disabled">← oldest</span><select class="archive-select" onchange="if(this.value)window.location.href=this.value"><option value="2026-06-01.html">2026-06-01</option><option value="2026-05-14.html">2026-05-14</option><option value="2026-05-13.html">2026-05-13</option><option value="2026-05-12.html">2026-05-12</option><option value="2026-05-11.html">2026-05-11</option><option value="2026-05-10.html">2026-05-10</option><option value="2026-05-09.html">2026-05-09</option><option value="2026-05-08.html">2026-05-08</option><option value="2026-05-07.html">2026-05-07</option><option value="2026-05-06.html">2026-05-06</option><option value="2026-05-05.html">2026-05-05</option><option value="2026-05-04.html">2026-05-04</option><option value="2026-05-02.html">2026-05-02</option><option value="2026-05-01.html">2026-05-01</option><option value="2026-04-30.html">2026-04-30</option><option value="2026-04-28.html">2026-04-28</option><option value="2026-04-27.html">2026-04-27</option><option value="2026-04-24.html">2026-04-24</option><option value="2026-04-01.html">2026-04-01</option><option value="2026-01-01.html">2026-01-01</option><option value="2025-05-01.html">2025-05-01</option><option value="2025-01-01.html">2025-01-01</option><option value="2024-12-01.html">2024-12-01</option><option value="2024-09-01.html">2024-09-01</option><option value="2024-08-27.html">2024-08-27</option><option value="2024-08-01.html">2024-08-01</option><option value="2024-06-01.html">2024-06-01</option><option value="2024-05-01.html">2024-05-01</option><option value="2024-04-22.html">2024-04-22</option><option value="2024-04-01.html">2024-04-01</option><option value="2024-03-15.html">2024-03-15</option><option value="2024-03-01.html">2024-03-01</option><option value="2024-02-23.html">2024-02-23</option><option value="2024-02-15.html">2024-02-15</option><option value="2024-02-14.html">2024-02-14</option><option value="2024-02-13.html">2024-02-13</option><option value="2024-02-12.html">2024-02-12</option><option value="2024-02-07.html">2024-02-07</option><option value="2024-02-05.html">2024-02-05</option><option value="2024-02-01.html">2024-02-01</option><option value="2024-01-31.html">2024-01-31</option><option value="2024-01-30.html">2024-01-30</option><option value="2024-01-29.html">2024-01-29</option><option value="2024-01-28.html">2024-01-28</option><option value="2024-01-27.html">2024-01-27</option><option value="2024-01-26.html">2024-01-26</option><option value="2024-01-25.html">2024-01-25</option><option value="2024-01-24.html">2024-01-24</option><option value="2024-01-23.html">2024-01-23</option><option value="2024-01-22.html">2024-01-22</option><option value="2024-01-21.html">2024-01-21</option><option value="2024-01-20.html">2024-01-20</option><option value="2024-01-19.html">2024-01-19</option><option value="2024-01-18.html">2024-01-18</option><option value="2024-01-17.html">2024-01-17</option><option value="2024-01-16.html">2024-01-16</option><option value="2024-01-15.html">2024-01-15</option><option value="2024-01-14.html">2024-01-14</option><option value="2024-01-13.html">2024-01-13</option><option value="2024-01-12.html">2024-01-12</option><option value="2024-01-11.html">2024-01-11</option><option value="2024-01-10.html">2024-01-10</option><option value="2024-01-09.html">2024-01-09</option><option value="2024-01-08.html">2024-01-08</option><option value="2024-01-07.html">2024-01-07</option><option value="2024-01-06.html">2024-01-06</option><option value="2024-01-05.html">2024-01-05</option><option value="2024-01-04.html">2024-01-04</option><option value="2024-01-03.html">2024-01-03</option><option value="2024-01-02.html">2024-01-02</option><option value="2024-01-01.html">2024-01-01</option><option value="2023-12-30.html">2023-12-30</option><option value="2023-12-28.html">2023-12-28</option><option value="2023-12-27.html">2023-12-27</option><option value="2023-12-26.html">2023-12-26</option><option value="2023-12-24.html">2023-12-24</option><option value="2023-12-19.html">2023-12-19</option><option value="2023-12-01.html">2023-12-01</option><option value="2023-11-21.html">2023-11-21</option><option value="2023-11-01.html">2023-11-01</option><option value="2023-08-01.html">2023-08-01</option><option value="2023-06-01.html">2023-06-01</option><option value="2023-01-01.html" selected>2023-01-01</option></select><a class="navbtn" href="2023-06-01.html">2023-06-01 →</a><a class="navbtn" href="weekly/index.html">📅 Weekly</a><a class="navbtn" href="status.html">📊 Status</a><a class="navbtn" href="search.html">🔍 Search</a></div>
+<div class="stats"><div class="stat"><div class="stat-label">Total scored</div><div class="stat-val">11</div></div><div class="stat"><div class="stat-label">High</div><div class="stat-val" style="color:#27500A">0</div></div><div class="stat"><div class="stat-label">Medium</div><div class="stat-val" style="color:#633806">1</div></div><div class="stat"><div class="stat-label">Low</div><div class="stat-val" style="color:#5F5E5A">3</div></div></div>
+<div class="tabs"><button class="tab active" data-filter="all">All</button><button class="tab" data-filter="ai_bioprinting">AI for Bioprinting</button><button class="tab" data-filter="hip_implant">Hip Implant &amp; Femoral Stem</button><button class="tab" data-filter="fea_surrogate">FEA &amp; Surrogate Modelling</button><button class="tab" data-filter="am_biomedical">AM Biomedical Materials</button></div>
+<div class="prio-filter"><button class="pf active" data-prio="HighMedium">High+Medium</button><button class="pf" data-prio="High">High only</button><button class="pf" data-prio="all">Show all</button></div>
+
+<article class="paper" data-direction="am_biomedical" data-priority="Medium">
+  <div class="paper-head">
+    <span class="priority" style="background:#FAEEDA;color:#633806">Medium</span>
+    <span class="direction-pill" style="background:#185FA520;color:#185FA5">AM Biomedical Materials</span>
+    <span class="source">pubmed</span>
+    
+    
+    
+    <span class="flag">Exp. validation</span>
+  </div>
+  <h3 class="paper-title">&quot;Metal-bone&quot; scaffold for accelerated peri-implant endosseous healing.</h3>
+  <div class="meta">
+    <span class="authors">Yue Lu, Xianggang Wang, Hao Chen, Xin Li, He Liu et al.</span>
+    <span class="venue">Frontiers in bioengineering and biotechnology</span>
+    <span class="date">2023-01-01</span>
+    <span class="doi"><a href="https://doi.org/10.3389/fbioe.2023.1334072" target="_blank">10.3389/fbioe.2023.1334072</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Key Laboratory of Bionic Engineering, Ministry of Education, Jilin University, Changchun, China.</div>
+  <div class="corresponding"><b>通讯:</b> Zhihui Qian <span class="corresp-aff">@ Key Laboratory of Bionic Engineering, Ministry of Education, Jilin University, Changchun, China.</span> <i>[推断]</i></div>
+  <div class="relevance"><b>相关性:</b> 提供了多孔钛合金支架骨整合的体内数据，但缺乏力学测试和应力屏蔽分析，与髋关节假体设计的相关性有限。</div>
+  
+  <div class="summary">
+    <div><b>动机·</b> 为了解决骨缺损修复的临床挑战，需要开发符合临床标准的骨组织工程支架。</div>
+    <div><b>方法·</b> 将3D打印的多孔Ti6Al4V支架与骨移植技术结合，植入动物股骨3个月后取出，形成&#x27;金属-骨&#x27;支架再植入。</div>
+    <div><b>结果·</b> 与单纯多孔钛支架相比，含骨组织的支架在早期阶段加速了骨再生，骨整合效果更优。</div>
+    <div><b>验证·</b> 通过体外实验和动物体内植入进行验证，但未涉及力学性能测试。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">AdditiveManufacturing_Ti6Al4V</span> <span class="tag">BoneTissueEngineering_Scaffold</span> <span class="tag">InVivo_Osseointegration</span></div>
+</article>
+<article class="paper" data-direction="ai_bioprinting" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#7F77DD20;color:#7F77DD">AI for Bioprinting</span>
+    <span class="source">pubmed</span>
+    
+    
+    
+    <span class="flag">Exp. validation</span>
+  </div>
+  <h3 class="paper-title">Three-dimensional biofabrication of nanosecond laser micromachined nanofibre meshes for tissue engineered scaffolds.</h3>
+  <div class="meta">
+    <span class="authors">Ross H McWilliam, Wenlong Chang, Zhao Liu, Jiayuan Wang, Fengxuan Han et al.</span>
+    <span class="venue">Biomaterials translational</span>
+    <span class="date">2023-01-01</span>
+    <span class="doi"><a href="https://doi.org/10.12336/biomatertransl.2023.02.005" target="_blank">10.12336/biomatertransl.2023.02.005</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Department of Biomedical Engineering, University of Strathclyde, Glasgow, UK.</div>
+  <div class="corresponding"><b>通讯:</b> Wenmiao Shu <span class="corresp-aff">@ Department of Biomedical Engineering, University of Strathclyde, Glasgow, UK.</span> <i>[推断]</i></div>
+  <div class="relevance"><b>相关性:</b> 与AI生物打印方向无直接关联，但涉及生物打印的支架制造技术，可作为背景参考。</div>
+  
+  <div class="summary">
+    <div><b>动机·</b> 需要制造具有复杂层次结构的组织工程支架，但现有方法难以同时实现微纳米尺度和临床相关尺寸。</div>
+    <div><b>方法·</b> 提出一种结合静电纺丝和纳秒激光微加工的新方法，将三维模型切片后激光切割二维纤维网片，再逐层组装成三维结构。</div>
+    <div><b>结果·</b> 成功制造出从简单立方体到复杂人耳形状的支架，尺寸达50毫米，并具有微/纳米分辨率。细胞实验显示细胞存活率良好，细胞在支架中迁移。</div>
+    <div><b>验证·</b> 有实际实验验证，包括支架制造和体外细胞培养实验，但无AI模型验证。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">Bioprinting_ScaffoldFabrication</span> <span class="tag">Bioprinting_Microfabrication</span></div>
+</article>
+<article class="paper" data-direction="ai_bioprinting" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#7F77DD20;color:#7F77DD">AI for Bioprinting</span>
+    <span class="source">pubmed</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Harnessing decellularised extracellular matrix microgels into modular bioinks for extrusion-based bioprinting with good printability and high post-printing cell viability.</h3>
+  <div class="meta">
+    <span class="authors">Hanyu Chu, Kexin Zhang, Zilong Rao, Panpan Song, Zudong Lin et al.</span>
+    <span class="venue">Biomaterials translational</span>
+    <span class="date">2023-01-01</span>
+    <span class="doi"><a href="https://doi.org/10.12336/biomatertransl.2023.02.006" target="_blank">10.12336/biomatertransl.2023.02.006</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Key Laboratory for Polymeric Composite &amp; Functional Materials of Ministry of Education, School of Chemistry, Sun Yat-sen University, Guangzhou, Guangdong Province, China.</div>
+  <div class="corresponding"><b>通讯:</b> Ying Bai <span class="corresp-aff">@ Guangdong Engineering Technology Research Centre for Functional Biomaterials, Key Laboratory for Polymeric Composite &amp; F</span> <i>[推断]</i></div>
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="ai_bioprinting" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#7F77DD20;color:#7F77DD">AI for Bioprinting</span>
+    <span class="source">pubmed</span>
+    
+    
+    
+    <span class="flag">Review</span>
+  </div>
+  <h3 class="paper-title">3D Bioprinting: An Important Tool for Tumor Microenvironment Research.</h3>
+  <div class="meta">
+    <span class="authors">Yilin Li, Jiaxing Liu, Shun Xu, Jiajun Wang</span>
+    <span class="venue">International journal of nanomedicine</span>
+    <span class="date">2023-01-01</span>
+    <span class="doi"><a href="https://doi.org/10.2147/IJN.S435845" target="_blank">10.2147/IJN.S435845</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Department of Thoracic Surgery, The First Hospital of China Medical University, Shenyang, People&#x27;s Republic of China.</div>
+  <div class="corresponding"><b>通讯:</b> Jiajun Wang <span class="corresp-aff">@ Department of Thoracic Surgery, The First Hospital of China Medical University, Shenyang, People&#x27;s Republic of China.</span> <i>[推断]</i></div>
+  <div class="relevance"><b>相关性:</b> 该综述与生物打印相关，但未涉及AI或优化方法，对用户专注于AI驱动生物打印的研究方向帮助有限。</div>
+  
+  <div class="summary">
+    <div><b>动机·</b> 传统2D细胞培养和小鼠模型无法完全模拟肿瘤微环境，3D生物打印能构建高精度3D生物结构以用于癌症研究。</div>
+    <div><b>方法·</b> 该综述总结了3D生物打印技术在肿瘤微环境研究中的应用，包括构建组织器官模型、药物开发和个性化医疗。</div>
+    <div><b>结果·</b> 3D生物打印为癌症研究、组织工程和器官移植提供了新机遇，有望改进医学治疗结果。</div>
+    <div><b>验证·</b> 文献综述，未涉及实验验证。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">Bioprinting_Review</span> <span class="tag">Bioprinting_TumorMicroenvironment</span></div>
+</article>
+<article class="paper" data-direction="ai_bioprinting" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#7F77DD20;color:#7F77DD">AI for Bioprinting</span>
+    <span class="source">pubmed</span>
+    
+    
+    
+    <span class="flag">Review</span>
+  </div>
+  <h3 class="paper-title">Advancements and application prospects of three-dimensional models for primary liver cancer: a comprehensive review.</h3>
+  <div class="meta">
+    <span class="authors">Liuyang Zhu, Chuanliang Cheng, Sen Liu, Long Yang, Pinsheng Han et al.</span>
+    <span class="venue">Frontiers in bioengineering and biotechnology</span>
+    <span class="date">2023-01-01</span>
+    <span class="doi"><a href="https://doi.org/10.3389/fbioe.2023.1343177" target="_blank">10.3389/fbioe.2023.1343177</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> First Central Clinical College of Tianjin Medical University, Tianjin, China.</div>
+  <div class="corresponding"><b>通讯:</b> Yamin Zhang <span class="corresp-aff">@ Department of Hepatobiliary Surgery, Tianjin First Central Hospital, Tianjin, China.</span> <i>[推断]</i></div>
+  <div class="relevance"><b>相关性:</b> 与AI生物打印方向无关，未涉及AI方法或实验验证。</div>
+  
+  <div class="summary">
+    <div><b>动机·</b> 传统的肝癌模型无法复制肿瘤异质性和微环境，限制了研究和个性化治疗。</div>
+    <div><b>方法·</b> 综述了3D生物打印和微流控等生物制造技术构建的3D培养模型。</div>
+    <div><b>结果·</b> 3D模型能更好地模拟肿瘤微环境，揭示肿瘤细胞亚群对治疗的差异敏感性，可用于药物筛选和个性化治疗指导。</div>
+    <div><b>验证·</b> 无实验验证，为文献综述。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="ai_bioprinting" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#7F77DD20;color:#7F77DD">AI for Bioprinting</span>
+    <span class="source">pubmed</span>
+    
+    
+    
+    <span class="flag">Exp. validation</span>
+  </div>
+  <h3 class="paper-title">Engineering three-dimensional bone macro-tissues by guided fusion of cell spheroids.</h3>
+  <div class="meta">
+    <span class="authors">Vinothini Prabhakaran, Ferry P W Melchels, Lyndsay M Murray, Jennifer Z Paxton</span>
+    <span class="venue">Frontiers in endocrinology</span>
+    <span class="date">2023-01-01</span>
+    <span class="doi"><a href="https://doi.org/10.3389/fendo.2023.1308604" target="_blank">10.3389/fendo.2023.1308604</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Anatomy@Edinburgh, Edinburgh Medical School, Biomedical Sciences, University of Edinburgh, Edinburgh, United Kingdom.; Centre for Discovery Brain Sciences, College of Medicine and Veterinary Medicine,</div>
+  <div class="corresponding"><b>通讯:</b> Vinothini Prabhakaran <span class="corresp-aff">@ Anatomy@Edinburgh, Edinburgh Medical School, Biomedical Sciences, University of Edinburgh, Edinburgh, United Kingdom.; C</span> &nbsp;|&nbsp; Lyndsay M Murray <span class="corresp-aff">@ Anatomy@Edinburgh, Edinburgh Medical School, Biomedical Sciences, University of Edinburgh, Edinburgh, United Kingdom.; C</span> &nbsp;|&nbsp; Jennifer Z Paxton <span class="corresp-aff">@ Anatomy@Edinburgh, Edinburgh Medical School, Biomedical Sciences, University of Edinburgh, Edinburgh, United Kingdom.; C</span></div>
+  <div class="relevance"><b>相关性:</b> 此论文聚焦于无支架生物组装，未涉及人工智能，因此与用户的AI辅助生物打印综述或髋关节植入物研究方向无关。</div>
+  
+  <div class="summary">
+    <div><b>动机·</b> 利用细胞球体生物组装技术制备大尺寸骨组织模型，实现无支架的体外骨组织构建。</div>
+    <div><b>方法·</b> 通过定制生物组装系统将成骨细胞球体组装到柱阵列支撑物上，待融合后移除支撑物，实现无支架生长和成熟。</div>
+    <div><b>结果·</b> 成功制备了直径超过2.5毫米的骨宏观组织，具有矿化形成和成骨成熟标志物表达。</div>
+    <div><b>验证·</b> 实验验证包括细胞增殖、活死染色、组织学染色和分子表达分析，均为体外实验。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">Bioprinting_ScaffoldFree</span></div>
+</article>
+<article class="paper" data-direction="am_biomedical" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#185FA520;color:#185FA5">AM Biomedical Materials</span>
+    <span class="source">pubmed</span>
+    
+    
+    
+    <span class="flag">Review</span>
+  </div>
+  <h3 class="paper-title">Significance of 25(OH) D3 in Early Dental Implant Failure (EDIF) during osseointegration-A systematic review.</h3>
+  <div class="meta">
+    <span class="authors">Anshdha Shah, Kalpana Singh, Jitendra Rao, Bhawna Tiwari, Khaidem Deba Singh</span>
+    <span class="venue">National journal of maxillofacial surgery</span>
+    <span class="date">2023-01-01</span>
+    <span class="doi"><a href="https://doi.org/10.4103/njms.njms_192_22" target="_blank">10.4103/njms.njms_192_22</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Scientist B, UCMS and GTB Hospital, New Delhi, India.</div>
+  <div class="corresponding"><b>通讯:</b> Khaidem Deba Singh <span class="corresp-aff">@ Department of Prosthodontics, Dental College JNIMS, Imphal, Manipur, India.</span> <i>[推断]</i></div>
+  <div class="relevance"><b>相关性:</b> 无关联，不涉及增材制造、多孔结构或力学测试。</div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="am_biomedical" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#185FA520;color:#185FA5">AM Biomedical Materials</span>
+    <span class="source">pubmed</span>
+    
+    
+    
+    <span class="flag">Exp. validation</span>
+  </div>
+  <h3 class="paper-title">A comparative study on efficacy of immediate and delayed placement of cylindrical and tapered dental implants: A clinical prospective study.</h3>
+  <div class="meta">
+    <span class="authors">Gaurav Mittal, Ritesh Garg, Abhishek Rathi, Debi P Ghatak, Sonu K Suman</span>
+    <span class="venue">National journal of maxillofacial surgery</span>
+    <span class="date">2023-01-01</span>
+    <span class="doi"><a href="https://doi.org/10.4103/njms.njms_65_22" target="_blank">10.4103/njms.njms_65_22</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Department of Oral and Maxillofacial Surgery, IDST, Kadrabad, Modinagar, Ghaziabad, Uttar Pradesh, India.</div>
+  <div class="corresponding"><b>通讯:</b> Sonu K Suman <span class="corresp-aff">@ Department of Oral and Maxillofacial Surgery, IDST, Kadrabad, Modinagar, Ghaziabad, Uttar Pradesh, India.</span> <i>[推断]</i></div>
+  <div class="relevance"><b>相关性:</b> 该研究为纯临床牙科，不涉及3D打印、FEA、髋关节或生物墨水，对用户研究方向无参考价值。</div>
+  
+  <div class="summary">
+    <div><b>动机·</b> 比较锥形与圆柱形牙种植体在即刻和延期植入场景下的疗效差异。</div>
+    <div><b>方法·</b> 40例患者随机分组，分别接受锥形或圆柱形种植体，并分为即刻与延期植入，随访6个月。</div>
+    <div><b>结果·</b> 锥形种植体在骨整合质量和牙槽骨高度维持方面优于圆柱形；延期植入可预测性更高，但周期长。</div>
+    <div><b>验证·</b> 临床前瞻性研究，有患者随访数据，无工程或材料验证。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="am_biomedical" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#185FA520;color:#185FA5">AM Biomedical Materials</span>
+    <span class="source">pubmed</span>
+    
+    
+    
+    <span class="flag">Patient-specific</span>
+  </div>
+  <h3 class="paper-title">Reconstruction of the external ear using implant-supported alloplasts-Our experience.</h3>
+  <div class="meta">
+    <span class="authors">Rayan Malick, M E Sham, Thyagraj Jayaram Reddy, P C Jacob</span>
+    <span class="venue">National journal of maxillofacial surgery</span>
+    <span class="date">2023-01-01</span>
+    <span class="doi"><a href="https://doi.org/10.4103/njms.njms_160_22" target="_blank">10.4103/njms.njms_160_22</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Department of Oral and Maxillofacial Surgery, Vydehi Institute of Dental and Medical Sciences and Research Centre, Bangalore, Karnataka, India.</div>
+  <div class="corresponding"><b>通讯:</b> P C Jacob <span class="corresp-aff">@ Department of Plastic and Reconstructive Surgery, Vydehi Institute of Dental and Medical Sciences and Research Centre, B</span> <i>[推断]</i></div>
+  <div class="relevance"><b>相关性:</b> 与用户的研究方向（AM生物医学材料）无关。</div>
+  
+  <div class="summary">
+    <div><b>动机·</b> 外耳缺失的修复困难，植入物支持的耳假体是一种替代方案。</div>
+    <div><b>方法·</b> 对三名患者植入钛种植体，6个月骨整合后以杆卡式修复体加载。</div>
+    <div><b>结果·</b> 平均随访18个月，假体固位良好，患者满意度高，但两个位点出现种植体周围组织反应。</div>
+    <div><b>验证·</b> 仅临床观察，无实验或力学验证。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="am_biomedical" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#185FA520;color:#185FA5">AM Biomedical Materials</span>
+    <span class="source">pubmed</span>
+    
+    
+    
+    <span class="flag">Patient-specific</span>
+  </div>
+  <h3 class="paper-title">Implant-Retained Prosthetic Rehabilitation of a Patient with Severe Oral Lichen Sclerosus.</h3>
+  <div class="meta">
+    <span class="authors">Tim Kluenter, Milan Stoilov</span>
+    <span class="venue">Case reports in dentistry</span>
+    <span class="date">2023-01-01</span>
+    <span class="doi"><a href="https://doi.org/10.1155/2023/6681076" target="_blank">10.1155/2023/6681076</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Department of Oral, Maxillofacial and Plastic Surgery, Medical Faculty, University of Bonn, Bonn, Germany.</div>
+  <div class="corresponding"><b>通讯:</b> Milan Stoilov <span class="corresp-aff">@ Department of Prosthodontics, Preclinical Education and Dental Materials Science, Medical Faculty, University of Bonn, B</span> <i>[推断]</i></div>
+  <div class="relevance"><b>相关性:</b> 与用户研究方向（增材制造生物医学材料）无关，纯临床案例报告。</div>
+  
+  <div class="summary">
+    <div><b>动机·</b> 报告一例口腔硬化性苔藓患者的种植体修复。</div>
+    <div><b>方法·</b> 在颌骨植入四颗种植体，使用临时桥测试后植入最终固定桥。</div>
+    <div><b>结果·</b> 患者恢复了咀嚼功能，生活质量提高。</div>
+    <div><b>验证·</b> 仅有临床病例报告，无实验或仿真验证。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">Clinical_Dentistry</span></div>
+</article>
+<article class="paper" data-direction="am_biomedical" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#185FA520;color:#185FA5">AM Biomedical Materials</span>
+    <span class="source">pubmed</span>
+    
+    
+    
+    <span class="flag">Patient-specific</span>
+  </div>
+  <h3 class="paper-title">Pilot study of fractal dimension analysis of osteogenesis for bone substitute materials of Bio-Oss in lateral sinus augmentation.</h3>
+  <div class="meta">
+    <span class="authors">Cai Wen, Qing Zhang</span>
+    <span class="venue">PloS one</span>
+    <span class="date">2023-01-01</span>
+    <span class="doi"><a href="https://doi.org/10.1371/journal.pone.0296248" target="_blank">10.1371/journal.pone.0296248</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Department of Oral Implantology, The Affiliated Stomatology Hospital, Southwest Medical University, Luzhou, Sichuan, China.; Department of VIP Dental Service, The Affiliated Stomatology Hospital, Sout</div>
+  <div class="corresponding"><b>通讯:</b> Qing Zhang <span class="corresp-aff">@ Department of Nosocomial Infection Control, The Affiliated Hospital, Southwest Medical University, Luzhou, Sichuan, Chin</span> <i>[推断]</i></div>
+  <div class="relevance"><b>相关性:</b> 与用户关注的生物打印、髋关节植入物、有限元代理模型或AM生物材料均无直接关联。</div>
+  
+  <div class="summary">
+    <div><b>动机·</b> 评估分形维数分析在Bio-Oss骨替代材料成骨检测中的可行性。</div>
+    <div><b>方法·</b> 对患者CBCT图像进行分形维数分析，使用盒计数法获得FD值，并采用配对t检验和方差分析比较时间点变化。</div>
+    <div><b>结果·</b> FD值在术后6个月显著变化(p=0.022)，但趋势不稳定，不同方向图像间FD值无显著差异。</div>
+    <div><b>验证·</b> 仅有临床患者数据，无增材制造或力学测试验证。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+
+<script>
+const tabs = document.querySelectorAll('.tab');
+const pfs = document.querySelectorAll('.pf');
+let dirFilter = 'all';
+let prioFilter = 'HighMedium';
+function applyFilters(){
+  document.querySelectorAll('.paper').forEach(p=>{
+    const d = p.dataset.direction;
+    const pr = p.dataset.priority;
+    const dirOk = dirFilter==='all' || dirFilter===d;
+    const prOk = prioFilter==='all'
+                  || (prioFilter==='High' && pr==='High')
+                  || (prioFilter==='HighMedium' && (pr==='High'||pr==='Medium'));
+    p.dataset.hidden = (dirOk && prOk) ? '0' : '1';
+  });
+}
+tabs.forEach(t=>t.onclick=()=>{tabs.forEach(x=>x.classList.remove('active'));t.classList.add('active');dirFilter=t.dataset.filter;applyFilters();});
+pfs.forEach(t=>t.onclick=()=>{pfs.forEach(x=>x.classList.remove('active'));t.classList.add('active');prioFilter=t.dataset.prio;applyFilters();});
+applyFilters();
+</script>
+</body></html>

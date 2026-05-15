@@ -1,0 +1,423 @@
+<!doctype html><html lang="zh"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Research Radar — 2024-01-18</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:980px;margin:2rem auto;padding:0 1rem;color:#222;line-height:1.5}
+h1{font-size:24px;font-weight:500;margin:0 0 .25rem}
+.subtitle{color:#666;font-size:14px;margin-bottom:1.5rem}
+.topbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 0;margin-bottom:1.25rem;border-bottom:.5px solid #e2e0d8}
+.navbtn{font-size:13px;background:#f5f4ef;color:#444;padding:6px 12px;border-radius:8px;text-decoration:none}
+.navbtn:hover{background:#e9e7df}
+.navbtn.disabled{color:#bbb;background:#fafaf6;cursor:default}
+.archive-select{font-size:13px;padding:6px 10px;border:.5px solid #ccc;border-radius:8px;background:#fff;color:#444;cursor:pointer}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1.5rem}
+.stat{background:#f5f4ef;border-radius:8px;padding:.75rem 1rem}
+.stat-label{font-size:12px;color:#666}
+.stat-val{font-size:22px;font-weight:500;margin-top:2px}
+.tabs,.prio-filter{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:.75rem}
+.tab,.pf{background:transparent;border:.5px solid #ccc;border-radius:8px;padding:6px 14px;font-size:13px;cursor:pointer;color:#444}
+.tab.active,.pf.active{background:#222;color:#fff;border-color:#222}
+.paper{background:#fff;border:.5px solid #e2e0d8;border-radius:12px;padding:1rem 1.25rem;margin-bottom:12px}
+.paper-head{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+.priority{font-size:12px;font-weight:500;padding:3px 10px;border-radius:999px}
+.direction-pill{font-size:11px;padding:3px 8px;border-radius:8px}
+.source{font-size:11px;color:#999;text-transform:uppercase}
+.flag{font-size:11px;background:#eef;color:#335;padding:2px 7px;border-radius:6px}
+.paper-title{font-size:15px;font-weight:500;line-height:1.4;margin:4px 0}
+.meta{font-size:12px;color:#666;margin-bottom:10px}
+.meta>span{margin-right:12px}
+.relevance{font-size:13px;background:#fafaf6;padding:6px 10px;border-radius:6px;margin-bottom:8px}
+.summary{font-size:13px;line-height:1.65}
+.summary>div{margin-bottom:4px}
+.tags-row{margin-top:8px}
+.tag{font-size:10px;background:#f1efe8;color:#555;padding:2px 7px;border-radius:6px;margin-right:4px}
+.paper[data-hidden="1"]{display:none}
+footer.run-info{margin-top:3rem;padding-top:1rem;border-top:.5px solid #e2e0d8;font-size:12px;color:#666}
+footer.run-info summary{cursor:pointer;color:#444}
+footer.run-info table{margin-top:8px;font-family:ui-monospace,monospace;font-size:11px}
+footer.run-info td{padding:2px 12px 2px 0;vertical-align:top}
+footer.run-info td:first-child{color:#888;width:140px}
+details.summary-en{margin-top:8px;background:#f8f8f3;border-radius:8px;padding:6px 12px;border:.5px solid #e2e0d8}
+details.summary-en summary{cursor:pointer;font-size:12px;color:#555;font-weight:500}
+details.summary-en[open] summary{margin-bottom:8px}
+.summary.en{font-size:13px;color:#333;line-height:1.55}
+.summary.en>div{margin-bottom:3px}
+.key-terms{margin-top:8px;display:flex;flex-wrap:wrap;gap:6px}
+.term{font-size:11px;background:#fff;border:.5px solid #ddd;padding:3px 8px;border-radius:6px;color:#444}
+.term b{color:#222;font-weight:500}
+.affiliations{font-size:12px;color:#666;margin-top:6px;padding-left:6px;border-left:2px solid #ddd}
+.affiliations b{color:#444;font-weight:500}
+.corresponding{font-size:12px;color:#555;margin-top:3px;padding-left:6px;border-left:2px solid #aac}
+.corresponding b{color:#3F2E7E;font-weight:500}
+.corresp-aff{color:#888}
+.corresponding i{color:#888;font-size:11px}
+.relevance-level{font-size:11px;padding:3px 8px;border-radius:8px;font-weight:500}
+.lvl-direct{background:#D4EBC4;color:#2D5A14}
+.lvl-transferable{background:#E0DDF4;color:#3F2E7E}
+.lvl-peripheral{background:#F1EFE8;color:#666}
+.read-action{font-size:11px;padding:3px 8px;border-radius:8px;font-weight:500;font-style:italic}
+.act-read-now{background:#FFE8D6;color:#7D4515}
+.act-save-for-project{background:#E6E1F5;color:#3A2C7A}
+.act-skim-only{background:#F0F0E8;color:#5C5C50}
+.act-background-only{background:#F5F5F0;color:#777}
+.act-ignore{background:#F5E8E8;color:#7A3A3A}
+.validation-kind{font-size:10px;background:#EDF4FA;color:#1F4A6B;padding:2px 7px;border-radius:6px}
+.why-not-core{font-size:12px;background:#FCF5E8;border-left:3px solid #D8A045;padding:5px 10px;margin-top:4px;color:#5A4318;border-radius:0 6px 6px 0}
+</style></head><body>
+<h1>Research Radar</h1>
+<div class="subtitle">2024-01-18 · AI Bioprinting / Hip Implant / FEA Surrogate / AM Biomedical</div>
+<div class="topbar"><a class="navbtn" href="2024-01-17.html">← 2024-01-17</a><select class="archive-select" onchange="if(this.value)window.location.href=this.value"><option value="2026-06-01.html">2026-06-01</option><option value="2026-05-14.html">2026-05-14</option><option value="2026-05-13.html">2026-05-13</option><option value="2026-05-12.html">2026-05-12</option><option value="2026-05-11.html">2026-05-11</option><option value="2026-05-10.html">2026-05-10</option><option value="2026-05-09.html">2026-05-09</option><option value="2026-05-08.html">2026-05-08</option><option value="2026-05-07.html">2026-05-07</option><option value="2026-05-06.html">2026-05-06</option><option value="2026-05-05.html">2026-05-05</option><option value="2026-05-04.html">2026-05-04</option><option value="2026-05-02.html">2026-05-02</option><option value="2026-05-01.html">2026-05-01</option><option value="2026-04-30.html">2026-04-30</option><option value="2026-04-28.html">2026-04-28</option><option value="2026-04-27.html">2026-04-27</option><option value="2026-04-24.html">2026-04-24</option><option value="2026-04-01.html">2026-04-01</option><option value="2026-01-01.html">2026-01-01</option><option value="2025-05-01.html">2025-05-01</option><option value="2025-01-01.html">2025-01-01</option><option value="2024-12-01.html">2024-12-01</option><option value="2024-09-01.html">2024-09-01</option><option value="2024-08-27.html">2024-08-27</option><option value="2024-08-01.html">2024-08-01</option><option value="2024-06-01.html">2024-06-01</option><option value="2024-05-01.html">2024-05-01</option><option value="2024-04-22.html">2024-04-22</option><option value="2024-04-01.html">2024-04-01</option><option value="2024-03-15.html">2024-03-15</option><option value="2024-03-01.html">2024-03-01</option><option value="2024-02-23.html">2024-02-23</option><option value="2024-02-15.html">2024-02-15</option><option value="2024-02-14.html">2024-02-14</option><option value="2024-02-13.html">2024-02-13</option><option value="2024-02-12.html">2024-02-12</option><option value="2024-02-07.html">2024-02-07</option><option value="2024-02-05.html">2024-02-05</option><option value="2024-02-01.html">2024-02-01</option><option value="2024-01-31.html">2024-01-31</option><option value="2024-01-30.html">2024-01-30</option><option value="2024-01-29.html">2024-01-29</option><option value="2024-01-28.html">2024-01-28</option><option value="2024-01-27.html">2024-01-27</option><option value="2024-01-26.html">2024-01-26</option><option value="2024-01-25.html">2024-01-25</option><option value="2024-01-24.html">2024-01-24</option><option value="2024-01-23.html">2024-01-23</option><option value="2024-01-22.html">2024-01-22</option><option value="2024-01-21.html">2024-01-21</option><option value="2024-01-20.html">2024-01-20</option><option value="2024-01-19.html">2024-01-19</option><option value="2024-01-18.html" selected>2024-01-18</option><option value="2024-01-17.html">2024-01-17</option><option value="2024-01-16.html">2024-01-16</option><option value="2024-01-15.html">2024-01-15</option><option value="2024-01-14.html">2024-01-14</option><option value="2024-01-13.html">2024-01-13</option><option value="2024-01-12.html">2024-01-12</option><option value="2024-01-11.html">2024-01-11</option><option value="2024-01-10.html">2024-01-10</option><option value="2024-01-09.html">2024-01-09</option><option value="2024-01-08.html">2024-01-08</option><option value="2024-01-07.html">2024-01-07</option><option value="2024-01-06.html">2024-01-06</option><option value="2024-01-05.html">2024-01-05</option><option value="2024-01-04.html">2024-01-04</option><option value="2024-01-03.html">2024-01-03</option><option value="2024-01-02.html">2024-01-02</option><option value="2024-01-01.html">2024-01-01</option><option value="2023-12-30.html">2023-12-30</option><option value="2023-12-28.html">2023-12-28</option><option value="2023-12-27.html">2023-12-27</option><option value="2023-12-26.html">2023-12-26</option><option value="2023-12-24.html">2023-12-24</option><option value="2023-12-19.html">2023-12-19</option><option value="2023-12-01.html">2023-12-01</option><option value="2023-11-21.html">2023-11-21</option><option value="2023-11-01.html">2023-11-01</option><option value="2023-08-01.html">2023-08-01</option><option value="2023-06-01.html">2023-06-01</option><option value="2023-01-01.html">2023-01-01</option></select><a class="navbtn" href="2024-01-19.html">2024-01-19 →</a><a class="navbtn" href="weekly/index.html">📅 Weekly</a><a class="navbtn" href="status.html">📊 Status</a><a class="navbtn" href="search.html">🔍 Search</a></div>
+<div class="stats"><div class="stat"><div class="stat-label">Total scored</div><div class="stat-val">8</div></div><div class="stat"><div class="stat-label">High</div><div class="stat-val" style="color:#27500A">0</div></div><div class="stat"><div class="stat-label">Medium</div><div class="stat-val" style="color:#633806">1</div></div><div class="stat"><div class="stat-label">Low</div><div class="stat-val" style="color:#5F5E5A">3</div></div></div>
+<div class="tabs"><button class="tab active" data-filter="all">All</button><button class="tab" data-filter="ai_bioprinting">AI for Bioprinting</button><button class="tab" data-filter="hip_implant">Hip Implant &amp; Femoral Stem</button><button class="tab" data-filter="fea_surrogate">FEA &amp; Surrogate Modelling</button><button class="tab" data-filter="am_biomedical">AM Biomedical Materials</button></div>
+<div class="prio-filter"><button class="pf active" data-prio="HighMedium">High+Medium</button><button class="pf" data-prio="High">High only</button><button class="pf" data-prio="all">Show all</button></div>
+
+<article class="paper" data-direction="fea_surrogate" data-priority="Medium">
+  <div class="paper-head">
+    <span class="priority" style="background:#FAEEDA;color:#633806">Medium</span>
+    <span class="direction-pill" style="background:#D85A3020;color:#D85A30">FEA &amp; Surrogate Modelling</span>
+    <span class="source">arxiv</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Material-Response-Informed DeepONet and its Application to Polycrystal Stress-strain Prediction in Crystal Plasticity</h3>
+  <div class="meta">
+    <span class="authors">Junyan He, Deepankar Pal, Ali Najafi, Diab Abueidda, Seid Koric et al.</span>
+    <span class="venue">arXiv preprint</span>
+    <span class="date">2024-01-18</span>
+    <span class="doi"><a href="https://doi.org/10.1007/s11837-024-06681-5" target="_blank">10.1007/s11837-024-06681-5</a></span>
+  </div>
+  
+  
+  <div class="relevance"><b>相关性:</b> 代理建模方法可迁移至生物力学有限元，但未直接针对髋关节植入物或骨科设计。</div>
+  
+  <div class="summary">
+    <div><b>动机·</b> 晶体塑性模拟计算成本高昂，需要高效代理模型加速多尺度分析。</div>
+    <div><b>方法·</b> 提出材料响应感知DeepONet架构，使用卷积神经网络编码微观结构，并将单晶应力-应变曲线作为分支网络输入，支持迁移学习。</div>
+    <div><b>结果·</b> 预测速度比CP模拟快约1e4倍，R²&gt;0.99，95%预测相对误差≤5%，仅需20个新数据点即可微调至新条件。</div>
+    <div><b>验证·</b> 仅在CP模拟数据上验证，无实验或临床验证。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">FEA_SurrogateModelling</span> <span class="tag">FEA_DeepLearning</span></div>
+</article>
+<article class="paper" data-direction="ai_bioprinting" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#7F77DD20;color:#7F77DD">AI for Bioprinting</span>
+    <span class="source">arxiv</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Cardiac Digital Twin Pipeline for Virtual Therapy Evaluation</h3>
+  <div class="meta">
+    <span class="authors">Julia Camps, Zhinuo Jenny Wang, Ruben Doste, Maxx Holmes, Brodie Lawson et al.</span>
+    <span class="venue">arXiv preprint</span>
+    <span class="date">2024-01-18</span>
+    <span class="doi"><a href="http://arxiv.org/abs/2401.10029v1" target="_blank">link</a></span>
+  </div>
+  
+  
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="ai_bioprinting" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#7F77DD20;color:#7F77DD">AI for Bioprinting</span>
+    <span class="source">openalex</span>
+    
+    
+    
+    <span class="flag">Review</span>
+  </div>
+  <h3 class="paper-title">A Systematized Discussion on 3D Bioprinting for Tissue Engineering</h3>
+  <div class="meta">
+    <span class="authors">Prasanna Phutane, Pranita Jirwankar</span>
+    <span class="venue"></span>
+    <span class="date">2024-01-18</span>
+    <span class="doi"><a href="https://doi.org/10.1109/hiset61796.2024.00040" target="_blank">10.1109/hiset61796.2024.00040</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> DMIHER (DU),Datta Meghe College of Pharmacy,Department of Pharmaceutics,Wardha,India</div>
+  <div class="corresponding"><b>通讯:</b> Prasanna Phutane <span class="corresp-aff">@ DMIHER (DU),Datta Meghe College of Pharmacy,Department of Pharmaceutics,Wardha,India</span></div>
+  <div class="relevance"><b>相关性:</b> 为生物打印综述提供背景知识，但未涉及AI或实验验证，与用户核心研究方向关联较弱。</div>
+  
+  <div class="summary">
+    <div><b>动机·</b> 器官移植存在免疫反应、疾病传播等风险，组织工程作为一种替代方案，利用3D生物打印制造支架进行组织再生，但该技术仍存在诸多局限。</div>
+    <div><b>方法·</b> 系统综述3D生物打印在组织工程中的优势和不足。</div>
+    <div><b>结果·</b> 总结了3D生物打印的关键限制和改进方向。</div>
+    <div><b>验证·</b> 该论文为综述，不包含实验验证。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">Bioprinting_Review</span> <span class="tag">Bioprinting_General</span></div>
+</article>
+<article class="paper" data-direction="fea_surrogate" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#D85A3020;color:#D85A30">FEA &amp; Surrogate Modelling</span>
+    <span class="source">arxiv</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Approximation of Solution Operators for High-dimensional PDEs</h3>
+  <div class="meta">
+    <span class="authors">Nathan Gaby, Xiaojing Ye</span>
+    <span class="venue">arXiv preprint</span>
+    <span class="date">2024-01-18</span>
+    <span class="doi"><a href="http://arxiv.org/abs/2401.10385v1" target="_blank">link</a></span>
+  </div>
+  
+  
+  <div class="relevance"><b>相关性:</b> 该方法可作为FEA替代模型的参考，但缺乏生物力学或植入物设计的具体案例，需进一步适配。</div>
+  
+  <div class="summary">
+    <div><b>动机·</b> 高效近似高维发展型偏微分方程的解算子，解决传统数值方法在高维下的计算瓶颈。</div>
+    <div><b>方法·</b> 采用降阶模型（如深度神经网络）参数化解空间，通过神经常微分方程学习参数空间的控制律，使轨迹逼近真实解。</div>
+    <div><b>结果·</b> 在多个高维PDE（包括Hamilton-Jacobi-Bellman方程）上验证了精度和效率，但结果局限于理论示例和简单应用。</div>
+    <div><b>验证·</b> 仅有数值仿真，无实验或临床验证。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">FEA_SurrogateModelling</span> <span class="tag">PDE_SolutionOperator</span> <span class="tag">NeuralODE</span></div>
+</article>
+<article class="paper" data-direction="ai_bioprinting" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#7F77DD20;color:#7F77DD">AI for Bioprinting</span>
+    <span class="source">arxiv</span>
+    
+    
+    
+    <span class="flag">Exp. validation</span>
+  </div>
+  <h3 class="paper-title">Automatic dimensionality reduction of Twin-in-the-Loop Observers</h3>
+  <div class="meta">
+    <span class="authors">Giacomo Delcaro, Riccardo Poli, Federico Dettù, Simone Formentin, Sergio Matteo Savaresi</span>
+    <span class="venue">arXiv preprint</span>
+    <span class="date">2024-01-18</span>
+    <span class="doi"><a href="http://arxiv.org/abs/2401.10945v2" target="_blank">link</a></span>
+  </div>
+  
+  
+  <div class="relevance"><b>相关性:</b> 与用户的研究方向完全无关，属于汽车工程领域。</div>
+  
+  <div class="summary">
+    <div><b>动机·</b> 传统车辆动力学估计方法使用独立滤波模块，提出统一Twin-in-the-Loop观测器架构。</div>
+    <div><b>方法·</b> 采用贝叶斯优化调参，并利用监督/无监督学习降低观测器维度。</div>
+    <div><b>结果·</b> 在纵向和横向车辆动力学上验证了降维策略的有效性。</div>
+    <div><b>验证·</b> 使用真实世界数据进行验证。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="am_biomedical" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#185FA520;color:#185FA5">AM Biomedical Materials</span>
+    <span class="source">openalex</span>
+    
+    
+    
+    <span class="flag">Exp. validation</span>
+  </div>
+  <h3 class="paper-title">Room Temperature Corrosion Behavior of Selective Laser Melting (SLM)-Processed Ni-Fe Superalloy (Inconel 718) in 3.5% NaCl Solution at Different pH Conditions: Role of Microstructures</h3>
+  <div class="meta">
+    <span class="authors">Thomas Thuneman, Krishnan S. Raja, Indrajit Charit</span>
+    <span class="venue">Crystals</span>
+    <span class="date">2024-01-18</span>
+    <span class="doi"><a href="https://doi.org/10.3390/cryst14010089" target="_blank">10.3390/cryst14010089</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Nuclear Engineering and Industrial Management, University of Idaho, Idaho Falls, ID 83402, USA</div>
+  <div class="corresponding"><b>通讯:</b> Indrajit Charit <span class="corresp-aff">@ Nuclear Engineering and Industrial Management, University of Idaho, Idaho Falls, ID 83402, USA</span></div>
+  <div class="relevance"><b>相关性:</b> 与用户的四项研究方向均无关联，属于非生物医学领域的腐蚀研究。</div>
+  
+  <div class="summary">
+    <div><b>动机·</b> 研究SLM制备的Inconel 718在不同pH的NaCl溶液中的腐蚀行为，比较不同后处理状态与锻造材料的差异。</div>
+    <div><b>方法·</b> 采用电化学测试（线性极化、循环极化、阻抗谱等）分析四种SLM状态（AS-AM、AM-HIP、热处理、HIP+热处理）及锻造试样的腐蚀行为。</div>
+    <div><b>结果·</b> SLM试样在酸性氯化物溶液中耐蚀性优于锻造材料，AM-HIP试样因消除枝晶结构、降低孔隙率而耐蚀性最佳；两步时效处理因形成γ&#x27;和γ&#x27;&#x27;沉淀相而降低耐蚀性。</div>
+    <div><b>验证·</b> 仅有实验室电化学测试，无生物医学相关验证。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">AM_Materials_Corrosion</span></div>
+</article>
+<article class="paper" data-direction="am_biomedical" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#185FA520;color:#185FA5">AM Biomedical Materials</span>
+    <span class="source">openalex</span>
+    
+    
+    
+    <span class="flag">Exp. validation</span>
+  </div>
+  <h3 class="paper-title">Effect of Hatch Spacing on the Quality of Inconel 718 Alloy Part</h3>
+  <div class="meta">
+    <span class="authors">Yuyi Mao, Yintao Gao, Juan Hu, Xiaodong Shen, Hao Zhou</span>
+    <span class="venue">Materials</span>
+    <span class="date">2024-01-18</span>
+    <span class="doi"><a href="https://doi.org/10.3390/ma17020452" target="_blank">10.3390/ma17020452</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> College of Materials Science and Engineering, Nanjing Tech University, Nanjing 211816, China</div>
+  <div class="corresponding"><b>通讯:</b> Xiaodong Shen <span class="corresp-aff">@ College of Materials Science and Engineering, Nanjing Tech University, Nanjing 211816, China</span> &nbsp;|&nbsp; Hao Zhou <span class="corresp-aff">@ Nanjing Institute of Environmental Sciences, Ministry of Ecology and Environment, Nanjing 210042, China</span></div>
+  <div class="relevance"><b>相关性:</b> 与用户的生物打印综述、髋关节植入物设计、FEA代理建模或AM生物材料研究方向均无直接关联。</div>
+  
+  <div class="summary">
+    <div><b>动机·</b> 研究SLM中扫描间距对Inconel 718合金零件质量的影响。</div>
+    <div><b>方法·</b> 通过改变扫描间距（0.04-0.10 mm）制备样品，测试显微硬度、耐磨性和孔隙密度。</div>
+    <div><b>结果·</b> 发现0.06 mm扫描间距可获得较优的成形质量，过大或过小均导致缺陷。</div>
+    <div><b>验证·</b> 仅有工艺参数优化，无生物医学相关的实验验证。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">AM_Parameter Optimization</span></div>
+</article>
+<article class="paper" data-direction="fea_surrogate" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#D85A3020;color:#D85A30">FEA &amp; Surrogate Modelling</span>
+    <span class="source">arxiv</span>
+    
+    
+    
+    <span class="flag">UQ</span>
+  </div>
+  <h3 class="paper-title">Querying Easily Flip-flopped Samples for Deep Active Learning</h3>
+  <div class="meta">
+    <span class="authors">Seong Jin Cho, Gwangsu Kim, Junghyun Lee, Jinwoo Shin, Chang D. Yoo</span>
+    <span class="venue">arXiv preprint</span>
+    <span class="date">2024-01-18</span>
+    <span class="doi"><a href="http://arxiv.org/abs/2401.09787v2" target="_blank">link</a></span>
+  </div>
+  
+  
+  <div class="relevance"><b>相关性:</b> 该论文属于纯机器学习方法研究，与用户的四维研究方向均无直接关联。</div>
+  
+  <div class="summary">
+    <div><b>动机·</b> 主动学习中，基于不确定性的采样策略计算复杂，尤其是多分类任务中的决策边界距离难以获取。</div>
+    <div><b>方法·</b> 提出最小分歧度量（LDM）作为样本不确定性的估计，利用参数扰动高效计算，并据此选择不确定样本进行标注。</div>
+    <div><b>结果·</b> 基于LDM的主动学习算法在多个数据集和深度架构上取得了最优整体性能。</div>
+    <div><b>验证·</b> 仅在标准分类数据集上进行了实验验证，无实际应用验证。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">DeepLearning</span> <span class="tag">ActiveLearning</span></div>
+</article>
+
+<script>
+const tabs = document.querySelectorAll('.tab');
+const pfs = document.querySelectorAll('.pf');
+let dirFilter = 'all';
+let prioFilter = 'HighMedium';
+function applyFilters(){
+  document.querySelectorAll('.paper').forEach(p=>{
+    const d = p.dataset.direction;
+    const pr = p.dataset.priority;
+    const dirOk = dirFilter==='all' || dirFilter===d;
+    const prOk = prioFilter==='all'
+                  || (prioFilter==='High' && pr==='High')
+                  || (prioFilter==='HighMedium' && (pr==='High'||pr==='Medium'));
+    p.dataset.hidden = (dirOk && prOk) ? '0' : '1';
+  });
+}
+tabs.forEach(t=>t.onclick=()=>{tabs.forEach(x=>x.classList.remove('active'));t.classList.add('active');dirFilter=t.dataset.filter;applyFilters();});
+pfs.forEach(t=>t.onclick=()=>{pfs.forEach(x=>x.classList.remove('active'));t.classList.add('active');prioFilter=t.dataset.prio;applyFilters();});
+applyFilters();
+</script>
+</body></html>

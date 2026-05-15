@@ -1,0 +1,669 @@
+<!doctype html><html lang="zh"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Research Radar — 2024-01-23</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:980px;margin:2rem auto;padding:0 1rem;color:#222;line-height:1.5}
+h1{font-size:24px;font-weight:500;margin:0 0 .25rem}
+.subtitle{color:#666;font-size:14px;margin-bottom:1.5rem}
+.topbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 0;margin-bottom:1.25rem;border-bottom:.5px solid #e2e0d8}
+.navbtn{font-size:13px;background:#f5f4ef;color:#444;padding:6px 12px;border-radius:8px;text-decoration:none}
+.navbtn:hover{background:#e9e7df}
+.navbtn.disabled{color:#bbb;background:#fafaf6;cursor:default}
+.archive-select{font-size:13px;padding:6px 10px;border:.5px solid #ccc;border-radius:8px;background:#fff;color:#444;cursor:pointer}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1.5rem}
+.stat{background:#f5f4ef;border-radius:8px;padding:.75rem 1rem}
+.stat-label{font-size:12px;color:#666}
+.stat-val{font-size:22px;font-weight:500;margin-top:2px}
+.tabs,.prio-filter{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:.75rem}
+.tab,.pf{background:transparent;border:.5px solid #ccc;border-radius:8px;padding:6px 14px;font-size:13px;cursor:pointer;color:#444}
+.tab.active,.pf.active{background:#222;color:#fff;border-color:#222}
+.paper{background:#fff;border:.5px solid #e2e0d8;border-radius:12px;padding:1rem 1.25rem;margin-bottom:12px}
+.paper-head{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+.priority{font-size:12px;font-weight:500;padding:3px 10px;border-radius:999px}
+.direction-pill{font-size:11px;padding:3px 8px;border-radius:8px}
+.source{font-size:11px;color:#999;text-transform:uppercase}
+.flag{font-size:11px;background:#eef;color:#335;padding:2px 7px;border-radius:6px}
+.paper-title{font-size:15px;font-weight:500;line-height:1.4;margin:4px 0}
+.meta{font-size:12px;color:#666;margin-bottom:10px}
+.meta>span{margin-right:12px}
+.relevance{font-size:13px;background:#fafaf6;padding:6px 10px;border-radius:6px;margin-bottom:8px}
+.summary{font-size:13px;line-height:1.65}
+.summary>div{margin-bottom:4px}
+.tags-row{margin-top:8px}
+.tag{font-size:10px;background:#f1efe8;color:#555;padding:2px 7px;border-radius:6px;margin-right:4px}
+.paper[data-hidden="1"]{display:none}
+footer.run-info{margin-top:3rem;padding-top:1rem;border-top:.5px solid #e2e0d8;font-size:12px;color:#666}
+footer.run-info summary{cursor:pointer;color:#444}
+footer.run-info table{margin-top:8px;font-family:ui-monospace,monospace;font-size:11px}
+footer.run-info td{padding:2px 12px 2px 0;vertical-align:top}
+footer.run-info td:first-child{color:#888;width:140px}
+details.summary-en{margin-top:8px;background:#f8f8f3;border-radius:8px;padding:6px 12px;border:.5px solid #e2e0d8}
+details.summary-en summary{cursor:pointer;font-size:12px;color:#555;font-weight:500}
+details.summary-en[open] summary{margin-bottom:8px}
+.summary.en{font-size:13px;color:#333;line-height:1.55}
+.summary.en>div{margin-bottom:3px}
+.key-terms{margin-top:8px;display:flex;flex-wrap:wrap;gap:6px}
+.term{font-size:11px;background:#fff;border:.5px solid #ddd;padding:3px 8px;border-radius:6px;color:#444}
+.term b{color:#222;font-weight:500}
+.affiliations{font-size:12px;color:#666;margin-top:6px;padding-left:6px;border-left:2px solid #ddd}
+.affiliations b{color:#444;font-weight:500}
+.corresponding{font-size:12px;color:#555;margin-top:3px;padding-left:6px;border-left:2px solid #aac}
+.corresponding b{color:#3F2E7E;font-weight:500}
+.corresp-aff{color:#888}
+.corresponding i{color:#888;font-size:11px}
+.relevance-level{font-size:11px;padding:3px 8px;border-radius:8px;font-weight:500}
+.lvl-direct{background:#D4EBC4;color:#2D5A14}
+.lvl-transferable{background:#E0DDF4;color:#3F2E7E}
+.lvl-peripheral{background:#F1EFE8;color:#666}
+.read-action{font-size:11px;padding:3px 8px;border-radius:8px;font-weight:500;font-style:italic}
+.act-read-now{background:#FFE8D6;color:#7D4515}
+.act-save-for-project{background:#E6E1F5;color:#3A2C7A}
+.act-skim-only{background:#F0F0E8;color:#5C5C50}
+.act-background-only{background:#F5F5F0;color:#777}
+.act-ignore{background:#F5E8E8;color:#7A3A3A}
+.validation-kind{font-size:10px;background:#EDF4FA;color:#1F4A6B;padding:2px 7px;border-radius:6px}
+.why-not-core{font-size:12px;background:#FCF5E8;border-left:3px solid #D8A045;padding:5px 10px;margin-top:4px;color:#5A4318;border-radius:0 6px 6px 0}
+</style></head><body>
+<h1>Research Radar</h1>
+<div class="subtitle">2024-01-23 · AI Bioprinting / Hip Implant / FEA Surrogate / AM Biomedical</div>
+<div class="topbar"><a class="navbtn" href="2024-01-22.html">← 2024-01-22</a><select class="archive-select" onchange="if(this.value)window.location.href=this.value"><option value="2026-06-01.html">2026-06-01</option><option value="2026-05-14.html">2026-05-14</option><option value="2026-05-13.html">2026-05-13</option><option value="2026-05-12.html">2026-05-12</option><option value="2026-05-11.html">2026-05-11</option><option value="2026-05-10.html">2026-05-10</option><option value="2026-05-09.html">2026-05-09</option><option value="2026-05-08.html">2026-05-08</option><option value="2026-05-07.html">2026-05-07</option><option value="2026-05-06.html">2026-05-06</option><option value="2026-05-05.html">2026-05-05</option><option value="2026-05-04.html">2026-05-04</option><option value="2026-05-02.html">2026-05-02</option><option value="2026-05-01.html">2026-05-01</option><option value="2026-04-30.html">2026-04-30</option><option value="2026-04-28.html">2026-04-28</option><option value="2026-04-27.html">2026-04-27</option><option value="2026-04-24.html">2026-04-24</option><option value="2026-04-01.html">2026-04-01</option><option value="2026-01-01.html">2026-01-01</option><option value="2025-05-01.html">2025-05-01</option><option value="2025-01-01.html">2025-01-01</option><option value="2024-12-01.html">2024-12-01</option><option value="2024-09-01.html">2024-09-01</option><option value="2024-08-27.html">2024-08-27</option><option value="2024-08-01.html">2024-08-01</option><option value="2024-06-01.html">2024-06-01</option><option value="2024-05-01.html">2024-05-01</option><option value="2024-04-22.html">2024-04-22</option><option value="2024-04-01.html">2024-04-01</option><option value="2024-03-15.html">2024-03-15</option><option value="2024-03-01.html">2024-03-01</option><option value="2024-02-23.html">2024-02-23</option><option value="2024-02-15.html">2024-02-15</option><option value="2024-02-14.html">2024-02-14</option><option value="2024-02-13.html">2024-02-13</option><option value="2024-02-12.html">2024-02-12</option><option value="2024-02-07.html">2024-02-07</option><option value="2024-02-05.html">2024-02-05</option><option value="2024-02-01.html">2024-02-01</option><option value="2024-01-31.html">2024-01-31</option><option value="2024-01-30.html">2024-01-30</option><option value="2024-01-29.html">2024-01-29</option><option value="2024-01-28.html">2024-01-28</option><option value="2024-01-27.html">2024-01-27</option><option value="2024-01-26.html">2024-01-26</option><option value="2024-01-25.html">2024-01-25</option><option value="2024-01-24.html">2024-01-24</option><option value="2024-01-23.html" selected>2024-01-23</option><option value="2024-01-22.html">2024-01-22</option><option value="2024-01-21.html">2024-01-21</option><option value="2024-01-20.html">2024-01-20</option><option value="2024-01-19.html">2024-01-19</option><option value="2024-01-18.html">2024-01-18</option><option value="2024-01-17.html">2024-01-17</option><option value="2024-01-16.html">2024-01-16</option><option value="2024-01-15.html">2024-01-15</option><option value="2024-01-14.html">2024-01-14</option><option value="2024-01-13.html">2024-01-13</option><option value="2024-01-12.html">2024-01-12</option><option value="2024-01-11.html">2024-01-11</option><option value="2024-01-10.html">2024-01-10</option><option value="2024-01-09.html">2024-01-09</option><option value="2024-01-08.html">2024-01-08</option><option value="2024-01-07.html">2024-01-07</option><option value="2024-01-06.html">2024-01-06</option><option value="2024-01-05.html">2024-01-05</option><option value="2024-01-04.html">2024-01-04</option><option value="2024-01-03.html">2024-01-03</option><option value="2024-01-02.html">2024-01-02</option><option value="2024-01-01.html">2024-01-01</option><option value="2023-12-30.html">2023-12-30</option><option value="2023-12-28.html">2023-12-28</option><option value="2023-12-27.html">2023-12-27</option><option value="2023-12-26.html">2023-12-26</option><option value="2023-12-24.html">2023-12-24</option><option value="2023-12-19.html">2023-12-19</option><option value="2023-12-01.html">2023-12-01</option><option value="2023-11-21.html">2023-11-21</option><option value="2023-11-01.html">2023-11-01</option><option value="2023-08-01.html">2023-08-01</option><option value="2023-06-01.html">2023-06-01</option><option value="2023-01-01.html">2023-01-01</option></select><a class="navbtn" href="2024-01-24.html">2024-01-24 →</a><a class="navbtn" href="weekly/index.html">📅 Weekly</a><a class="navbtn" href="status.html">📊 Status</a><a class="navbtn" href="search.html">🔍 Search</a></div>
+<div class="stats"><div class="stat"><div class="stat-label">Total scored</div><div class="stat-val">14</div></div><div class="stat"><div class="stat-label">High</div><div class="stat-val" style="color:#27500A">0</div></div><div class="stat"><div class="stat-label">Medium</div><div class="stat-val" style="color:#633806">4</div></div><div class="stat"><div class="stat-label">Low</div><div class="stat-val" style="color:#5F5E5A">4</div></div></div>
+<div class="tabs"><button class="tab active" data-filter="all">All</button><button class="tab" data-filter="ai_bioprinting">AI for Bioprinting</button><button class="tab" data-filter="hip_implant">Hip Implant &amp; Femoral Stem</button><button class="tab" data-filter="fea_surrogate">FEA &amp; Surrogate Modelling</button><button class="tab" data-filter="am_biomedical">AM Biomedical Materials</button></div>
+<div class="prio-filter"><button class="pf active" data-prio="HighMedium">High+Medium</button><button class="pf" data-prio="High">High only</button><button class="pf" data-prio="all">Show all</button></div>
+
+<article class="paper" data-direction="am_biomedical" data-priority="Medium">
+  <div class="paper-head">
+    <span class="priority" style="background:#FAEEDA;color:#633806">Medium</span>
+    <span class="direction-pill" style="background:#185FA520;color:#185FA5">AM Biomedical Materials</span>
+    <span class="source">openalex</span>
+    
+    
+    
+    <span class="flag">Exp. validation</span>
+  </div>
+  <h3 class="paper-title">Microstructural evolution and mechanical properties of Ti55531–0.5Nb fabricated by selective laser melting under different heat treatments</h3>
+  <div class="meta">
+    <span class="authors">Pingguang Xu, Huichao Liu, Lvjun Zhou, Jun Tang</span>
+    <span class="venue">Materials Characterization</span>
+    <span class="date">2024-01-23</span>
+    <span class="doi"><a href="https://doi.org/10.1016/j.matchar.2024.113683" target="_blank">10.1016/j.matchar.2024.113683</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Institute of Nuclear Science and Technology, Sichuan University, Chengdu 610064, PR China</div>
+  <div class="corresponding"><b>通讯:</b> Jun Tang <span class="corresp-aff">@ Institute of Nuclear Science and Technology, Sichuan University, Chengdu 610064, PR China</span></div>
+  <div class="relevance"><b>相关性:</b> 与AM生物医学材料方向相关，但未涉及多孔结构、应力屏蔽或疲劳等具体应用需求。</div>
+  
+  <div class="summary">
+    <div><b>动机·</b> 研究不同热处理条件下SLM制备的Ti55531-0.5Nb合金的显微组织演变和力学性能，以优化其综合性能。</div>
+    <div><b>方法·</b> 采用选区激光熔化（SLM）制备合金，随后进行不同热处理，通过显微组织表征和力学测试分析其性能。</div>
+    <div><b>结果·</b> 揭示了热处理对合金显微组织和力学性能的影响规律，为工艺优化提供依据。</div>
+    <div><b>验证·</b> 基于实验室实验，包含显微组织和力学性能测试，无临床或体内验证。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">AdditiveManufacturing_SLM</span> <span class="tag">MaterialScience_TitaniumAlloy</span> <span class="tag">BiomedicalMaterial_Ti55531</span></div>
+</article>
+<article class="paper" data-direction="fea_surrogate" data-priority="Medium">
+  <div class="paper-head">
+    <span class="priority" style="background:#FAEEDA;color:#633806">Medium</span>
+    <span class="direction-pill" style="background:#D85A3020;color:#D85A30">FEA &amp; Surrogate Modelling</span>
+    <span class="source">arxiv</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Binary structured physics-informed neural networks for solving equations with rapidly changing solutions</h3>
+  <div class="meta">
+    <span class="authors">Yanzhi Liu, Ruifan Wu, Ying Jiang</span>
+    <span class="venue">arXiv preprint</span>
+    <span class="date">2024-01-23</span>
+    <span class="doi"><a href="http://arxiv.org/abs/2401.12806v2" target="_blank">link</a></span>
+  </div>
+  
+  
+  <div class="relevance"><b>相关性:</b> 提供一种改进的PINN方法，可迁移至骨科植入物设计的代理建模，但需结合具体生物力学问题。</div>
+  
+  <div class="summary">
+    <div><b>动机·</b> 解决PINN在处理快速变化解时收敛慢、易陷入局部最优和精度低的问题。</div>
+    <div><b>方法·</b> 提出二值结构物理信息神经网络(BsPINN)，采用二值神经网络减少神经元连接，提高局部特征捕获效率。</div>
+    <div><b>结果·</b> 在Burgers、Euler、Helmholtz和高维Poisson等方程上，BsPINN收敛更快且精度高于标准PINN。</div>
+    <div><b>验证·</b> 仅在数值实验中验证，无实际实验或临床验证。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">FEA_Surrogate_PINN</span> <span class="tag">FEA_Surrogate_BsPINN</span></div>
+</article>
+<article class="paper" data-direction="fea_surrogate" data-priority="Medium">
+  <div class="paper-head">
+    <span class="priority" style="background:#FAEEDA;color:#633806">Medium</span>
+    <span class="direction-pill" style="background:#D85A3020;color:#D85A30">FEA &amp; Surrogate Modelling</span>
+    <span class="source">arxiv</span>
+    
+    
+    
+    <span class="flag">Exp. validation</span> <span class="flag">UQ</span>
+  </div>
+  <h3 class="paper-title">Integrating Human Expertise in Continuous Spaces: A Novel Interactive Bayesian Optimization Framework with Preference Expected Improvement</h3>
+  <div class="meta">
+    <span class="authors">Nikolaus Feith, Elmar Rueckert</span>
+    <span class="venue">arXiv preprint</span>
+    <span class="date">2024-01-23</span>
+    <span class="doi"><a href="http://arxiv.org/abs/2401.12662v1" target="_blank">link</a></span>
+  </div>
+  
+  
+  <div class="relevance"><b>相关性:</b> 与FEA代理建模方向相关，但缺少约束处理、不确定量化和生物力学设计验证。</div>
+  
+  <div class="summary">
+    <div><b>动机·</b> 将人类专业知识融入贝叶斯优化框架，以处理连续空间中的交互式机器学习问题。</div>
+    <div><b>方法·</b> 提出交互式贝叶斯优化（IBO）框架，并引入新的采集函数偏好期望改进（PEI）来建模用户偏好。</div>
+    <div><b>结果·</b> 在仿真和真实机器人任务中验证了人机协作的有效性。</div>
+    <div><b>验证·</b> 仅包含仿真和机器人实验，无生物医学验证。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">Surrogate_BayesianOptimization</span> <span class="tag">HumanInTheLoop</span></div>
+</article>
+<article class="paper" data-direction="fea_surrogate" data-priority="Medium">
+  <div class="paper-head">
+    <span class="priority" style="background:#FAEEDA;color:#633806">Medium</span>
+    <span class="direction-pill" style="background:#D85A3020;color:#D85A30">FEA &amp; Surrogate Modelling</span>
+    <span class="source">arxiv</span>
+    
+    
+    
+    <span class="flag">Exp. validation</span>
+  </div>
+  <h3 class="paper-title">Quantitative Analysis of Molecular Transport in the Extracellular Space Using Physics-Informed Neural Network</h3>
+  <div class="meta">
+    <span class="authors">Jiayi Xie, Hongfeng Li, Jin Cheng, Qingrui Cai, Hanbo Tan et al.</span>
+    <span class="venue">arXiv preprint</span>
+    <span class="date">2024-01-23</span>
+    <span class="doi"><a href="http://arxiv.org/abs/2401.12435v2" target="_blank">link</a></span>
+  </div>
+  
+  
+  <div class="relevance"><b>相关性:</b> 该方法展示了PINN在解决逆问题中的应用，但对用户关于髋关节植入物、生物打印或增材制造的生物医学材料研究无直接贡献。</div>
+  
+  <div class="summary">
+    <div><b>动机·</b> 研究脑细胞外空间中分子运输的具体形式，如扩散和对流的主导作用。</div>
+    <div><b>方法·</b> 利用物理信息神经网络（PINN）求解对流扩散方程的逆问题，自动计算扩散系数和对流速度，并计算Peclet数判断运输模式。</div>
+    <div><b>结果·</b> 通过两组不同时间点的MRI数据验证，PINN能够识别出相同的分子运输模式，证明方法有效性。</div>
+    <div><b>验证·</b> 使用大鼠脑部的MRI数据进行实验验证，但无额外的物理实验或临床数据。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">FEA_SurrogateModelling</span> <span class="tag">PINN</span> <span class="tag">MolecularTransport</span> <span class="tag">InverseProblem</span></div>
+</article>
+<article class="paper" data-direction="ai_bioprinting" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#7F77DD20;color:#7F77DD">AI for Bioprinting</span>
+    <span class="source">openalex</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Designed Microbial Biosynthesis of Hierarchical Bone-Mimetic Biocomposites in 3D-Printed Soft Bioreactors</h3>
+  <div class="meta">
+    <span class="authors">Shan Liu, Muxuan Yang, Hazel A. Barton, Weinan Xu</span>
+    <span class="venue">ACS Applied Materials &amp; Interfaces</span>
+    <span class="date">2024-01-23</span>
+    <span class="doi"><a href="https://doi.org/10.1021/acsami.3c15706" target="_blank">10.1021/acsami.3c15706</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> School of Polymer Science and Polymer Engineering, The University of Akron, Akron, Ohio 44325, United States</div>
+  <div class="corresponding"><b>通讯:</b> Weinan Xu <span class="corresp-aff">@ School of Polymer Science and Polymer Engineering, The University of Akron, Akron, Ohio 44325, United States</span></div>
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="am_biomedical" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#185FA520;color:#185FA5">AM Biomedical Materials</span>
+    <span class="source">openalex</span>
+    
+    
+    
+    <span class="flag">Exp. validation</span>
+  </div>
+  <h3 class="paper-title">Understanding Melt Pool Behavior of 316L Stainless Steel in Laser Powder Bed Fusion Additive Manufacturing</h3>
+  <div class="meta">
+    <span class="authors">Zilong Zhang, Tianyu Zhang, Can Sun, Sivaji Karna, Lang Yuan</span>
+    <span class="venue">Micromachines</span>
+    <span class="date">2024-01-23</span>
+    <span class="doi"><a href="https://doi.org/10.3390/mi15020170" target="_blank">10.3390/mi15020170</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Department of Mechanical Engineering, University of South Carolina, Columbia, SC 29201, USA</div>
+  <div class="corresponding"><b>通讯:</b> Lang Yuan <span class="corresp-aff">@ Department of Mechanical Engineering, University of South Carolina, Columbia, SC 29201, USA</span></div>
+  <div class="relevance"><b>相关性:</b> 为LPBF加工316L不锈钢提供了基础理解，但未直接服务于生物医学增材制造中的结构设计或性能验证。</div>
+  
+  <div class="summary">
+    <div><b>动机·</b> 理解激光粉末床熔融增材制造中的熔池行为，以优化工艺质量。</div>
+    <div><b>方法·</b> 通过单道激光扫描实验观察熔池特征，并开发包含流体动力学、传热、汽化和凝固的高保真计算模型。</div>
+    <div><b>结果·</b> 模型成功预测了传导模式和锁孔模式以及不规则表面特征，解释了高功率高速条件下膨大-下切缺陷的形成机制。</div>
+    <div><b>验证·</b> 实验验证了熔池尺寸和形态的预测结果，具有实验支持。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">AM_MeltPool</span> <span class="tag">AM_LPBF</span> <span class="tag">AM_316L</span></div>
+</article>
+<article class="paper" data-direction="am_biomedical" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#185FA520;color:#185FA5">AM Biomedical Materials</span>
+    <span class="source">openalex</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Role of shielding gas and rolling treatment on mechanical properties of CP-Ti sheet fabricated by selective laser melting</h3>
+  <div class="meta">
+    <span class="authors">Pinghu Chen, Changjun Qiu, Wenxing Wu, Ruiqing Li, Yun Zhang et al.</span>
+    <span class="venue">Journal of Materials Research and Technology</span>
+    <span class="date">2024-01-23</span>
+    <span class="doi"><a href="https://doi.org/10.1016/j.jmrt.2024.01.199" target="_blank">10.1016/j.jmrt.2024.01.199</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> College of Mechanical Engineering, Key Laboratory of Hunan Province of Equipment Safety Service Technology Under Extreme Environment, University of South China, 421001, Hengyang, China</div>
+  <div class="corresponding"><b>通讯:</b> Yinghao Zhou <span class="corresp-aff">@ Department of Materials Science and Engineering, Southern University of Science and Technology, 518055, Shenzhen, China</span></div>
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="fea_surrogate" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#D85A3020;color:#D85A30">FEA &amp; Surrogate Modelling</span>
+    <span class="source">arxiv</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Adaptive Uncertainty Quantification for Stochastic Hyperbolic Conservation Laws</h3>
+  <div class="meta">
+    <span class="authors">Jake J. Harmon, Svetlana Tokareva, Anatoly Zlotnik, Pieter J. Swart</span>
+    <span class="venue">arXiv preprint</span>
+    <span class="date">2024-01-23</span>
+    <span class="doi"><a href="http://arxiv.org/abs/2401.12880v1" target="_blank">link</a></span>
+  </div>
+  
+  
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="fea_surrogate" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#D85A3020;color:#D85A30">FEA &amp; Surrogate Modelling</span>
+    <span class="source">arxiv</span>
+    
+    
+    
+    <span class="flag">Exp. validation</span>
+  </div>
+  <h3 class="paper-title">MORPH: Towards Automated Concept Drift Adaptation for Malware Detection</h3>
+  <div class="meta">
+    <span class="authors">Md Tanvirul Alam, Romy Fieblinger, Ashim Mahara, Nidhi Rastogi</span>
+    <span class="venue">arXiv preprint</span>
+    <span class="date">2024-01-23</span>
+    <span class="doi"><a href="http://arxiv.org/abs/2401.12790v1" target="_blank">link</a></span>
+  </div>
+  
+  
+  <div class="relevance"><b>相关性:</b> 该论文与用户的研究方向无关。</div>
+  
+  <div class="summary">
+    <div><b>动机·</b> 该研究旨在解决恶意软件检测中概念漂移导致的模型性能退化问题。</div>
+    <div><b>方法·</b> 提出了一种基于伪标签的概念漂移适应方法MORPH，通过自训练和主动学习减少标注成本。</div>
+    <div><b>结果·</b> 在Android和Windows恶意软件数据集上验证了方法的有效性。</div>
+    <div><b>验证·</b> 仅基于公开数据集进行实验验证，无真实临床试验。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="fea_surrogate" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#D85A3020;color:#D85A30">FEA &amp; Surrogate Modelling</span>
+    <span class="source">arxiv</span>
+    
+    
+    
+    <span class="flag">Exp. validation</span>
+  </div>
+  <h3 class="paper-title">Falcon: Fair Active Learning using Multi-armed Bandits</h3>
+  <div class="meta">
+    <span class="authors">Ki Hyun Tae, Hantian Zhang, Jaeyoung Park, Kexin Rong, Steven Euijong Whang</span>
+    <span class="venue">arXiv preprint</span>
+    <span class="date">2024-01-23</span>
+    <span class="doi"><a href="http://arxiv.org/abs/2401.12722v2" target="_blank">link</a></span>
+  </div>
+  
+  
+  <div class="relevance"><b>相关性:</b> 无关联，未涉及有限元模拟、代理模型、优化或生物医学工程。</div>
+  
+  <div class="summary">
+    <div><b>动机·</b> 数据偏差会导致不公平的机器学习模型，需在数据标注阶段嵌入公平性。</div>
+    <div><b>方法·</b> 提出Falcon框架，采用多臂赌博机策略在信息性和延迟率之间自动平衡，选择样本以改善公平性。</div>
+    <div><b>结果·</b> Falcon在公平性和准确性上显著优于现有方法，公平性得分最高可达次优结果的1.8-4.5倍。</div>
+    <div><b>验证·</b> 仅在标准机器学习数据集上进行实验验证，无实际工程或生物医学验证。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">Unrelated_Fairness &amp; Active Learning</span></div>
+</article>
+<article class="paper" data-direction="fea_surrogate" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#D85A3020;color:#D85A30">FEA &amp; Surrogate Modelling</span>
+    <span class="source">arxiv</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Learning from the Best: Active Learning for Wireless Communications</h3>
+  <div class="meta">
+    <span class="authors">Nasim Soltani, Jifan Zhang, Batool Salehi, Debashri Roy, Robert Nowak et al.</span>
+    <span class="venue">arXiv preprint</span>
+    <span class="date">2024-01-23</span>
+    <span class="doi"><a href="http://arxiv.org/abs/2402.04896v1" target="_blank">link</a></span>
+  </div>
+  
+  
+  <div class="relevance"><b>相关性:</b> 完全不相关：该论文属于无线通信领域，与生物打印、髋关节植入物、FEA替代模型或生物医学增材制造无关。</div>
+  
+  <div class="summary">
+    <div><b>动机·</b> 无线通信中深度学习标签获取昂贵，需要减少标注成本。</div>
+    <div><b>方法·</b> 引入主动学习算法，识别关键样本仅标注部分数据。</div>
+    <div><b>结果·</b> 在毫米波波束选择任务中，主动学习可减少50%标注量而不损失精度。</div>
+    <div><b>验证·</b> 仅基于公开数据集仿真验证，无实验或临床验证。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">ActiveLearning_WirelessCommunications</span> <span class="tag">ML_Communication</span></div>
+</article>
+<article class="paper" data-direction="fea_surrogate" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#D85A3020;color:#D85A30">FEA &amp; Surrogate Modelling</span>
+    <span class="source">arxiv</span>
+    
+    
+    
+    <span class="flag">UQ</span>
+  </div>
+  <h3 class="paper-title">Towards Improved Variational Inference for Deep Bayesian Models</h3>
+  <div class="meta">
+    <span class="authors">Sebastian W. Ober</span>
+    <span class="venue">arXiv preprint</span>
+    <span class="date">2024-01-23</span>
+    <span class="doi"><a href="https://doi.org/10.17863/CAM.102025" target="_blank">10.17863/CAM.102025</a></span>
+  </div>
+  
+  
+  <div class="relevance"><b>相关性:</b> 该论文的方法论虽涉及不确定性量化，但未应用于生物力学或植入物设计，无法直接服务于用户的研究方向。</div>
+  
+  <div class="summary">
+    <div><b>动机·</b> 深度模型通过最大似然估计训练往往过度自信且校准差，贝叶斯深度学习试图通过后验推断解决，但真实后验难以处理。</div>
+    <div><b>方法·</b> 探索变分推断在深度模型中的三个方面：参数推断的必要性、统一贝叶斯神经网络与深度高斯过程的变分后验、通过分析移除对称性改进深度高斯过程推断。</div>
+    <div><b>结果·</b> 为变分推断在深度模型中的充分应用提供了理论基础和改进方向。</div>
+    <div><b>验证·</b> 纯方法论论文，无实验验证。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">ML_DeepLearning</span> <span class="tag">ML_BayesianInference</span></div>
+</article>
+<article class="paper" data-direction="hip_implant" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#1D9E7520;color:#1D9E75">Hip Implant &amp; Femoral Stem</span>
+    <span class="source">openalex</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Total hip arthroplasty performed in summer is not associated with increased risk of revision due to prosthetic joint infection: a cohort study on 58 449 patients with osteoarthritis from the Danish Hip Arthroplasty Register</h3>
+  <div class="meta">
+    <span class="authors">Rajzan Joanroy, Jens Kjølseth Møller, Sophie Gubbels, Søren Overgaard, Claus Varnum</span>
+    <span class="venue">Journal of Bone and Joint Infection</span>
+    <span class="date">2024-01-23</span>
+    <span class="doi"><a href="https://doi.org/10.5194/jbji-9-1-2024" target="_blank">10.5194/jbji-9-1-2024</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Department of Orthopaedic Surgery, Lillebaelt Hospital, Vejle, Denmark</div>
+  <div class="corresponding"><b>通讯:</b> Rajzan Joanroy <span class="corresp-aff">@ Department of Orthopaedic Surgery, Lillebaelt Hospital, Vejle, Denmark</span> &nbsp;|&nbsp; Jens Kjølseth Møller <span class="corresp-aff">@ Department of Clinical Microbiology, Lillebaelt Hospital, Vejle, Denmark</span> &nbsp;|&nbsp; Sophie Gubbels <span class="corresp-aff">@ Division of Infectious Disease Preparedness, Statens Serum Institut, Copenhagen, Denmark</span> &nbsp;|&nbsp; Søren Overgaard <span class="corresp-aff">@ Department of Clinical Medicine, Faculty of Health and Medical Sciences, University of Copenhagen, Copenhagen, Denmark</span> &nbsp;|&nbsp; Claus Varnum <span class="corresp-aff">@ Department of Orthopaedic Surgery, Lillebaelt Hospital, Vejle, Denmark</span></div>
+  <div class="relevance"><b>相关性:</b> 该论文为纯临床流行病学研究，与生物打印、髋关节植入物设计、有限元分析或增材制造均无关联。</div>
+  
+  <div class="summary">
+    <div><b>动机·</b> 探讨夏季进行全髋关节置换术是否增加因假体关节感染而翻修的风险。</div>
+    <div><b>方法·</b> 基于丹麦髋关节置换注册数据库，对58449例骨关节炎患者进行队列研究。</div>
+    <div><b>结果·</b> 未发现夏季手术与假体关节感染翻修风险或任何翻修风险之间存在关联。</div>
+    <div><b>验证·</b> 仅有基于注册数据的统计分析，无实验或临床验证。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="hip_implant" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#1D9E7520;color:#1D9E75">Hip Implant &amp; Femoral Stem</span>
+    <span class="source">openalex</span>
+    
+    
+    
+    <span class="flag">Exp. validation</span>
+  </div>
+  <h3 class="paper-title">Accelerated Rehabilitation Surgical Nursing Combined with Enteral Nutrition can Improve the Recovery of Hip Function in Patients Undergoing Total Hip Arthroplasty</h3>
+  <div class="meta">
+    <span class="authors">Xin Wang, Dan Wang</span>
+    <span class="venue">Current Topics in Nutraceutical Research</span>
+    <span class="date">2024-01-23</span>
+    <span class="doi"><a href="https://doi.org/10.37290/ctnr2641-452x.22:852-860" target="_blank">10.37290/ctnr2641-452x.22:852-860</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Department of Orthopedics, Ankang People’s Hospital, Ankang 725000, Shaanxi, China</div>
+  <div class="corresponding"><b>通讯:</b> Xin Wang <span class="corresp-aff">@ Department of Orthopedics, Ankang People’s Hospital, Ankang 725000, Shaanxi, China</span></div>
+  <div class="relevance"><b>相关性:</b> 与用户的四个研究方向均无直接关联，属于纯临床护理研究</div>
+  
+  <div class="summary">
+    <div><b>动机·</b> 探讨加速康复外科护理联合肠内营养对全髋关节置换术后患者恢复的影响</div>
+    <div><b>方法·</b> 100名患者随机分为对照组和干预组，对照组接受常规护理，干预组接受加速康复护理和肠内营养</div>
+    <div><b>结果·</b> 干预组术中出血量、术后下床时间、住院时间、VAS评分和并发症发生率更低，Harris评分、Barthel指数、营养指标和满意度更高</div>
+    <div><b>验证·</b> 该研究为临床随机对照试验，有实际患者数据，但非力学或材料验证</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+
+<script>
+const tabs = document.querySelectorAll('.tab');
+const pfs = document.querySelectorAll('.pf');
+let dirFilter = 'all';
+let prioFilter = 'HighMedium';
+function applyFilters(){
+  document.querySelectorAll('.paper').forEach(p=>{
+    const d = p.dataset.direction;
+    const pr = p.dataset.priority;
+    const dirOk = dirFilter==='all' || dirFilter===d;
+    const prOk = prioFilter==='all'
+                  || (prioFilter==='High' && pr==='High')
+                  || (prioFilter==='HighMedium' && (pr==='High'||pr==='Medium'));
+    p.dataset.hidden = (dirOk && prOk) ? '0' : '1';
+  });
+}
+tabs.forEach(t=>t.onclick=()=>{tabs.forEach(x=>x.classList.remove('active'));t.classList.add('active');dirFilter=t.dataset.filter;applyFilters();});
+pfs.forEach(t=>t.onclick=()=>{pfs.forEach(x=>x.classList.remove('active'));t.classList.add('active');prioFilter=t.dataset.prio;applyFilters();});
+applyFilters();
+</script>
+</body></html>

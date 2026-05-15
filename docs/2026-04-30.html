@@ -1,0 +1,546 @@
+<!doctype html><html lang="zh"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Research Radar — 2026-04-30</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:980px;margin:2rem auto;padding:0 1rem;color:#222;line-height:1.5}
+h1{font-size:24px;font-weight:500;margin:0 0 .25rem}
+.subtitle{color:#666;font-size:14px;margin-bottom:1.5rem}
+.topbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 0;margin-bottom:1.25rem;border-bottom:.5px solid #e2e0d8}
+.navbtn{font-size:13px;background:#f5f4ef;color:#444;padding:6px 12px;border-radius:8px;text-decoration:none}
+.navbtn:hover{background:#e9e7df}
+.navbtn.disabled{color:#bbb;background:#fafaf6;cursor:default}
+.archive-select{font-size:13px;padding:6px 10px;border:.5px solid #ccc;border-radius:8px;background:#fff;color:#444;cursor:pointer}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1.5rem}
+.stat{background:#f5f4ef;border-radius:8px;padding:.75rem 1rem}
+.stat-label{font-size:12px;color:#666}
+.stat-val{font-size:22px;font-weight:500;margin-top:2px}
+.tabs,.prio-filter{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:.75rem}
+.tab,.pf{background:transparent;border:.5px solid #ccc;border-radius:8px;padding:6px 14px;font-size:13px;cursor:pointer;color:#444}
+.tab.active,.pf.active{background:#222;color:#fff;border-color:#222}
+.paper{background:#fff;border:.5px solid #e2e0d8;border-radius:12px;padding:1rem 1.25rem;margin-bottom:12px}
+.paper-head{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+.priority{font-size:12px;font-weight:500;padding:3px 10px;border-radius:999px}
+.direction-pill{font-size:11px;padding:3px 8px;border-radius:8px}
+.source{font-size:11px;color:#999;text-transform:uppercase}
+.flag{font-size:11px;background:#eef;color:#335;padding:2px 7px;border-radius:6px}
+.paper-title{font-size:15px;font-weight:500;line-height:1.4;margin:4px 0}
+.meta{font-size:12px;color:#666;margin-bottom:10px}
+.meta>span{margin-right:12px}
+.relevance{font-size:13px;background:#fafaf6;padding:6px 10px;border-radius:6px;margin-bottom:8px}
+.summary{font-size:13px;line-height:1.65}
+.summary>div{margin-bottom:4px}
+.tags-row{margin-top:8px}
+.tag{font-size:10px;background:#f1efe8;color:#555;padding:2px 7px;border-radius:6px;margin-right:4px}
+.paper[data-hidden="1"]{display:none}
+footer.run-info{margin-top:3rem;padding-top:1rem;border-top:.5px solid #e2e0d8;font-size:12px;color:#666}
+footer.run-info summary{cursor:pointer;color:#444}
+footer.run-info table{margin-top:8px;font-family:ui-monospace,monospace;font-size:11px}
+footer.run-info td{padding:2px 12px 2px 0;vertical-align:top}
+footer.run-info td:first-child{color:#888;width:140px}
+details.summary-en{margin-top:8px;background:#f8f8f3;border-radius:8px;padding:6px 12px;border:.5px solid #e2e0d8}
+details.summary-en summary{cursor:pointer;font-size:12px;color:#555;font-weight:500}
+details.summary-en[open] summary{margin-bottom:8px}
+.summary.en{font-size:13px;color:#333;line-height:1.55}
+.summary.en>div{margin-bottom:3px}
+.key-terms{margin-top:8px;display:flex;flex-wrap:wrap;gap:6px}
+.term{font-size:11px;background:#fff;border:.5px solid #ddd;padding:3px 8px;border-radius:6px;color:#444}
+.term b{color:#222;font-weight:500}
+.affiliations{font-size:12px;color:#666;margin-top:6px;padding-left:6px;border-left:2px solid #ddd}
+.affiliations b{color:#444;font-weight:500}
+.corresponding{font-size:12px;color:#555;margin-top:3px;padding-left:6px;border-left:2px solid #aac}
+.corresponding b{color:#3F2E7E;font-weight:500}
+.corresp-aff{color:#888}
+.corresponding i{color:#888;font-size:11px}
+.relevance-level{font-size:11px;padding:3px 8px;border-radius:8px;font-weight:500}
+.lvl-direct{background:#D4EBC4;color:#2D5A14}
+.lvl-transferable{background:#E0DDF4;color:#3F2E7E}
+.lvl-peripheral{background:#F1EFE8;color:#666}
+.read-action{font-size:11px;padding:3px 8px;border-radius:8px;font-weight:500;font-style:italic}
+.act-read-now{background:#FFE8D6;color:#7D4515}
+.act-save-for-project{background:#E6E1F5;color:#3A2C7A}
+.act-skim-only{background:#F0F0E8;color:#5C5C50}
+.act-background-only{background:#F5F5F0;color:#777}
+.act-ignore{background:#F5E8E8;color:#7A3A3A}
+.validation-kind{font-size:10px;background:#EDF4FA;color:#1F4A6B;padding:2px 7px;border-radius:6px}
+.why-not-core{font-size:12px;background:#FCF5E8;border-left:3px solid #D8A045;padding:5px 10px;margin-top:4px;color:#5A4318;border-radius:0 6px 6px 0}
+</style></head><body>
+<h1>Research Radar</h1>
+<div class="subtitle">2026-04-30 · AI Bioprinting / Hip Implant / FEA Surrogate / AM Biomedical</div>
+<div class="topbar"><a class="navbtn" href="2026-04-28.html">← 2026-04-28</a><select class="archive-select" onchange="if(this.value)window.location.href=this.value"><option value="2026-06-01.html">2026-06-01</option><option value="2026-05-14.html">2026-05-14</option><option value="2026-05-13.html">2026-05-13</option><option value="2026-05-12.html">2026-05-12</option><option value="2026-05-11.html">2026-05-11</option><option value="2026-05-10.html">2026-05-10</option><option value="2026-05-09.html">2026-05-09</option><option value="2026-05-08.html">2026-05-08</option><option value="2026-05-07.html">2026-05-07</option><option value="2026-05-06.html">2026-05-06</option><option value="2026-05-05.html">2026-05-05</option><option value="2026-05-04.html">2026-05-04</option><option value="2026-05-02.html">2026-05-02</option><option value="2026-05-01.html">2026-05-01</option><option value="2026-04-30.html" selected>2026-04-30</option><option value="2026-04-28.html">2026-04-28</option><option value="2026-04-27.html">2026-04-27</option><option value="2026-04-24.html">2026-04-24</option><option value="2026-04-01.html">2026-04-01</option><option value="2026-01-01.html">2026-01-01</option><option value="2025-05-01.html">2025-05-01</option><option value="2025-01-01.html">2025-01-01</option><option value="2024-12-01.html">2024-12-01</option><option value="2024-09-01.html">2024-09-01</option><option value="2024-08-27.html">2024-08-27</option><option value="2024-08-01.html">2024-08-01</option><option value="2024-06-01.html">2024-06-01</option><option value="2024-05-01.html">2024-05-01</option><option value="2024-04-22.html">2024-04-22</option><option value="2024-04-01.html">2024-04-01</option><option value="2024-03-15.html">2024-03-15</option><option value="2024-03-01.html">2024-03-01</option><option value="2024-02-23.html">2024-02-23</option><option value="2024-02-15.html">2024-02-15</option><option value="2024-02-14.html">2024-02-14</option><option value="2024-02-13.html">2024-02-13</option><option value="2024-02-12.html">2024-02-12</option><option value="2024-02-07.html">2024-02-07</option><option value="2024-02-05.html">2024-02-05</option><option value="2024-02-01.html">2024-02-01</option><option value="2024-01-31.html">2024-01-31</option><option value="2024-01-30.html">2024-01-30</option><option value="2024-01-29.html">2024-01-29</option><option value="2024-01-28.html">2024-01-28</option><option value="2024-01-27.html">2024-01-27</option><option value="2024-01-26.html">2024-01-26</option><option value="2024-01-25.html">2024-01-25</option><option value="2024-01-24.html">2024-01-24</option><option value="2024-01-23.html">2024-01-23</option><option value="2024-01-22.html">2024-01-22</option><option value="2024-01-21.html">2024-01-21</option><option value="2024-01-20.html">2024-01-20</option><option value="2024-01-19.html">2024-01-19</option><option value="2024-01-18.html">2024-01-18</option><option value="2024-01-17.html">2024-01-17</option><option value="2024-01-16.html">2024-01-16</option><option value="2024-01-15.html">2024-01-15</option><option value="2024-01-14.html">2024-01-14</option><option value="2024-01-13.html">2024-01-13</option><option value="2024-01-12.html">2024-01-12</option><option value="2024-01-11.html">2024-01-11</option><option value="2024-01-10.html">2024-01-10</option><option value="2024-01-09.html">2024-01-09</option><option value="2024-01-08.html">2024-01-08</option><option value="2024-01-07.html">2024-01-07</option><option value="2024-01-06.html">2024-01-06</option><option value="2024-01-05.html">2024-01-05</option><option value="2024-01-04.html">2024-01-04</option><option value="2024-01-03.html">2024-01-03</option><option value="2024-01-02.html">2024-01-02</option><option value="2024-01-01.html">2024-01-01</option><option value="2023-12-30.html">2023-12-30</option><option value="2023-12-28.html">2023-12-28</option><option value="2023-12-27.html">2023-12-27</option><option value="2023-12-26.html">2023-12-26</option><option value="2023-12-24.html">2023-12-24</option><option value="2023-12-19.html">2023-12-19</option><option value="2023-12-01.html">2023-12-01</option><option value="2023-11-21.html">2023-11-21</option><option value="2023-11-01.html">2023-11-01</option><option value="2023-08-01.html">2023-08-01</option><option value="2023-06-01.html">2023-06-01</option><option value="2023-01-01.html">2023-01-01</option></select><a class="navbtn" href="2026-05-01.html">2026-05-01 →</a><a class="navbtn" href="weekly/index.html">📅 Weekly</a><a class="navbtn" href="status.html">📊 Status</a><a class="navbtn" href="search.html">🔍 Search</a></div>
+<div class="stats"><div class="stat"><div class="stat-label">Total scored</div><div class="stat-val">11</div></div><div class="stat"><div class="stat-label">High</div><div class="stat-val" style="color:#27500A">0</div></div><div class="stat"><div class="stat-label">Medium</div><div class="stat-val" style="color:#633806">1</div></div><div class="stat"><div class="stat-label">Low</div><div class="stat-val" style="color:#5F5E5A">5</div></div></div>
+<div class="tabs"><button class="tab active" data-filter="all">All</button><button class="tab" data-filter="ai_bioprinting">AI for Bioprinting</button><button class="tab" data-filter="hip_implant">Hip Implant &amp; Femoral Stem</button><button class="tab" data-filter="fea_surrogate">FEA &amp; Surrogate Modelling</button><button class="tab" data-filter="am_biomedical">AM Biomedical Materials</button></div>
+<div class="prio-filter"><button class="pf active" data-prio="HighMedium">High+Medium</button><button class="pf" data-prio="High">High only</button><button class="pf" data-prio="all">Show all</button></div>
+
+<article class="paper" data-direction="am_biomedical" data-priority="Medium">
+  <div class="paper-head">
+    <span class="priority" style="background:#FAEEDA;color:#633806">Medium</span>
+    <span class="direction-pill" style="background:#185FA520;color:#185FA5">AM Biomedical Materials</span>
+    <span class="source">openalex</span>
+    <span class="relevance-level lvl-direct">Direct</span>
+    <span class="read-action act-skim-only">Skim only</span>
+    <span class="validation-kind">none</span>
+    <span class="flag">Review</span>
+  </div>
+  <h3 class="paper-title">Laser Powder Bed Fusion of SS316L Stainless Steel for Strut Based Lattice Structures in Biomedical Implant Applications: A Comprehensive Review</h3>
+  <div class="meta">
+    <span class="authors">Vikram Singh Rajput, AKARSH MISHRA, Tanmay Gupta, Yash Chandra</span>
+    <span class="venue">International Scientific Journal of Engineering and Management</span>
+    <span class="date">2026-04-30</span>
+    <span class="doi"><a href="https://doi.org/10.55041/isjem07023" target="_blank">10.55041/isjem07023</a></span>
+  </div>
+  
+  
+  <div class="relevance"><b>相关性:</b> 该综述总结了SS316L点阵结构的LPBF工艺、力学性能及应力屏蔽问题，但缺乏实验验证和疲劳数据。</div>
+  <div class="why-not-core"><b>边界:</b> This is a review paper with no original experimental validation, no fatigue testing, and no quantitative link between porous structure and stress shielding reduction.</div>
+  <div class="summary">
+    <div><b>动机·</b> 综述LPBF制备SS316L点阵结构用于生物医学植入物的研究现状</div>
+    <div><b>方法·</b> 系统回顾80余篇文献，涵盖工艺、力学、设计及生物学验证</div>
+    <div><b>结果·</b> 总结了工艺参数、力学性能及点阵拓扑对骨植入物适配性的影响</div>
+    <div><b>验证·</b> 无原始实验验证，仅文献综述</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> To consolidate the state of the art in LPBF of SS316L lattice structures for biomedical implants, focusing on process-structure-property relationships.</div>
+      <div><b>Method·</b> A comprehensive review of over 80 peer-reviewed studies covering LPBF process parameters, mechanical properties, lattice topologies, and biological evidence.</div>
+      <div><b>Result·</b> Identified key gaps including lack of integrated process-structure-biology studies and weak quantitative mapping of strut size to compressive strength.</div>
+      <div><b>Validation·</b> No original experimental validation; the paper is a literature review.</div>
+    </div>
+    <div class="key-terms">
+      <span class="term"><b>laser powder bed fusion</b> · 激光粉末床熔融</span><span class="term"><b>SS316L stainless steel</b> · SS316L不锈钢</span><span class="term"><b>lattice structure</b> · 点阵结构</span><span class="term"><b>stress shielding</b> · 应力遮挡</span><span class="term"><b>Gibson-Ashby model</b> · Gibson-Ashby模型</span><span class="term"><b>selective laser melting</b> · 选择性激光熔化</span><span class="term"><b>biomedical implant</b> · 生物医学植入物</span><span class="term"><b>process optimization</b> · 工艺优化</span>
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">LPBF</span> <span class="tag">SS316L</span> <span class="tag">lattice structure</span> <span class="tag">biomedical implant</span> <span class="tag">stress shielding</span> <span class="tag">review</span></div>
+</article>
+<article class="paper" data-direction="ai_bioprinting" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#7F77DD20;color:#7F77DD">AI for Bioprinting</span>
+    <span class="source">openalex</span>
+    <span class="relevance-level lvl-peripheral">Peripheral</span>
+    <span class="read-action act-background-only">Background only</span>
+    <span class="validation-kind">in_vitro</span>
+    <span class="flag">Exp. validation</span>
+  </div>
+  <h3 class="paper-title">3D Bioprinting of Blood Vessel Model for Improving Wound Healing</h3>
+  <div class="meta">
+    <span class="authors">Florin IORDACHE, Madalina Dulceanu, Alina Maria Holban, Alexandra Valentina Badaluta, Aurelia Magdalena Pisoschi et al.</span>
+    <span class="venue">International Journal of Molecular Sciences</span>
+    <span class="date">2026-04-30</span>
+    <span class="doi"><a href="https://doi.org/10.3390/ijms27094019" target="_blank">10.3390/ijms27094019</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Faculty of Veterinary Medicine, University of Agronomic Sciences and Veterinary Medicine of Bucharest, Splaiul Independentei 105, 050097 Bucharest, Romania</div>
+  <div class="corresponding"><b>通讯:</b> Florin IORDACHE <span class="corresp-aff">@ Faculty of Veterinary Medicine, University of Agronomic Sciences and Veterinary Medicine of Bucharest, Splaiul Independe</span></div>
+  <div class="relevance"><b>相关性:</b> 该论文涉及3D生物打印血管模型，但未使用AI技术，与AI生物打印方向不直接相关。</div>
+  <div class="why-not-core"><b>边界:</b> This paper does not integrate AI into any bioprinting workflow stage; it is a purely experimental bioprinting study without machine learning or autonomous decision-making.</div>
+  <div class="summary">
+    <div><b>动机·</b> 构建用于促进伤口愈合的血管模型</div>
+    <div><b>方法·</b> 利用胶原-透明质酸水凝胶包裹干细胞进行3D生物打印</div>
+    <div><b>结果·</b> 构建的血管模型具有良好的生物相容性和结构准确性</div>
+    <div><b>验证·</b> 通过FTIR、SEM、细胞活力等体外实验验证</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> To create a blood vessel model using 3D bioprinting for improving wound healing in diabetic and chronic burn wounds.</div>
+      <div><b>Method·</b> Collagen-hyaluronic acid hydrogels encapsulating endothelial and smooth muscle progenitor cells derived from amniotic mesenchymal stem cells were printed using a dual-printhead bioprinter.</div>
+      <div><b>Result·</b> The printed vascular constructs demonstrated biocompatibility, structural fidelity, and supported cell viability and VEGF production.</div>
+      <div><b>Validation·</b> Validation included morphological characterization (FTIR, TGA, SEM), mechanical testing (water uptake, degradation), and in vitro biological assays (viability, proliferation, oxidative stress).</div>
+    </div>
+    <div class="key-terms">
+      <span class="term"><b>3D bioprinting</b> · 3D生物打印</span><span class="term"><b>blood vessel model</b> · 血管模型</span><span class="term"><b>hydrogel</b> · 水凝胶</span><span class="term"><b>stem cells</b> · 干细胞</span><span class="term"><b>wound healing</b> · 伤口愈合</span><span class="term"><b>collagen</b> · 胶原蛋白</span><span class="term"><b>hyaluronic acid</b> · 透明质酸</span><span class="term"><b>endothelial progenitor cells</b> · 内皮祖细胞</span><span class="term"><b>smooth muscle progenitor cells</b> · 平滑肌祖细胞</span><span class="term"><b>biocompatibility</b> · 生物相容性</span>
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">3D bioprinting</span> <span class="tag">blood vessel model</span> <span class="tag">wound healing</span> <span class="tag">hydrogel</span> <span class="tag">stem cells</span></div>
+</article>
+<article class="paper" data-direction="ai_bioprinting" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#7F77DD20;color:#7F77DD">AI for Bioprinting</span>
+    <span class="source">openalex</span>
+    <span class="relevance-level lvl-peripheral">Peripheral</span>
+    <span class="read-action act-background-only">Background only</span>
+    <span class="validation-kind">none</span>
+    
+  </div>
+  <h3 class="paper-title">TOWARDS GMP-COMPATIBLE BIOFABRICATION AND MRI-BASED QUALITY MONITORING OF IMPLANTABLE ADIPOSE TISSUE CONSTRUCTS</h3>
+  <div class="meta">
+    <span class="authors">C. marquette, Y. Gimenez, E.J. Cowles, L. Essayan, C. Thomann et al.</span>
+    <span class="venue">Cytotherapy</span>
+    <span class="date">2026-04-30</span>
+    <span class="doi"><a href="https://doi.org/10.1016/j.jcyt.2026.102399" target="_blank">10.1016/j.jcyt.2026.102399</a></span>
+  </div>
+  
+  
+  <div class="relevance"><b>相关性:</b> 该论文涉及生物制造和MRI质量监测，但未使用AI技术，与AI生物打印方向关联较弱。</div>
+  <div class="why-not-core"><b>边界:</b> This paper does not integrate AI into any bioprinting workflow stage, lacks experimental validation of AI models, and does not address autonomous decision-making.</div>
+  <div class="summary">
+    <div><b>动机·</b> 实现符合GMP标准的植入式脂肪组织构建物的生物制造与质量监测。</div>
+    <div><b>方法·</b> 采用生物制造与MRI技术进行构建物质量监测。</div>
+    <div><b>结果·</b> 未提供具体结果，可能为概念或方案介绍。</div>
+    <div><b>验证·</b> 未提及实验验证。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> To achieve GMP-compatible biofabrication and quality monitoring of implantable adipose tissue constructs.</div>
+      <div><b>Method·</b> The study employs biofabrication techniques and MRI-based monitoring for construct quality assessment.</div>
+      <div><b>Result·</b> No specific results are reported; the paper likely presents a concept or protocol.</div>
+      <div><b>Validation·</b> No experimental validation is described.</div>
+    </div>
+    <div class="key-terms">
+      <span class="term"><b>biofabrication</b> · 生物制造</span><span class="term"><b>adipose tissue</b> · 脂肪组织</span><span class="term"><b>MRI</b> · 磁共振成像</span><span class="term"><b>GMP</b> · 良好生产规范</span><span class="term"><b>quality monitoring</b> · 质量监测</span>
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">biofabrication</span> <span class="tag">adipose tissue</span> <span class="tag">MRI monitoring</span> <span class="tag">GMP</span></div>
+</article>
+<article class="paper" data-direction="ai_bioprinting" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#7F77DD20;color:#7F77DD">AI for Bioprinting</span>
+    <span class="source">openalex</span>
+    <span class="relevance-level lvl-peripheral">Peripheral</span>
+    <span class="read-action act-background-only">Background only</span>
+    <span class="validation-kind">in_vitro</span>
+    <span class="flag">Exp. validation</span>
+  </div>
+  <h3 class="paper-title">TOWARDS A COMPLEX 3D IN VITRO BRONCHIAL EPITHELIUM MODEL THANKS TO 3D BIOPRINTING</h3>
+  <div class="meta">
+    <span class="authors">A. Carré, C. Thomann, L. Essayan, A. Erny, K. Moreau et al.</span>
+    <span class="venue">Cytotherapy</span>
+    <span class="date">2026-04-30</span>
+    <span class="doi"><a href="https://doi.org/10.1016/j.jcyt.2026.102215" target="_blank">10.1016/j.jcyt.2026.102215</a></span>
+  </div>
+  
+  
+  <div class="relevance"><b>相关性:</b> 该论文涉及3D生物打印构建支气管上皮模型，但未使用AI技术，与AI生物打印方向不直接相关。</div>
+  <div class="why-not-core"><b>边界:</b> No AI/ML integration in any bioprinting workflow stage; purely a tissue engineering study without computational modeling or autonomous decision-making.</div>
+  <div class="summary">
+    <div><b>动机·</b> 构建复杂3D支气管上皮体外模型</div>
+    <div><b>方法·</b> 使用3D生物打印技术构建支气管上皮结构</div>
+    <div><b>结果·</b> 成功打印出具有生理相关性的支气管上皮模型</div>
+    <div><b>验证·</b> 体外细胞培养验证模型功能</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> To develop a complex 3D in vitro bronchial epithelium model for studying respiratory diseases.</div>
+      <div><b>Method·</b> 3D bioprinting was employed to fabricate a bronchial epithelial construct with multiple cell types.</div>
+      <div><b>Result·</b> The printed model exhibited key morphological and functional features of native bronchial epithelium.</div>
+      <div><b>Validation·</b> In vitro cell culture and characterization confirmed tissue viability and barrier function.</div>
+    </div>
+    <div class="key-terms">
+      <span class="term"><b>3D bioprinting</b> · 3D生物打印</span><span class="term"><b>bronchial epithelium</b> · 支气管上皮</span><span class="term"><b>in vitro model</b> · 体外模型</span><span class="term"><b>tissue engineering</b> · 组织工程</span><span class="term"><b>airway model</b> · 气道模型</span>
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">3D bioprinting</span> <span class="tag">bronchial epithelium</span> <span class="tag">in vitro model</span> <span class="tag">tissue engineering</span></div>
+</article>
+<article class="paper" data-direction="am_biomedical" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#185FA520;color:#185FA5">AM Biomedical Materials</span>
+    <span class="source">openalex</span>
+    <span class="relevance-level lvl-peripheral">Peripheral</span>
+    <span class="read-action act-background-only">Background only</span>
+    <span class="validation-kind">mechanical_testing</span>
+    <span class="flag">Exp. validation</span>
+  </div>
+  <h3 class="paper-title">Effects of Heat Treatment and Oxidation on the Microstructure and Compressive Strength of Ti-6Al-4V Lattice Structures Prepared by SLM</h3>
+  <div class="meta">
+    <span class="authors">Xinyi Wang</span>
+    <span class="venue">Ingegneria Sismica</span>
+    <span class="date">2026-04-30</span>
+    <span class="doi"><a href="https://doi.org/10.65102/is2026959" target="_blank">10.65102/is2026959</a></span>
+  </div>
+  
+  
+  <div class="relevance"><b>相关性:</b> 该论文研究了SLM制备的Ti-6Al-4V点阵结构的热处理和氧化效应，但未涉及应力遮挡、疲劳性能或骨整合，与用户方向关联较弱。</div>
+  <div class="why-not-core"><b>边界:</b> This paper does not link porous structure to stress shielding or stiffness matching, does not include fatigue testing, and does not report surface roughness or osseointegration.</div>
+  <div class="summary">
+    <div><b>动机·</b> 研究热处理和氧化对SLM制备的Ti-6Al-4V点阵结构性能的影响</div>
+    <div><b>方法·</b> 对比空气和真空热处理，分析微观结构和压缩性能</div>
+    <div><b>结果·</b> 空气热处理形成氧化层降低强度，真空热处理改善微观结构并提高能量吸收</div>
+    <div><b>验证·</b> 通过压缩实验和微观结构表征验证</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> To investigate the effects of heat treatment and oxidation on the microstructure and compressive properties of SLM-fabricated Ti-6Al-4V lattice structures.</div>
+      <div><b>Method·</b> Air and vacuum heat treatments were compared, and the resulting microstructure and compression performance were analyzed.</div>
+      <div><b>Result·</b> Air heat treatment formed an oxide layer that reduced compressive strength, while vacuum heat treatment promoted a lamellar microstructure and improved energy absorption.</div>
+      <div><b>Validation·</b> Validation was performed through compression testing and microstructural characterization.</div>
+    </div>
+    <div class="key-terms">
+      <span class="term"><b>Ti-6Al-4V</b> · Ti-6Al-4V合金</span><span class="term"><b>lattice structure</b> · 点阵结构</span><span class="term"><b>selective laser melting</b> · 选区激光熔化</span><span class="term"><b>heat treatment</b> · 热处理</span><span class="term"><b>oxidation</b> · 氧化</span><span class="term"><b>compressive strength</b> · 抗压强度</span><span class="term"><b>energy absorption</b> · 能量吸收</span><span class="term"><b>microstructure</b> · 微观结构</span>
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">Ti-6Al-4V</span> <span class="tag">lattice structures</span> <span class="tag">SLM</span> <span class="tag">heat treatment</span> <span class="tag">oxidation</span> <span class="tag">compressive strength</span></div>
+</article>
+<article class="paper" data-direction="am_biomedical" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#185FA520;color:#185FA5">AM Biomedical Materials</span>
+    <span class="source">pubmed</span>
+    <span class="relevance-level lvl-peripheral">Peripheral</span>
+    <span class="read-action act-background-only">Background only</span>
+    <span class="validation-kind">none</span>
+    <span class="flag">Review</span>
+  </div>
+  <h3 class="paper-title">Poly(Lactic-Co-Glycolic Acid)-Based Systems in Implantology: Advances in Biomaterial Design, Drug Delivery, and Tissue Regeneration.</h3>
+  <div class="meta">
+    <span class="authors">Bogdan Alexandru Popescu, Ionela Belu, Andreea Gabriela Mocanu, Maria Viorica Ciocîlteu, Daniela Calina et al.</span>
+    <span class="venue">Polymers</span>
+    <span class="date">2026-04-30</span>
+    <span class="doi"><a href="https://doi.org/10.3390/polym18091113" target="_blank">10.3390/polym18091113</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Doctoral School, University of Medicine and Pharmacy of Craiova, 2 Petru Rareş Street, 200349 Craiova, Romania.</div>
+  <div class="corresponding"><b>通讯:</b> Andreea Silvia Pîrvu <span class="corresp-aff">@ Department of Biochemistry, Faculty of Medicine, University of Medicine and Pharmacy of Craiova, 2 Petru Rareş Street, 2</span> <i>[推断]</i></div>
+  <div class="relevance"><b>相关性:</b> 该综述聚焦PLGA在植入物中的药物递送和组织再生，未涉及LPBF制造、应力遮挡或疲劳测试。</div>
+  <div class="why-not-core"><b>边界:</b> This paper is a review of PLGA-based systems for drug delivery and tissue regeneration, with no LPBF fabrication, mechanical testing, or stress shielding analysis.</div>
+  <div class="summary">
+    <div><b>动机·</b> 综述PLGA在牙科和骨科植入物中的应用进展</div>
+    <div><b>方法·</b> 系统回顾PLGA组成、加工策略与生物学性能的关系</div>
+    <div><b>结果·</b> 提出PLGA基植入系统的理性设计框架</div>
+    <div><b>验证·</b> 文献综述，无实验验证</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> To provide a focused review of PLGA-based systems in dental and orthopedic implantology, emphasizing the correlation between polymer composition, processing, and biological outcomes.</div>
+      <div><b>Method·</b> A systematic review of PLGA applications in scaffolds, coatings, and drug delivery, with critical evaluation of emerging technologies like additive manufacturing and stimuli-responsive platforms.</div>
+      <div><b>Result·</b> A framework for rational development of next-generation PLGA implant systems is proposed, highlighting key limitations and clinical trends.</div>
+      <div><b>Validation·</b> No experimental validation; this is a literature review.</div>
+    </div>
+    <div class="key-terms">
+      <span class="term"><b>PLGA</b> · 聚乳酸-羟基乙酸共聚物</span><span class="term"><b>biodegradable polymer</b> · 可生物降解聚合物</span><span class="term"><b>implantology</b> · 植入学</span><span class="term"><b>osseointegration</b> · 骨整合</span><span class="term"><b>drug delivery</b> · 药物递送</span><span class="term"><b>tissue regeneration</b> · 组织再生</span><span class="term"><b>additive manufacturing</b> · 增材制造</span><span class="term"><b>scaffold</b> · 支架</span><span class="term"><b>antibacterial</b> · 抗菌</span><span class="term"><b>osteogenesis</b> · 成骨</span>
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">PLGA</span> <span class="tag">biodegradable polymer</span> <span class="tag">implantology</span> <span class="tag">drug delivery</span> <span class="tag">tissue regeneration</span> <span class="tag">review</span></div>
+</article>
+<article class="paper" data-direction="hip_implant" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#1D9E7520;color:#1D9E75">Hip Implant &amp; Femoral Stem</span>
+    <span class="source">openalex</span>
+    <span class="relevance-level lvl-peripheral">Peripheral</span>
+    <span class="read-action act-ignore">Ignore</span>
+    <span class="validation-kind">none</span>
+    
+  </div>
+  <h3 class="paper-title">For patients undergoing total hip replacement, do outcomes differ between those who have had bariatric surgery and those who have not?</h3>
+  <div class="meta">
+    <span class="authors">Tripdatabase</span>
+    <span class="venue">Zenodo (CERN European Organization for Nuclear Research)</span>
+    <span class="date">2026-04-30</span>
+    <span class="doi"><a href="https://doi.org/10.5281/zenodo.19912043" target="_blank">10.5281/zenodo.19912043</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Tripdatabase</div>
+  <div class="corresponding"><b>通讯:</b> Tripdatabase <span class="corresp-aff">@ Tripdatabase</span></div>
+  <div class="relevance"><b>相关性:</b> 该论文讨论肥胖手术对全髋关节置换术临床结果的影响，未涉及任何生物力学建模或植入物设计。</div>
+  <div class="why-not-core"><b>边界:</b> This paper is a clinical outcomes study with no biomechanical modeling, no FEA, no implant design, and no stress shielding or micromotion analysis.</div>
+  <div class="summary">
+    <div><b>动机·</b> 探讨肥胖手术对全髋关节置换术患者预后的影响。</div>
+    <div><b>方法·</b> 回顾性分析临床数据，比较有无肥胖手术史患者的术后结果。</div>
+    <div><b>结果·</b> 肥胖手术患者短期并发症减少但脱位风险增加，长期结果需进一步研究。</div>
+    <div><b>验证·</b> 基于临床数据统计分析。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> To investigate whether prior bariatric surgery affects clinical outcomes after total hip arthroplasty.</div>
+      <div><b>Method·</b> Retrospective analysis comparing complication rates and functional outcomes between patients with and without prior bariatric surgery.</div>
+      <div><b>Result·</b> Patients with prior bariatric surgery had reduced short-term complications but increased dislocation risk; long-term outcomes remain unclear.</div>
+      <div><b>Validation·</b> Statistical analysis of clinical registry data.</div>
+    </div>
+    <div class="key-terms">
+      <span class="term"><b>total hip arthroplasty</b> · 全髋关节置换术</span><span class="term"><b>bariatric surgery</b> · 肥胖手术</span><span class="term"><b>clinical outcomes</b> · 临床结果</span><span class="term"><b>dislocation</b> · 脱位</span><span class="term"><b>complications</b> · 并发症</span>
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">total hip arthroplasty</span> <span class="tag">bariatric surgery</span> <span class="tag">clinical outcomes</span></div>
+</article>
+<article class="paper" data-direction="hip_implant" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#1D9E7520;color:#1D9E75">Hip Implant &amp; Femoral Stem</span>
+    <span class="source">openalex</span>
+    <span class="relevance-level lvl-peripheral">Peripheral</span>
+    <span class="read-action act-ignore">Ignore</span>
+    <span class="validation-kind">none</span>
+    
+  </div>
+  <h3 class="paper-title">For patients undergoing total hip replacement, do outcomes differ between those who have had bariatric surgery and those who have not?</h3>
+  <div class="meta">
+    <span class="authors">Tripdatabase</span>
+    <span class="venue">Zenodo (CERN European Organization for Nuclear Research)</span>
+    <span class="date">2026-04-30</span>
+    <span class="doi"><a href="https://doi.org/10.5281/zenodo.19912042" target="_blank">10.5281/zenodo.19912042</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Tripdatabase</div>
+  <div class="corresponding"><b>通讯:</b> Tripdatabase <span class="corresp-aff">@ Tripdatabase</span></div>
+  <div class="relevance"><b>相关性:</b> 该论文关注肥胖手术对全髋关节置换术临床结果的影响，未涉及任何生物力学建模或植入物设计。</div>
+  <div class="why-not-core"><b>边界:</b> This paper is a clinical outcomes study with no biomechanics modeling, no FEA, no implant design, and no quantification of stress shielding or micromotion.</div>
+  <div class="summary">
+    <div><b>动机·</b> 探究肥胖手术对全髋关节置换术患者预后的影响</div>
+    <div><b>方法·</b> 文献综述与临床数据分析</div>
+    <div><b>结果·</b> 肥胖手术患者短期并发症减少但脱位风险增加</div>
+    <div><b>验证·</b> 无生物力学验证</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> To investigate whether prior bariatric surgery affects clinical outcomes after total hip arthroplasty.</div>
+      <div><b>Method·</b> Review and analysis of clinical data comparing patients with and without prior bariatric surgery.</div>
+      <div><b>Result·</b> Patients with prior bariatric surgery have reduced short-term complications but increased risk of dislocation.</div>
+      <div><b>Validation·</b> No biomechanical validation was performed.</div>
+    </div>
+    <div class="key-terms">
+      <span class="term"><b>total hip arthroplasty</b> · 全髋关节置换术</span><span class="term"><b>bariatric surgery</b> · 肥胖手术</span><span class="term"><b>clinical outcomes</b> · 临床结果</span>
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">total hip arthroplasty</span> <span class="tag">bariatric surgery</span> <span class="tag">clinical outcomes</span></div>
+</article>
+<article class="paper" data-direction="hip_implant" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#1D9E7520;color:#1D9E75">Hip Implant &amp; Femoral Stem</span>
+    <span class="source">openalex</span>
+    <span class="relevance-level lvl-peripheral">Peripheral</span>
+    <span class="read-action act-ignore">Ignore</span>
+    <span class="validation-kind">none</span>
+    <span class="flag">Review</span>
+  </div>
+  <h3 class="paper-title">Periportal and Puncture Capsulotomy Techniques Have Similar Outcomes to Traditional Capsulotomies With Closure in Hip Arthroscopy: A Systematic Review and Meta‐analysis of 2‐Year Outcomes</h3>
+  <div class="meta">
+    <span class="authors">Brandon J Allen, Jeffrey S Mun, Srish S Chenna, Rachel L Poutre, Kieran Dowley et al.</span>
+    <span class="venue">Arthroscopy The Journal of Arthroscopic and Related Surgery</span>
+    <span class="date">2026-04-30</span>
+    <span class="doi"><a href="https://doi.org/10.1002/arj.70207" target="_blank">10.1002/arj.70207</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Sports Medicine Department of Orthopaedic Surgery Massachusetts General Hospital  Boston Massachusetts U.S.A</div>
+  <div class="corresponding"><b>通讯:</b> Brandon J Allen <span class="corresp-aff">@ Sports Medicine Department of Orthopaedic Surgery Massachusetts General Hospital  Boston Massachusetts U.S.A</span></div>
+  <div class="relevance"><b>相关性:</b> 该论文研究髋关节镜手术中的关节囊切开技术，不涉及股骨柄假体或应力遮挡等生物力学问题。</div>
+  <div class="why-not-core"><b>边界:</b> This paper focuses on surgical capsulotomy techniques in hip arthroscopy and does not quantify femoral stem stress shielding, micromotion, or bone-implant interface mechanics.</div>
+  <div class="summary">
+    <div><b>动机·</b> 比较不同关节囊切开技术在髋关节镜术后的临床效果。</div>
+    <div><b>方法·</b> 系统综述和荟萃分析，纳入8项研究1961例髋关节。</div>
+    <div><b>结果·</b> 不同关节囊切开技术术后2年患者报告结果无显著差异。</div>
+    <div><b>验证·</b> 基于已发表研究的荟萃分析，无实验验证。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> To systematically compare clinical outcomes of different capsulotomy techniques in hip arthroscopy.</div>
+      <div><b>Method·</b> A systematic review and meta-analysis of 8 studies involving 1961 hips, with meta-regression to adjust for heterogeneity.</div>
+      <div><b>Result·</b> Periportal and puncture capsulotomies showed similar patient-reported outcomes and revision rates compared to traditional capsulotomies with closure at 2-year follow-up.</div>
+      <div><b>Validation·</b> The study is a meta-analysis of existing clinical studies, without experimental or biomechanical validation.</div>
+    </div>
+    <div class="key-terms">
+      <span class="term"><b>hip arthroscopy</b> · 髋关节镜</span><span class="term"><b>capsulotomy</b> · 关节囊切开术</span><span class="term"><b>femoroacetabular impingement</b> · 股骨髋臼撞击综合征</span><span class="term"><b>patient-reported outcome measures</b> · 患者报告结局指标</span><span class="term"><b>meta-analysis</b> · 荟萃分析</span>
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">hip arthroscopy</span> <span class="tag">capsulotomy</span> <span class="tag">systematic review</span> <span class="tag">meta-analysis</span></div>
+</article>
+<article class="paper" data-direction="hip_implant" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#1D9E7520;color:#1D9E75">Hip Implant &amp; Femoral Stem</span>
+    <span class="source">openalex</span>
+    <span class="relevance-level lvl-peripheral">Peripheral</span>
+    <span class="read-action act-ignore">Ignore</span>
+    <span class="validation-kind">clinical</span>
+    <span class="flag">Exp. validation</span>
+  </div>
+  <h3 class="paper-title">Short-Term Functional Outcome Following Primary Total Hip Replacement With and Without Acetabular Screw Fixation: A Prospective Indian Cohort Study</h3>
+  <div class="meta">
+    <span class="authors">Saurav Narayan Nanda, Sumit Kaushik, Sabyasachi Jena, Rahul Adwani</span>
+    <span class="venue">(JOINTS) Journal Orthopaedi and Traumatology Surabaya</span>
+    <span class="date">2026-04-30</span>
+    <span class="doi"><a href="https://doi.org/10.20473/joints.v15i1.2026.28-34" target="_blank">10.20473/joints.v15i1.2026.28-34</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Department of Orthopaedics, Kalinga Institute of Medical Sciences, KIIT University, Bhubaneswar, Odisha</div>
+  <div class="corresponding"><b>通讯:</b> Saurav Narayan Nanda <span class="corresp-aff">@ Department of Orthopaedics, Kalinga Institute of Medical Sciences, KIIT University, Bhubaneswar, Odisha</span></div>
+  <div class="relevance"><b>相关性:</b> 该论文仅关注髋臼杯螺钉固定的临床结果，未涉及股骨柄应力遮挡或微动等生物力学分析。</div>
+  <div class="why-not-core"><b>边界:</b> This paper is a clinical outcome study on acetabular screw fixation, with no biomechanical modeling, no femoral stem stress shielding or micromotion analysis, and no FEA or contact mechanics.</div>
+  <div class="summary">
+    <div><b>动机·</b> 评估髋臼螺钉固定在初次全髋置换中的必要性</div>
+    <div><b>方法·</b> 前瞻性队列研究，比较有或无螺钉固定的临床和影像学结果</div>
+    <div><b>结果·</b> 两组功能评分和杯迁移无显著差异，螺钉未带来额外益处</div>
+    <div><b>验证·</b> 临床随访12个月，Harris髋评分和X线测量</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> To determine whether supplemental acetabular screw fixation provides clinical or radiographic benefits in primary cementless THA with adequate press-fit stability.</div>
+      <div><b>Method·</b> A prospective cohort study allocated 80 patients into screw and no-screw groups based on intraoperative press-fit assessment, comparing functional scores and cup migration at 12 months.</div>
+      <div><b>Result·</b> No significant differences in Harris Hip Score, WOMAC, or acetabular cup migration were found between groups, with minimal migration in both.</div>
+      <div><b>Validation·</b> Clinical and radiographic evaluation at 12 months postoperatively.</div>
+    </div>
+    <div class="key-terms">
+      <span class="term"><b>total hip arthroplasty</b> · 全髋关节置换术</span><span class="term"><b>acetabular screw fixation</b> · 髋臼螺钉固定</span><span class="term"><b>press-fit stability</b> · 压配稳定性</span><span class="term"><b>Harris Hip Score</b> · Harris髋关节评分</span><span class="term"><b>cup migration</b> · 髋臼杯移位</span>
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">total hip arthroplasty</span> <span class="tag">acetabular screw fixation</span> <span class="tag">clinical outcome</span> <span class="tag">Harris Hip Score</span></div>
+</article>
+<article class="paper" data-direction="hip_implant" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#1D9E7520;color:#1D9E75">Hip Implant &amp; Femoral Stem</span>
+    <span class="source">openalex</span>
+    <span class="relevance-level lvl-peripheral">Peripheral</span>
+    <span class="read-action act-ignore">Ignore</span>
+    <span class="validation-kind">none</span>
+    
+  </div>
+  <h3 class="paper-title">Is an Opioid Prescription Necessary after Joint Replacement in 2026?</h3>
+  <div class="meta">
+    <span class="authors">Anjali Malhotra, Kayleigh Corrado, Brian Fuller, Andrew WICKLINE</span>
+    <span class="venue">Journal of Orthopaedic Experience &amp; Innovation</span>
+    <span class="date">2026-04-30</span>
+    <span class="doi"><a href="https://doi.org/10.60118/001c.160282" target="_blank">10.60118/001c.160282</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> SUNY Upstate Medical University</div>
+  <div class="corresponding"><b>通讯:</b> Anjali Malhotra <span class="corresp-aff">@ SUNY Upstate Medical University</span></div>
+  <div class="relevance"><b>相关性:</b> 该论文讨论全关节置换术后镇痛方案，未涉及任何生物力学建模或植入物设计。</div>
+  <div class="why-not-core"><b>边界:</b> This paper focuses on postoperative pain management and opioid prescription, with no biomechanical modeling, implant design, stress shielding, micromotion, or FEA analysis.</div>
+  <div class="summary">
+    <div><b>动机·</b> 评估新型非阿片药物在全关节置换术后无阿片恢复中的效果</div>
+    <div><b>方法·</b> 回顾性分析236例全髋/全膝置换患者，接受标准多模式镇痛加用suzetrigine</div>
+    <div><b>结果·</b> 89%患者术后未使用阿片类药物，术前阿片暴露是术后使用的强预测因子</div>
+    <div><b>验证·</b> 单中心回顾性研究，无对照组</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> To evaluate whether adding suzetrigine to a multimodal protocol enables opioid-free recovery after total joint arthroplasty.</div>
+      <div><b>Method·</b> A retrospective review of 236 primary THA and TKA patients who received suzetrigine pre- and postoperatively.</div>
+      <div><b>Result·</b> 89% of patients did not fill an opioid prescription; preoperative opioid use strongly predicted postoperative opioid requirement.</div>
+      <div><b>Validation·</b> Single-surgeon retrospective series without a control group.</div>
+    </div>
+    <div class="key-terms">
+      <span class="term"><b>opioid-free recovery</b> · 无阿片恢复</span><span class="term"><b>total hip arthroplasty</b> · 全髋关节置换术</span><span class="term"><b>total knee arthroplasty</b> · 全膝关节置换术</span><span class="term"><b>suzetrigine</b> · 舒泽替金</span><span class="term"><b>multimodal analgesia</b> · 多模式镇痛</span>
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">opioid-free recovery</span> <span class="tag">total joint arthroplasty</span> <span class="tag">suzetrigine</span></div>
+</article>
+
+<script>
+const tabs = document.querySelectorAll('.tab');
+const pfs = document.querySelectorAll('.pf');
+let dirFilter = 'all';
+let prioFilter = 'HighMedium';
+function applyFilters(){
+  document.querySelectorAll('.paper').forEach(p=>{
+    const d = p.dataset.direction;
+    const pr = p.dataset.priority;
+    const dirOk = dirFilter==='all' || dirFilter===d;
+    const prOk = prioFilter==='all'
+                  || (prioFilter==='High' && pr==='High')
+                  || (prioFilter==='HighMedium' && (pr==='High'||pr==='Medium'));
+    p.dataset.hidden = (dirOk && prOk) ? '0' : '1';
+  });
+}
+tabs.forEach(t=>t.onclick=()=>{tabs.forEach(x=>x.classList.remove('active'));t.classList.add('active');dirFilter=t.dataset.filter;applyFilters();});
+pfs.forEach(t=>t.onclick=()=>{pfs.forEach(x=>x.classList.remove('active'));t.classList.add('active');prioFilter=t.dataset.prio;applyFilters();});
+applyFilters();
+</script>
+</body></html>

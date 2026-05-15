@@ -1,0 +1,669 @@
+<!doctype html><html lang="zh"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Research Radar — 2024-02-01</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:980px;margin:2rem auto;padding:0 1rem;color:#222;line-height:1.5}
+h1{font-size:24px;font-weight:500;margin:0 0 .25rem}
+.subtitle{color:#666;font-size:14px;margin-bottom:1.5rem}
+.topbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 0;margin-bottom:1.25rem;border-bottom:.5px solid #e2e0d8}
+.navbtn{font-size:13px;background:#f5f4ef;color:#444;padding:6px 12px;border-radius:8px;text-decoration:none}
+.navbtn:hover{background:#e9e7df}
+.navbtn.disabled{color:#bbb;background:#fafaf6;cursor:default}
+.archive-select{font-size:13px;padding:6px 10px;border:.5px solid #ccc;border-radius:8px;background:#fff;color:#444;cursor:pointer}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1.5rem}
+.stat{background:#f5f4ef;border-radius:8px;padding:.75rem 1rem}
+.stat-label{font-size:12px;color:#666}
+.stat-val{font-size:22px;font-weight:500;margin-top:2px}
+.tabs,.prio-filter{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:.75rem}
+.tab,.pf{background:transparent;border:.5px solid #ccc;border-radius:8px;padding:6px 14px;font-size:13px;cursor:pointer;color:#444}
+.tab.active,.pf.active{background:#222;color:#fff;border-color:#222}
+.paper{background:#fff;border:.5px solid #e2e0d8;border-radius:12px;padding:1rem 1.25rem;margin-bottom:12px}
+.paper-head{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+.priority{font-size:12px;font-weight:500;padding:3px 10px;border-radius:999px}
+.direction-pill{font-size:11px;padding:3px 8px;border-radius:8px}
+.source{font-size:11px;color:#999;text-transform:uppercase}
+.flag{font-size:11px;background:#eef;color:#335;padding:2px 7px;border-radius:6px}
+.paper-title{font-size:15px;font-weight:500;line-height:1.4;margin:4px 0}
+.meta{font-size:12px;color:#666;margin-bottom:10px}
+.meta>span{margin-right:12px}
+.relevance{font-size:13px;background:#fafaf6;padding:6px 10px;border-radius:6px;margin-bottom:8px}
+.summary{font-size:13px;line-height:1.65}
+.summary>div{margin-bottom:4px}
+.tags-row{margin-top:8px}
+.tag{font-size:10px;background:#f1efe8;color:#555;padding:2px 7px;border-radius:6px;margin-right:4px}
+.paper[data-hidden="1"]{display:none}
+footer.run-info{margin-top:3rem;padding-top:1rem;border-top:.5px solid #e2e0d8;font-size:12px;color:#666}
+footer.run-info summary{cursor:pointer;color:#444}
+footer.run-info table{margin-top:8px;font-family:ui-monospace,monospace;font-size:11px}
+footer.run-info td{padding:2px 12px 2px 0;vertical-align:top}
+footer.run-info td:first-child{color:#888;width:140px}
+details.summary-en{margin-top:8px;background:#f8f8f3;border-radius:8px;padding:6px 12px;border:.5px solid #e2e0d8}
+details.summary-en summary{cursor:pointer;font-size:12px;color:#555;font-weight:500}
+details.summary-en[open] summary{margin-bottom:8px}
+.summary.en{font-size:13px;color:#333;line-height:1.55}
+.summary.en>div{margin-bottom:3px}
+.key-terms{margin-top:8px;display:flex;flex-wrap:wrap;gap:6px}
+.term{font-size:11px;background:#fff;border:.5px solid #ddd;padding:3px 8px;border-radius:6px;color:#444}
+.term b{color:#222;font-weight:500}
+.affiliations{font-size:12px;color:#666;margin-top:6px;padding-left:6px;border-left:2px solid #ddd}
+.affiliations b{color:#444;font-weight:500}
+.corresponding{font-size:12px;color:#555;margin-top:3px;padding-left:6px;border-left:2px solid #aac}
+.corresponding b{color:#3F2E7E;font-weight:500}
+.corresp-aff{color:#888}
+.corresponding i{color:#888;font-size:11px}
+.relevance-level{font-size:11px;padding:3px 8px;border-radius:8px;font-weight:500}
+.lvl-direct{background:#D4EBC4;color:#2D5A14}
+.lvl-transferable{background:#E0DDF4;color:#3F2E7E}
+.lvl-peripheral{background:#F1EFE8;color:#666}
+.read-action{font-size:11px;padding:3px 8px;border-radius:8px;font-weight:500;font-style:italic}
+.act-read-now{background:#FFE8D6;color:#7D4515}
+.act-save-for-project{background:#E6E1F5;color:#3A2C7A}
+.act-skim-only{background:#F0F0E8;color:#5C5C50}
+.act-background-only{background:#F5F5F0;color:#777}
+.act-ignore{background:#F5E8E8;color:#7A3A3A}
+.validation-kind{font-size:10px;background:#EDF4FA;color:#1F4A6B;padding:2px 7px;border-radius:6px}
+.why-not-core{font-size:12px;background:#FCF5E8;border-left:3px solid #D8A045;padding:5px 10px;margin-top:4px;color:#5A4318;border-radius:0 6px 6px 0}
+</style></head><body>
+<h1>Research Radar</h1>
+<div class="subtitle">2024-02-01 · AI Bioprinting / Hip Implant / FEA Surrogate / AM Biomedical</div>
+<div class="topbar"><a class="navbtn" href="2024-01-31.html">← 2024-01-31</a><select class="archive-select" onchange="if(this.value)window.location.href=this.value"><option value="2026-06-01.html">2026-06-01</option><option value="2026-05-14.html">2026-05-14</option><option value="2026-05-13.html">2026-05-13</option><option value="2026-05-12.html">2026-05-12</option><option value="2026-05-11.html">2026-05-11</option><option value="2026-05-10.html">2026-05-10</option><option value="2026-05-09.html">2026-05-09</option><option value="2026-05-08.html">2026-05-08</option><option value="2026-05-07.html">2026-05-07</option><option value="2026-05-06.html">2026-05-06</option><option value="2026-05-05.html">2026-05-05</option><option value="2026-05-04.html">2026-05-04</option><option value="2026-05-02.html">2026-05-02</option><option value="2026-05-01.html">2026-05-01</option><option value="2026-04-30.html">2026-04-30</option><option value="2026-04-28.html">2026-04-28</option><option value="2026-04-27.html">2026-04-27</option><option value="2026-04-24.html">2026-04-24</option><option value="2026-04-01.html">2026-04-01</option><option value="2026-01-01.html">2026-01-01</option><option value="2025-05-01.html">2025-05-01</option><option value="2025-01-01.html">2025-01-01</option><option value="2024-12-01.html">2024-12-01</option><option value="2024-09-01.html">2024-09-01</option><option value="2024-08-27.html">2024-08-27</option><option value="2024-08-01.html">2024-08-01</option><option value="2024-06-01.html">2024-06-01</option><option value="2024-05-01.html">2024-05-01</option><option value="2024-04-22.html">2024-04-22</option><option value="2024-04-01.html">2024-04-01</option><option value="2024-03-15.html">2024-03-15</option><option value="2024-03-01.html">2024-03-01</option><option value="2024-02-23.html">2024-02-23</option><option value="2024-02-15.html">2024-02-15</option><option value="2024-02-14.html">2024-02-14</option><option value="2024-02-13.html">2024-02-13</option><option value="2024-02-12.html">2024-02-12</option><option value="2024-02-07.html">2024-02-07</option><option value="2024-02-05.html">2024-02-05</option><option value="2024-02-01.html" selected>2024-02-01</option><option value="2024-01-31.html">2024-01-31</option><option value="2024-01-30.html">2024-01-30</option><option value="2024-01-29.html">2024-01-29</option><option value="2024-01-28.html">2024-01-28</option><option value="2024-01-27.html">2024-01-27</option><option value="2024-01-26.html">2024-01-26</option><option value="2024-01-25.html">2024-01-25</option><option value="2024-01-24.html">2024-01-24</option><option value="2024-01-23.html">2024-01-23</option><option value="2024-01-22.html">2024-01-22</option><option value="2024-01-21.html">2024-01-21</option><option value="2024-01-20.html">2024-01-20</option><option value="2024-01-19.html">2024-01-19</option><option value="2024-01-18.html">2024-01-18</option><option value="2024-01-17.html">2024-01-17</option><option value="2024-01-16.html">2024-01-16</option><option value="2024-01-15.html">2024-01-15</option><option value="2024-01-14.html">2024-01-14</option><option value="2024-01-13.html">2024-01-13</option><option value="2024-01-12.html">2024-01-12</option><option value="2024-01-11.html">2024-01-11</option><option value="2024-01-10.html">2024-01-10</option><option value="2024-01-09.html">2024-01-09</option><option value="2024-01-08.html">2024-01-08</option><option value="2024-01-07.html">2024-01-07</option><option value="2024-01-06.html">2024-01-06</option><option value="2024-01-05.html">2024-01-05</option><option value="2024-01-04.html">2024-01-04</option><option value="2024-01-03.html">2024-01-03</option><option value="2024-01-02.html">2024-01-02</option><option value="2024-01-01.html">2024-01-01</option><option value="2023-12-30.html">2023-12-30</option><option value="2023-12-28.html">2023-12-28</option><option value="2023-12-27.html">2023-12-27</option><option value="2023-12-26.html">2023-12-26</option><option value="2023-12-24.html">2023-12-24</option><option value="2023-12-19.html">2023-12-19</option><option value="2023-12-01.html">2023-12-01</option><option value="2023-11-21.html">2023-11-21</option><option value="2023-11-01.html">2023-11-01</option><option value="2023-08-01.html">2023-08-01</option><option value="2023-06-01.html">2023-06-01</option><option value="2023-01-01.html">2023-01-01</option></select><a class="navbtn" href="2024-02-05.html">2024-02-05 →</a><a class="navbtn" href="weekly/index.html">📅 Weekly</a><a class="navbtn" href="status.html">📊 Status</a><a class="navbtn" href="search.html">🔍 Search</a></div>
+<div class="stats"><div class="stat"><div class="stat-label">Total scored</div><div class="stat-val">14</div></div><div class="stat"><div class="stat-label">High</div><div class="stat-val" style="color:#27500A">0</div></div><div class="stat"><div class="stat-label">Medium</div><div class="stat-val" style="color:#633806">0</div></div><div class="stat"><div class="stat-label">Low</div><div class="stat-val" style="color:#5F5E5A">9</div></div></div>
+<div class="tabs"><button class="tab active" data-filter="all">All</button><button class="tab" data-filter="ai_bioprinting">AI for Bioprinting</button><button class="tab" data-filter="hip_implant">Hip Implant &amp; Femoral Stem</button><button class="tab" data-filter="fea_surrogate">FEA &amp; Surrogate Modelling</button><button class="tab" data-filter="am_biomedical">AM Biomedical Materials</button></div>
+<div class="prio-filter"><button class="pf active" data-prio="HighMedium">High+Medium</button><button class="pf" data-prio="High">High only</button><button class="pf" data-prio="all">Show all</button></div>
+
+<article class="paper" data-direction="ai_bioprinting" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#7F77DD20;color:#7F77DD">AI for Bioprinting</span>
+    <span class="source">pubmed</span>
+    
+    
+    
+    <span class="flag">Review</span>
+  </div>
+  <h3 class="paper-title">The microparticulate inks for bioprinting applications.</h3>
+  <div class="meta">
+    <span class="authors">Chuanfeng An, Shiying Zhang, Jiqing Xu, Yujie Zhang, Zhenzhen Dou et al.</span>
+    <span class="venue">Materials today. Bio</span>
+    <span class="date">2024-02-01</span>
+    <span class="doi"><a href="https://doi.org/10.1016/j.mtbio.2023.100930" target="_blank">10.1016/j.mtbio.2023.100930</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Central Laboratory, The Second Affiliated Hospital, School of Medicine, The Chinese University of Hong Kong, Shenzhen &amp; Longgang District People&#x27;s Hospital of Shenzhen, Shenzhen, 518172, China.; Guang</div>
+  <div class="corresponding"><b>通讯:</b> Jia Liu <span class="corresp-aff">@ Central Laboratory, The Second Affiliated Hospital, School of Medicine, The Chinese University of Hong Kong, Shenzhen &amp; </span> <i>[推断]</i></div>
+  <div class="relevance"><b>相关性:</b> 该综述为生物打印墨水配方提供背景知识，但缺少AI集成，与用户AI驱动的研究方向关联性弱。</div>
+  
+  <div class="summary">
+    <div><b>动机·</b> 生物打印墨水的开发对构建功能组织至关重要，微颗粒墨水因其模块化特性受到关注。</div>
+    <div><b>方法·</b> 综述了聚合物微颗粒、组织衍生微颗粒和生物活性无机微颗粒等材料，并介绍了颗粒墨水与复合墨水配方。</div>
+    <div><b>结果·</b> 分类总结了微颗粒墨水的配方策略及其作为3D生物打印模块化实体的能力，指出了当前挑战和未来方向。</div>
+    <div><b>验证·</b> 无实验验证，为纯综述性论文。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">Bioprinting_InkFormulation</span> <span class="tag">Review</span></div>
+</article>
+<article class="paper" data-direction="ai_bioprinting" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#7F77DD20;color:#7F77DD">AI for Bioprinting</span>
+    <span class="source">pubmed</span>
+    
+    
+    
+    <span class="flag">Exp. validation</span>
+  </div>
+  <h3 class="paper-title">3D bioprinting of Salvianolic acid B-sodium alginate-gelatin skin scaffolds promotes diabetic wound repair via antioxidant, anti-inflammatory, and proangiogenic effects.</h3>
+  <div class="meta">
+    <span class="authors">Qin Lihao, Liu Tingting, Zhang Jiawei, Bai Yifei, Tang Zheyu et al.</span>
+    <span class="venue">Biomedicine &amp; pharmacotherapy = Biomedecine &amp; pharmacotherapie</span>
+    <span class="date">2024-02-01</span>
+    <span class="doi"><a href="https://doi.org/10.1016/j.biopha.2024.116168" target="_blank">10.1016/j.biopha.2024.116168</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Department of Interventional and Vascular Surgery, The Affiliated Changzhou Second People&#x27;s Hospital of Nanjing Medical University, Changzhou 213003, China.</div>
+  <div class="corresponding"><b>通讯:</b> Li Jingyan <span class="corresp-aff">@ Department of Interventional and Vascular Surgery, The Affiliated Changzhou Second People&#x27;s Hospital of Nanjing Medical </span> &nbsp;|&nbsp; Xue Tongqing <span class="corresp-aff">@ Department of Interventional Radiology, Huaian Hospital of Huai&#x27;an City (Huaian Cancer Hospital), Huai&#x27;an 223200, China.</span> &nbsp;|&nbsp; Jia Zhongzhi <span class="corresp-aff">@ Department of Interventional and Vascular Surgery, The Affiliated Changzhou Second People&#x27;s Hospital of Nanjing Medical </span></div>
+  <div class="relevance"><b>相关性:</b> 该论文与生物打印相关，但缺乏AI集成，对用户当前AI辅助生物打印综述或研究无直接贡献。</div>
+  
+  <div class="summary">
+    <div><b>动机·</b> 糖尿病创面愈合受损，存在氧化应激、炎症和血管生成障碍。</div>
+    <div><b>方法·</b> 通过3D生物打印技术将丹酚酸B（SAB）掺入海藻酸钠-明胶（SA-Gel）中，制备复合多孔支架。</div>
+    <div><b>结果·</b> 1.0% SAB-SA-Gel支架具有强抗氧化、抗炎和促血管生成能力，促进糖尿病大鼠创面愈合。</div>
+    <div><b>验证·</b> 进行了体外细胞实验和体内大鼠模型验证。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">Bioprinting_Scaffold</span></div>
+</article>
+<article class="paper" data-direction="ai_bioprinting" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#7F77DD20;color:#7F77DD">AI for Bioprinting</span>
+    <span class="source">pubmed</span>
+    
+    
+    
+    <span class="flag">Exp. validation</span>
+  </div>
+  <h3 class="paper-title">Novel strategy for multi-material 3D bioprinting of human stem cell based corneal stroma with heterogenous design.</h3>
+  <div class="meta">
+    <span class="authors">Paula Puistola, Susanna Miettinen, Heli Skottman, Anni Mörö</span>
+    <span class="venue">Materials today. Bio</span>
+    <span class="date">2024-02-01</span>
+    <span class="doi"><a href="https://doi.org/10.1016/j.mtbio.2023.100924" target="_blank">10.1016/j.mtbio.2023.100924</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Eye Regeneration Group, Faculty of Medicine and Health Technology, Tampere University, Tampere 33520, Finland.</div>
+  <div class="corresponding"><b>通讯:</b> Anni Mörö <span class="corresp-aff">@ Eye Regeneration Group, Faculty of Medicine and Health Technology, Tampere University, Tampere 33520, Finland.</span> <i>[推断]</i></div>
+  <div class="relevance"><b>相关性:</b> 作为生物打印在角膜组织工程中的应用案例，可为用户撰写生物打印综述提供背景材料，但缺乏AI集成。</div>
+  
+  <div class="summary">
+    <div><b>动机·</b> 供体角膜稀缺，现有组织工程技术无法复制天然角膜基质的复杂微观结构，需要开发多材料3D生物打印策略。</div>
+    <div><b>方法·</b> 利用人脂肪来源干细胞和不同刚度的透明质酸基生物墨水，通过多材料生物打印交替打印硬/软纤维，模仿角膜基质正交层状结构。</div>
+    <div><b>结果·</b> 软生物墨水促进细胞生长和组织形成，硬生物墨水提供机械支撑并引导细胞排列，打印结构在离体角膜模型中与宿主组织良好整合。</div>
+    <div><b>验证·</b> 实验中采用了离体角膜器官培养模型进行验证，属于实验性验证，但未涉及体内实验或临床试验。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">bioprinting_multi-material</span> <span class="tag">bioprinting_corneal_stroma</span></div>
+</article>
+<article class="paper" data-direction="ai_bioprinting" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#7F77DD20;color:#7F77DD">AI for Bioprinting</span>
+    <span class="source">pubmed</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Cation-crosslinked</h3>
+  <div class="meta">
+    <span class="authors">Hua Zhang, Yang Luo, Zeming Hu, Mengxi Chen, Shang Chen et al.</span>
+    <span class="venue">Biofabrication</span>
+    <span class="date">2024-02-01</span>
+    <span class="doi"><a href="https://doi.org/10.1088/1758-5090/ad1cf3" target="_blank">10.1088/1758-5090/ad1cf3</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Research Institute of Smart Medicine and Biological Engineering, Ningbo University, Ningbo, Zhejiang 315211, People&#x27;s Republic of China.; State Key Laboratory of Fluid Power and Mechatronic Systems, Z</div>
+  <div class="corresponding"><b>通讯:</b> Jun Fu <span class="corresp-aff">@ School of Materials Science and Engineering, Sun Yat-sen University, Guangzhou, Guangdong 510275, People&#x27;s Republic of C</span> <i>[推断]</i></div>
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="ai_bioprinting" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#7F77DD20;color:#7F77DD">AI for Bioprinting</span>
+    <span class="source">pubmed</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">3D bioprinting bioglass to construct vascularized full-thickness skin substitutes for wound healing.</h3>
+  <div class="meta">
+    <span class="authors">Yanyan Liu, Xin Liu, Haitao Guo, Xinhuan Wang, Ailing Li et al.</span>
+    <span class="venue">Materials today. Bio</span>
+    <span class="date">2024-02-01</span>
+    <span class="doi"><a href="https://doi.org/10.1016/j.mtbio.2023.100899" target="_blank">10.1016/j.mtbio.2023.100899</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> State Key Laboratory of Membrane Biology, Institute of Zoology, Chinese Academy of Sciences, Chaoyang District, Beijing, 100101, PR China.; School of Materials Design and Engineering, Beijing Institut</div>
+  <div class="corresponding"><b>通讯:</b> Qi Gu <span class="corresp-aff">@ State Key Laboratory of Membrane Biology, Institute of Zoology, Chinese Academy of Sciences, Chaoyang District, Beijing,</span> <i>[推断]</i></div>
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="am_biomedical" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#185FA520;color:#185FA5">AM Biomedical Materials</span>
+    <span class="source">pubmed</span>
+    
+    
+    
+    <span class="flag">Exp. validation</span>
+  </div>
+  <h3 class="paper-title">Engineering tunable dual peptide hybrid coatings promote osseointegration of implants.</h3>
+  <div class="meta">
+    <span class="authors">Zeyu Shou, Zhibiao Bai, Han Zhou, Yizhe Shen, Xiaojing Huang et al.</span>
+    <span class="venue">Materials today. Bio</span>
+    <span class="date">2024-02-01</span>
+    <span class="doi"><a href="https://doi.org/10.1016/j.mtbio.2023.100921" target="_blank">10.1016/j.mtbio.2023.100921</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Department of Orthopedics, The First Affiliated Hospital of Wenzhou Medical University, Wenzhou, 325000, People&#x27;s Republic of China.; Wenzhou Institute, University of Chinese Academy of Sciences, Wenz</div>
+  <div class="corresponding"><b>通讯:</b> Chun Chen <span class="corresp-aff">@ Department of Orthopedics, The First Affiliated Hospital of Wenzhou Medical University, Wenzhou, 325000, People&#x27;s Republ</span> <i>[推断]</i></div>
+  <div class="relevance"><b>相关性:</b> 与髋关节植入物的表面改性相关，但未涉及增材制造或多孔结构优化。</div>
+  
+  <div class="summary">
+    <div><b>动机·</b> 开发一种能够促进骨整合的双肽杂化涂层，以增强生物惰性植入体的骨再生能力。</div>
+    <div><b>方法·</b> 在PC/Fe-MPNs表面通过超分子作用接枝K6-RGD和K6-OGP嵌段肽，并通过调节RGD/OGP比例优化涂层性能。</div>
+    <div><b>结果·</b> 该涂层通过Wnt/β-catenin通路显著增强MC3T3-E1细胞的成骨活性、细胞粘附和免疫调节，并在大鼠骨缺损模型中促进骨再生和骨整合。</div>
+    <div><b>验证·</b> 有体内（大鼠骨缺损模型）和体外（细胞实验）验证，但无临床或尸体标本验证。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">Biofunctionalization_Coating</span> <span class="tag">Osseointegration_Peptide</span></div>
+</article>
+<article class="paper" data-direction="am_biomedical" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#185FA520;color:#185FA5">AM Biomedical Materials</span>
+    <span class="source">pubmed</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Bioactive prosthesis interface compositing variable-stiffness hydrogels regulates stem cells fates to facilitate osseointegration through mechanotransduction.</h3>
+  <div class="meta">
+    <span class="authors">Zhonghan Wang, Yue Zhao, Haotian Bai, Fei Chang, Xiaoyu Yang et al.</span>
+    <span class="venue">International journal of biological macromolecules</span>
+    <span class="date">2024-02-01</span>
+    <span class="doi"><a href="https://doi.org/10.1016/j.ijbiomac.2023.129073" target="_blank">10.1016/j.ijbiomac.2023.129073</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Department of Orthopaedics, The Second Hospital of Jilin University, Changchun 130041, PR China; Orthopaedic Research Institute of Jilin Province, Changchun 130041, PR China.</div>
+  <div class="corresponding"><b>通讯:</b> He Liu <span class="corresp-aff">@ Department of Orthopaedics, The Second Hospital of Jilin University, Changchun 130041, PR China; Orthopaedic Research In</span></div>
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="am_biomedical" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#185FA520;color:#185FA5">AM Biomedical Materials</span>
+    <span class="source">pubmed</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Functionalized biomimetic mineralized collagen promotes osseointegration of 3D-printed titanium alloy microporous interface.</h3>
+  <div class="meta">
+    <span class="authors">Xiao Sheng, He Liu, Yu Xu, Zhonghan Wang, Weimin Zhang et al.</span>
+    <span class="venue">Materials today. Bio</span>
+    <span class="date">2024-02-01</span>
+    <span class="doi"><a href="https://doi.org/10.1016/j.mtbio.2023.100896" target="_blank">10.1016/j.mtbio.2023.100896</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Department of Orthopedics, The Second Hospital of Jilin University, Changchun, 130041, Jilin, China.</div>
+  <div class="corresponding"><b>通讯:</b> Jincheng Wang <span class="corresp-aff">@ Department of Orthopedics, The Second Hospital of Jilin University, Changchun, 130041, Jilin, China.; Orthopaedic Resear</span> <i>[推断]</i></div>
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="am_biomedical" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#185FA520;color:#185FA5">AM Biomedical Materials</span>
+    <span class="source">pubmed</span>
+    
+    
+    
+    <span class="flag">Exp. validation</span>
+  </div>
+  <h3 class="paper-title">Ion-bombardment-driven surface modification of porous magnesium scaffolds: Enhancing biocompatibility and osteoimmunomodulation.</h3>
+  <div class="meta">
+    <span class="authors">Viviana M Posada, Juan Ramírez, Ana Civantos, Patricia Fernández-Morales, Jean Paul Allain</span>
+    <span class="venue">Colloids and surfaces. B, Biointerfaces</span>
+    <span class="date">2024-02-01</span>
+    <span class="doi"><a href="https://doi.org/10.1016/j.colsurfb.2023.113717" target="_blank">10.1016/j.colsurfb.2023.113717</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Ken and Mary Alice Lindquist Department of Nuclear Engineering, Pennsylvania State University, USA; Department of Mechanical Engineering, School of Mines, Universidad Nacional de Colombia, Colombia; D</div>
+  <div class="corresponding"><b>通讯:</b> Viviana M Posada <span class="corresp-aff">@ Ken and Mary Alice Lindquist Department of Nuclear Engineering, Pennsylvania State University, USA; Department of Mechan</span> &nbsp;|&nbsp; Juan Ramírez <span class="corresp-aff">@ Department of Mechanical Engineering, School of Mines, Universidad Nacional de Colombia, Colombia. Electronic address: j</span></div>
+  <div class="relevance"><b>相关性:</b> 该研究涉及多孔生物材料的表面改性以提高骨整合，但未采用增材制造或力学测试，对用户基于AM的生物医学材料方向参考价值有限。</div>
+  
+  <div class="summary">
+    <div><b>动机·</b> 多孔镁支架腐蚀速率高、涂层完整性差，需要提高生物活性和耐蚀性。</div>
+    <div><b>方法·</b> 采用定向等离子体纳米合成（DPNS）对多孔镁支架进行表面处理，在400 eV和1×10¹⁸ cm⁻²剂量下轰击。</div>
+    <div><b>结果·</b> 处理后表面粗糙度降低，水接触角增大，腐蚀速率从2.3×10⁻²降至5.7×10⁻³ mg/cm²/day，促进磷灰石形成和细胞铺展，并降低TNF-α表达。</div>
+    <div><b>验证·</b> 有体外实验（hBM-MSCs和J774A.1细胞）和腐蚀测试，但无动物或临床验证。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">Biomaterials_Magnesium</span> <span class="tag">SurfaceModification_IonBombardment</span> <span class="tag">Biocompatibility_Osseointegration</span></div>
+</article>
+<article class="paper" data-direction="ai_bioprinting" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#7F77DD20;color:#7F77DD">AI for Bioprinting</span>
+    <span class="source">pubmed</span>
+    
+    
+    
+    <span class="flag">Exp. validation</span>
+  </div>
+  <h3 class="paper-title">Enhancement of lacrimal gland cell function by decellularized lacrimal gland derived hydrogel.</h3>
+  <div class="meta">
+    <span class="authors">Katharina E Wiebe-Ben Zakour, Sema Kaya, Julia C Matros, Michael C Hacker, Amina Cheikh-Rouhou et al.</span>
+    <span class="venue">Biofabrication</span>
+    <span class="date">2024-02-01</span>
+    <span class="doi"><a href="https://doi.org/10.1088/1758-5090/ad2082" target="_blank">10.1088/1758-5090/ad2082</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Department of Ophthalmology, Medical Faculty and University Hospital Düsseldorf, Heinrich Heine University Duesseldorf, Duesseldorf, Germany.</div>
+  <div class="corresponding"><b>通讯:</b> Joana Witt <span class="corresp-aff">@ Department of Ophthalmology, Medical Faculty and University Hospital Düsseldorf, Heinrich Heine University Duesseldorf, </span> <i>[推断]</i></div>
+  <div class="relevance"><b>相关性:</b> 与用户所有研究方向（3D生物打印综述、髋关节植入物、FEA替代模型、增材制造生物材料）均无直接关联。</div>
+  
+  <div class="summary">
+    <div><b>动机·</b> 开发一种可持续治疗水液缺乏型干眼症的体外模型，需要组织特异性水凝胶作为生物墨水。</div>
+    <div><b>方法·</b> 制备脱细胞泪腺水凝胶（dLG-HG），比较不同水解时间对其物理、超微结构及生化成分的影响，并评估其对泪腺相关细胞活性和功能的影响。</div>
+    <div><b>结果·</b> dLG-HG增强了泪腺上皮细胞、间充质干细胞和内皮细胞的增殖，且上皮细胞分泌能力优于胶原蛋白I和Matrigel，但存在快速降解限制培养周期。</div>
+    <div><b>验证·</b> 仅进行了体外细胞实验验证，无动物或临床实验。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="ai_bioprinting" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#7F77DD20;color:#7F77DD">AI for Bioprinting</span>
+    <span class="source">pubmed</span>
+    
+    
+    
+    <span class="flag">Review</span>
+  </div>
+  <h3 class="paper-title">Ink-spiring innovations: 3D bioprinting skin models for disease discovery.</h3>
+  <div class="meta">
+    <span class="authors">Rafaela Mayumi Simoes Torigoe, Alexander Revzin, Andrew Badley, Saranya Wyles</span>
+    <span class="venue">Regenerative medicine</span>
+    <span class="date">2024-02-01</span>
+    <span class="doi"><a href="https://doi.org/10.2217/rme-2023-0216" target="_blank">10.2217/rme-2023-0216</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Mayo Clinic Graduate School of Biomedical Sciences, Rochester, MN 55905, USA.</div>
+  <div class="corresponding"><b>通讯:</b> Saranya Wyles <span class="corresp-aff">@ Mayo Clinic Department of Dermatology, Rochester, MN 55905, USA.</span> <i>[推断]</i></div>
+  <div class="relevance"><b>相关性:</b> 该论文与用户的生物打印综述方向仅有场景重叠，但完全缺乏人工智能元素，不直接相关。</div>
+  
+  <div class="summary">
+    <div><b>动机·</b> 炎症性皮肤病是常见的慢性皮肤疾病，需要更好的模型来理解疾病机制和治疗。</div>
+    <div><b>方法·</b> 论文综述了3D生物打印技术在构建皮肤模型中的应用前景。</div>
+    <div><b>结果·</b> 强调了3D生物打印在特应性皮炎和移植物抗宿主病研究中的潜力。</div>
+    <div><b>验证·</b> 没有实验验证，是一篇综述性观点文章。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">Bioprinting_SkinModels</span> <span class="tag">Bioprinting_DiseaseModeling</span></div>
+</article>
+<article class="paper" data-direction="am_biomedical" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#185FA520;color:#185FA5">AM Biomedical Materials</span>
+    <span class="source">pubmed</span>
+    
+    
+    
+    <span class="flag">Exp. validation</span> <span class="flag">Patient-specific</span>
+  </div>
+  <h3 class="paper-title">Clinical study with sandblasted dental implants: a 17-year retrospective follow up.</h3>
+  <div class="meta">
+    <span class="authors">Loreto Monsalve-Guil, Eugenio Velasco-Ortega, Jesús Moreno-Muñoz, Enrique Núñez-Márquez, José-Luis Rondón-Romero et al.</span>
+    <span class="venue">The British journal of oral &amp; maxillofacial surgery</span>
+    <span class="date">2024-02-01</span>
+    <span class="doi"><a href="https://doi.org/10.1016/j.bjoms.2023.12.002" target="_blank">10.1016/j.bjoms.2023.12.002</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Department of Comprehensive Dentistry for Adults and Gerodontology. Master&#x27;s Degree in Implant Dentistry. Faculty of Dentistry. University of Seville, Spain.</div>
+  <div class="corresponding"><b>通讯:</b> Ángel-Orión Salgado-Peralvo <span class="corresp-aff">@ Department of Dental Clinical Specialties, Faculty of Dentistry, Complutense University of Madrid, Spain. Electronic add</span></div>
+  <div class="relevance"><b>相关性:</b> 与AM生物材料方向相关性低，未涉及LPBF制造或多孔结构力学性能。</div>
+  
+  <div class="summary">
+    <div><b>动机·</b> 评估喷砂表面牙种植体长达17年的临床效果。</div>
+    <div><b>方法·</b> 回顾性临床研究，86名患者植入275颗喷砂表面种植体，随访17年。</div>
+    <div><b>结果·</b> 种植体存活率93.50%，机械修复并发症24.40%，边缘骨丢失1.78 mm。</div>
+    <div><b>验证·</b> 真实临床研究，包含患者数据和长期随访。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">biomedical_osseointegration</span> <span class="tag">dental_implants</span> <span class="tag">surface_treatment</span></div>
+</article>
+<article class="paper" data-direction="am_biomedical" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#185FA520;color:#185FA5">AM Biomedical Materials</span>
+    <span class="source">pubmed</span>
+    
+    
+    
+    <span class="flag">Exp. validation</span>
+  </div>
+  <h3 class="paper-title">Dual aldehyde cross-linked hyaluronic acid hydrogels loaded with PRP and NGF biofunctionalized PEEK interfaces to enhance osteogenesis and vascularization.</h3>
+  <div class="meta">
+    <span class="authors">Junyan An, Xiaotong Shi, Jun Zhang, Le Qi, Wu Xue et al.</span>
+    <span class="venue">Materials today. Bio</span>
+    <span class="date">2024-02-01</span>
+    <span class="doi"><a href="https://doi.org/10.1016/j.mtbio.2023.100928" target="_blank">10.1016/j.mtbio.2023.100928</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> The Second Hospital of Jilin University, Department of Orthopedics, Changchun, 130041, China.; The Third Hospital of Jilin University, Department of Neurosurgery, Changchun, 130031, China.</div>
+  <div class="corresponding"><b>通讯:</b> Qinyi Liu <span class="corresp-aff">@ The Second Hospital of Jilin University, Department of Orthopedics, Changchun, 130041, China.</span> <i>[推断]</i></div>
+  <div class="relevance"><b>相关性:</b> 该研究与用户关注的AM生物材料方向无关，未涉及增材制造或多孔结构力学性能。</div>
+  
+  <div class="summary">
+    <div><b>动机·</b> 解决PEEK材料生物惰性问题，通过表面涂层促进成骨和血管化。</div>
+    <div><b>方法·</b> 在PEEK表面构建负载PRP和NGF的双醛交联透明质酸水凝胶涂层。</div>
+    <div><b>结果·</b> 涂层可缓释生长因子，体外促进成骨和血管生成，体内增强骨整合和新血管形成。</div>
+    <div><b>验证·</b> 有体外和体内实验验证，包括SEM、EDS、FT-IR、降解测试、ELISA及动物实验。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">Biomedical_Coatings</span> <span class="tag">PEEK_SurfaceModification</span></div>
+</article>
+<article class="paper" data-direction="am_biomedical" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#185FA520;color:#185FA5">AM Biomedical Materials</span>
+    <span class="source">pubmed</span>
+    
+    
+    
+    <span class="flag">Exp. validation</span>
+  </div>
+  <h3 class="paper-title">Titanium-based substrate modified with nanoenzyme for accelerating the repair of bone defect.</h3>
+  <div class="meta">
+    <span class="authors">Yingying Tan, Yao Ding, Shaopeng Liu, Peng Liu, Kaiyong Cai</span>
+    <span class="venue">Colloids and surfaces. B, Biointerfaces</span>
+    <span class="date">2024-02-01</span>
+    <span class="doi"><a href="https://doi.org/10.1016/j.colsurfb.2023.113737" target="_blank">10.1016/j.colsurfb.2023.113737</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Key Laboratory of Biorheological Science and Technology, Ministry of Education, College of Bioengineering, Chongqing University, Chongqing China.</div>
+  <div class="corresponding"><b>通讯:</b> Peng Liu <span class="corresp-aff">@ Key Laboratory of Biorheological Science and Technology, Ministry of Education, College of Bioengineering, Chongqing Uni</span> &nbsp;|&nbsp; Kaiyong Cai <span class="corresp-aff">@ Key Laboratory of Biorheological Science and Technology, Ministry of Education, College of Bioengineering, Chongqing Uni</span></div>
+  <div class="relevance"><b>相关性:</b> 与用户研究方向无直接关联，未涉及增材制造或力学性能分析。</div>
+  
+  <div class="summary">
+    <div><b>动机·</b> 钛植入体初期产生过量ROS导致氧化应激，抑制骨愈合。</div>
+    <div><b>方法·</b> 通过碱热和水热处理在钛表面制备纳米MnO2涂层，利用其类酶活性清除H2O2和ROS。</div>
+    <div><b>结果·</b> 改性钛基底能促进MSCs早期粘附、增殖和成骨分化，体内实验显示能减轻氧化应激并促进骨再生。</div>
+    <div><b>验证·</b> 有体外细胞实验和体内大鼠模型的组织学验证。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">BiomedicalMaterials_SurfaceModification</span> <span class="tag">Titanium_Osseointegration</span> <span class="tag">Nanoenzyme_ROS</span></div>
+</article>
+
+<script>
+const tabs = document.querySelectorAll('.tab');
+const pfs = document.querySelectorAll('.pf');
+let dirFilter = 'all';
+let prioFilter = 'HighMedium';
+function applyFilters(){
+  document.querySelectorAll('.paper').forEach(p=>{
+    const d = p.dataset.direction;
+    const pr = p.dataset.priority;
+    const dirOk = dirFilter==='all' || dirFilter===d;
+    const prOk = prioFilter==='all'
+                  || (prioFilter==='High' && pr==='High')
+                  || (prioFilter==='HighMedium' && (pr==='High'||pr==='Medium'));
+    p.dataset.hidden = (dirOk && prOk) ? '0' : '1';
+  });
+}
+tabs.forEach(t=>t.onclick=()=>{tabs.forEach(x=>x.classList.remove('active'));t.classList.add('active');dirFilter=t.dataset.filter;applyFilters();});
+pfs.forEach(t=>t.onclick=()=>{pfs.forEach(x=>x.classList.remove('active'));t.classList.add('active');prioFilter=t.dataset.prio;applyFilters();});
+applyFilters();
+</script>
+</body></html>

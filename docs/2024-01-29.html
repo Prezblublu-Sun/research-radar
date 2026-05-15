@@ -1,0 +1,587 @@
+<!doctype html><html lang="zh"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Research Radar — 2024-01-29</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:980px;margin:2rem auto;padding:0 1rem;color:#222;line-height:1.5}
+h1{font-size:24px;font-weight:500;margin:0 0 .25rem}
+.subtitle{color:#666;font-size:14px;margin-bottom:1.5rem}
+.topbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 0;margin-bottom:1.25rem;border-bottom:.5px solid #e2e0d8}
+.navbtn{font-size:13px;background:#f5f4ef;color:#444;padding:6px 12px;border-radius:8px;text-decoration:none}
+.navbtn:hover{background:#e9e7df}
+.navbtn.disabled{color:#bbb;background:#fafaf6;cursor:default}
+.archive-select{font-size:13px;padding:6px 10px;border:.5px solid #ccc;border-radius:8px;background:#fff;color:#444;cursor:pointer}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1.5rem}
+.stat{background:#f5f4ef;border-radius:8px;padding:.75rem 1rem}
+.stat-label{font-size:12px;color:#666}
+.stat-val{font-size:22px;font-weight:500;margin-top:2px}
+.tabs,.prio-filter{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:.75rem}
+.tab,.pf{background:transparent;border:.5px solid #ccc;border-radius:8px;padding:6px 14px;font-size:13px;cursor:pointer;color:#444}
+.tab.active,.pf.active{background:#222;color:#fff;border-color:#222}
+.paper{background:#fff;border:.5px solid #e2e0d8;border-radius:12px;padding:1rem 1.25rem;margin-bottom:12px}
+.paper-head{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+.priority{font-size:12px;font-weight:500;padding:3px 10px;border-radius:999px}
+.direction-pill{font-size:11px;padding:3px 8px;border-radius:8px}
+.source{font-size:11px;color:#999;text-transform:uppercase}
+.flag{font-size:11px;background:#eef;color:#335;padding:2px 7px;border-radius:6px}
+.paper-title{font-size:15px;font-weight:500;line-height:1.4;margin:4px 0}
+.meta{font-size:12px;color:#666;margin-bottom:10px}
+.meta>span{margin-right:12px}
+.relevance{font-size:13px;background:#fafaf6;padding:6px 10px;border-radius:6px;margin-bottom:8px}
+.summary{font-size:13px;line-height:1.65}
+.summary>div{margin-bottom:4px}
+.tags-row{margin-top:8px}
+.tag{font-size:10px;background:#f1efe8;color:#555;padding:2px 7px;border-radius:6px;margin-right:4px}
+.paper[data-hidden="1"]{display:none}
+footer.run-info{margin-top:3rem;padding-top:1rem;border-top:.5px solid #e2e0d8;font-size:12px;color:#666}
+footer.run-info summary{cursor:pointer;color:#444}
+footer.run-info table{margin-top:8px;font-family:ui-monospace,monospace;font-size:11px}
+footer.run-info td{padding:2px 12px 2px 0;vertical-align:top}
+footer.run-info td:first-child{color:#888;width:140px}
+details.summary-en{margin-top:8px;background:#f8f8f3;border-radius:8px;padding:6px 12px;border:.5px solid #e2e0d8}
+details.summary-en summary{cursor:pointer;font-size:12px;color:#555;font-weight:500}
+details.summary-en[open] summary{margin-bottom:8px}
+.summary.en{font-size:13px;color:#333;line-height:1.55}
+.summary.en>div{margin-bottom:3px}
+.key-terms{margin-top:8px;display:flex;flex-wrap:wrap;gap:6px}
+.term{font-size:11px;background:#fff;border:.5px solid #ddd;padding:3px 8px;border-radius:6px;color:#444}
+.term b{color:#222;font-weight:500}
+.affiliations{font-size:12px;color:#666;margin-top:6px;padding-left:6px;border-left:2px solid #ddd}
+.affiliations b{color:#444;font-weight:500}
+.corresponding{font-size:12px;color:#555;margin-top:3px;padding-left:6px;border-left:2px solid #aac}
+.corresponding b{color:#3F2E7E;font-weight:500}
+.corresp-aff{color:#888}
+.corresponding i{color:#888;font-size:11px}
+.relevance-level{font-size:11px;padding:3px 8px;border-radius:8px;font-weight:500}
+.lvl-direct{background:#D4EBC4;color:#2D5A14}
+.lvl-transferable{background:#E0DDF4;color:#3F2E7E}
+.lvl-peripheral{background:#F1EFE8;color:#666}
+.read-action{font-size:11px;padding:3px 8px;border-radius:8px;font-weight:500;font-style:italic}
+.act-read-now{background:#FFE8D6;color:#7D4515}
+.act-save-for-project{background:#E6E1F5;color:#3A2C7A}
+.act-skim-only{background:#F0F0E8;color:#5C5C50}
+.act-background-only{background:#F5F5F0;color:#777}
+.act-ignore{background:#F5E8E8;color:#7A3A3A}
+.validation-kind{font-size:10px;background:#EDF4FA;color:#1F4A6B;padding:2px 7px;border-radius:6px}
+.why-not-core{font-size:12px;background:#FCF5E8;border-left:3px solid #D8A045;padding:5px 10px;margin-top:4px;color:#5A4318;border-radius:0 6px 6px 0}
+</style></head><body>
+<h1>Research Radar</h1>
+<div class="subtitle">2024-01-29 · AI Bioprinting / Hip Implant / FEA Surrogate / AM Biomedical</div>
+<div class="topbar"><a class="navbtn" href="2024-01-28.html">← 2024-01-28</a><select class="archive-select" onchange="if(this.value)window.location.href=this.value"><option value="2026-06-01.html">2026-06-01</option><option value="2026-05-14.html">2026-05-14</option><option value="2026-05-13.html">2026-05-13</option><option value="2026-05-12.html">2026-05-12</option><option value="2026-05-11.html">2026-05-11</option><option value="2026-05-10.html">2026-05-10</option><option value="2026-05-09.html">2026-05-09</option><option value="2026-05-08.html">2026-05-08</option><option value="2026-05-07.html">2026-05-07</option><option value="2026-05-06.html">2026-05-06</option><option value="2026-05-05.html">2026-05-05</option><option value="2026-05-04.html">2026-05-04</option><option value="2026-05-02.html">2026-05-02</option><option value="2026-05-01.html">2026-05-01</option><option value="2026-04-30.html">2026-04-30</option><option value="2026-04-28.html">2026-04-28</option><option value="2026-04-27.html">2026-04-27</option><option value="2026-04-24.html">2026-04-24</option><option value="2026-04-01.html">2026-04-01</option><option value="2026-01-01.html">2026-01-01</option><option value="2025-05-01.html">2025-05-01</option><option value="2025-01-01.html">2025-01-01</option><option value="2024-12-01.html">2024-12-01</option><option value="2024-09-01.html">2024-09-01</option><option value="2024-08-27.html">2024-08-27</option><option value="2024-08-01.html">2024-08-01</option><option value="2024-06-01.html">2024-06-01</option><option value="2024-05-01.html">2024-05-01</option><option value="2024-04-22.html">2024-04-22</option><option value="2024-04-01.html">2024-04-01</option><option value="2024-03-15.html">2024-03-15</option><option value="2024-03-01.html">2024-03-01</option><option value="2024-02-23.html">2024-02-23</option><option value="2024-02-15.html">2024-02-15</option><option value="2024-02-14.html">2024-02-14</option><option value="2024-02-13.html">2024-02-13</option><option value="2024-02-12.html">2024-02-12</option><option value="2024-02-07.html">2024-02-07</option><option value="2024-02-05.html">2024-02-05</option><option value="2024-02-01.html">2024-02-01</option><option value="2024-01-31.html">2024-01-31</option><option value="2024-01-30.html">2024-01-30</option><option value="2024-01-29.html" selected>2024-01-29</option><option value="2024-01-28.html">2024-01-28</option><option value="2024-01-27.html">2024-01-27</option><option value="2024-01-26.html">2024-01-26</option><option value="2024-01-25.html">2024-01-25</option><option value="2024-01-24.html">2024-01-24</option><option value="2024-01-23.html">2024-01-23</option><option value="2024-01-22.html">2024-01-22</option><option value="2024-01-21.html">2024-01-21</option><option value="2024-01-20.html">2024-01-20</option><option value="2024-01-19.html">2024-01-19</option><option value="2024-01-18.html">2024-01-18</option><option value="2024-01-17.html">2024-01-17</option><option value="2024-01-16.html">2024-01-16</option><option value="2024-01-15.html">2024-01-15</option><option value="2024-01-14.html">2024-01-14</option><option value="2024-01-13.html">2024-01-13</option><option value="2024-01-12.html">2024-01-12</option><option value="2024-01-11.html">2024-01-11</option><option value="2024-01-10.html">2024-01-10</option><option value="2024-01-09.html">2024-01-09</option><option value="2024-01-08.html">2024-01-08</option><option value="2024-01-07.html">2024-01-07</option><option value="2024-01-06.html">2024-01-06</option><option value="2024-01-05.html">2024-01-05</option><option value="2024-01-04.html">2024-01-04</option><option value="2024-01-03.html">2024-01-03</option><option value="2024-01-02.html">2024-01-02</option><option value="2024-01-01.html">2024-01-01</option><option value="2023-12-30.html">2023-12-30</option><option value="2023-12-28.html">2023-12-28</option><option value="2023-12-27.html">2023-12-27</option><option value="2023-12-26.html">2023-12-26</option><option value="2023-12-24.html">2023-12-24</option><option value="2023-12-19.html">2023-12-19</option><option value="2023-12-01.html">2023-12-01</option><option value="2023-11-21.html">2023-11-21</option><option value="2023-11-01.html">2023-11-01</option><option value="2023-08-01.html">2023-08-01</option><option value="2023-06-01.html">2023-06-01</option><option value="2023-01-01.html">2023-01-01</option></select><a class="navbtn" href="2024-01-30.html">2024-01-30 →</a><a class="navbtn" href="weekly/index.html">📅 Weekly</a><a class="navbtn" href="status.html">📊 Status</a><a class="navbtn" href="search.html">🔍 Search</a></div>
+<div class="stats"><div class="stat"><div class="stat-label">Total scored</div><div class="stat-val">12</div></div><div class="stat"><div class="stat-label">High</div><div class="stat-val" style="color:#27500A">0</div></div><div class="stat"><div class="stat-label">Medium</div><div class="stat-val" style="color:#633806">3</div></div><div class="stat"><div class="stat-label">Low</div><div class="stat-val" style="color:#5F5E5A">5</div></div></div>
+<div class="tabs"><button class="tab active" data-filter="all">All</button><button class="tab" data-filter="ai_bioprinting">AI for Bioprinting</button><button class="tab" data-filter="hip_implant">Hip Implant &amp; Femoral Stem</button><button class="tab" data-filter="fea_surrogate">FEA &amp; Surrogate Modelling</button><button class="tab" data-filter="am_biomedical">AM Biomedical Materials</button></div>
+<div class="prio-filter"><button class="pf active" data-prio="HighMedium">High+Medium</button><button class="pf" data-prio="High">High only</button><button class="pf" data-prio="all">Show all</button></div>
+
+<article class="paper" data-direction="ai_bioprinting" data-priority="Medium">
+  <div class="paper-head">
+    <span class="priority" style="background:#FAEEDA;color:#633806">Medium</span>
+    <span class="direction-pill" style="background:#7F77DD20;color:#7F77DD">AI for Bioprinting</span>
+    <span class="source">openalex</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Manufacturing multi-organs database: A comprehensive, predictive, and analytical biofabrication database</h3>
+  <div class="meta">
+    <span class="authors">Jingmin An, Wenjuan Cui, Haolin Chen, Juan Wu, Yishuang Liang et al.</span>
+    <span class="venue">International Journal of AI for Materials and Design</span>
+    <span class="date">2024-01-29</span>
+    <span class="doi"><a href="https://doi.org/10.36922/ijamd.2420" target="_blank">10.36922/ijamd.2420</a></span>
+  </div>
+  
+  
+  <div class="relevance"><b>相关性:</b> 该数据库可为生物打印综述提供数据支持，但缺少实验验证和自主决策机制，与用户核心研究方向（AI嵌入生物打印工作流）存在差距。</div>
+  
+  <div class="summary">
+    <div><b>动机·</b> 生物制造领域文献爆炸式增长，但数据难以获取和理解，需要整合数据库。</div>
+    <div><b>方法·</b> 通过分析5000多篇论文，构建多器官生物制造数据库（MMDB），利用机器学习模型预测最佳打印参数和器官功能指标。</div>
+    <div><b>结果·</b> MMDB能够识别常用细胞、材料和培养策略，提供热点分析、趋势识别和知识图谱，加速实验设计。</div>
+    <div><b>验证·</b> 仅基于文献分析，无实际实验或临床验证。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">AIforBioprinting_Database</span> <span class="tag">AIforBioprinting_MachineLearning</span></div>
+</article>
+<article class="paper" data-direction="fea_surrogate" data-priority="Medium">
+  <div class="paper-head">
+    <span class="priority" style="background:#FAEEDA;color:#633806">Medium</span>
+    <span class="direction-pill" style="background:#D85A3020;color:#D85A30">FEA &amp; Surrogate Modelling</span>
+    <span class="source">arxiv</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Active learning of Boltzmann samplers and potential energies with quantum mechanical accuracy</h3>
+  <div class="meta">
+    <span class="authors">Ana Molina-Taborda, Pilar Cossio, Olga Lopez-Acevedo, Marylou Gabrié</span>
+    <span class="venue">arXiv preprint</span>
+    <span class="date">2024-01-29</span>
+    <span class="doi"><a href="http://arxiv.org/abs/2401.16487v2" target="_blank">link</a></span>
+  </div>
+  
+  
+  <div class="relevance"><b>相关性:</b> 主动学习和替代模型方法可迁移至生物力学设计中的昂贵仿真采样效率问题。</div>
+  
+  <div class="summary">
+    <div><b>动机·</b> 分子动力学模拟计算昂贵，尤其是需量子精度时。</div>
+    <div><b>方法·</b> 结合增强采样、深度生成模型（正则化流）和主动学习机器学习势。</div>
+    <div><b>结果·</b> 实现向玻尔兹曼分布的快速收敛，并计算自由能差等热力学量。</div>
+    <div><b>验证·</b> 仅在银纳米团簇体系上进行模拟验证，无实验对照。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">FEA_SurrogateModelling</span> <span class="tag">ActiveLearning</span> <span class="tag">MachineLearningPotential</span> <span class="tag">NormalizingFlow</span> <span class="tag">MolecularDynamics</span></div>
+</article>
+<article class="paper" data-direction="fea_surrogate" data-priority="Medium">
+  <div class="paper-head">
+    <span class="priority" style="background:#FAEEDA;color:#633806">Medium</span>
+    <span class="direction-pill" style="background:#D85A3020;color:#D85A30">FEA &amp; Surrogate Modelling</span>
+    <span class="source">arxiv</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">PICL: Physics Informed Contrastive Learning for Partial Differential Equations</h3>
+  <div class="meta">
+    <span class="authors">Cooper Lorsung, Amir Barati Farimani</span>
+    <span class="venue">arXiv preprint</span>
+    <span class="date">2024-01-29</span>
+    <span class="doi"><a href="http://arxiv.org/abs/2401.16327v4" target="_blank">link</a></span>
+  </div>
+  
+  
+  <div class="relevance"><b>相关性:</b> 该方法可迁移至生物力学代理模型，但缺乏具体验证与不确定性量化，与FEA代理方向有间接关联。</div>
+  
+  <div class="summary">
+    <div><b>动机·</b> 现有神经算子代理模型通常针对单一方程，泛化能力有限，需要一种能跨多个偏微分方程提升泛化性能的预训练方法。</div>
+    <div><b>方法·</b> 提出物理信息对比学习（PICL）框架，利用广义对比损失和物理信息系统演化进行对比预训练，结合潜在空间模型输出与输入数据的距离函数。</div>
+    <div><b>结果·</b> 在1D/2D热方程、Burgers方程和线性对流方程的固定未来和自回归滚动任务中，PICL预训练提高了傅里叶神经算子的准确性。</div>
+    <div><b>验证·</b> 仅在数值模拟数据集上验证，无实验或临床验证。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">FEA_Surrogate_Methods</span> <span class="tag">ML_PINN</span></div>
+</article>
+<article class="paper" data-direction="ai_bioprinting" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#7F77DD20;color:#7F77DD">AI for Bioprinting</span>
+    <span class="source">openalex</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Osteoimmunomodulatory bioinks for 3D bioprinting achieve complete regeneration of critical-sized bone defects</h3>
+  <div class="meta">
+    <span class="authors">Xingge Yu, Shengjie Jiang, Dejian Li, Steve GF Shen, Xudong Wang et al.</span>
+    <span class="venue">Composites Part B Engineering</span>
+    <span class="date">2024-01-29</span>
+    <span class="doi"><a href="https://doi.org/10.1016/j.compositesb.2024.111256" target="_blank">10.1016/j.compositesb.2024.111256</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Department of Oral and Cranio-maxillofacial Science, Shanghai Ninth People&#x27;s Hospital, Shanghai Jiao Tong University School of Medicine, College of Stomatology, Shanghai Jiao Tong University, National</div>
+  <div class="corresponding"><b>通讯:</b> Steve GF Shen <span class="corresp-aff">@ Department of Oral and Cranio-maxillofacial Science, Shanghai Ninth People&#x27;s Hospital, Shanghai Jiao Tong University Sch</span> &nbsp;|&nbsp; Xudong Wang <span class="corresp-aff">@ Department of Oral and Cranio-maxillofacial Science, Shanghai Ninth People&#x27;s Hospital, Shanghai Jiao Tong University Sch</span> &nbsp;|&nbsp; Kaili Lin <span class="corresp-aff">@ Department of Oral and Cranio-maxillofacial Science, Shanghai Ninth People&#x27;s Hospital, Shanghai Jiao Tong University Sch</span></div>
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="am_biomedical" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#185FA520;color:#185FA5">AM Biomedical Materials</span>
+    <span class="source">openalex</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Design, Stereolithographic 3D Printing, and Characterization of TPMS Scaffolds</h3>
+  <div class="meta">
+    <span class="authors">Roberta Gabrieli, Raphaël Wenger, Marco Mazza, Enrica Verné, Francesco Baino</span>
+    <span class="venue">Materials</span>
+    <span class="date">2024-01-29</span>
+    <span class="doi"><a href="https://doi.org/10.3390/ma17030654" target="_blank">10.3390/ma17030654</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Institute of Materials Physics and Engineering, Department of Applied Science and Technology, Politecnico di Torino, 10129 Torino, Italy</div>
+  <div class="corresponding"><b>通讯:</b> Francesco Baino <span class="corresp-aff">@ Institute of Materials Physics and Engineering, Department of Applied Science and Technology, Politecnico di Torino, 101</span></div>
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="fea_surrogate" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#D85A3020;color:#D85A30">FEA &amp; Surrogate Modelling</span>
+    <span class="source">arxiv</span>
+    
+    
+    
+    <span class="flag">UQ</span>
+  </div>
+  <h3 class="paper-title">A Bayesian Gaussian Process-Based Latent Discriminative Generative Decoder (LDGD) Model for High-Dimensional Data</h3>
+  <div class="meta">
+    <span class="authors">Navid Ziaei, Behzad Nazari, Uri T. Eden, Alik Widge, Ali Yousefi</span>
+    <span class="venue">arXiv preprint</span>
+    <span class="date">2024-01-29</span>
+    <span class="doi"><a href="https://doi.org/10.1109/ACCESS.2024.3443646" target="_blank">10.1109/ACCESS.2024.3443646</a></span>
+  </div>
+  
+  
+  <div class="relevance"><b>相关性:</b> 通用GP方法，可为FEA代理建模提供参考，但未直接解决生物力学设计中的约束优化或不确定性量化问题。</div>
+  
+  <div class="summary">
+    <div><b>动机·</b> 高维数据中提取有意义信息困难，尤其是存在噪声或多种模态时。</div>
+    <div><b>方法·</b> 提出基于高斯过程的潜在判别生成解码器（LDGD），通过贝叶斯推断学习低维潜在流形，并利用诱导点降低计算复杂度。</div>
+    <div><b>结果·</b> 在合成和基准数据集上，流形推断和标签预测精度优于现有方法，且在小样本场景下表现鲁棒。</div>
+    <div><b>验证·</b> 仅在合成和基准数据集上验证，无实验或临床应用验证。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">Gaussian Process_Bayesian</span> <span class="tag">Dimensionality Reduction_Latent Variable Model</span> <span class="tag">Machine Learning_Generative Model</span></div>
+</article>
+<article class="paper" data-direction="fea_surrogate" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#D85A3020;color:#D85A30">FEA &amp; Surrogate Modelling</span>
+    <span class="source">arxiv</span>
+    
+    
+    
+    <span class="flag">Review</span>
+  </div>
+  <h3 class="paper-title">Bayesian optimization as a flexible and efficient design framework for sustainable process systems</h3>
+  <div class="meta">
+    <span class="authors">Joel A. Paulson, Calvin Tsay</span>
+    <span class="venue">arXiv preprint</span>
+    <span class="date">2024-01-29</span>
+    <span class="doi"><a href="http://arxiv.org/abs/2401.16373v1" target="_blank">link</a></span>
+  </div>
+  
+  
+  <div class="relevance"><b>相关性:</b> 虽涉及贝叶斯优化，但应用于工艺系统，未针对生物力学或植入物设计，相关性不高。</div>
+  
+  <div class="summary">
+    <div><b>动机·</b> 介绍贝叶斯优化技术在工艺系统设计中的最新进展、挑战和机遇。</div>
+    <div><b>方法·</b> 概述先进贝叶斯优化方法如何提高噪声昂贵黑盒函数的采样效率。</div>
+    <div><b>结果·</b> 讨论了改进概率模型质量、内部优化过程选择以及利用问题结构提高采样效率的挑战。</div>
+    <div><b>验证·</b> 无实验验证，仅为综述性论文。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">SurrogateModelling_BayesianOptimization</span> <span class="tag">Review</span></div>
+</article>
+<article class="paper" data-direction="fea_surrogate" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#D85A3020;color:#D85A30">FEA &amp; Surrogate Modelling</span>
+    <span class="source">arxiv</span>
+    
+    
+    
+    <span class="flag">UQ</span>
+  </div>
+  <h3 class="paper-title">Distributed Markov Chain Monte Carlo Sampling based on the Alternating Direction Method of Multipliers</h3>
+  <div class="meta">
+    <span class="authors">Alexandros E. Tzikas, Licio Romao, Mert Pilanci, Alessandro Abate, Mykel J. Kochenderfer</span>
+    <span class="venue">arXiv preprint</span>
+    <span class="date">2024-01-29</span>
+    <span class="doi"><a href="http://arxiv.org/abs/2401.15838v1" target="_blank">link</a></span>
+  </div>
+  
+  
+  <div class="relevance"><b>相关性:</b> 该方法可用于代理模型的贝叶斯不确定性量化，但未直接应用于生物力学或植入物设计，需要额外适配。</div>
+  
+  <div class="summary">
+    <div><b>动机·</b> 提出一种基于ADMM的分布式MCMC采样方案，用于处理空间分布式数据集的贝叶斯推理，以保护隐私并降低通信成本。</div>
+    <div><b>方法·</b> 利用交替方向乘子法（ADMM）在分布式节点上并行生成样本，通过凸优化理论证明收敛性，并用线性/逻辑回归进行实验。</div>
+    <div><b>结果·</b> 理论证明了算法在Wasserstein距离下收敛到目标分布，实验显示其收敛速度快于现有梯度方法。</div>
+    <div><b>验证·</b> 仅包含模拟实验，无实际生物力学或工程验证。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">FEA_SurrogateModelling</span></div>
+</article>
+<article class="paper" data-direction="am_biomedical" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#185FA520;color:#185FA5">AM Biomedical Materials</span>
+    <span class="source">openalex</span>
+    
+    
+    
+    <span class="flag">Exp. validation</span>
+  </div>
+  <h3 class="paper-title">Microstructure and Mechanical Properties of Al–Li Alloys with Different Li Contents Prepared by Selective Laser Melting</h3>
+  <div class="meta">
+    <span class="authors">Shuobing Shao, Zhuoheng Liang, Peng Yin, Xinyuan Li, Yongzhong Zhang</span>
+    <span class="venue">Materials</span>
+    <span class="date">2024-01-29</span>
+    <span class="doi"><a href="https://doi.org/10.3390/ma17030657" target="_blank">10.3390/ma17030657</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> GRINM Metal Composites Technology Co., Ltd., Beijing 101407, China</div>
+  <div class="corresponding"><b>通讯:</b> Yongzhong Zhang <span class="corresp-aff">@ GRINM Metal Composites Technology Co., Ltd., Beijing 101407, China</span></div>
+  <div class="relevance"><b>相关性:</b> 完全不相关，该论文属于航空航天轻合金领域，不涉及生物医学3D打印、髋关节植入物或FEA方法</div>
+  
+  <div class="summary">
+    <div><b>动机·</b> 研究不同Li含量对SLM成形Al-Li合金微观组织和力学性能的影响</div>
+    <div><b>方法·</b> 制备不同Li含量的Al-Li合金粉末，通过SLM成形并进行微观表征和力学测试</div>
+    <div><b>结果·</b> 获得无裂纹高强Al-Li合金的工艺窗口</div>
+    <div><b>验证·</b> 仅涉及材料表征和力学测试，无生物医学相关验证</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">AM_NonBiomedical</span></div>
+</article>
+<article class="paper" data-direction="am_biomedical" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#185FA520;color:#185FA5">AM Biomedical Materials</span>
+    <span class="source">pubmed</span>
+    
+    
+    
+    <span class="flag">Exp. validation</span>
+  </div>
+  <h3 class="paper-title">AMPK activation enhances osteoblast differentiation on a titanium disc via autophagy.</h3>
+  <div class="meta">
+    <span class="authors">Kei Egashira, Hiroshi Kajiya, Takashi Tsutsumi, Yusuke Taniguchi, Kae Kakura et al.</span>
+    <span class="venue">International journal of implant dentistry</span>
+    <span class="date">2024-01-29</span>
+    <span class="doi"><a href="https://doi.org/10.1186/s40729-024-00525-2" target="_blank">10.1186/s40729-024-00525-2</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Section of Oral Implantology, Department of Oral Rehabilitation, Fukuoka Dental College, Fukuoka, Japan.; Oral Medicine Research Center, Fukuoka Dental College, Fukuoka, Japan.</div>
+  <div class="corresponding"><b>通讯:</b> Hiroshi Kajiya <span class="corresp-aff">@ Oral Medicine Research Center, Fukuoka Dental College, Fukuoka, Japan. kajiya@fdcnet.ac.jp.; Department of Physiological</span></div>
+  <div class="relevance"><b>相关性:</b> 不相关：未涉及生物打印、髋关节植入物设计、FEA代理建模或增材制造生物材料。</div>
+  
+  <div class="summary">
+    <div><b>动机·</b> 糖尿病患者骨整合获得较慢，本研究假设AMPK激活可增强钛盘上成骨分化，促进骨整合。</div>
+    <div><b>方法·</b> 在钛盘上培养MC3T3-E1细胞，加入AMPK激活剂AICAR，通过CCK8、荧光素酶测定、qRT-PCR和western blot检测成骨分化相关分子和自噬相关分子的表达。</div>
+    <div><b>结果·</b> AMPK激活增强BMP-2依赖的转录活性和成骨分化分子表达，同时上调自噬相关分子（如LC3-II），AdipoRon类似效果。</div>
+    <div><b>验证·</b> 仅基于体外细胞实验，无动物或临床验证。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">Biomaterials_CellResponse</span> <span class="tag">Osseointegration_BiologicalPathway</span></div>
+</article>
+<article class="paper" data-direction="fea_surrogate" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#D85A3020;color:#D85A30">FEA &amp; Surrogate Modelling</span>
+    <span class="source">arxiv</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">KFVM-WENO: A high-order accurate kernel-based finite volume method for compressible hydrodynamics</h3>
+  <div class="meta">
+    <span class="authors">Ian C. T. May, Dongwook Lee</span>
+    <span class="venue">arXiv preprint</span>
+    <span class="date">2024-01-29</span>
+    <span class="doi"><a href="http://arxiv.org/abs/2401.16543v1" target="_blank">link</a></span>
+  </div>
+  
+  
+  <div class="relevance"><b>相关性:</b> 该论文为计算流体力学方法，与用户研究（生物力学FEA/代理模型）不直接相关。</div>
+  
+  <div class="summary">
+    <div><b>动机·</b> 提出一种完全多维的基于核的有限体积重构方案，用于双曲守恒定律系统，特别是可压缩欧拉方程。</div>
+    <div><b>方法·</b> 采用基于径向基函数和高斯过程建模的自适应阶数加权本质无振荡方法，实现多维重构。</div>
+    <div><b>结果·</b> 通过一系列严格基准问题验证了方案的精度和有效性，并提供了多GPU并行实现。</div>
+    <div><b>验证·</b> 仅通过数值算例验证，无实验或临床数据。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="fea_surrogate" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#D85A3020;color:#D85A30">FEA &amp; Surrogate Modelling</span>
+    <span class="source">arxiv</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Breaking the Barrier: Selective Uncertainty-based Active Learning for Medical Image Segmentation</h3>
+  <div class="meta">
+    <span class="authors">Siteng Ma, Haochang Wu, Aonghus Lawlor, Ruihai Dong</span>
+    <span class="venue">arXiv preprint</span>
+    <span class="date">2024-01-29</span>
+    <span class="doi"><a href="http://arxiv.org/abs/2401.16298v1" target="_blank">link</a></span>
+  </div>
+  
+  
+  <div class="relevance"><b>相关性:</b> 与用户的生物打印综述、髋关节植入物博士研究、有限元代理方法或生物医学增材制造无直接关联。</div>
+  
+  <div class="summary">
+    <div><b>动机·</b> 传统基于不确定性的主动学习方法在医学图像分割中忽略目标区域（如病变）且存在冗余，导致性能不佳甚至低于随机采样。</div>
+    <div><b>方法·</b> 提出选择性不确定性主动学习，通过过滤过程优先选择目标区域和决策边界附近的像素，避免汇总所有像素指标。</div>
+    <div><b>结果·</b> 在五种不确定性方法和两个数据集上，使用更少标注数据达到监督基线，并始终获得最高整体性能。</div>
+    <div><b>验证·</b> 仅在公共数据集上进行实验验证，无真实临床或实验验证。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">Medical_Image_Segmentation</span> <span class="tag">Active_Learning</span></div>
+</article>
+
+<script>
+const tabs = document.querySelectorAll('.tab');
+const pfs = document.querySelectorAll('.pf');
+let dirFilter = 'all';
+let prioFilter = 'HighMedium';
+function applyFilters(){
+  document.querySelectorAll('.paper').forEach(p=>{
+    const d = p.dataset.direction;
+    const pr = p.dataset.priority;
+    const dirOk = dirFilter==='all' || dirFilter===d;
+    const prOk = prioFilter==='all'
+                  || (prioFilter==='High' && pr==='High')
+                  || (prioFilter==='HighMedium' && (pr==='High'||pr==='Medium'));
+    p.dataset.hidden = (dirOk && prOk) ? '0' : '1';
+  });
+}
+tabs.forEach(t=>t.onclick=()=>{tabs.forEach(x=>x.classList.remove('active'));t.classList.add('active');dirFilter=t.dataset.filter;applyFilters();});
+pfs.forEach(t=>t.onclick=()=>{pfs.forEach(x=>x.classList.remove('active'));t.classList.add('active');prioFilter=t.dataset.prio;applyFilters();});
+applyFilters();
+</script>
+</body></html>

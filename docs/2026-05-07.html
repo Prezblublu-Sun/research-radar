@@ -1,0 +1,218 @@
+<!doctype html><html lang="zh"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Research Radar — 2026-05-07</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:980px;margin:2rem auto;padding:0 1rem;color:#222;line-height:1.5}
+h1{font-size:24px;font-weight:500;margin:0 0 .25rem}
+.subtitle{color:#666;font-size:14px;margin-bottom:1.5rem}
+.topbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 0;margin-bottom:1.25rem;border-bottom:.5px solid #e2e0d8}
+.navbtn{font-size:13px;background:#f5f4ef;color:#444;padding:6px 12px;border-radius:8px;text-decoration:none}
+.navbtn:hover{background:#e9e7df}
+.navbtn.disabled{color:#bbb;background:#fafaf6;cursor:default}
+.archive-select{font-size:13px;padding:6px 10px;border:.5px solid #ccc;border-radius:8px;background:#fff;color:#444;cursor:pointer}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1.5rem}
+.stat{background:#f5f4ef;border-radius:8px;padding:.75rem 1rem}
+.stat-label{font-size:12px;color:#666}
+.stat-val{font-size:22px;font-weight:500;margin-top:2px}
+.tabs,.prio-filter{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:.75rem}
+.tab,.pf{background:transparent;border:.5px solid #ccc;border-radius:8px;padding:6px 14px;font-size:13px;cursor:pointer;color:#444}
+.tab.active,.pf.active{background:#222;color:#fff;border-color:#222}
+.paper{background:#fff;border:.5px solid #e2e0d8;border-radius:12px;padding:1rem 1.25rem;margin-bottom:12px}
+.paper-head{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+.priority{font-size:12px;font-weight:500;padding:3px 10px;border-radius:999px}
+.direction-pill{font-size:11px;padding:3px 8px;border-radius:8px}
+.source{font-size:11px;color:#999;text-transform:uppercase}
+.flag{font-size:11px;background:#eef;color:#335;padding:2px 7px;border-radius:6px}
+.paper-title{font-size:15px;font-weight:500;line-height:1.4;margin:4px 0}
+.meta{font-size:12px;color:#666;margin-bottom:10px}
+.meta>span{margin-right:12px}
+.relevance{font-size:13px;background:#fafaf6;padding:6px 10px;border-radius:6px;margin-bottom:8px}
+.summary{font-size:13px;line-height:1.65}
+.summary>div{margin-bottom:4px}
+.tags-row{margin-top:8px}
+.tag{font-size:10px;background:#f1efe8;color:#555;padding:2px 7px;border-radius:6px;margin-right:4px}
+.paper[data-hidden="1"]{display:none}
+footer.run-info{margin-top:3rem;padding-top:1rem;border-top:.5px solid #e2e0d8;font-size:12px;color:#666}
+footer.run-info summary{cursor:pointer;color:#444}
+footer.run-info table{margin-top:8px;font-family:ui-monospace,monospace;font-size:11px}
+footer.run-info td{padding:2px 12px 2px 0;vertical-align:top}
+footer.run-info td:first-child{color:#888;width:140px}
+details.summary-en{margin-top:8px;background:#f8f8f3;border-radius:8px;padding:6px 12px;border:.5px solid #e2e0d8}
+details.summary-en summary{cursor:pointer;font-size:12px;color:#555;font-weight:500}
+details.summary-en[open] summary{margin-bottom:8px}
+.summary.en{font-size:13px;color:#333;line-height:1.55}
+.summary.en>div{margin-bottom:3px}
+.key-terms{margin-top:8px;display:flex;flex-wrap:wrap;gap:6px}
+.term{font-size:11px;background:#fff;border:.5px solid #ddd;padding:3px 8px;border-radius:6px;color:#444}
+.term b{color:#222;font-weight:500}
+.affiliations{font-size:12px;color:#666;margin-top:6px;padding-left:6px;border-left:2px solid #ddd}
+.affiliations b{color:#444;font-weight:500}
+.corresponding{font-size:12px;color:#555;margin-top:3px;padding-left:6px;border-left:2px solid #aac}
+.corresponding b{color:#3F2E7E;font-weight:500}
+.corresp-aff{color:#888}
+.corresponding i{color:#888;font-size:11px}
+.relevance-level{font-size:11px;padding:3px 8px;border-radius:8px;font-weight:500}
+.lvl-direct{background:#D4EBC4;color:#2D5A14}
+.lvl-transferable{background:#E0DDF4;color:#3F2E7E}
+.lvl-peripheral{background:#F1EFE8;color:#666}
+.read-action{font-size:11px;padding:3px 8px;border-radius:8px;font-weight:500;font-style:italic}
+.act-read-now{background:#FFE8D6;color:#7D4515}
+.act-save-for-project{background:#E6E1F5;color:#3A2C7A}
+.act-skim-only{background:#F0F0E8;color:#5C5C50}
+.act-background-only{background:#F5F5F0;color:#777}
+.act-ignore{background:#F5E8E8;color:#7A3A3A}
+.validation-kind{font-size:10px;background:#EDF4FA;color:#1F4A6B;padding:2px 7px;border-radius:6px}
+.why-not-core{font-size:12px;background:#FCF5E8;border-left:3px solid #D8A045;padding:5px 10px;margin-top:4px;color:#5A4318;border-radius:0 6px 6px 0}
+</style></head><body>
+<h1>Research Radar</h1>
+<div class="subtitle">2026-05-07 · AI Bioprinting / Hip Implant / FEA Surrogate / AM Biomedical</div>
+<div class="topbar"><a class="navbtn" href="2026-05-06.html">← 2026-05-06</a><select class="archive-select" onchange="if(this.value)window.location.href=this.value"><option value="2026-06-01.html">2026-06-01</option><option value="2026-05-14.html">2026-05-14</option><option value="2026-05-13.html">2026-05-13</option><option value="2026-05-12.html">2026-05-12</option><option value="2026-05-11.html">2026-05-11</option><option value="2026-05-10.html">2026-05-10</option><option value="2026-05-09.html">2026-05-09</option><option value="2026-05-08.html">2026-05-08</option><option value="2026-05-07.html" selected>2026-05-07</option><option value="2026-05-06.html">2026-05-06</option><option value="2026-05-05.html">2026-05-05</option><option value="2026-05-04.html">2026-05-04</option><option value="2026-05-02.html">2026-05-02</option><option value="2026-05-01.html">2026-05-01</option><option value="2026-04-30.html">2026-04-30</option><option value="2026-04-28.html">2026-04-28</option><option value="2026-04-27.html">2026-04-27</option><option value="2026-04-24.html">2026-04-24</option><option value="2026-04-01.html">2026-04-01</option><option value="2026-01-01.html">2026-01-01</option><option value="2025-05-01.html">2025-05-01</option><option value="2025-01-01.html">2025-01-01</option><option value="2024-12-01.html">2024-12-01</option><option value="2024-09-01.html">2024-09-01</option><option value="2024-08-27.html">2024-08-27</option><option value="2024-08-01.html">2024-08-01</option><option value="2024-06-01.html">2024-06-01</option><option value="2024-05-01.html">2024-05-01</option><option value="2024-04-22.html">2024-04-22</option><option value="2024-04-01.html">2024-04-01</option><option value="2024-03-15.html">2024-03-15</option><option value="2024-03-01.html">2024-03-01</option><option value="2024-02-23.html">2024-02-23</option><option value="2024-02-15.html">2024-02-15</option><option value="2024-02-14.html">2024-02-14</option><option value="2024-02-13.html">2024-02-13</option><option value="2024-02-12.html">2024-02-12</option><option value="2024-02-07.html">2024-02-07</option><option value="2024-02-05.html">2024-02-05</option><option value="2024-02-01.html">2024-02-01</option><option value="2024-01-31.html">2024-01-31</option><option value="2024-01-30.html">2024-01-30</option><option value="2024-01-29.html">2024-01-29</option><option value="2024-01-28.html">2024-01-28</option><option value="2024-01-27.html">2024-01-27</option><option value="2024-01-26.html">2024-01-26</option><option value="2024-01-25.html">2024-01-25</option><option value="2024-01-24.html">2024-01-24</option><option value="2024-01-23.html">2024-01-23</option><option value="2024-01-22.html">2024-01-22</option><option value="2024-01-21.html">2024-01-21</option><option value="2024-01-20.html">2024-01-20</option><option value="2024-01-19.html">2024-01-19</option><option value="2024-01-18.html">2024-01-18</option><option value="2024-01-17.html">2024-01-17</option><option value="2024-01-16.html">2024-01-16</option><option value="2024-01-15.html">2024-01-15</option><option value="2024-01-14.html">2024-01-14</option><option value="2024-01-13.html">2024-01-13</option><option value="2024-01-12.html">2024-01-12</option><option value="2024-01-11.html">2024-01-11</option><option value="2024-01-10.html">2024-01-10</option><option value="2024-01-09.html">2024-01-09</option><option value="2024-01-08.html">2024-01-08</option><option value="2024-01-07.html">2024-01-07</option><option value="2024-01-06.html">2024-01-06</option><option value="2024-01-05.html">2024-01-05</option><option value="2024-01-04.html">2024-01-04</option><option value="2024-01-03.html">2024-01-03</option><option value="2024-01-02.html">2024-01-02</option><option value="2024-01-01.html">2024-01-01</option><option value="2023-12-30.html">2023-12-30</option><option value="2023-12-28.html">2023-12-28</option><option value="2023-12-27.html">2023-12-27</option><option value="2023-12-26.html">2023-12-26</option><option value="2023-12-24.html">2023-12-24</option><option value="2023-12-19.html">2023-12-19</option><option value="2023-12-01.html">2023-12-01</option><option value="2023-11-21.html">2023-11-21</option><option value="2023-11-01.html">2023-11-01</option><option value="2023-08-01.html">2023-08-01</option><option value="2023-06-01.html">2023-06-01</option><option value="2023-01-01.html">2023-01-01</option></select><a class="navbtn" href="2026-05-08.html">2026-05-08 →</a><a class="navbtn" href="weekly/index.html">📅 Weekly</a><a class="navbtn" href="status.html">📊 Status</a><a class="navbtn" href="search.html">🔍 Search</a></div>
+<div class="stats"><div class="stat"><div class="stat-label">Total scored</div><div class="stat-val">3</div></div><div class="stat"><div class="stat-label">High</div><div class="stat-val" style="color:#27500A">0</div></div><div class="stat"><div class="stat-label">Medium</div><div class="stat-val" style="color:#633806">0</div></div><div class="stat"><div class="stat-label">Low</div><div class="stat-val" style="color:#5F5E5A">1</div></div></div>
+<div class="tabs"><button class="tab active" data-filter="all">All</button><button class="tab" data-filter="ai_bioprinting">AI for Bioprinting</button><button class="tab" data-filter="hip_implant">Hip Implant &amp; Femoral Stem</button><button class="tab" data-filter="fea_surrogate">FEA &amp; Surrogate Modelling</button><button class="tab" data-filter="am_biomedical">AM Biomedical Materials</button></div>
+<div class="prio-filter"><button class="pf active" data-prio="HighMedium">High+Medium</button><button class="pf" data-prio="High">High only</button><button class="pf" data-prio="all">Show all</button></div>
+
+<article class="paper" data-direction="ai_bioprinting" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#7F77DD20;color:#7F77DD">AI for Bioprinting</span>
+    <span class="source">openalex</span>
+    <span class="relevance-level lvl-peripheral">Peripheral</span>
+    <span class="read-action act-background-only">Background only</span>
+    <span class="validation-kind">none</span>
+    <span class="flag">Review</span>
+  </div>
+  <h3 class="paper-title">Challenges in drug efficacy and toxicity screening with 3D bioprinted melanoma models</h3>
+  <div class="meta">
+    <span class="authors">Lissinda H. du Plessis, Nonzuzo Myeza, Chrisna Gouws, Awie F. Kotzé, Daniel Nieto</span>
+    <span class="venue">Frontiers in Cell Death</span>
+    <span class="date">2026-05-07</span>
+    <span class="doi"><a href="https://doi.org/10.3389/fceld.2026.1821035" target="_blank">10.3389/fceld.2026.1821035</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Centre of Excellence for Pharmaceutical Sciences, Faculty of Health Sciences, North-West University</div>
+  <div class="corresponding"><b>通讯:</b> Lissinda H. du Plessis <span class="corresp-aff">@ Centre of Excellence for Pharmaceutical Sciences, Faculty of Health Sciences, North-West University</span></div>
+  <div class="relevance"><b>相关性:</b> 该论文讨论了3D生物打印黑色素瘤模型在药物筛选中的挑战，但未涉及AI在生物打印中的应用。</div>
+  <div class="why-not-core"><b>边界:</b> This paper does not embed AI into any bioprinting workflow stage, lacks experimental validation of AI models, and does not advance toward autonomous decision-making.</div>
+  <div class="summary">
+    <div><b>动机·</b> 探讨3D生物打印黑色素瘤模型在药物筛选中的挑战</div>
+    <div><b>方法·</b> 综述现有文献，分析成像和检测方法的局限性</div>
+    <div><b>结果·</b> 指出3D模型分析中光学干扰和异质性问题</div>
+    <div><b>验证·</b> 无实验验证，为观点性综述</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> To discuss challenges in drug efficacy and toxicity screening using 3D bioprinted melanoma models.</div>
+      <div><b>Method·</b> Review of current literature focusing on limitations of microscopy, colorimetric, and fluorescence-based assays for 3D models.</div>
+      <div><b>Result·</b> Identified issues such as optical interference and heterogeneity in cell distribution affecting accurate analysis.</div>
+      <div><b>Validation·</b> No experimental validation; this is a perspective article.</div>
+    </div>
+    <div class="key-terms">
+      <span class="term"><b>3D bioprinting</b> · 3D生物打印</span><span class="term"><b>melanoma model</b> · 黑色素瘤模型</span><span class="term"><b>drug screening</b> · 药物筛选</span><span class="term"><b>bioink</b> · 生物墨水</span><span class="term"><b>apoptosis</b> · 细胞凋亡</span>
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">3D bioprinting</span> <span class="tag">melanoma models</span> <span class="tag">drug screening</span> <span class="tag">review</span></div>
+</article>
+<article class="paper" data-direction="am_biomedical" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#185FA520;color:#185FA5">AM Biomedical Materials</span>
+    <span class="source">openalex</span>
+    <span class="relevance-level lvl-peripheral">Peripheral</span>
+    <span class="read-action act-ignore">Ignore</span>
+    <span class="validation-kind">mechanical_testing</span>
+    <span class="flag">Exp. validation</span>
+  </div>
+  <h3 class="paper-title">Thermohydraulic performance prediction of an additively manufactured minichannel gas-to-gas heat exchanger</h3>
+  <div class="meta">
+    <span class="authors">Vishwjeet Choudhary, A. M. Aneesh, Chennu Ranganayakulu</span>
+    <span class="venue">Scientific Reports</span>
+    <span class="date">2026-05-07</span>
+    <span class="doi"><a href="https://doi.org/10.1038/s41598-026-51667-9" target="_blank">10.1038/s41598-026-51667-9</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Department of Mechanical Engineering, Birla Institute of Technology and Science, Pilani, 333031, Rajasthan, India</div>
+  <div class="corresponding"><b>通讯:</b> Vishwjeet Choudhary <span class="corresp-aff">@ Department of Mechanical Engineering, Birla Institute of Technology and Science, Pilani, 333031, Rajasthan, India</span></div>
+  <div class="relevance"><b>相关性:</b> 该论文研究增材制造微型通道换热器的热工水力性能，与生物医学植入物的应力屏蔽、疲劳或骨整合无关。</div>
+  <div class="why-not-core"><b>边界:</b> This paper focuses on heat exchanger thermohydraulics, not on porous structures for stress shielding, LPBF fabrication with mechanical testing, fatigue, or osseointegration relevant to biomedical implants.</div>
+  <div class="summary">
+    <div><b>动机·</b> 研究增材制造微型通道换热器的热工水力性能，考虑表面粗糙度影响。</div>
+    <div><b>方法·</b> 实验测量与数值模拟结合，开发经验修正因子。</div>
+    <div><b>结果·</b> 过渡SST模型预测最接近，提出独立粗糙度参数。</div>
+    <div><b>验证·</b> 实验与数值对比验证修正因子有效性。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> To characterize the thermohydraulic performance of additively manufactured minichannel heat exchangers and account for surface roughness effects. </div>
+      <div><b>Method·</b> Experimental measurements using a nitrogen-nitrogen test facility and numerical simulations with laminar, realizable k-ε, and transition SST models, along with empirical correction factors. </div>
+      <div><b>Result·</b> Transition SST model showed best agreement; independent roughness parameters for momentum and heat transfer were proposed. </div>
+      <div><b>Validation·</b> Validated against experimental data with average percentage differences of 66.6% and 51.7% for friction factor and Nusselt number. </div>
+    </div>
+    <div class="key-terms">
+      <span class="term"><b>additive manufacturing</b> · 增材制造</span><span class="term"><b>selective laser melting</b> · 选区激光熔化</span><span class="term"><b>surface roughness</b> · 表面粗糙度</span><span class="term"><b>heat exchanger</b> · 换热器</span><span class="term"><b>minichannel</b> · 微型通道</span><span class="term"><b>thermohydraulic performance</b> · 热工水力性能</span><span class="term"><b>fanning friction factor</b> · 范宁摩擦因子</span><span class="term"><b>Nusselt number</b> · 努塞尔数</span><span class="term"><b>transition SST model</b> · 过渡SST模型</span><span class="term"><b>equivalent sand-grain roughness</b> · 等效沙粒粗糙度</span>
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">additive manufacturing</span> <span class="tag">heat exchanger</span> <span class="tag">surface roughness</span> <span class="tag">selective laser melting</span> <span class="tag">thermohydraulic performance</span></div>
+</article>
+<article class="paper" data-direction="hip_implant" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#1D9E7520;color:#1D9E75">Hip Implant &amp; Femoral Stem</span>
+    <span class="source">openalex</span>
+    <span class="relevance-level lvl-peripheral">Peripheral</span>
+    <span class="read-action act-ignore">Ignore</span>
+    <span class="validation-kind">clinical</span>
+    <span class="flag">Exp. validation</span>
+  </div>
+  <h3 class="paper-title">Pre-operative two-step test predicts reciprocal stair-climbing performance one week after total hip arthroplasty</h3>
+  <div class="meta">
+    <span class="authors">Naoki Higashijima, Masanori Fujii, Saki Matsumoto, Yasuo Takei, Koichiro Kishikawa et al.</span>
+    <span class="venue">Journal of Joint Surgery and Research</span>
+    <span class="date">2026-05-07</span>
+    <span class="doi"><a href="https://doi.org/10.1016/j.jjoisr.2026.04.004" target="_blank">10.1016/j.jjoisr.2026.04.004</a></span>
+  </div>
+  
+  
+  <div class="relevance"><b>相关性:</b> 该论文关注全髋关节置换术后临床功能恢复，未涉及生物力学建模或植入物设计。</div>
+  <div class="why-not-core"><b>边界:</b> No biomechanics modeling, no implant stress/strain analysis, no micromotion or contact mechanics, no FEA.</div>
+  <div class="summary">
+    <div><b>动机·</b> 预测全髋置换术后一周爬楼梯能力。</div>
+    <div><b>方法·</b> 术前两步测试评估患者功能。</div>
+    <div><b>结果·</b> 术前测试可预测术后爬楼梯表现。</div>
+    <div><b>验证·</b> 临床患者数据验证。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> To predict stair-climbing performance one week after total hip arthroplasty using a simple preoperative test.</div>
+      <div><b>Method·</b> A two-step test was administered preoperatively and correlated with postoperative stair-climbing ability.</div>
+      <div><b>Result·</b> The preoperative two-step test significantly predicted stair-climbing performance at one week post-surgery.</div>
+      <div><b>Validation·</b> Clinical validation with patient cohort data.</div>
+    </div>
+    <div class="key-terms">
+      <span class="term"><b>total hip arthroplasty</b> · 全髋关节置换术</span><span class="term"><b>stair climbing</b> · 爬楼梯</span><span class="term"><b>preoperative test</b> · 术前测试</span><span class="term"><b>clinical outcome</b> · 临床结果</span>
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">total hip arthroplasty</span> <span class="tag">stair climbing</span> <span class="tag">clinical outcome</span></div>
+</article>
+
+<script>
+const tabs = document.querySelectorAll('.tab');
+const pfs = document.querySelectorAll('.pf');
+let dirFilter = 'all';
+let prioFilter = 'HighMedium';
+function applyFilters(){
+  document.querySelectorAll('.paper').forEach(p=>{
+    const d = p.dataset.direction;
+    const pr = p.dataset.priority;
+    const dirOk = dirFilter==='all' || dirFilter===d;
+    const prOk = prioFilter==='all'
+                  || (prioFilter==='High' && pr==='High')
+                  || (prioFilter==='HighMedium' && (pr==='High'||pr==='Medium'));
+    p.dataset.hidden = (dirOk && prOk) ? '0' : '1';
+  });
+}
+tabs.forEach(t=>t.onclick=()=>{tabs.forEach(x=>x.classList.remove('active'));t.classList.add('active');dirFilter=t.dataset.filter;applyFilters();});
+pfs.forEach(t=>t.onclick=()=>{pfs.forEach(x=>x.classList.remove('active'));t.classList.add('active');prioFilter=t.dataset.prio;applyFilters();});
+applyFilters();
+</script>
+</body></html>
