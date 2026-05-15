@@ -129,6 +129,19 @@ def _normalize(work: dict) -> dict:
 
     venue = (work.get("primary_location") or {}).get("source") or {}
 
+    # ADR-0015 §4.1: OpenAlex always emits publication_date as YYYY-MM-DD,
+    # even when the source record is month-only or year-only. Infer precision
+    # heuristically from the trailing suffix.
+    raw_date = work.get("publication_date", "") or ""
+    if not raw_date:
+        date_str, date_precision = "", "year"
+    elif raw_date.endswith("-01-01"):
+        date_str, date_precision = raw_date, "year"
+    elif raw_date.endswith("-01"):
+        date_str, date_precision = raw_date, "month"
+    else:
+        date_str, date_precision = raw_date, "day"
+
     return {
         "source": "openalex",
         "id": work.get("id", ""),
@@ -140,7 +153,8 @@ def _normalize(work: dict) -> dict:
         "corresponding_authors": corresponding,
         "venue": venue.get("display_name", ""),
         "year": work.get("publication_year"),
-        "date": work.get("publication_date", ""),
+        "date": date_str,
+        "date_precision": date_precision,
         "url": work.get("doi") or work.get("id", ""),
         "cited_by_count": work.get("cited_by_count", 0),
         "concepts": concepts,
