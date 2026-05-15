@@ -65,10 +65,16 @@ def run(days_back: int = 2, skip_zotero: bool = False, force: bool = False) -> d
     openalex_lookback = max(days_back, 14)
     pubmed_lookback = days_back
 
+    # Per-source counts: only populated when a fetcher was attempted AND succeeded.
+    # A source that was not attempted (empty config) stays absent; a source whose
+    # try block raised stays absent too (the except branch already logged it).
+    source_counts: dict[str, int] = {}
+
     if arxiv_cats:
         _print(f"Fetching arxiv (lookback={arxiv_lookback}d): {sorted(arxiv_cats)}")
         try:
             all_lists.append(arxiv_fetcher.fetch(sorted(arxiv_cats), days_back=arxiv_lookback))
+            source_counts["arxiv"] = len(all_lists[-1])
             _print(f"  -> {len(all_lists[-1])} papers")
         except Exception as e:
             _print(f"  ! arxiv failed: {e}")
@@ -81,6 +87,7 @@ def run(days_back: int = 2, skip_zotero: bool = False, force: bool = False) -> d
                 keywords=sorted(openalex_kws),
                 days_back=openalex_lookback,
             ))
+            source_counts["openalex"] = len(all_lists[-1])
             _print(f"  -> {len(all_lists[-1])} papers")
         except Exception as e:
             _print(f"  ! OpenAlex failed: {e}")
@@ -89,6 +96,7 @@ def run(days_back: int = 2, skip_zotero: bool = False, force: bool = False) -> d
         _print(f"Fetching PubMed (lookback={pubmed_lookback}d): {sorted(pubmed_terms)}")
         try:
             all_lists.append(pubmed_fetcher.fetch(sorted(pubmed_terms), days_back=pubmed_lookback))
+            source_counts["pubmed"] = len(all_lists[-1])
             _print(f"  -> {len(all_lists[-1])} papers")
         except Exception as e:
             _print(f"  ! PubMed failed: {e}")
@@ -186,6 +194,12 @@ def run(days_back: int = 2, skip_zotero: bool = False, force: bool = False) -> d
         quality_flags.append("zero_routed")
     if priority_counts.get("High", 0) + priority_counts.get("Medium", 0) == 0 and len(routed) > 0:
         quality_flags.append("zero_high_medium")
+    # Per-source silent-zero detection: an attempted fetcher that returned 0
+    # papers gets its own flag, so single-source outages don't get masked by
+    # the other sources keeping fetched_total healthy.
+    for src, count in source_counts.items():
+        if count == 0:
+            quality_flags.append(f"{src}_returned_zero")
     # =================================
 
 
