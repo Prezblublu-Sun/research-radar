@@ -8,7 +8,6 @@
 from __future__ import annotations
 import datetime as dt
 import json
-import os
 import pathlib
 import sys
 import yaml
@@ -18,6 +17,7 @@ from pipeline import (
     aggregator,
     direction_router,
     llm_scorer,
+    v2_schema as v2,
     zotero_sync,
     manifest as mf,
     changelog_updater as clu,
@@ -38,103 +38,8 @@ def _print(msg: str):
     print(f"[{dt.datetime.now().strftime('%H:%M:%S')}] {msg}", flush=True)
 
 
-# ============================================================================
-# ADR-0015 v2 schema helpers
-# ============================================================================
-# Kept consistent with scripts/migrate_to_schema_v2.py — if you change one, change
-# the other.
-
-def _identity_key(paper: dict) -> str:
-    doi = (paper.get("doi") or "").strip()
-    if doi:
-        return f"doi:{doi}"
-    arxiv = (paper.get("arxiv_id") or "").strip()
-    if arxiv:
-        return f"arxiv:{arxiv}"
-    return ""
-
-
-def _infer_date_precision(date_str: str) -> str:
-    if not date_str:
-        return "year"
-    if date_str.endswith("-01-01"):
-        return "year"
-    if date_str.endswith("-01"):
-        return "month"
-    return "day"
-
-
-def _atomic_write_json(path: pathlib.Path, data) -> None:
-    """Write JSON to <path>.tmp then os.replace — atomic on POSIX."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
-    os.replace(tmp, path)
-
-
-def _load_existing_v2(path: pathlib.Path) -> tuple[list[dict], dict]:
-    """Return (papers, meta) from an existing v2 bucket file, ([], {}) if absent.
-
-    Tolerates a stray v1 list shape for any file that predates migration.
-    """
-    if not path.exists():
-        return [], {}
-    try:
-        data = json.loads(path.read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, OSError):
-        return [], {}
-    if isinstance(data, list):
-        return data, {}
-    if isinstance(data, dict):
-        papers = data.get("papers", [])
-        meta = {k: v for k, v in data.items() if k != "papers"}
-        if not isinstance(papers, list):
-            papers = []
-        return papers, meta
-    return [], {}
-
-
-def _build_v2_counts(papers: list[dict]) -> dict:
-    by_source: dict[str, int] = {}
-    by_direction: dict[str, int] = {}
-    priority_counts: dict[str, int] = {}
-    scored = 0
-    for p in papers:
-        src = p.get("source", "")
-        by_source[src] = by_source.get(src, 0) + 1
-        d = p.get("direction") or p.get("direction_name")
-        if d:
-            by_direction[d] = by_direction.get(d, 0) + 1
-        llm = p.get("llm")
-        if isinstance(llm, dict):
-            scored += 1
-            pr = llm.get("priority")
-            if pr:
-                priority_counts[pr] = priority_counts.get(pr, 0) + 1
-    return {
-        "fetched_total": len(papers),
-        "by_source": by_source,
-        "after_dedup": len(papers),
-        "after_routing": len(papers),
-        "by_direction": by_direction,
-        "routed_by_source": dict(by_source),
-        "scored": scored,
-        "priority_counts": priority_counts if priority_counts else None,
-    }
-
-
-def _build_v2_file(date_str: str, papers: list[dict]) -> dict:
-    return {
-        "schema_version": "v2",
-        "date": date_str,
-        "date_precision": _infer_date_precision(date_str),
-        "papers": papers,
-        "counts": _build_v2_counts(papers),
-    }
-
-
-def _utc_now_iso() -> str:
-    return dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
+# ADR-0015 v2 schema helpers live in pipeline/v2_schema.py and are shared
+# with pipeline.run_historical. Keep changes there, not here.
 
 
 def run(days_back: int = 2, skip_zotero: bool = False, force: bool = False) -> dict:
@@ -247,7 +152,8 @@ def run(days_back: int = 2, skip_zotero: bool = False, force: bool = False) -> d
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     daily_dir = DATA_DIR / "daily"
     daily_dir.mkdir(exist_ok=True)
-    run_ts = _utc_now_iso()
+    run_ts = v2.utc_now_iso()
+    scorer_version = v2.scorer_version_from_active_prompt()
 
     run_status = "success"
     quality_flags = []
@@ -277,32 +183,32 @@ def run(days_back: int = 2, skip_zotero: bool = False, force: bool = False) -> d
         # Merge each bucket with whatever is already on disk; first-seen wins.
         for bucket_date, new_papers in buckets.items():
             target = daily_dir / f"{bucket_date}.json"
-            existing_papers, _existing_meta = _load_existing_v2(target)
+            existing_papers, _existing_meta = v2.load_existing_v2(target)
             existing_keys = {
-                k for k in (_identity_key(p) for p in existing_papers) if k
+                k for k in (v2.identity_key(p) for p in existing_papers) if k
             }
             added = 0
             for p in new_papers:
-                k = _identity_key(p)
+                k = v2.identity_key(p)
                 if k and k in existing_keys:
                     continue  # first-seen wins; do not re-score in place
                 p_out = dict(p)
                 p_out["schema_version"] = "v2"
-                p_out["date_precision"] = _infer_date_precision(p_out.get("date", ""))
-                p_out["scorer_version"] = "v3"
+                p_out["date_precision"] = v2.infer_date_precision(p_out.get("date", ""))
+                p_out["scorer_version"] = scorer_version
                 p_out["first_seen_at"] = run_ts
                 existing_papers.append(p_out)
                 if k:
                     existing_keys.add(k)
                 added += 1
             if added > 0:
-                _atomic_write_json(target, _build_v2_file(bucket_date, existing_papers))
+                v2.atomic_write_json(target, v2.build_v2_file(bucket_date, existing_papers))
                 touched_dates[bucket_date] = added
 
         # Discovery log: one record per observed scored paper (ADR-0015 §4.3).
         discovery_records = []
         for p in scored:
-            k = _identity_key(p)
+            k = v2.identity_key(p)
             if not k:
                 continue
             discovery_records.append({
@@ -320,7 +226,7 @@ def run(days_back: int = 2, skip_zotero: bool = False, force: bool = False) -> d
                         existing_log = loaded
                 except (json.JSONDecodeError, OSError):
                     existing_log = []
-            _atomic_write_json(log_path, existing_log + discovery_records)
+            v2.atomic_write_json(log_path, existing_log + discovery_records)
 
         aggregator.save_state(updated_seen, SEEN_STATE)
         total_added = sum(touched_dates.values())

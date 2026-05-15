@@ -250,16 +250,35 @@ def test_dry_run_does_not_call_llm_scorer(monkeypatch, tmp_path):
     assert called["score_batch"] is False
 
 
-def test_dry_run_writes_dryrun_suffixed_filename(monkeypatch, tmp_path):
+def test_dry_run_writes_no_bucket_files_but_records_counts_in_progress(
+    monkeypatch, tmp_path
+):
+    """Dry-run does not produce per-month or per-bucket output files; the
+    only artifact is _progress.json with per-month counts populated."""
     _mock_three_fetchers(monkeypatch, {
         "openalex": [_make_paper("10.1/a", "AI bioprinting")],
     })
     monkeypatch.setattr(rh.llm_scorer, "score_batch",
                         lambda *a, **kw: ([], []))
+    output_dir = tmp_path / "historical"
+    output_dir.mkdir()
     rh.run(from_date="2024-01-15", to_date="2024-01-20",
-           dry_run=True, output_dir=tmp_path, no_resume=True)
-    assert (tmp_path / "2024-01_dryrun.json").exists()
-    assert not (tmp_path / "2024-01.json").exists()
+           dry_run=True, output_dir=output_dir, data_root=tmp_path,
+           no_resume=True)
+
+    # No legacy month-level files, no v2 bucket files, no discovery_log.
+    assert list((tmp_path / "daily").glob("*.json")) == [] \
+        if (tmp_path / "daily").exists() else True
+    assert not (tmp_path / "discovery_log").exists() \
+        or list((tmp_path / "discovery_log").glob("*.json")) == []
+    assert not (output_dir / "2024-01_dryrun.json").exists()
+    assert not (output_dir / "2024-01.json").exists()
+
+    # Counts surface via the progress file.
+    p = json.loads((output_dir / "_progress.json").read_text())
+    assert p["months"]["2024-01"]["status"] == "complete"
+    assert "counts" in p["months"]["2024-01"]
+    assert p["months"]["2024-01"]["counts"]["scored"] == 0
 
 
 def test_resume_skips_complete_months(monkeypatch, tmp_path):
@@ -369,24 +388,28 @@ def test_zotero_sync_module_not_imported():
     assert "from pipeline.zotero_sync" not in mod_src
 
 
-def test_per_month_output_schema(monkeypatch, tmp_path):
+def test_per_month_counts_schema_in_progress_file(monkeypatch, tmp_path):
+    """Under the v2 schema, per-month tallies live inside the progress
+    file's `months[<key>].counts` block (no separate month-output file)."""
     _mock_three_fetchers(monkeypatch, {
         "openalex": [_make_paper("10.1/a", "AI bioprinting")],
     })
     monkeypatch.setattr(rh.llm_scorer, "score_batch",
                         lambda *a, **kw: ([], []))
+    output_dir = tmp_path / "historical"
+    output_dir.mkdir()
     rh.run(from_date="2024-01-01", to_date="2024-01-31",
-           dry_run=True, output_dir=tmp_path, no_resume=True)
-    out = json.loads((tmp_path / "2024-01_dryrun.json").read_text())
-    for k in ("schema_version", "month", "window", "dry_run",
-              "completed_at", "counts"):
-        assert k in out
+           dry_run=True, output_dir=output_dir, data_root=tmp_path,
+           no_resume=True)
+    p = json.loads((output_dir / "_progress.json").read_text())
+    month = p["months"]["2024-01"]
+    assert month["status"] == "complete"
+    assert "counts" in month
     for k in ("fetched_total", "by_source", "after_dedup", "after_routing",
               "by_direction", "scored", "priority_counts"):
-        assert k in out["counts"]
-    assert out["counts"]["scored"] == 0
-    assert out["counts"]["priority_counts"] is None
-    assert "papers" not in out  # papers list suppressed in dry-run
+        assert k in month["counts"]
+    assert month["counts"]["scored"] == 0
+    assert month["counts"]["priority_counts"] is None
 
 
 def test_progress_file_schema(monkeypatch, tmp_path):
@@ -425,10 +448,13 @@ def test_routed_by_source_present_and_sums_to_after_routing(monkeypatch, tmp_pat
     })
     monkeypatch.setattr(rh.llm_scorer, "score_batch",
                         lambda *a, **kw: ([], []))
+    output_dir = tmp_path / "historical"
+    output_dir.mkdir()
     rh.run(from_date="2024-01-15", to_date="2024-01-15",
-           dry_run=True, output_dir=tmp_path, no_resume=True)
-    out = json.loads((tmp_path / "2024-01_dryrun.json").read_text())
-    counts = out["counts"]
+           dry_run=True, output_dir=output_dir, data_root=tmp_path,
+           no_resume=True)
+    p = json.loads((output_dir / "_progress.json").read_text())
+    counts = p["months"]["2024-01"]["counts"]
     assert "routed_by_source" in counts
     rbs = counts["routed_by_source"]
     assert rbs.get("arxiv", 0) == 2
@@ -496,9 +522,154 @@ def test_dois_seen_dedups_across_months(monkeypatch, tmp_path):
     monkeypatch.setattr(rh.llm_scorer, "score_batch",
                         lambda *a, **kw: ([], []))
 
+    output_dir = tmp_path / "historical"
+    output_dir.mkdir()
     rh.run(from_date="2024-01-01", to_date="2024-02-29",
-           dry_run=True, output_dir=tmp_path, no_resume=True)
-    jan = json.loads((tmp_path / "2024-01_dryrun.json").read_text())
-    feb = json.loads((tmp_path / "2024-02_dryrun.json").read_text())
-    assert jan["counts"]["after_dedup"] == 1
-    assert feb["counts"]["after_dedup"] == 0
+           dry_run=True, output_dir=output_dir, data_root=tmp_path,
+           no_resume=True)
+    p = json.loads((output_dir / "_progress.json").read_text())
+    assert p["months"]["2024-01"]["counts"]["after_dedup"] == 1
+    assert p["months"]["2024-02"]["counts"]["after_dedup"] == 0
+
+
+# ============================================================================
+# ADR-0015 Phase 4 Session 4.6: v2 bucket output
+# ============================================================================
+
+def _paper_with_date(doi: str, date: str, source: str = "openalex") -> dict:
+    return {
+        "source": source,
+        "id": doi,
+        "doi": doi,
+        "arxiv_id": "",
+        "title": "AI bioprinting bioink study",
+        "abstract": "AI bioprinting bioink optimization study",
+        "authors": ["A. Author"],
+        "first_author_affiliation": "",
+        "corresponding_authors": [],
+        "venue": "V",
+        "year": int(date[:4]),
+        "date": date,
+        "url": f"https://doi.org/{doi}",
+        "cited_by_count": 0,
+        "concepts": [],
+        "categories": [],
+    }
+
+
+def test_historical_buckets_papers_into_per_publication_date_files(
+    monkeypatch, tmp_path
+):
+    """5 papers across 3 distinct publication dates in 2024-03 -> 3 v2 files
+    under data_root/daily/, each containing the right paper(s)."""
+    papers = [
+        _paper_with_date("10.1/a", "2024-03-05"),
+        _paper_with_date("10.1/b", "2024-03-05"),
+        _paper_with_date("10.1/c", "2024-03-15"),
+        _paper_with_date("10.1/d", "2024-03-15"),
+        _paper_with_date("10.1/e", "2024-03-25"),
+    ]
+    _mock_three_fetchers(monkeypatch, {"openalex": papers})
+    monkeypatch.setattr(rh.llm_scorer, "score_batch",
+                        lambda routed, dirs: (routed, []))
+
+    output_dir = tmp_path / "historical"
+    output_dir.mkdir()
+    rh.run(from_date="2024-03-01", to_date="2024-03-31",
+           dry_run=False, output_dir=output_dir, data_root=tmp_path,
+           no_resume=True)
+
+    daily_dir = tmp_path / "daily"
+    files = sorted(p.name for p in daily_dir.glob("*.json"))
+    assert files == ["2024-03-05.json", "2024-03-15.json", "2024-03-25.json"]
+
+    for date_str, expected_dois in [
+        ("2024-03-05", {"10.1/a", "10.1/b"}),
+        ("2024-03-15", {"10.1/c", "10.1/d"}),
+        ("2024-03-25", {"10.1/e"}),
+    ]:
+        bucket = json.loads((daily_dir / f"{date_str}.json").read_text())
+        assert bucket["schema_version"] == "v2"
+        assert bucket["date"] == date_str
+        assert {p["doi"] for p in bucket["papers"]} == expected_dois
+        for p in bucket["papers"]:
+            assert p["schema_version"] == "v2"
+            assert p["scorer_version"] == "v3"
+            assert p["first_seen_at"].endswith("Z")
+
+    # Discovery log: one record per scored paper, all run_type=historical_backfill.
+    log_dir = tmp_path / "discovery_log"
+    log_files = list(log_dir.glob("*.json"))
+    assert len(log_files) == 1
+    records = json.loads(log_files[0].read_text())
+    assert len(records) == 5
+    assert all(r["run_type"] == "historical_backfill" for r in records)
+    assert {r["doi_or_arxiv_id"] for r in records} == {
+        f"doi:10.1/{c}" for c in "abcde"
+    }
+
+
+def test_historical_re_run_same_month_does_not_double_add_papers(
+    monkeypatch, tmp_path
+):
+    """Re-running the same month with --no-resume re-fetches the papers, but
+    the v2 bucket merge keeps first-seen-wins so bucket contents are stable
+    and first_seen_at on existing papers is preserved."""
+    papers = [
+        _paper_with_date("10.1/x", "2024-03-10"),
+        _paper_with_date("10.1/y", "2024-03-20"),
+    ]
+    _mock_three_fetchers(monkeypatch, {"openalex": papers})
+    monkeypatch.setattr(rh.llm_scorer, "score_batch",
+                        lambda routed, dirs: (routed, []))
+
+    output_dir = tmp_path / "historical"
+    output_dir.mkdir()
+
+    # First run
+    rh.run(from_date="2024-03-01", to_date="2024-03-31",
+           dry_run=False, output_dir=output_dir, data_root=tmp_path,
+           no_resume=True)
+    first_x = json.loads((tmp_path / "daily" / "2024-03-10.json").read_text())
+    first_y = json.loads((tmp_path / "daily" / "2024-03-20.json").read_text())
+    first_seen_x = first_x["papers"][0]["first_seen_at"]
+    first_seen_y = first_y["papers"][0]["first_seen_at"]
+
+    # Second run (no_resume=True forces re-fetch + re-score)
+    rh.run(from_date="2024-03-01", to_date="2024-03-31",
+           dry_run=False, output_dir=output_dir, data_root=tmp_path,
+           no_resume=True)
+
+    second_x = json.loads((tmp_path / "daily" / "2024-03-10.json").read_text())
+    second_y = json.loads((tmp_path / "daily" / "2024-03-20.json").read_text())
+
+    assert len(second_x["papers"]) == 1
+    assert len(second_y["papers"]) == 1
+    assert second_x["papers"][0]["doi"] == "10.1/x"
+    assert second_y["papers"][0]["doi"] == "10.1/y"
+    # First-seen wins: original first_seen_at is preserved on the existing row.
+    assert second_x["papers"][0]["first_seen_at"] == first_seen_x
+    assert second_y["papers"][0]["first_seen_at"] == first_seen_y
+
+
+def test_historical_scorer_version_parsed_from_active_prompt_file(
+    monkeypatch, tmp_path
+):
+    """scorer_version on each v2 paper record reflects the live value of
+    llm_scorer.ACTIVE_PROMPT_FILE, not a hardcoded 'v3'. Regression test for
+    the v2_schema.scorer_version_from_active_prompt() wiring."""
+    monkeypatch.setattr(rh.llm_scorer, "ACTIVE_PROMPT_FILE", "scorer_v9.txt")
+    _mock_three_fetchers(monkeypatch, {
+        "openalex": [_paper_with_date("10.1/z", "2024-04-10")],
+    })
+    monkeypatch.setattr(rh.llm_scorer, "score_batch",
+                        lambda routed, dirs: (routed, []))
+
+    output_dir = tmp_path / "historical"
+    output_dir.mkdir()
+    rh.run(from_date="2024-04-01", to_date="2024-04-30",
+           dry_run=False, output_dir=output_dir, data_root=tmp_path,
+           no_resume=True)
+
+    bucket = json.loads((tmp_path / "daily" / "2024-04-10.json").read_text())
+    assert bucket["papers"][0]["scorer_version"] == "v9"

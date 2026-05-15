@@ -16,40 +16,42 @@ Hard constraints (enforced by structure of this file):
     any LLM call, so unrouted papers never reach the scorer.
 
 ================================================================================
-JSON OUTPUT SCHEMA -- v1
+OUTPUT SCHEMA -- ADR-0015 v2 (Phase 4 Session 4.6)
 ================================================================================
 
-Per-month file at data/historical/<YYYY-MM>[_dryrun].json:
+Per-publication-date bucket file at data/daily/<YYYY-MM-DD>.json (v2 schema):
 
-    schema_version       str
-    month                str   "YYYY-MM"
-    window               dict  {from, to}  -- the actual window for this month
-    dry_run              bool
-    completed_at         str   ISO 8601 Zulu
-    counts               dict  per-month tallies (see below)
-    papers               list  scored paper records (omitted in dry-run)
+    schema_version       "v2"
+    date                 str   "YYYY-MM-DD" -- the paper publication date
+    date_precision       "day" | "month" | "year"
+    papers               list  scored paper records (with v2 fields:
+                                schema_version, date_precision, scorer_version,
+                                first_seen_at)
+    counts               dict  reconstructed from this bucket's papers
 
-Counts dict:
-    fetched_total        int   sum across sources, before any dedup
-    by_source            dict  {arxiv, openalex, pubmed} -- fetched counts
-    after_dedup          int   distinct papers after cross-source +
-                                cross-month DOI dedup
-    after_routing        int   papers with at least one direction
-    by_direction         dict  per-direction routed count
-    routed_by_source     dict  {arxiv, openalex, pubmed} -- routed counts;
-                                values sum to after_routing
-    scored               int   0 in dry-run, else == after_routing
-    priority_counts      dict | null   High/Medium/Low/Exclude breakdown
+Historical and daily producers both write into the SAME data/daily/ tree;
+merge on identity_key (doi:/arxiv:) is first-seen-wins (ADR-0015 §4.4), so a
+re-run of the same month never duplicates a paper that's already on disk.
 
-Progress file at data/historical/_progress.json:
+Discovery log records at data/discovery_log/<RUN-START-DATE>.json:
 
-    schema_version       str
+    list of {doi_or_arxiv_id, first_seen_at, run_type="historical_backfill"}
+
+Progress file at data/historical/_progress.json (UNCHANGED by Session 4.6):
+
+    schema_version       run-coordination metadata version (NOT per-paper
+                          schema; the paper schema_version is "v2" and lives
+                          on each paper record under data/daily/).
     tool                 "run_historical"
     date_range           dict  {from, to}
     dry_run              bool
     started_at, last_updated_at  str
-    months               dict  per-month status block
+    months               dict  per-month status + counts block
     dois_seen            list  sorted, for cross-month dedup
+
+In dry-run mode, no bucket files and no discovery_log entries are written;
+per-month counts are still tracked inside the progress file's
+`months[<key>].counts` block.
 ================================================================================
 """
 from __future__ import annotations
@@ -65,14 +67,18 @@ from collections import Counter
 import yaml
 
 from fetchers import arxiv_fetcher, openalex_fetcher, pubmed_fetcher
-from pipeline import direction_router, llm_scorer
+from pipeline import direction_router, llm_scorer, v2_schema as v2
 
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 DEFAULT_OUTPUT_DIR = ROOT / "data" / "historical"
+DEFAULT_DATA_ROOT = ROOT / "data"
 PROGRESS_FILENAME = "_progress.json"
 CONFIG_PATH = ROOT / "config" / "directions.yaml"
 
+# Version tag for the run-coordination metadata in _progress.json, distinct
+# from the per-paper `schema_version` field (which is "v2" per ADR-0015). The
+# progress file's shape didn't change in Session 4.6.
 SCHEMA_VERSION = "v1"
 
 
@@ -201,7 +207,8 @@ def _dedup_key(paper: dict) -> str:
 def _run_month(month_key: str, window_from: str, window_to: str,
                directions: dict, exclusions: dict, terms: dict,
                dois_seen: set, dry_run: bool,
-               output_dir: pathlib.Path, log) -> dict:
+               data_root: pathlib.Path, run_start_date: str,
+               log) -> dict:
     log(f"Month {month_key}: window {window_from} -> {window_to}")
 
     by_source = {"arxiv": 0, "openalex": 0, "pubmed": 0}
@@ -286,6 +293,80 @@ def _run_month(month_key: str, window_from: str, window_to: str,
     for k in keyed:
         dois_seen.add(k)
 
+    # ADR-0015 v2: bucket scored papers by paper["date"] into
+    # data/daily/<bucket_date>.json, first-seen-wins merge against any prior
+    # content on disk. Dry-run skips scoring entirely, so scored_papers == []
+    # and no bucket/discovery_log files are written; per-month counts are
+    # still surfaced via the returned dict.
+    touched_buckets: dict[str, int] = {}
+    missing_date = 0
+    if not dry_run and scored_papers:
+        run_ts = v2.utc_now_iso()
+        scorer_version = v2.scorer_version_from_active_prompt()
+        daily_dir = data_root / "daily"
+
+        buckets: dict[str, list[dict]] = {}
+        for p in scored_papers:
+            d = (p.get("date") or "").strip()
+            if not d:
+                missing_date += 1
+                continue
+            buckets.setdefault(d, []).append(p)
+
+        for bucket_date, new_papers in buckets.items():
+            target = daily_dir / f"{bucket_date}.json"
+            existing_papers, _meta = v2.load_existing_v2(target)
+            existing_keys = {
+                k for k in (v2.identity_key(p) for p in existing_papers) if k
+            }
+            added = 0
+            for p in new_papers:
+                k = v2.identity_key(p)
+                if k and k in existing_keys:
+                    continue  # first-seen wins
+                p_out = dict(p)
+                p_out["schema_version"] = "v2"
+                p_out["date_precision"] = v2.infer_date_precision(
+                    p_out.get("date", "")
+                )
+                p_out["scorer_version"] = scorer_version
+                p_out["first_seen_at"] = run_ts
+                existing_papers.append(p_out)
+                if k:
+                    existing_keys.add(k)
+                added += 1
+            if added > 0:
+                v2.atomic_write_json(
+                    target, v2.build_v2_file(bucket_date, existing_papers)
+                )
+                touched_buckets[bucket_date] = added
+
+        # Discovery log: one record per scored observation, regardless of
+        # whether the paper survived the bucket-level dedup. run_date is the
+        # calendar date of when this historical session started so that all
+        # months in one run share a discovery file.
+        discovery_records = [
+            {
+                "doi_or_arxiv_id": v2.identity_key(p),
+                "first_seen_at": run_ts,
+                "run_type": "historical_backfill",
+            }
+            for p in scored_papers
+            if v2.identity_key(p)
+        ]
+        if discovery_records:
+            log_path = (data_root / "discovery_log"
+                        / f"{run_start_date}.json")
+            existing_log: list = []
+            if log_path.exists():
+                try:
+                    loaded = json.loads(log_path.read_text(encoding="utf-8"))
+                    if isinstance(loaded, list):
+                        existing_log = loaded
+                except (json.JSONDecodeError, OSError):
+                    existing_log = []
+            v2.atomic_write_json(log_path, existing_log + discovery_records)
+
     counts = {
         "fetched_total": fetched_total,
         "by_source": by_source,
@@ -295,26 +376,19 @@ def _run_month(month_key: str, window_from: str, window_to: str,
         "routed_by_source": dict(routed_by_source),
         "scored": scored_count,
         "priority_counts": priority_counts,
+        # v2 diagnostics
+        "touched_buckets": touched_buckets,
+        "papers_with_missing_date": missing_date,
     }
-
-    # Per-month output file
-    output_dir.mkdir(parents=True, exist_ok=True)
-    suffix = "_dryrun" if dry_run else ""
-    out_path = output_dir / f"{month_key}{suffix}.json"
-    out_data = {
-        "schema_version": SCHEMA_VERSION,
-        "month": month_key,
-        "window": {"from": window_from, "to": window_to},
-        "dry_run": dry_run,
-        "completed_at": _now_iso(),
-        "counts": counts,
-    }
-    if not dry_run:
-        out_data["papers"] = scored_papers
-    out_path.write_text(json.dumps(out_data, indent=2, ensure_ascii=False),
-                        encoding="utf-8")
-    log(f"  -> wrote {out_path.name} "
-        f"(routed {after_routing}, scored {scored_count})")
+    if dry_run:
+        log(f"  -> dry-run: routed {after_routing}, scored 0; "
+            f"no bucket files written")
+    else:
+        total_added = sum(touched_buckets.values())
+        log(f"  -> scored {scored_count}; wrote {total_added} new paper(s) "
+            f"across {len(touched_buckets)} bucket(s)")
+        if missing_date:
+            log(f"     (skipped {missing_date} paper(s) with empty date)")
 
     return counts
 
@@ -325,9 +399,17 @@ def _run_month(month_key: str, window_from: str, window_to: str,
 
 def run(from_date: str, to_date: str, dry_run: bool,
         output_dir: pathlib.Path, no_resume: bool,
+        data_root: pathlib.Path | None = None,
         config_path: pathlib.Path = CONFIG_PATH,
         log_fn=None) -> dict:
     log = log_fn or (lambda m: print(m, flush=True))
+
+    # Default: data_root is the parent of output_dir, which under production
+    # config means data/historical/.parent == data/. Tests that put both
+    # progress and bucket output under tmp_path should pass data_root=tmp_path
+    # explicitly.
+    if data_root is None:
+        data_root = output_dir.parent
 
     fd = dt.date.fromisoformat(from_date)
     td = dt.date.fromisoformat(to_date)
@@ -360,6 +442,10 @@ def run(from_date: str, to_date: str, dry_run: bool,
     directions, exclusions = _load_config(config_path)
     terms = _collect_source_terms(directions)
     dois_seen: set[str] = set(progress.get("dois_seen", []))
+    # Run-start calendar date drives the discovery_log filename. Use the
+    # progress file's started_at so a resumed session keeps appending to the
+    # original day's log.
+    run_start_date = progress["started_at"][:10]
 
     _write_progress(progress_path, progress)
 
@@ -394,7 +480,8 @@ def run(from_date: str, to_date: str, dry_run: bool,
                 terms=terms,
                 dois_seen=dois_seen,
                 dry_run=dry_run,
-                output_dir=output_dir,
+                data_root=data_root,
+                run_start_date=run_start_date,
                 log=log,
             )
         except Exception as e:
@@ -446,7 +533,14 @@ def main(argv: list[str] | None = None) -> int:
                         help="Skip LLM scoring; emit fetch/route counts only.")
     parser.add_argument("--output-dir", type=pathlib.Path,
                         default=DEFAULT_OUTPUT_DIR,
-                        help="Output directory (default: data/historical/).")
+                        help="Progress-file directory "
+                             "(default: data/historical/).")
+    parser.add_argument("--data-root", type=pathlib.Path,
+                        default=DEFAULT_DATA_ROOT,
+                        help="Root for v2 outputs; bucket files go to "
+                             "<data-root>/daily/ and discovery_log entries "
+                             "to <data-root>/discovery_log/ "
+                             "(default: data/).")
     parser.add_argument("--no-resume", action="store_true",
                         help="Ignore any existing _progress.json and start "
                              "fresh.")
@@ -455,6 +549,7 @@ def main(argv: list[str] | None = None) -> int:
     report = run(
         from_date=args.from_date, to_date=args.to_date,
         dry_run=args.dry_run, output_dir=args.output_dir.resolve(),
+        data_root=args.data_root.resolve(),
         no_resume=args.no_resume,
     )
     print(json.dumps(report, indent=2, ensure_ascii=False))
