@@ -168,6 +168,8 @@ def _extract_one(art) -> dict:
         "venue": venue,
         "year": int(year) if year.isdigit() else None,
         "date": date,
+        # PubMed uses EDAT (Entrez Date — when the record entered PubMed); always day-precision per ADR-0015 §4.1
+        "date_precision": "day",
         "url": f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/",
         "cited_by_count": 0,
         "concepts": [],
