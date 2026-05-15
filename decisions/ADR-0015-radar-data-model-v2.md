@@ -337,10 +337,14 @@ Affected consumers — must be updated in lockstep with the migration:
 
 Five questions deferred to implementation time:
 
-- **(i) arXiv v1 vs. latest-revision date.** Does the current arXiv
-  fetcher's `result.published.date()` return v1 or latest? Source-code
-  verification required before deciding whether arXiv handling needs
-  further changes beyond §4.1's stated intent.
+- **(i) arXiv v1 vs. latest-revision date.** RESOLVED 2026-05-15
+  (commit b8fdc94). Empirically verified via arxiv library source
+  inspection plus multi-version paper fetch (Attention v7:
+  result.published=2017-06-12, result.updated=2023-08-02 — 6-year
+  separation). result.published returns v1 submission date, matching
+  ADR-0015 §4.1 requirement. No fetcher code change to the date field
+  itself was needed; the change in commit b8fdc94 added only the
+  date_precision="day" sibling field.
 - **(ii) Commit policy for `data/discovery_log/`.** Should these
   files be committed to git, or gitignored? Leaning gitignored — they
   are append-only run records and the per-paper `first_seen_at`
@@ -444,3 +448,6 @@ implementation phases (see §8) and are not resolved by this approval
   the migration plan in §5 and rollback in §9 honor this
 - `CLAUDE.md` § 6 "Should / Shouldn't" — workflow file edits in §7(iv)
   and Phase 5 are user-owned, not autonomous
+- commit b8fdc94 — Phase 1 α: arxiv fetcher date_precision="day", resolves §7(i)
+- commit 78cdc8a — Phase 1 β1: openalex fetcher date_precision day/month/year heuristic
+- commit 25cdcf4 — Phase 1 β2: pubmed fetcher date_precision="day"
