@@ -18,6 +18,49 @@ WEEKLY_DIR = DOCS_DIR / "weekly"
 CONFIG = ROOT / "config" / "directions.yaml"
 
 
+def _load_papers_v2_or_v1(path: pathlib.Path) -> tuple[list[dict], dict]:
+    """Return (papers, file_meta) for a daily JSON, v2-dict or stray v1-list.
+
+    v2 (ADR-0015 §4.5): {schema_version, date, date_precision, papers, counts}
+    v1 (pre-migration): top-level list of paper dicts.
+    Anything unparseable / unexpected returns ([], {}).
+
+    Duplicated from render/build_pages.py rather than imported: weekly_report
+    is part of the pipeline package and we keep it free of a render-layer
+    import dependency (same rationale as export_candidates.py).
+    """
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return [], {}
+    if isinstance(data, list):
+        return data, {}
+    if isinstance(data, dict):
+        papers = data.get("papers", [])
+        if not isinstance(papers, list):
+            papers = []
+        meta = {k: v for k, v in data.items() if k != "papers"}
+        return papers, meta
+    return [], {}
+
+
+def _paper_in_window(p: dict, monday: dt.date, sunday: dt.date) -> bool:
+    """True iff the paper's publication `date` falls in [monday, sunday].
+
+    ADR-0015 §4.5 / decision D9: "weekly" means *published this week*, keyed
+    on paper["date"] (publication date), NOT paper["first_seen_at"] (the
+    radar-run/backfill date). No date_precision filtering here -- a
+    month/year-precision paper still carries a full ISO date pinned to the
+    1st, so it lands in whatever ISO week that 1st belongs to and is kept.
+    """
+    raw = p.get("date") or ""
+    try:
+        d = dt.date.fromisoformat(str(raw)[:10])
+    except (ValueError, TypeError):
+        return False
+    return monday <= d <= sunday
+
+
 def _iso_week_id(d: dt.date) -> str:
     """Returns 'YYYY-Www' format, e.g. '2026-W20'."""
     yr, wk, _ = d.isocalendar()
@@ -45,16 +88,22 @@ def collect_week_papers(end_date: dt.date) -> tuple[list[dict], dict]:
         path = DATA_DIR / "daily" / f"{cur.isoformat()}.json"
         if path.exists():
             try:
-                ps = json.loads(path.read_text())
-                all_papers.extend(ps)
-                days_with_data += 1
-                daily_counts[cur.isoformat()] = {
-                    "total": len(ps),
-                    "High":    sum(1 for p in ps if p.get("llm", {}).get("priority") == "High"),
-                    "Medium":  sum(1 for p in ps if p.get("llm", {}).get("priority") == "Medium"),
-                    "Low":     sum(1 for p in ps if p.get("llm", {}).get("priority") == "Low"),
-                    "Exclude": sum(1 for p in ps if p.get("llm", {}).get("priority") == "Exclude"),
-                }
+                raw_ps, _meta = _load_papers_v2_or_v1(path)
+                # D9: keep only papers actually published in this ISO week.
+                # Under v2 the bucket filename usually already aligns with
+                # publication date, but month/year-precision papers can land
+                # a bucket off, so we filter on paper["date"] explicitly.
+                ps = [p for p in raw_ps if _paper_in_window(p, monday, sunday)]
+                if ps:
+                    all_papers.extend(ps)
+                    days_with_data += 1
+                    daily_counts[cur.isoformat()] = {
+                        "total": len(ps),
+                        "High":    sum(1 for p in ps if p.get("llm", {}).get("priority") == "High"),
+                        "Medium":  sum(1 for p in ps if p.get("llm", {}).get("priority") == "Medium"),
+                        "Low":     sum(1 for p in ps if p.get("llm", {}).get("priority") == "Low"),
+                        "Exclude": sum(1 for p in ps if p.get("llm", {}).get("priority") == "Exclude"),
+                    }
             except Exception as e:
                 print(f"  ! skipping {path.name}: {e}")
         cur += dt.timedelta(days=1)

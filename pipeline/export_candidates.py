@@ -24,6 +24,9 @@ lit-system reads top-level keys, no dot-navigation required):
     url                       str
     source                    str   "arxiv" | "openalex" | "pubmed"
     date                      str   ISO date string from upstream
+    date_precision            str   "day" | "month" | "year" -- granularity of
+                                    `date`; under v2 a month/year-precision date
+                                    is still a full ISO date pinned to the 1st
     year                      int|None
     venue                     str
 
@@ -56,9 +59,16 @@ lit-system reads top-level keys, no dot-navigation required):
     summary_en                dict        same shape
 
   Provenance:
-    radar_source_date         str   YYYY-MM-DD of the source daily/*.json
+    scorer_version            str   prompt version that graded this paper
+                                    (e.g. "v3"); "" for legacy v1 records
+    radar_source_date         str   YYYY-MM-DD of the source daily/*.json.
+                                    Under the v2 corpus, daily files are
+                                    bucketed by *publication* date, so this is
+                                    effectively the paper's publication date,
+                                    not the radar-run date. The field name is
+                                    kept for the lit-system contract (ADR-0015).
     radar_export_date         str   YYYY-MM-DD this export ran
-    radar_export_version      str   schema version, currently "v1"
+    radar_export_version      str   schema version, currently "v2"
 
 Lit-system primary key recipe:
     candidate_id = doi if doi else arxiv_id
@@ -90,7 +100,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 DAILY_DIR = ROOT / "data" / "daily"
 DEFAULT_OUTPUT = ROOT / "data" / "exports" / "candidates.jsonl"
 
-EXPORT_VERSION = "v1"
+EXPORT_VERSION = "v2"
 
 PRIORITY_RANK = {"High": 0, "Medium": 1, "Low": 2, "Exclude": 3}
 
@@ -102,6 +112,32 @@ MIN_PRIORITY_INCLUDES: dict[str, set[str]] = {
 }
 
 DAILY_FILENAME_RE = re.compile(r"^(\d{4}-\d{2}-\d{2})\.json$")
+
+
+def _load_papers_v2_or_v1(path: pathlib.Path) -> tuple[list[dict], dict]:
+    """Return (papers, file_meta) for a daily JSON, v2-dict or stray v1-list.
+
+    v2 (ADR-0015 §4.5): {schema_version, date, date_precision, papers, counts}
+    v1 (pre-migration): top-level list of paper dicts.
+    Anything unparseable / unexpected returns ([], {}).
+
+    Mirrors render/build_pages.py:_load_papers_v2_or_v1. Duplicated rather
+    than imported because export_candidates.py is a standalone read-only
+    contract producer and must not take a dependency on the render layer.
+    """
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return [], {}
+    if isinstance(data, list):
+        return data, {}
+    if isinstance(data, dict):
+        papers = data.get("papers", [])
+        if not isinstance(papers, list):
+            papers = []
+        meta = {k: v for k, v in data.items() if k != "papers"}
+        return papers, meta
+    return [], {}
 
 
 def _parse_date(s: str) -> dt.date:
@@ -144,6 +180,7 @@ def _build_record(paper: dict, source_date: str, export_date: str) -> dict:
         "url":       paper.get("url", "") or "",
         "source":    paper.get("source", "") or "",
         "date":      paper.get("date", "") or "",
+        "date_precision": paper.get("date_precision", "") or "",
         "year":      paper.get("year"),
         "venue":     paper.get("venue", "") or "",
         "abstract":  paper.get("abstract", "") or "",
@@ -163,6 +200,7 @@ def _build_record(paper: dict, source_date: str, export_date: str) -> dict:
         "key_terms":         list(llm.get("key_terms") or []),
         "summary_zh":        dict(llm.get("summary_zh") or {}),
         "summary_en":        dict(llm.get("summary_en") or {}),
+        "scorer_version":       paper.get("scorer_version", "") or "",
         "radar_source_date":    source_date,
         "radar_export_date":    export_date,
         "radar_export_version": EXPORT_VERSION,
@@ -201,13 +239,11 @@ def collect_records(
     collisions = 0
 
     for date, path in daily_files:
-        try:
-            papers = json.loads(path.read_text())
-        except (json.JSONDecodeError, OSError) as e:
-            print(f"[warn] skip {path.name}: {e}", file=sys.stderr)
-            continue
-        if not isinstance(papers, list):
-            print(f"[warn] skip {path.name}: top-level is not a list", file=sys.stderr)
+        papers, _meta = _load_papers_v2_or_v1(path)
+        if not papers:
+            # Empty list, unparseable, or unexpected top-level shape.
+            # _load_papers_v2_or_v1 already tolerates v2 dict + v1 list;
+            # anything else (or a genuinely empty file) is skipped quietly.
             continue
 
         source_date = date.isoformat()

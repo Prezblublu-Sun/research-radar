@@ -29,8 +29,11 @@ from pipeline import export_candidates as ec  # noqa: E402
 
 def _make_paper(*, doi: str = "", arxiv_id: str = "",
                 priority: str = "Medium",
-                title: str | None = None) -> dict:
-    """Build a synthetic paper matching daily/*.json schema."""
+                title: str | None = None,
+                date: str = "2026-05-13",
+                date_precision: str = "day",
+                scorer_version: str = "v3") -> dict:
+    """Build a synthetic paper matching daily/*.json v2 paper schema."""
     return {
         "source":   "arxiv" if arxiv_id else "openalex",
         "id":       f"arxiv:{arxiv_id}" if arxiv_id else f"doi:{doi}",
@@ -41,7 +44,9 @@ def _make_paper(*, doi: str = "", arxiv_id: str = "",
         "authors":  ["A. Author"],
         "venue":    "Test Venue",
         "year":     2026,
-        "date":     "2026-05-13",
+        "date":     date,
+        "date_precision": date_precision,
+        "scorer_version": scorer_version,
         "url":      "http://example.org",
         "direction":      "fea_surrogate",
         "direction_name": "FEA & Surrogate Modelling",
@@ -62,10 +67,23 @@ def _make_paper(*, doi: str = "", arxiv_id: str = "",
 
 
 def _write_daily(daily_dir: pathlib.Path, date_str: str,
-                 papers: list[dict]) -> pathlib.Path:
+                 papers: list[dict],
+                 date_precision: str = "day") -> pathlib.Path:
+    """Write a v2-shape daily bucket: a dict wrapper around the paper list.
+
+    ADR-0015 §4.5 v2 schema:
+      {schema_version, date, date_precision, papers, counts}
+    """
     daily_dir.mkdir(parents=True, exist_ok=True)
     path = daily_dir / f"{date_str}.json"
-    path.write_text(json.dumps(papers, ensure_ascii=False))
+    payload = {
+        "schema_version": "v2",
+        "date": date_str,
+        "date_precision": date_precision,
+        "papers": papers,
+        "counts": {"total": len(papers)},
+    }
+    path.write_text(json.dumps(payload, ensure_ascii=False))
     return path
 
 
@@ -320,7 +338,40 @@ def test_provenance_fields_present(daily_dir, output_path):
              "--output", str(output_path)])
     rec = _read_jsonl(output_path)[0]
     assert rec["radar_source_date"] == "2026-05-13"
-    assert rec["radar_export_version"] == "v1"
+    assert rec["radar_export_version"] == "v2"
     # radar_export_date is today; just confirm it's an ISO date
     import datetime as _dt
     _dt.date.fromisoformat(rec["radar_export_date"])
+
+
+# ----------------------------- v2 schema migration -----------------------
+
+def test_v2_file_yields_date_precision_and_scorer_version(daily_dir, output_path):
+    """A v2 daily bucket flows through with the two new provenance fields."""
+    _write_daily(daily_dir, "2026-05-13", [
+        _make_paper(doi="10.1/a", priority="High",
+                    date_precision="month", scorer_version="v3"),
+    ], date_precision="month")
+    rc = ec.main(["--daily-dir", str(daily_dir),
+                  "--output", str(output_path)])
+    assert rc == 0
+    rec = _read_jsonl(output_path)[0]
+    assert rec["date_precision"] == "month"
+    assert rec["scorer_version"] == "v3"
+
+
+def test_export_version_constant_is_v2():
+    assert ec.EXPORT_VERSION == "v2"
+
+
+def test_legacy_v1_list_still_readable(daily_dir, output_path):
+    """A stray pre-migration v1 list-shaped file is still consumed."""
+    daily_dir.mkdir(parents=True, exist_ok=True)
+    (daily_dir / "2026-05-13.json").write_text(
+        json.dumps([_make_paper(doi="10.1/legacy", priority="High")],
+                   ensure_ascii=False)
+    )
+    ec.main(["--daily-dir", str(daily_dir), "--output", str(output_path)])
+    records = _read_jsonl(output_path)
+    assert len(records) == 1
+    assert records[0]["doi"] == "10.1/legacy"
