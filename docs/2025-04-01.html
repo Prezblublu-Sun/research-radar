@@ -1,0 +1,1858 @@
+<!doctype html><html lang="zh"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Research Radar — 2025-04-01</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:980px;margin:2rem auto;padding:0 1rem;color:#222;line-height:1.5}
+h1{font-size:24px;font-weight:500;margin:0 0 .25rem}
+.subtitle{color:#666;font-size:14px;margin-bottom:1.5rem}
+.topbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 0;margin-bottom:1.25rem;border-bottom:.5px solid #e2e0d8}
+.navbtn{font-size:13px;background:#f5f4ef;color:#444;padding:6px 12px;border-radius:8px;text-decoration:none}
+.navbtn:hover{background:#e9e7df}
+.navbtn.disabled{color:#bbb;background:#fafaf6;cursor:default}
+.archive-select{font-size:13px;padding:6px 10px;border:.5px solid #ccc;border-radius:8px;background:#fff;color:#444;cursor:pointer}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1.5rem}
+.stat{background:#f5f4ef;border-radius:8px;padding:.75rem 1rem}
+.stat-label{font-size:12px;color:#666}
+.stat-val{font-size:22px;font-weight:500;margin-top:2px}
+.tabs,.prio-filter{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:.75rem}
+.tab,.pf{background:transparent;border:.5px solid #ccc;border-radius:8px;padding:6px 14px;font-size:13px;cursor:pointer;color:#444}
+.tab.active,.pf.active{background:#222;color:#fff;border-color:#222}
+.paper{background:#fff;border:.5px solid #e2e0d8;border-radius:12px;padding:1rem 1.25rem;margin-bottom:12px}
+.paper-head{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+.priority{font-size:12px;font-weight:500;padding:3px 10px;border-radius:999px}
+.direction-pill{font-size:11px;padding:3px 8px;border-radius:8px}
+.source{font-size:11px;color:#999;text-transform:uppercase}
+.flag{font-size:11px;background:#eef;color:#335;padding:2px 7px;border-radius:6px}
+.paper-title{font-size:15px;font-weight:500;line-height:1.4;margin:4px 0}
+.meta{font-size:12px;color:#666;margin-bottom:10px}
+.meta>span{margin-right:12px}
+.relevance{font-size:13px;background:#fafaf6;padding:6px 10px;border-radius:6px;margin-bottom:8px}
+.summary{font-size:13px;line-height:1.65}
+.summary>div{margin-bottom:4px}
+.tags-row{margin-top:8px}
+.tag{font-size:10px;background:#f1efe8;color:#555;padding:2px 7px;border-radius:6px;margin-right:4px}
+.paper[data-hidden="1"]{display:none}
+footer.run-info{margin-top:3rem;padding-top:1rem;border-top:.5px solid #e2e0d8;font-size:12px;color:#666}
+footer.run-info summary{cursor:pointer;color:#444}
+footer.run-info table{margin-top:8px;font-family:ui-monospace,monospace;font-size:11px}
+footer.run-info td{padding:2px 12px 2px 0;vertical-align:top}
+footer.run-info td:first-child{color:#888;width:140px}
+details.summary-en{margin-top:8px;background:#f8f8f3;border-radius:8px;padding:6px 12px;border:.5px solid #e2e0d8}
+details.summary-en summary{cursor:pointer;font-size:12px;color:#555;font-weight:500}
+details.summary-en[open] summary{margin-bottom:8px}
+.summary.en{font-size:13px;color:#333;line-height:1.55}
+.summary.en>div{margin-bottom:3px}
+.key-terms{margin-top:8px;display:flex;flex-wrap:wrap;gap:6px}
+.term{font-size:11px;background:#fff;border:.5px solid #ddd;padding:3px 8px;border-radius:6px;color:#444}
+.term b{color:#222;font-weight:500}
+.affiliations{font-size:12px;color:#666;margin-top:6px;padding-left:6px;border-left:2px solid #ddd}
+.affiliations b{color:#444;font-weight:500}
+.corresponding{font-size:12px;color:#555;margin-top:3px;padding-left:6px;border-left:2px solid #aac}
+.corresponding b{color:#3F2E7E;font-weight:500}
+.corresp-aff{color:#888}
+.corresponding i{color:#888;font-size:11px}
+.relevance-level{font-size:11px;padding:3px 8px;border-radius:8px;font-weight:500}
+.lvl-direct{background:#D4EBC4;color:#2D5A14}
+.lvl-transferable{background:#E0DDF4;color:#3F2E7E}
+.lvl-peripheral{background:#F1EFE8;color:#666}
+.read-action{font-size:11px;padding:3px 8px;border-radius:8px;font-weight:500;font-style:italic}
+.act-read-now{background:#FFE8D6;color:#7D4515}
+.act-save-for-project{background:#E6E1F5;color:#3A2C7A}
+.act-skim-only{background:#F0F0E8;color:#5C5C50}
+.act-background-only{background:#F5F5F0;color:#777}
+.act-ignore{background:#F5E8E8;color:#7A3A3A}
+.validation-kind{font-size:10px;background:#EDF4FA;color:#1F4A6B;padding:2px 7px;border-radius:6px}
+.why-not-core{font-size:12px;background:#FCF5E8;border-left:3px solid #D8A045;padding:5px 10px;margin-top:4px;color:#5A4318;border-radius:0 6px 6px 0}
+</style></head><body>
+<h1>Research Radar</h1>
+<div class="subtitle">2025-04-01 · AI Bioprinting / Hip Implant / FEA Surrogate / AM Biomedical</div>
+<div class="topbar"><a class="navbtn" href="2025-03-31.html">← 2025-03-31</a><select class="archive-select" onchange="if(this.value)window.location.href=this.value"><option value="2026-12-01.html">2026-12-01</option><option value="2026-10-01.html">2026-10-01</option><option value="2026-08-01.html">2026-08-01</option><option value="2026-07-01.html">2026-07-01</option><option value="2026-06-10.html">2026-06-10</option><option value="2026-06-01.html">2026-06-01</option><option value="2026-05-20.html">2026-05-20</option><option value="2026-05-15.html">2026-05-15</option><option value="2026-05-14.html">2026-05-14</option><option value="2026-05-13.html">2026-05-13</option><option value="2026-05-12.html">2026-05-12</option><option value="2026-05-11.html">2026-05-11</option><option value="2026-05-10.html">2026-05-10</option><option value="2026-05-09.html">2026-05-09</option><option value="2026-05-08.html">2026-05-08</option><option value="2026-05-07.html">2026-05-07</option><option value="2026-05-06.html">2026-05-06</option><option value="2026-05-05.html">2026-05-05</option><option value="2026-05-04.html">2026-05-04</option><option value="2026-05-02.html">2026-05-02</option><option value="2026-05-01.html">2026-05-01</option><option value="2026-04-30.html">2026-04-30</option><option value="2026-04-29.html">2026-04-29</option><option value="2026-04-28.html">2026-04-28</option><option value="2026-04-27.html">2026-04-27</option><option value="2026-04-26.html">2026-04-26</option><option value="2026-04-25.html">2026-04-25</option><option value="2026-04-24.html">2026-04-24</option><option value="2026-04-23.html">2026-04-23</option><option value="2026-04-22.html">2026-04-22</option><option value="2026-04-21.html">2026-04-21</option><option value="2026-04-20.html">2026-04-20</option><option value="2026-04-19.html">2026-04-19</option><option value="2026-04-18.html">2026-04-18</option><option value="2026-04-17.html">2026-04-17</option><option value="2026-04-16.html">2026-04-16</option><option value="2026-04-15.html">2026-04-15</option><option value="2026-04-14.html">2026-04-14</option><option value="2026-04-13.html">2026-04-13</option><option value="2026-04-12.html">2026-04-12</option><option value="2026-04-11.html">2026-04-11</option><option value="2026-04-10.html">2026-04-10</option><option value="2026-04-09.html">2026-04-09</option><option value="2026-04-08.html">2026-04-08</option><option value="2026-04-07.html">2026-04-07</option><option value="2026-04-06.html">2026-04-06</option><option value="2026-04-05.html">2026-04-05</option><option value="2026-04-04.html">2026-04-04</option><option value="2026-04-03.html">2026-04-03</option><option value="2026-04-02.html">2026-04-02</option><option value="2026-04-01.html">2026-04-01</option><option value="2026-03-31.html">2026-03-31</option><option value="2026-03-30.html">2026-03-30</option><option value="2026-03-29.html">2026-03-29</option><option value="2026-03-28.html">2026-03-28</option><option value="2026-03-27.html">2026-03-27</option><option value="2026-03-26.html">2026-03-26</option><option value="2026-03-25.html">2026-03-25</option><option value="2026-03-24.html">2026-03-24</option><option value="2026-03-23.html">2026-03-23</option><option value="2026-03-22.html">2026-03-22</option><option value="2026-03-21.html">2026-03-21</option><option value="2026-03-20.html">2026-03-20</option><option value="2026-03-19.html">2026-03-19</option><option value="2026-03-18.html">2026-03-18</option><option value="2026-03-17.html">2026-03-17</option><option value="2026-03-16.html">2026-03-16</option><option value="2026-03-15.html">2026-03-15</option><option value="2026-03-14.html">2026-03-14</option><option value="2026-03-13.html">2026-03-13</option><option value="2026-03-12.html">2026-03-12</option><option value="2026-03-11.html">2026-03-11</option><option value="2026-03-10.html">2026-03-10</option><option value="2026-03-09.html">2026-03-09</option><option value="2026-03-08.html">2026-03-08</option><option value="2026-03-07.html">2026-03-07</option><option value="2026-03-06.html">2026-03-06</option><option value="2026-03-05.html">2026-03-05</option><option value="2026-03-04.html">2026-03-04</option><option value="2026-03-03.html">2026-03-03</option><option value="2026-03-02.html">2026-03-02</option><option value="2026-03-01.html">2026-03-01</option><option value="2026-02-28.html">2026-02-28</option><option value="2026-02-27.html">2026-02-27</option><option value="2026-02-26.html">2026-02-26</option><option value="2026-02-25.html">2026-02-25</option><option value="2026-02-24.html">2026-02-24</option><option value="2026-02-23.html">2026-02-23</option><option value="2026-02-22.html">2026-02-22</option><option value="2026-02-21.html">2026-02-21</option><option value="2026-02-20.html">2026-02-20</option><option value="2026-02-19.html">2026-02-19</option><option value="2026-02-18.html">2026-02-18</option><option value="2026-02-17.html">2026-02-17</option><option value="2026-02-16.html">2026-02-16</option><option value="2026-02-15.html">2026-02-15</option><option value="2026-02-14.html">2026-02-14</option><option value="2026-02-13.html">2026-02-13</option><option value="2026-02-12.html">2026-02-12</option><option value="2026-02-11.html">2026-02-11</option><option value="2026-02-10.html">2026-02-10</option><option value="2026-02-09.html">2026-02-09</option><option value="2026-02-08.html">2026-02-08</option><option value="2026-02-07.html">2026-02-07</option><option value="2026-02-06.html">2026-02-06</option><option value="2026-02-05.html">2026-02-05</option><option value="2026-02-04.html">2026-02-04</option><option value="2026-02-03.html">2026-02-03</option><option value="2026-02-02.html">2026-02-02</option><option value="2026-02-01.html">2026-02-01</option><option value="2026-01-31.html">2026-01-31</option><option value="2026-01-30.html">2026-01-30</option><option value="2026-01-29.html">2026-01-29</option><option value="2026-01-28.html">2026-01-28</option><option value="2026-01-27.html">2026-01-27</option><option value="2026-01-26.html">2026-01-26</option><option value="2026-01-25.html">2026-01-25</option><option value="2026-01-24.html">2026-01-24</option><option value="2026-01-23.html">2026-01-23</option><option value="2026-01-22.html">2026-01-22</option><option value="2026-01-21.html">2026-01-21</option><option value="2026-01-20.html">2026-01-20</option><option value="2026-01-19.html">2026-01-19</option><option value="2026-01-18.html">2026-01-18</option><option value="2026-01-17.html">2026-01-17</option><option value="2026-01-16.html">2026-01-16</option><option value="2026-01-15.html">2026-01-15</option><option value="2026-01-14.html">2026-01-14</option><option value="2026-01-13.html">2026-01-13</option><option value="2026-01-12.html">2026-01-12</option><option value="2026-01-11.html">2026-01-11</option><option value="2026-01-10.html">2026-01-10</option><option value="2026-01-09.html">2026-01-09</option><option value="2026-01-08.html">2026-01-08</option><option value="2026-01-07.html">2026-01-07</option><option value="2026-01-06.html">2026-01-06</option><option value="2026-01-05.html">2026-01-05</option><option value="2026-01-04.html">2026-01-04</option><option value="2026-01-03.html">2026-01-03</option><option value="2026-01-02.html">2026-01-02</option><option value="2026-01-01.html">2026-01-01</option><option value="2025-12-31.html">2025-12-31</option><option value="2025-12-30.html">2025-12-30</option><option value="2025-12-29.html">2025-12-29</option><option value="2025-12-28.html">2025-12-28</option><option value="2025-12-27.html">2025-12-27</option><option value="2025-12-26.html">2025-12-26</option><option value="2025-12-25.html">2025-12-25</option><option value="2025-12-24.html">2025-12-24</option><option value="2025-12-23.html">2025-12-23</option><option value="2025-12-22.html">2025-12-22</option><option value="2025-12-21.html">2025-12-21</option><option value="2025-12-20.html">2025-12-20</option><option value="2025-12-19.html">2025-12-19</option><option value="2025-12-18.html">2025-12-18</option><option value="2025-12-17.html">2025-12-17</option><option value="2025-12-16.html">2025-12-16</option><option value="2025-12-15.html">2025-12-15</option><option value="2025-12-14.html">2025-12-14</option><option value="2025-12-13.html">2025-12-13</option><option value="2025-12-12.html">2025-12-12</option><option value="2025-12-11.html">2025-12-11</option><option value="2025-12-10.html">2025-12-10</option><option value="2025-12-09.html">2025-12-09</option><option value="2025-12-08.html">2025-12-08</option><option value="2025-12-07.html">2025-12-07</option><option value="2025-12-06.html">2025-12-06</option><option value="2025-12-05.html">2025-12-05</option><option value="2025-12-04.html">2025-12-04</option><option value="2025-12-03.html">2025-12-03</option><option value="2025-12-02.html">2025-12-02</option><option value="2025-12-01.html">2025-12-01</option><option value="2025-11-30.html">2025-11-30</option><option value="2025-11-29.html">2025-11-29</option><option value="2025-11-28.html">2025-11-28</option><option value="2025-11-27.html">2025-11-27</option><option value="2025-11-26.html">2025-11-26</option><option value="2025-11-25.html">2025-11-25</option><option value="2025-11-24.html">2025-11-24</option><option value="2025-11-23.html">2025-11-23</option><option value="2025-11-22.html">2025-11-22</option><option value="2025-11-21.html">2025-11-21</option><option value="2025-11-20.html">2025-11-20</option><option value="2025-11-19.html">2025-11-19</option><option value="2025-11-18.html">2025-11-18</option><option value="2025-11-17.html">2025-11-17</option><option value="2025-11-16.html">2025-11-16</option><option value="2025-11-15.html">2025-11-15</option><option value="2025-11-14.html">2025-11-14</option><option value="2025-11-13.html">2025-11-13</option><option value="2025-11-12.html">2025-11-12</option><option value="2025-11-11.html">2025-11-11</option><option value="2025-11-10.html">2025-11-10</option><option value="2025-11-09.html">2025-11-09</option><option value="2025-11-08.html">2025-11-08</option><option value="2025-11-07.html">2025-11-07</option><option value="2025-11-06.html">2025-11-06</option><option value="2025-11-05.html">2025-11-05</option><option value="2025-11-04.html">2025-11-04</option><option value="2025-11-03.html">2025-11-03</option><option value="2025-11-02.html">2025-11-02</option><option value="2025-11-01.html">2025-11-01</option><option value="2025-10-31.html">2025-10-31</option><option value="2025-10-30.html">2025-10-30</option><option value="2025-10-29.html">2025-10-29</option><option value="2025-10-28.html">2025-10-28</option><option value="2025-10-27.html">2025-10-27</option><option value="2025-10-26.html">2025-10-26</option><option value="2025-10-25.html">2025-10-25</option><option value="2025-10-24.html">2025-10-24</option><option value="2025-10-23.html">2025-10-23</option><option value="2025-10-22.html">2025-10-22</option><option value="2025-10-21.html">2025-10-21</option><option value="2025-10-20.html">2025-10-20</option><option value="2025-10-19.html">2025-10-19</option><option value="2025-10-18.html">2025-10-18</option><option value="2025-10-17.html">2025-10-17</option><option value="2025-10-16.html">2025-10-16</option><option value="2025-10-15.html">2025-10-15</option><option value="2025-10-14.html">2025-10-14</option><option value="2025-10-13.html">2025-10-13</option><option value="2025-10-12.html">2025-10-12</option><option value="2025-10-11.html">2025-10-11</option><option value="2025-10-10.html">2025-10-10</option><option value="2025-10-09.html">2025-10-09</option><option value="2025-10-08.html">2025-10-08</option><option value="2025-10-07.html">2025-10-07</option><option value="2025-10-06.html">2025-10-06</option><option value="2025-10-05.html">2025-10-05</option><option value="2025-10-04.html">2025-10-04</option><option value="2025-10-03.html">2025-10-03</option><option value="2025-10-02.html">2025-10-02</option><option value="2025-10-01.html">2025-10-01</option><option value="2025-09-30.html">2025-09-30</option><option value="2025-09-29.html">2025-09-29</option><option value="2025-09-28.html">2025-09-28</option><option value="2025-09-27.html">2025-09-27</option><option value="2025-09-26.html">2025-09-26</option><option value="2025-09-25.html">2025-09-25</option><option value="2025-09-24.html">2025-09-24</option><option value="2025-09-23.html">2025-09-23</option><option value="2025-09-22.html">2025-09-22</option><option value="2025-09-21.html">2025-09-21</option><option value="2025-09-20.html">2025-09-20</option><option value="2025-09-19.html">2025-09-19</option><option value="2025-09-18.html">2025-09-18</option><option value="2025-09-17.html">2025-09-17</option><option value="2025-09-16.html">2025-09-16</option><option value="2025-09-15.html">2025-09-15</option><option value="2025-09-14.html">2025-09-14</option><option value="2025-09-13.html">2025-09-13</option><option value="2025-09-12.html">2025-09-12</option><option value="2025-09-11.html">2025-09-11</option><option value="2025-09-10.html">2025-09-10</option><option value="2025-09-09.html">2025-09-09</option><option value="2025-09-08.html">2025-09-08</option><option value="2025-09-07.html">2025-09-07</option><option value="2025-09-06.html">2025-09-06</option><option value="2025-09-05.html">2025-09-05</option><option value="2025-09-04.html">2025-09-04</option><option value="2025-09-03.html">2025-09-03</option><option value="2025-09-02.html">2025-09-02</option><option value="2025-09-01.html">2025-09-01</option><option value="2025-08-31.html">2025-08-31</option><option value="2025-08-30.html">2025-08-30</option><option value="2025-08-29.html">2025-08-29</option><option value="2025-08-28.html">2025-08-28</option><option value="2025-08-27.html">2025-08-27</option><option value="2025-08-26.html">2025-08-26</option><option value="2025-08-25.html">2025-08-25</option><option value="2025-08-24.html">2025-08-24</option><option value="2025-08-23.html">2025-08-23</option><option value="2025-08-22.html">2025-08-22</option><option value="2025-08-21.html">2025-08-21</option><option value="2025-08-20.html">2025-08-20</option><option value="2025-08-19.html">2025-08-19</option><option value="2025-08-18.html">2025-08-18</option><option value="2025-08-17.html">2025-08-17</option><option value="2025-08-16.html">2025-08-16</option><option value="2025-08-15.html">2025-08-15</option><option value="2025-08-14.html">2025-08-14</option><option value="2025-08-13.html">2025-08-13</option><option value="2025-08-12.html">2025-08-12</option><option value="2025-08-11.html">2025-08-11</option><option value="2025-08-10.html">2025-08-10</option><option value="2025-08-09.html">2025-08-09</option><option value="2025-08-08.html">2025-08-08</option><option value="2025-08-07.html">2025-08-07</option><option value="2025-08-06.html">2025-08-06</option><option value="2025-08-05.html">2025-08-05</option><option value="2025-08-04.html">2025-08-04</option><option value="2025-08-03.html">2025-08-03</option><option value="2025-08-02.html">2025-08-02</option><option value="2025-08-01.html">2025-08-01</option><option value="2025-07-31.html">2025-07-31</option><option value="2025-07-30.html">2025-07-30</option><option value="2025-07-29.html">2025-07-29</option><option value="2025-07-28.html">2025-07-28</option><option value="2025-07-27.html">2025-07-27</option><option value="2025-07-26.html">2025-07-26</option><option value="2025-07-25.html">2025-07-25</option><option value="2025-07-24.html">2025-07-24</option><option value="2025-07-23.html">2025-07-23</option><option value="2025-07-22.html">2025-07-22</option><option value="2025-07-21.html">2025-07-21</option><option value="2025-07-20.html">2025-07-20</option><option value="2025-07-19.html">2025-07-19</option><option value="2025-07-18.html">2025-07-18</option><option value="2025-07-17.html">2025-07-17</option><option value="2025-07-16.html">2025-07-16</option><option value="2025-07-15.html">2025-07-15</option><option value="2025-07-14.html">2025-07-14</option><option value="2025-07-13.html">2025-07-13</option><option value="2025-07-12.html">2025-07-12</option><option value="2025-07-11.html">2025-07-11</option><option value="2025-07-10.html">2025-07-10</option><option value="2025-07-09.html">2025-07-09</option><option value="2025-07-08.html">2025-07-08</option><option value="2025-07-07.html">2025-07-07</option><option value="2025-07-06.html">2025-07-06</option><option value="2025-07-05.html">2025-07-05</option><option value="2025-07-04.html">2025-07-04</option><option value="2025-07-03.html">2025-07-03</option><option value="2025-07-02.html">2025-07-02</option><option value="2025-07-01.html">2025-07-01</option><option value="2025-06-30.html">2025-06-30</option><option value="2025-06-29.html">2025-06-29</option><option value="2025-06-28.html">2025-06-28</option><option value="2025-06-27.html">2025-06-27</option><option value="2025-06-26.html">2025-06-26</option><option value="2025-06-25.html">2025-06-25</option><option value="2025-06-24.html">2025-06-24</option><option value="2025-06-23.html">2025-06-23</option><option value="2025-06-22.html">2025-06-22</option><option value="2025-06-21.html">2025-06-21</option><option value="2025-06-20.html">2025-06-20</option><option value="2025-06-19.html">2025-06-19</option><option value="2025-06-18.html">2025-06-18</option><option value="2025-06-17.html">2025-06-17</option><option value="2025-06-16.html">2025-06-16</option><option value="2025-06-15.html">2025-06-15</option><option value="2025-06-14.html">2025-06-14</option><option value="2025-06-13.html">2025-06-13</option><option value="2025-06-12.html">2025-06-12</option><option value="2025-06-11.html">2025-06-11</option><option value="2025-06-10.html">2025-06-10</option><option value="2025-06-09.html">2025-06-09</option><option value="2025-06-08.html">2025-06-08</option><option value="2025-06-07.html">2025-06-07</option><option value="2025-06-06.html">2025-06-06</option><option value="2025-06-05.html">2025-06-05</option><option value="2025-06-04.html">2025-06-04</option><option value="2025-06-03.html">2025-06-03</option><option value="2025-06-02.html">2025-06-02</option><option value="2025-06-01.html">2025-06-01</option><option value="2025-05-31.html">2025-05-31</option><option value="2025-05-30.html">2025-05-30</option><option value="2025-05-29.html">2025-05-29</option><option value="2025-05-28.html">2025-05-28</option><option value="2025-05-27.html">2025-05-27</option><option value="2025-05-26.html">2025-05-26</option><option value="2025-05-25.html">2025-05-25</option><option value="2025-05-24.html">2025-05-24</option><option value="2025-05-23.html">2025-05-23</option><option value="2025-05-22.html">2025-05-22</option><option value="2025-05-21.html">2025-05-21</option><option value="2025-05-20.html">2025-05-20</option><option value="2025-05-19.html">2025-05-19</option><option value="2025-05-18.html">2025-05-18</option><option value="2025-05-17.html">2025-05-17</option><option value="2025-05-16.html">2025-05-16</option><option value="2025-05-15.html">2025-05-15</option><option value="2025-05-14.html">2025-05-14</option><option value="2025-05-13.html">2025-05-13</option><option value="2025-05-12.html">2025-05-12</option><option value="2025-05-11.html">2025-05-11</option><option value="2025-05-10.html">2025-05-10</option><option value="2025-05-09.html">2025-05-09</option><option value="2025-05-08.html">2025-05-08</option><option value="2025-05-07.html">2025-05-07</option><option value="2025-05-06.html">2025-05-06</option><option value="2025-05-05.html">2025-05-05</option><option value="2025-05-04.html">2025-05-04</option><option value="2025-05-03.html">2025-05-03</option><option value="2025-05-02.html">2025-05-02</option><option value="2025-05-01.html">2025-05-01</option><option value="2025-04-30.html">2025-04-30</option><option value="2025-04-29.html">2025-04-29</option><option value="2025-04-28.html">2025-04-28</option><option value="2025-04-27.html">2025-04-27</option><option value="2025-04-26.html">2025-04-26</option><option value="2025-04-25.html">2025-04-25</option><option value="2025-04-24.html">2025-04-24</option><option value="2025-04-23.html">2025-04-23</option><option value="2025-04-22.html">2025-04-22</option><option value="2025-04-21.html">2025-04-21</option><option value="2025-04-20.html">2025-04-20</option><option value="2025-04-18.html">2025-04-18</option><option value="2025-04-17.html">2025-04-17</option><option value="2025-04-16.html">2025-04-16</option><option value="2025-04-15.html">2025-04-15</option><option value="2025-04-14.html">2025-04-14</option><option value="2025-04-13.html">2025-04-13</option><option value="2025-04-12.html">2025-04-12</option><option value="2025-04-11.html">2025-04-11</option><option value="2025-04-10.html">2025-04-10</option><option value="2025-04-09.html">2025-04-09</option><option value="2025-04-08.html">2025-04-08</option><option value="2025-04-07.html">2025-04-07</option><option value="2025-04-06.html">2025-04-06</option><option value="2025-04-05.html">2025-04-05</option><option value="2025-04-04.html">2025-04-04</option><option value="2025-04-03.html">2025-04-03</option><option value="2025-04-02.html">2025-04-02</option><option value="2025-04-01.html" selected>2025-04-01</option><option value="2025-03-31.html">2025-03-31</option><option value="2025-03-28.html">2025-03-28</option><option value="2025-03-27.html">2025-03-27</option><option value="2025-03-21.html">2025-03-21</option><option value="2025-03-18.html">2025-03-18</option><option value="2025-03-01.html">2025-03-01</option><option value="2025-02-26.html">2025-02-26</option><option value="2025-02-10.html">2025-02-10</option><option value="2025-02-01.html">2025-02-01</option><option value="2025-01-05.html">2025-01-05</option><option value="2025-01-01.html">2025-01-01</option><option value="2024-12-01.html">2024-12-01</option><option value="2024-11-01.html">2024-11-01</option><option value="2024-10-01.html">2024-10-01</option><option value="2024-09-01.html">2024-09-01</option><option value="2024-08-27.html">2024-08-27</option><option value="2024-08-01.html">2024-08-01</option><option value="2024-06-01.html">2024-06-01</option><option value="2024-05-01.html">2024-05-01</option><option value="2024-04-22.html">2024-04-22</option><option value="2024-04-01.html">2024-04-01</option><option value="2024-03-15.html">2024-03-15</option><option value="2024-03-01.html">2024-03-01</option><option value="2024-02-23.html">2024-02-23</option><option value="2024-02-15.html">2024-02-15</option><option value="2024-02-14.html">2024-02-14</option><option value="2024-02-13.html">2024-02-13</option><option value="2024-02-12.html">2024-02-12</option><option value="2024-02-07.html">2024-02-07</option><option value="2024-02-05.html">2024-02-05</option><option value="2024-02-01.html">2024-02-01</option><option value="2024-01-31.html">2024-01-31</option><option value="2024-01-30.html">2024-01-30</option><option value="2024-01-29.html">2024-01-29</option><option value="2024-01-28.html">2024-01-28</option><option value="2024-01-27.html">2024-01-27</option><option value="2024-01-26.html">2024-01-26</option><option value="2024-01-25.html">2024-01-25</option><option value="2024-01-24.html">2024-01-24</option><option value="2024-01-23.html">2024-01-23</option><option value="2024-01-22.html">2024-01-22</option><option value="2024-01-21.html">2024-01-21</option><option value="2024-01-20.html">2024-01-20</option><option value="2024-01-19.html">2024-01-19</option><option value="2024-01-18.html">2024-01-18</option><option value="2024-01-17.html">2024-01-17</option><option value="2024-01-16.html">2024-01-16</option><option value="2024-01-15.html">2024-01-15</option><option value="2024-01-14.html">2024-01-14</option><option value="2024-01-13.html">2024-01-13</option><option value="2024-01-12.html">2024-01-12</option><option value="2024-01-11.html">2024-01-11</option><option value="2024-01-10.html">2024-01-10</option><option value="2024-01-09.html">2024-01-09</option><option value="2024-01-08.html">2024-01-08</option><option value="2024-01-07.html">2024-01-07</option><option value="2024-01-06.html">2024-01-06</option><option value="2024-01-05.html">2024-01-05</option><option value="2024-01-04.html">2024-01-04</option><option value="2024-01-03.html">2024-01-03</option><option value="2024-01-02.html">2024-01-02</option><option value="2024-01-01.html">2024-01-01</option><option value="2023-12-30.html">2023-12-30</option><option value="2023-12-28.html">2023-12-28</option><option value="2023-12-27.html">2023-12-27</option><option value="2023-12-26.html">2023-12-26</option><option value="2023-12-24.html">2023-12-24</option><option value="2023-12-19.html">2023-12-19</option><option value="2023-12-01.html">2023-12-01</option><option value="2023-11-21.html">2023-11-21</option><option value="2023-11-01.html">2023-11-01</option><option value="2023-08-01.html">2023-08-01</option><option value="2023-06-01.html">2023-06-01</option><option value="2023-01-01.html">2023-01-01</option></select><a class="navbtn" href="2025-04-02.html">2025-04-02 →</a><a class="navbtn" href="weekly/index.html">📅 Weekly</a><a class="navbtn" href="status.html">📊 Status</a><a class="navbtn" href="search.html">🔍 Search</a></div>
+<div class="stats"><div class="stat"><div class="stat-label">Total scored</div><div class="stat-val">43</div></div><div class="stat"><div class="stat-label">High</div><div class="stat-val" style="color:#27500A">0</div></div><div class="stat"><div class="stat-label">Medium</div><div class="stat-val" style="color:#633806">0</div></div><div class="stat"><div class="stat-label">Low</div><div class="stat-val" style="color:#5F5E5A">29</div></div></div>
+<div class="tabs"><button class="tab active" data-filter="all">All</button><button class="tab" data-filter="ai_bioprinting">AI for Bioprinting</button><button class="tab" data-filter="hip_implant">Hip Implant &amp; Femoral Stem</button><button class="tab" data-filter="fea_surrogate">FEA &amp; Surrogate Modelling</button><button class="tab" data-filter="am_biomedical">AM Biomedical Materials</button></div>
+<div class="prio-filter"><button class="pf active" data-prio="HighMedium">High+Medium</button><button class="pf" data-prio="High">High only</button><button class="pf" data-prio="all">Show all</button></div>
+
+<article class="paper" data-direction="ai_bioprinting" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#7F77DD20;color:#7F77DD">AI for Bioprinting</span>
+    <span class="source">openalex</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">3D printing assisted biofabrication of oxidized guar gum/agar–agar/salvianolic acid hydrogels</h3>
+  <div class="meta">
+    <span class="authors">Rahila Batul, Syed Muneeb Haider Gillani, A. S. K. Ghouri, Basit Mehmood, Isra Fayyaz et al.</span>
+    <span class="venue">The International Journal of Advanced Manufacturing Technology</span>
+    <span class="date">2025-04-01</span>
+    <span class="doi"><a href="https://doi.org/10.1007/s00170-025-15423-z" target="_blank">10.1007/s00170-025-15423-z</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> College of Pharmacy, University of Hail, Hail, Saudi Arabia</div>
+  <div class="corresponding"><b>通讯:</b> Muhammad Atiq Ur Rehman <span class="corresp-aff">@ Centre of Excellence in Biomaterials and Tissue Engineering, Materials Science Engineering Department, Government Colleg</span></div>
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="ai_bioprinting" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#7F77DD20;color:#7F77DD">AI for Bioprinting</span>
+    <span class="source">openalex</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Comparative Analysis of Hydrogels From Porcine Extracellular Matrix for &lt;scp&gt;3D&lt;/scp&gt; Bioprinting of Adipose Tissue</h3>
+  <div class="meta">
+    <span class="authors">Leonie Füge, Felix Schüssler, Jamina Sofie Gerhardus, Roxana Schwab, Gregory S. Harms et al.</span>
+    <span class="venue">Journal of Biomedical Materials Research Part A</span>
+    <span class="date">2025-04-01</span>
+    <span class="doi"><a href="https://doi.org/10.1002/jbm.a.37832" target="_blank">10.1002/jbm.a.37832</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Department of Obstetrics and Women&#x27;s Health University Medical Center of the Johannes Gutenberg University Mainz  Mainz Germany</div>
+  <div class="corresponding"><b>通讯:</b> Κ. Peters <span class="corresp-aff">@ BiomaTiCS – Biomaterials, Tissues and Cells in Science University Medical Center of the Johannes Gutenberg University Ma</span></div>
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="ai_bioprinting" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#7F77DD20;color:#7F77DD">AI for Bioprinting</span>
+    <span class="source">openalex</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">PRINTABLE CARTILAGE “TISSUE BIOINK” WITH ENHANCED BIOMIMETIC PROPERTIES FOR MINIMIZED POST-PRINTING STEPS IN 3D BIOPRINTING</h3>
+  <div class="meta">
+    <span class="authors">Sujin Noh, Yong Jun Jin, Dong Il Shin, Hyeon Jae Kwon, Hee‐Woong Yun et al.</span>
+    <span class="venue">Osteoarthritis and Cartilage</span>
+    <span class="date">2025-04-01</span>
+    <span class="doi"><a href="https://doi.org/10.1016/j.joca.2025.02.016" target="_blank">10.1016/j.joca.2025.02.016</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Department of Biomedical Sciences, Graduate School of Ajou University, Suwon, Korea (the Republic of)</div>
+  <div class="corresponding"><b>通讯:</b> Sujin Noh <span class="corresp-aff">@ Department of Biomedical Sciences, Graduate School of Ajou University, Suwon, Korea (the Republic of)</span></div>
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="ai_bioprinting" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#7F77DD20;color:#7F77DD">AI for Bioprinting</span>
+    <span class="source">openalex</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">التطبيقات الفقهية المعاصرة للطباعة الحيوية ثلاثية الأبعاد (3D Bioprinting) Contemporary Jurisprudential Applications of 3D Bioprinting</h3>
+  <div class="meta">
+    <span class="authors">مهاء بنت سالم إبراهيم السويداء</span>
+    <span class="venue">المجلة العلمية بکلية الآداب</span>
+    <span class="date">2025-04-01</span>
+    <span class="doi"><a href="https://doi.org/10.21608/jartf.2025.433619" target="_blank">10.21608/jartf.2025.433619</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> أستاذ مشارك، قسم الفقه وأصوله، كلية الشريعة والقانون، جامعة حائل، المملكة العربية السعودية</div>
+  <div class="corresponding"><b>通讯:</b> مهاء بنت سالم إبراهيم السويداء <span class="corresp-aff">@ أستاذ مشارك، قسم الفقه وأصوله، كلية الشريعة والقانون، جامعة حائل، المملكة العربية السعودية</span></div>
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="ai_bioprinting" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#7F77DD20;color:#7F77DD">AI for Bioprinting</span>
+    <span class="source">openalex</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Engineering of a &lt;scp&gt;3D&lt;/scp&gt; Printed Bilayer Artificial Skin Bio‐Mimicking Epidermis and Dermis for Skin Tissue Engineering Applications</h3>
+  <div class="meta">
+    <span class="authors">Mahan Mahdavi, Azadeh Asefnejad, Zohreh Bagher, Mazaher Gholipourmalekabadi</span>
+    <span class="venue">Polymers for Advanced Technologies</span>
+    <span class="date">2025-04-01</span>
+    <span class="doi"><a href="https://doi.org/10.1002/pat.70173" target="_blank">10.1002/pat.70173</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Department of Biomedical Engineering Science and Research Branch, Islamic Azad University  Tehran Iran</div>
+  <div class="corresponding"><b>通讯:</b> Azadeh Asefnejad <span class="corresp-aff">@ Department of Biomedical Engineering Science and Research Branch, Islamic Azad University  Tehran Iran</span> &nbsp;|&nbsp; Mazaher Gholipourmalekabadi <span class="corresp-aff">@ Cellular and Molecular Research Center Iran University of Medical Sciences  Tehran Iran</span></div>
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="ai_bioprinting" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#7F77DD20;color:#7F77DD">AI for Bioprinting</span>
+    <span class="source">openalex</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Bioxolography Using Diphenyliodonium Chloride and N ‐Vinylpyrrolidone Enables Rapid High‐Resolution Volumetric 3D Printing of Spatially Encoded Living Matter</h3>
+  <div class="meta">
+    <span class="authors">Alexis Wolfel Sánchez, Castro Johnbosco, Annalise Anspach, Marieke Meteling, Jos Olijve et al.</span>
+    <span class="venue">Conicet</span>
+    <span class="date">2025-04-01</span>
+    <span class="doi"><a href="https://openalex.org/W7125760806" target="_blank">link</a></span>
+  </div>
+  
+  
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="ai_bioprinting" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#7F77DD20;color:#7F77DD">AI for Bioprinting</span>
+    <span class="source">pubmed</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">3D Bioprinting: Shaping the Future of Periodontal Tissue Regeneration and Disease Management.</h3>
+  <div class="meta">
+    <span class="authors">Jahnavi R Acharya, Santosh Kumar, Gaurav A Girdhar, Shirishkumar Patel, Nirav H Parekh et al.</span>
+    <span class="venue">Cureus</span>
+    <span class="date">2025-04-01</span>
+    <span class="doi"><a href="https://doi.org/10.7759/cureus.82432" target="_blank">10.7759/cureus.82432</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Department of Periodontology and Implantology, Karnavati School of Dentistry, Karnavati University, Gandhinagar, IND.</div>
+  <div class="corresponding"><b>通讯:</b> Mainul Haque <span class="corresp-aff">@ Department of Pharmacology and Therapeutics, National Defence University of Malaysia, Kuala Lumpur, MYS.; Department of </span> <i>[推断]</i></div>
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="ai_bioprinting" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#7F77DD20;color:#7F77DD">AI for Bioprinting</span>
+    <span class="source">pubmed</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Engineering Adhesive Hydrogels for Hemostasis and Vascular Repair.</h3>
+  <div class="meta">
+    <span class="authors">Juya Jeon, Shri Venkatesh Subramani, Kok Zhi Lee, Santiago Elizondo-Benedetto, Mohamed Adel Zayed et al.</span>
+    <span class="venue">Polymers</span>
+    <span class="date">2025-04-01</span>
+    <span class="doi"><a href="https://doi.org/10.3390/polym17070959" target="_blank">10.3390/polym17070959</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Department of Energy, Environmental &amp; Chemical Engineering, Washington University in St. Louis, Saint Louis, MO 63130, USA.</div>
+  <div class="corresponding"><b>通讯:</b> Fuzhong Zhang <span class="corresp-aff">@ Department of Energy, Environmental &amp; Chemical Engineering, Washington University in St. Louis, Saint Louis, MO 63130, U</span> <i>[推断]</i></div>
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="ai_bioprinting" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#7F77DD20;color:#7F77DD">AI for Bioprinting</span>
+    <span class="source">pubmed</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Innovations in liver organoids: the role of 3D bioprinting in creating functional organoids.</h3>
+  <div class="meta">
+    <span class="authors">Kai Zhang, Huayu Yang</span>
+    <span class="venue">Hepatobiliary surgery and nutrition</span>
+    <span class="date">2025-04-01</span>
+    <span class="doi"><a href="https://doi.org/10.21037/hbsn-2025-154" target="_blank">10.21037/hbsn-2025-154</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Department of Liver Surgery, Peking Union Medical College (PUMC) Hospital, PUMC &amp; Chinese Academy of Medical Sciences (CAMS), Beijing, China.</div>
+  <div class="corresponding"><b>通讯:</b> Huayu Yang <span class="corresp-aff">@ Department of Liver Surgery, Peking Union Medical College (PUMC) Hospital, PUMC &amp; Chinese Academy of Medical Sciences (C</span> <i>[推断]</i></div>
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="ai_bioprinting" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#7F77DD20;color:#7F77DD">AI for Bioprinting</span>
+    <span class="source">pubmed</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Bioreactors as Additive Manufacturing Environments.</h3>
+  <div class="meta">
+    <span class="authors">Orkan Telhan</span>
+    <span class="venue">3D printing and additive manufacturing</span>
+    <span class="date">2025-04-01</span>
+    <span class="doi"><a href="https://doi.org/10.1089/3dp.2024.0023" target="_blank">10.1089/3dp.2024.0023</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Stuart Weitzman School of Design, University of Pennsylvania, Philadelphia, Pennsylvania, USA.</div>
+  
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="am_biomedical" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#185FA520;color:#185FA5">AM Biomedical Materials</span>
+    <span class="source">openalex</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Microstructure and mechanical properties of selective laser melting Al−Mg−Mn−Sc−Zr alloy annealed at different temperatures</h3>
+  <div class="meta">
+    <span class="authors">Yao Li, Guofu Xu, Xiaoyan Peng, Ying Deng, Zhimin Yin</span>
+    <span class="venue">Transactions of Nonferrous Metals Society of China</span>
+    <span class="date">2025-04-01</span>
+    <span class="doi"><a href="https://doi.org/10.1016/s1003-6326(24)66733-6" target="_blank">10.1016/s1003-6326(24)66733-6</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> School of Materials Science and Engineering, Central South University, Changsha 410083, China</div>
+  <div class="corresponding"><b>通讯:</b> Xiaoyan Peng <span class="corresp-aff">@ Key Laboratory of Nonferrous Materials Science and Engineering of Ministry of Education, Central South University, Chang</span></div>
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="am_biomedical" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#185FA520;color:#185FA5">AM Biomedical Materials</span>
+    <span class="source">openalex</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Heat treatment and laser shock peening of AlSi10Mg alloy produced by selective laser melting: Microstructure, hardness and residual stress analysis</h3>
+  <div class="meta">
+    <span class="authors">Reza Babalou, Morteza Azarbarmas, Konda Gokuldoss Prashanth</span>
+    <span class="venue">Materials Today Communications</span>
+    <span class="date">2025-04-01</span>
+    <span class="doi"><a href="https://doi.org/10.1016/j.mtcomm.2025.112408" target="_blank">10.1016/j.mtcomm.2025.112408</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Research Center for Advance Materials, Faculty of Materials Engineering, Sahand University of Technology, Tabriz, Iran</div>
+  <div class="corresponding"><b>通讯:</b> Morteza Azarbarmas <span class="corresp-aff">@ Research Center for Advance Materials, Faculty of Materials Engineering, Sahand University of Technology, Tabriz, Iran</span> &nbsp;|&nbsp; Konda Gokuldoss Prashanth <span class="corresp-aff">@ Center for Biomaterials, Cellular and Molecular Theranostics, Vellore Institute of Technology, Vellore, Tamil Nadu 63201</span></div>
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="am_biomedical" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#185FA520;color:#185FA5">AM Biomedical Materials</span>
+    <span class="source">pubmed</span>
+    <span class="relevance-level lvl-peripheral">Peripheral</span>
+    <span class="read-action act-background-only">Background only</span>
+    <span class="validation-kind">mechanical_testing</span>
+    <span class="flag">Exp. validation</span>
+  </div>
+  <h3 class="paper-title">Investigation of Friction for Nanocoated and Uncoated Ti-6Al-4V Substrates via the Modified Pin-on-Disk Technique for Transfemoral Implants.</h3>
+  <div class="meta">
+    <span class="authors">Muntadher Saleh Mahdi, Dunya Abdulsahib Hamdi</span>
+    <span class="venue">Journal of biomedical physics &amp; engineering</span>
+    <span class="date">2025-04-01</span>
+    <span class="doi"><a href="https://doi.org/10.31661/jbpe.v0i0.2401-1712" target="_blank">10.31661/jbpe.v0i0.2401-1712</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Department of Prosthetics &amp; Orthotics Engineering, College of Engineering and Technology, Al-Mustaqbal University, Babylon - Hilla, Iraq.</div>
+  <div class="corresponding"><b>通讯:</b> Dunya Abdulsahib Hamdi <span class="corresp-aff">@ Department of Prosthetics &amp; Orthotics Engineering, College of Engineering, Al-Nahrain University, Baghdad, Iraq.</span> <i>[推断]</i></div>
+  <div class="relevance"><b>相关性:</b> 该论文研究纳米涂层对钛合金摩擦性能的影响，与增材制造生物医学材料方向无直接关联。</div>
+  <div class="why-not-core"><b>边界:</b> This paper does not involve additive manufacturing (LPBF), porous structures, stress shielding, fatigue testing, or as-built surface morphology of AM parts.</div>
+  <div class="summary">
+    <div><b>动机·</b> 研究纳米涂层对植入体摩擦行为的影响。</div>
+    <div><b>方法·</b> 使用等离子冷喷涂在Ti-6Al-4V上沉积HAp/SiO2涂层，通过销盘实验测试摩擦系数。</div>
+    <div><b>结果·</b> 纳米涂层显著提高摩擦系数，表面粗糙度是主要影响因素。</div>
+    <div><b>验证·</b> 微观结构分析和销盘摩擦实验验证。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> This study investigates the tribological behavior of nanocoated Ti-6Al-4V for improving implant-bone interface friction.</div>
+      <div><b>Method·</b> Hydroxyapatite (90%) and silica (10%) coatings were applied via plasma cold spray, and friction was tested using a pin-on-disk apparatus under simulated body fluid.</div>
+      <div><b>Result·</b> Nanocoated specimens exhibited a significantly higher coefficient of friction, attributed to increased surface roughness.</div>
+      <div><b>Validation·</b> Microstructural imaging and pin-on-disc tribological testing.</div>
+    </div>
+    <div class="key-terms">
+      <span class="term"><b>coefficient of friction</b> · 摩擦系数</span><span class="term"><b>hydroxyapatite coating</b> · 羟基磷灰石涂层</span><span class="term"><b>plasma cold spray</b> · 等离子冷喷涂</span><span class="term"><b>pin-on-disk</b> · 销盘实验</span><span class="term"><b>Ti-6Al-4V</b> · 钛合金</span><span class="term"><b>simulated body fluid</b> · 模拟体液</span><span class="term"><b>surface roughness</b> · 表面粗糙度</span><span class="term"><b>transfemoral implant</b> · 股骨植入体</span>
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">coating</span> <span class="tag">tribology</span> <span class="tag">Ti-6Al-4V</span> <span class="tag">pin-on-disk</span> <span class="tag">hydroxyapatite</span> <span class="tag">silica glass</span></div>
+</article>
+<article class="paper" data-direction="am_biomedical" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#185FA520;color:#185FA5">AM Biomedical Materials</span>
+    <span class="source">pubmed</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Sustained slow-release TGF-β3 in a three-dimensional-printed titanium microporous scaffold composite system promotes ligament-to-bone healing.</h3>
+  <div class="meta">
+    <span class="authors">Liwei Zhu, Yuzhe Liu, Yifu Sun, Zhenjia Che, Youbin Li et al.</span>
+    <span class="venue">Materials today. Bio</span>
+    <span class="date">2025-04-01</span>
+    <span class="doi"><a href="https://doi.org/10.1016/j.mtbio.2025.101549" target="_blank">10.1016/j.mtbio.2025.101549</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Department of Orthopedics, The Second Hospital of Jilin University, Changchun, 130041, PR China.</div>
+  <div class="corresponding"><b>通讯:</b> Lanfeng Huang <span class="corresp-aff">@ Department of Orthopedics, The Second Hospital of Jilin University, Changchun, 130041, PR China.</span> <i>[推断]</i></div>
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="am_biomedical" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#185FA520;color:#185FA5">AM Biomedical Materials</span>
+    <span class="source">pubmed</span>
+    <span class="relevance-level lvl-peripheral">Peripheral</span>
+    <span class="read-action act-background-only">Background only</span>
+    <span class="validation-kind">none</span>
+    <span class="flag">Review</span>
+  </div>
+  <h3 class="paper-title">The Impact of Implant Surface Modifications on the Osseointegration Process: An Overview.</h3>
+  <div class="meta">
+    <span class="authors">Bansi B Sarvaiya, Santosh Kumar, Mohd Shabankhan H Pathan, Shirishkumar Patel, Vineeta Gupta et al.</span>
+    <span class="venue">Cureus</span>
+    <span class="date">2025-04-01</span>
+    <span class="doi"><a href="https://doi.org/10.7759/cureus.81576" target="_blank">10.7759/cureus.81576</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Department of Periodontology and Implantology, Karnavati School of Dentistry, Karnavati University, Gandhinagar, IND.</div>
+  <div class="corresponding"><b>通讯:</b> Mainul Haque <span class="corresp-aff">@ Department of Pharmacology and Therapeutics, National Defence University of Malaysia, Kuala Lumpur, MYS.; Department of </span> <i>[推断]</i></div>
+  <div class="relevance"><b>相关性:</b> 该综述仅讨论牙种植体的表面改性技术，未涉及LPBF制造、疲劳测试或应力遮挡匹配。</div>
+  <div class="why-not-core"><b>边界:</b> No LPBF fabrication, mechanical testing (static or fatigue), stress shielding analysis, or as-built morphology characterization.</div>
+  <div class="summary">
+    <div><b>动机·</b> 综述牙种植体表面改性对骨整合的影响。</div>
+    <div><b>方法·</b> 概述减法（喷砂、酸蚀）和加法（等离子喷涂、溶胶凝胶）改性技术。</div>
+    <div><b>结果·</b> 多种表面处理可改善骨整合，但缺乏机械性能评估。</div>
+    <div><b>验证·</b> 无实验验证，纯文献综述。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> This review summarizes how surface modifications of dental implants influence the osseointegration process.</div>
+      <div><b>Method·</b> Subtractive (blasting, acid etching) and additive (plasma-sprayed HA, sol-gel, biomimetic coatings) techniques are described.</div>
+      <div><b>Result·</b> Various surface treatments can improve osseointegration, but no mechanical testing or implant design aspects are covered.</div>
+      <div><b>Validation·</b> No experimental validation; it is a literature review.</div>
+    </div>
+    <div class="key-terms">
+      <span class="term"><b>osseointegration</b> · 骨整合</span><span class="term"><b>dental implant</b> · 牙种植体</span><span class="term"><b>surface roughness</b> · 表面粗糙度</span><span class="term"><b>hydroxyapatite coating</b> · 羟基磷灰石涂层</span><span class="term"><b>biomimetic coating</b> · 仿生涂层</span>
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">dental implant</span> <span class="tag">osseointegration</span> <span class="tag">surface modification</span> <span class="tag">review</span> <span class="tag">biomimetic coating</span></div>
+</article>
+<article class="paper" data-direction="am_biomedical" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#185FA520;color:#185FA5">AM Biomedical Materials</span>
+    <span class="source">pubmed</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">The Role of Concurrent Thigh Lifts in Obese Patients With Transfemoral Osseointegrated Prostheses.</h3>
+  <div class="meta">
+    <span class="authors">Anna M Vaeth, Grant G Black, Nancy Qin, Makayla Kochheiser, Lucy Wei et al.</span>
+    <span class="venue">Annals of plastic surgery</span>
+    <span class="date">2025-04-01</span>
+    <span class="doi"><a href="https://doi.org/10.1097/SAP.0000000000004286" target="_blank">10.1097/SAP.0000000000004286</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> From the Department of Plastic and Reconstructive Surgery, Weill Cornell Medicine, New York, NY.</div>
+  <div class="corresponding"><b>通讯:</b> David M Otterburn <span class="corresp-aff">@ From the Department of Plastic and Reconstructive Surgery, Weill Cornell Medicine, New York, NY.</span> <i>[推断]</i></div>
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="am_biomedical" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#185FA520;color:#185FA5">AM Biomedical Materials</span>
+    <span class="source">pubmed</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Early aseptic loosening and inferior patient-reported outcomes of a cementless tibial baseplate in a modern total knee arthroplasty design.</h3>
+  <div class="meta">
+    <span class="authors">Octavian Andronic, Yue H Yang, Moreica Pabbruwe, Chris W Jones, Piers J Yates</span>
+    <span class="venue">The bone &amp; joint journal</span>
+    <span class="date">2025-04-01</span>
+    <span class="doi"><a href="https://doi.org/10.1302/0301-620X.107B4.BJJ-2024-0704.R1" target="_blank">10.1302/0301-620X.107B4.BJJ-2024-0704.R1</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Department of Orthopaedics, Balgrist University Hospital, University of Zurich, Zurich, Switzerland.; Orthopaedic Research Foundation Western Australia, Perth, Australia.; Department of Orthopaedics, </div>
+  <div class="corresponding"><b>通讯:</b> Piers J Yates <span class="corresp-aff">@ Orthopaedic Research Foundation Western Australia, Perth, Australia.; Department of Orthopaedics, St. John of God Hospit</span> <i>[推断]</i></div>
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="am_biomedical" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#185FA520;color:#185FA5">AM Biomedical Materials</span>
+    <span class="source">pubmed</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Are Dyslipidemias a risk factor for Peri-Implant complications? A Systematic review and meta-analysis.</h3>
+  <div class="meta">
+    <span class="authors">Barbara Gurgel, Roberta Souza, André Vajgel, Maria Fernanda Cabral, Marina Almeida et al.</span>
+    <span class="venue">Journal of clinical and experimental dentistry</span>
+    <span class="date">2025-04-01</span>
+    <span class="doi"><a href="https://doi.org/10.4317/jced.62241" target="_blank">10.4317/jced.62241</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Student, PhD, Department of Oral and Maxillofacial Surgery University of Pernambuco - School of Dentistry (UPE/FOP).</div>
+  <div class="corresponding"><b>通讯:</b> Renata Almeida <span class="corresp-aff">@ PhD in Oral and Maxillofacial Surgery, Professor of University of Pernambuco, Department of Oral and Maxillofacial Surge</span> <i>[推断]</i></div>
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="am_biomedical" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#185FA520;color:#185FA5">AM Biomedical Materials</span>
+    <span class="source">pubmed</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Evaluation of the Effect of Various Surface Conditioning Methods and Attachment of Platelet-rich Fibrin on Dental Implant Surface: An</h3>
+  <div class="meta">
+    <span class="authors">Bs Harsha Raj, Ipsita Jayanti, Asutosh Das, Mayank Trivedi, Reena Chaudhary et al.</span>
+    <span class="venue">The journal of contemporary dental practice</span>
+    <span class="date">2025-04-01</span>
+    <span class="doi"><a href="https://doi.org/10.5005/jp-journals-10024-3840" target="_blank">10.5005/jp-journals-10024-3840</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Department of Oral and Maxillofacial Surgery, JSS Dental College and Hospital, JSS Academy of Higher Education and Research (JSSAHER), Mysore, Karnataka, India.</div>
+  <div class="corresponding"><b>通讯:</b> Mayank Trivedi <span class="corresp-aff">@ Department of Orthodontics and Dentofacial Orthopaedics, Adhiparasakthi Dental College and Hospital, Melmaruvathur, Tami</span></div>
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="hip_implant" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#1D9E7520;color:#1D9E75">Hip Implant &amp; Femoral Stem</span>
+    <span class="source">openalex</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Effects of Fospropofol Disodium and Propofol on the Postoperative Recovery of Elderly Patients Who Underwent Total Hip Arthroplasty: A Retrospective Study</h3>
+  <div class="meta">
+    <span class="authors">Sheng Ding, Zaibao Wang, Chunliu Li, Guizhi Wang, Juan Li et al.</span>
+    <span class="venue">Drug Design Development and Therapy</span>
+    <span class="date">2025-04-01</span>
+    <span class="doi"><a href="https://doi.org/10.2147/dddt.s501222" target="_blank">10.2147/dddt.s501222</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Department of Anesthesiology, The First Affiliated Hospital of USTC, Division of Life Sciences and Medicine, University of Science and Technology of China, Hefei, People&#x27;s Republic of China</div>
+  <div class="corresponding"><b>通讯:</b> Sheng Ding <span class="corresp-aff">@ Department of Anesthesiology, The First Affiliated Hospital of USTC, Division of Life Sciences and Medicine, University </span></div>
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="hip_implant" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#1D9E7520;color:#1D9E75">Hip Implant &amp; Femoral Stem</span>
+    <span class="source">openalex</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Effects of Process Parameters on Properties of Silver‐Coated Graphene Reinforced Low Modulus Titanium Matrix Composites Fabricated by Selective Laser Melting</h3>
+  <div class="meta">
+    <span class="authors">Qiusheng Xie, Wei Liu, Xuepeng Yan, Hao Zheng, Zhonghua Li et al.</span>
+    <span class="venue">Advanced Engineering Materials</span>
+    <span class="date">2025-04-01</span>
+    <span class="doi"><a href="https://doi.org/10.1002/adem.202500030" target="_blank">10.1002/adem.202500030</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> School of Materials Science and Engineering North University of China  Taiyuan 030051 China</div>
+  <div class="corresponding"><b>通讯:</b> Wei Liu <span class="corresp-aff">@ School of Materials Science and Engineering North University of China  Taiyuan 030051 China</span> &nbsp;|&nbsp; Yuxin Li <span class="corresp-aff">@ School of Materials Science and Engineering North University of China  Taiyuan 030051 China</span></div>
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="hip_implant" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#1D9E7520;color:#1D9E75">Hip Implant &amp; Femoral Stem</span>
+    <span class="source">openalex</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">A brief report on the association of preoperative hematological indices and acute deep vein thrombosis following total hip arthroplasty for osteoarthritis</h3>
+  <div class="meta">
+    <span class="authors">Răzvan Marian Melinte, Matei Florin Negruț, Daniel Oltean‐Dan, Adrian Dumitru Ivănescu, Tudor-Mihai Magdaș et al.</span>
+    <span class="venue">The Journal of Critical Care Medicine</span>
+    <span class="date">2025-04-01</span>
+    <span class="doi"><a href="https://doi.org/10.2478/jccm-2025-0018" target="_blank">10.2478/jccm-2025-0018</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> 1st Department of Orthopedics and Traumatology , “Iuliu Hațieganu” University of Medicine and Pharmacy , Cluj-Napoca , Romania ; Department of Orthopedics , Regina Maria Health Network , Targu Mures ,</div>
+  <div class="corresponding"><b>通讯:</b> Răzvan Marian Melinte <span class="corresp-aff">@ 1st Department of Orthopedics and Traumatology , “Iuliu Hațieganu” University of Medicine and Pharmacy , Cluj-Napoca , R</span></div>
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="hip_implant" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#1D9E7520;color:#1D9E75">Hip Implant &amp; Femoral Stem</span>
+    <span class="source">openalex</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Evaluation of the sexual satisfaction quality of female patients and their sexual partners after total hip arthroplasty surgery</h3>
+  <div class="meta">
+    <span class="authors">Emre Kaya, Gizem Adlı</span>
+    <span class="venue">Joint Diseases and Related Surgery</span>
+    <span class="date">2025-04-01</span>
+    <span class="doi"><a href="https://doi.org/10.52312/jdrs.2025.2084" target="_blank">10.52312/jdrs.2025.2084</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Çakmak Erdem Hastanesi, Ortopedi ve Travmatoloji Bölümü, 34768 Ümraniye, İstanbul, Türkiye. emrekaya0034@gmail.com</div>
+  <div class="corresponding"><b>通讯:</b> Emre Kaya <span class="corresp-aff">@ Çakmak Erdem Hastanesi, Ortopedi ve Travmatoloji Bölümü, 34768 Ümraniye, İstanbul, Türkiye. emrekaya0034@gmail.com</span></div>
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="hip_implant" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#1D9E7520;color:#1D9E75">Hip Implant &amp; Femoral Stem</span>
+    <span class="source">openalex</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Vancomycin powder as a preventive measure for wound infection in total hip arthroplasty: A prospective cohort study</h3>
+  <div class="meta">
+    <span class="authors">Iskandar Mahdi Alardi</span>
+    <span class="venue">Wiadomości Lekarskie</span>
+    <span class="date">2025-04-01</span>
+    <span class="doi"><a href="https://doi.org/10.36740/wlek/197300" target="_blank">10.36740/wlek/197300</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> DEPARTMENT OF SURGERY, COLLEGE OF MEDICINE, UNIVERSITY OF AL-QADISIYAH, AL-QADISIYAH, IRAQ</div>
+  <div class="corresponding"><b>通讯:</b> Iskandar Mahdi Alardi <span class="corresp-aff">@ DEPARTMENT OF SURGERY, COLLEGE OF MEDICINE, UNIVERSITY OF AL-QADISIYAH, AL-QADISIYAH, IRAQ</span></div>
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="hip_implant" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#1D9E7520;color:#1D9E75">Hip Implant &amp; Femoral Stem</span>
+    <span class="source">openalex</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Comparative Study between Direct Anterior Approach and Direct Lateral Approach for Total Hip Arthroplasty in Patients with Hip Osteoarthritis</h3>
+  <div class="meta">
+    <span class="authors">Ahmed Amin, Sayed El, Etewy Soudy, Sherif Shehta, Attia Abouhashem et al.</span>
+    <span class="venue">The Egyptian Journal of Hospital Medicine</span>
+    <span class="date">2025-04-01</span>
+    <span class="doi"><a href="https://doi.org/10.21608/ejhm.2025.425546" target="_blank">10.21608/ejhm.2025.425546</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Orthopedic Surgery Department , Faculty of Medicine , Zagazig University</div>
+  <div class="corresponding"><b>通讯:</b> Ahmed Amin <span class="corresp-aff">@ Orthopedic Surgery Department , Faculty of Medicine , Zagazig University</span></div>
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="hip_implant" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#1D9E7520;color:#1D9E75">Hip Implant &amp; Femoral Stem</span>
+    <span class="source">openalex</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">The 3D-Printed Customized Femoral Short Stem Offers Improved Anatomical Parameters Restoration, Fitness and Biomechanical Performance Compared With Traditional Femoral Stem</h3>
+  <div class="meta">
+    <span class="authors">Ziang Jiang, Cheng, Rongshan, Dimitris Dimitriou, Yangyang Yang, Tsung‐Yuan Tsai et al.</span>
+    <span class="venue">Universität Zürich, ZORA</span>
+    <span class="date">2025-04-01</span>
+    <span class="doi"><a href="https://doi.org/10.5167/uzh-282926" target="_blank">10.5167/uzh-282926</a></span>
+  </div>
+  
+  
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="hip_implant" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#1D9E7520;color:#1D9E75">Hip Implant &amp; Femoral Stem</span>
+    <span class="source">openalex</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Biomechanical assessment of total hip replacement designs: A comparative study</h3>
+  <div class="meta">
+    <span class="authors">Markus Virtanen, Elina Kokkonen, Juha Rantala, Sanna Leppanen</span>
+    <span class="venue">National Journal of Clinical Orthopaedics</span>
+    <span class="date">2025-04-01</span>
+    <span class="doi"><a href="https://doi.org/10.33545/orthor.2025.v9.i2.a.510" target="_blank">10.33545/orthor.2025.v9.i2.a.510</a></span>
+  </div>
+  
+  
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="hip_implant" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#1D9E7520;color:#1D9E75">Hip Implant &amp; Femoral Stem</span>
+    <span class="source">pubmed</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Blinded prediction of custom-made pelvic implant failure using patient-specific finite element modeling.</h3>
+  <div class="meta">
+    <span class="authors">Nicholas J Dunbar, Yuhui Zhu, Ata Babazadeh-Naseri, John E Akin, Benedetta Spazzoli et al.</span>
+    <span class="venue">Medical engineering &amp; physics</span>
+    <span class="date">2025-04-01</span>
+    <span class="doi"><a href="https://doi.org/10.1016/j.medengphy.2025.104321" target="_blank">10.1016/j.medengphy.2025.104321</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Department of Mechanical Engineering, Rice University, Houston, TX, USA. Electronic address: nicholas.j.dunbar@uth.tmc.edu.</div>
+  <div class="corresponding"><b>通讯:</b> Nicholas J Dunbar <span class="corresp-aff">@ Department of Mechanical Engineering, Rice University, Houston, TX, USA. Electronic address: nicholas.j.dunbar@uth.tmc.e</span> &nbsp;|&nbsp; Yuhui Zhu <span class="corresp-aff">@ Department of Mechanical Engineering, Rice University, Houston, TX, USA. Electronic address: yuhui.zhu@rice.edu.</span> &nbsp;|&nbsp; Ata Babazadeh-Naseri <span class="corresp-aff">@ Department of Mechanical Engineering, Rice University, Houston, TX, USA. Electronic address: ata.babazadeh@rice.edu.</span> &nbsp;|&nbsp; John E Akin <span class="corresp-aff">@ Department of Mechanical Engineering, Rice University, Houston, TX, USA. Electronic address: akin@rice.edu.</span> &nbsp;|&nbsp; Benedetta Spazzoli <span class="corresp-aff">@ Third Orthopaedic Clinic, IRCCS Istituto Ortopedico Rizzoli, Bologna, Italy. Electronic address: benedetta.spazzoli@ior.</span> &nbsp;|&nbsp; Claudio Belvedere <span class="corresp-aff">@ Movement Analysis Laboratory, IRCCS Istituto Ortopedico Rizzoli, Bologna, Italy. Electronic address: belvedere@ior.it.</span> &nbsp;|&nbsp; Davide M Donati <span class="corresp-aff">@ Third Orthopaedic Clinic, IRCCS Istituto Ortopedico Rizzoli, Bologna, Italy. Electronic address: davidemaria.donati@ior.</span> &nbsp;|&nbsp; Alberto Leardini <span class="corresp-aff">@ Movement Analysis Laboratory, IRCCS Istituto Ortopedico Rizzoli, Bologna, Italy. Electronic address: alberto.leardini@io</span> &nbsp;|&nbsp; Benjamin J Fregly <span class="corresp-aff">@ Department of Mechanical Engineering, Rice University, Houston, TX, USA. Electronic address: fregly@rice.edu.</span></div>
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="hip_implant" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#1D9E7520;color:#1D9E75">Hip Implant &amp; Femoral Stem</span>
+    <span class="source">pubmed</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Safety and performance of contemporary press-fit titanium osseointegration implants in lower extremity amputation : a five-year follow-up study.</h3>
+  <div class="meta">
+    <span class="authors">Robin Atallah, Elmer Rutjes, Jan P M Frölke, Ruud A Leijendekkers</span>
+    <span class="venue">The bone &amp; joint journal</span>
+    <span class="date">2025-04-01</span>
+    <span class="doi"><a href="https://doi.org/10.1302/0301-620X.107B4.BJJ-2024-0754.R1" target="_blank">10.1302/0301-620X.107B4.BJJ-2024-0754.R1</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Department of Orthopedics, Radboud University Medical Center, Radboud Institute for Health Sciences, Nijmegen, Netherlands.; Department of Orthopedics, Sint Maartenskliniek, Nijmegen, Netherlands.</div>
+  <div class="corresponding"><b>通讯:</b> Ruud A Leijendekkers <span class="corresp-aff">@ Department of Rehabilitation Medicine, Radboud University Medical Center, Radboud Institute for Health Sciences, Nijmege</span> <i>[推断]</i></div>
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="ai_bioprinting" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#7F77DD20;color:#7F77DD">AI for Bioprinting</span>
+    <span class="source">openalex</span>
+    <span class="relevance-level lvl-peripheral">Peripheral</span>
+    <span class="read-action act-ignore">Ignore</span>
+    <span class="validation-kind">in_vitro</span>
+    <span class="flag">Exp. validation</span>
+  </div>
+  <h3 class="paper-title">Adipose-mesenchymal stem cells enhance the formation of auricular cartilage in vitro and in vivo</h3>
+  <div class="meta">
+    <span class="authors">Dominika Zielińska, Katarzyna Michalak‐Micka, Hyrije Ademi, Philipp Fisch, Roland Boeni et al.</span>
+    <span class="venue">Stem Cells Translational Medicine</span>
+    <span class="date">2025-04-01</span>
+    <span class="doi"><a href="https://doi.org/10.1093/stcltm/szae098" target="_blank">10.1093/stcltm/szae098</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Children’s Research Center, University Children’s Hospital Zurich , 8008  Zurich ,</div>
+  <div class="corresponding"><b>通讯:</b> Dominika Zielińska <span class="corresp-aff">@ Children’s Research Center, University Children’s Hospital Zurich , 8008  Zurich ,</span></div>
+  <div class="relevance"><b>相关性:</b> 该论文未涉及任何AI方法，与AI生物打印研究方向无关。</div>
+  <div class="why-not-core"><b>边界:</b> This paper contains no AI/ML integration into bioprinting workflow; it is a pure tissue engineering study without computational modeling or autonomous decision-making.</div>
+  <div class="summary">
+    <div><b>动机·</b> 改善小耳畸形患者耳廓重建的治疗选择。</div>
+    <div><b>方法·</b> 将分化的人脂肪间充质干细胞与耳软骨细胞以1:5比例共培养于胶原-I生物墨水中。</div>
+    <div><b>结果·</b> 共培养显著增强耳廓软骨形成，减少收缩并增加GAG沉积。</div>
+    <div><b>验证·</b> 体外2D/3D分析及裸鼠体内植入8周验证。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> To address limitations of current auricular reconstruction by developing an alternative tissue-engineered approach using stem cells.</div>
+      <div><b>Method·</b> Co-culture of differentiated human adipose-derived mesenchymal stem cells and auricular chondrocytes in a 1:5 ratio within a collagen-I bioink, followed by in vitro characterization and in vivo implantation.</div>
+      <div><b>Result·</b> Co-culture enhanced de novo auricular cartilage formation, reduced construct shrinkage, and increased cartilage matrix deposition in vivo.</div>
+      <div><b>Validation·</b> In vitro gene/protein expression and biochemical analyses, and in vivo implantation in immunodeficient rats for 8 weeks.</div>
+    </div>
+    <div class="key-terms">
+      <span class="term"><b>adipose-derived mesenchymal stem cells</b> · 脂肪间充质干细胞</span><span class="term"><b>auricular cartilage</b> · 耳廓软骨</span><span class="term"><b>tissue engineering</b> · 组织工程</span><span class="term"><b>co-culture</b> · 共培养</span><span class="term"><b>collagen-I bioink</b> · I型胶原生物墨水</span><span class="term"><b>chondrogenic differentiation</b> · 软骨分化</span><span class="term"><b>in vivo</b> · 体内</span><span class="term"><b>microtia</b> · 小耳畸形</span>
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">tissue engineering</span> <span class="tag">auricular cartilage</span> <span class="tag">stem cells</span> <span class="tag">co-culture</span> <span class="tag">bioink</span> <span class="tag">in vivo</span></div>
+</article>
+<article class="paper" data-direction="am_biomedical" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#185FA520;color:#185FA5">AM Biomedical Materials</span>
+    <span class="source">openalex</span>
+    <span class="relevance-level lvl-peripheral">Peripheral</span>
+    <span class="read-action act-ignore">Ignore</span>
+    <span class="validation-kind">none</span>
+    
+  </div>
+  <h3 class="paper-title">Spiral-like geometry as an efficient way to minimize high-frequency losses in 3D printed FeSi6.5 toroidal cores using selective laser melting technology</h3>
+  <div class="meta">
+    <span class="authors">Aleksandra Kolano-Burian, Bartosz Jóźwik, P. Zackiewicz, Adam Pilśniak, Marcin Polak et al.</span>
+    <span class="venue">Materials Today Communications</span>
+    <span class="date">2025-04-01</span>
+    <span class="doi"><a href="https://doi.org/10.1016/j.mtcomm.2025.112410" target="_blank">10.1016/j.mtcomm.2025.112410</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Łukasiewicz Research Network - Institute of Non-Ferrous Metals, Sowinskiego 5, Gliwice 44-100, Poland</div>
+  <div class="corresponding"><b>通讯:</b> Adrian Radoń <span class="corresp-aff">@ Łukasiewicz Research Network - Institute of Non-Ferrous Metals, Sowinskiego 5, Gliwice 44-100, Poland</span></div>
+  <div class="relevance"><b>相关性:</b> 该论文研究的是用于电气应用的FeSi6.5磁芯的3D打印，与生物医学植入物或骨骼植入无关。</div>
+  <div class="why-not-core"><b>边界:</b> This paper does not address porous structures, stress shielding, LPBF of biomedical implants, mechanical testing, fatigue, or osseointegration.</div>
+  <div class="summary">
+    <div><b>动机·</b> 减小3D打印FeSi6.5磁芯的高频损耗</div>
+    <div><b>方法·</b> 采用螺旋状几何结构并通过SLM技术制备</div>
+    <div><b>结果·</b> 螺旋结构有效降低了高频涡流损耗</div>
+    <div><b>验证·</b> 通过实验测量磁性能验证</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> To minimize high-frequency losses in additively manufactured FeSi6.5 toroidal cores for electrical applications.</div>
+      <div><b>Method·</b> Spiral-like geometries were designed and fabricated using selective laser melting technology.</div>
+      <div><b>Result·</b> The spiral geometry significantly reduced eddy current losses at high frequencies.</div>
+      <div><b>Validation·</b> Magnetic performance was experimentally characterized by measuring core losses and permeability.</div>
+    </div>
+    <div class="key-terms">
+      <span class="term"><b>spiral-like geometry</b> · 螺旋状几何结构</span><span class="term"><b>selective laser melting</b> · 选区激光熔化</span><span class="term"><b>FeSi6.5</b> · 铁硅6.5合金</span><span class="term"><b>toroidal core</b> · 环形磁芯</span><span class="term"><b>high-frequency loss</b> · 高频损耗</span><span class="term"><b>eddy current loss</b> · 涡流损耗</span><span class="term"><b>magnetic permeability</b> · 磁导率</span>
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">selective laser melting</span> <span class="tag">magnetic cores</span> <span class="tag">high-frequency losses</span> <span class="tag">FeSi6.5</span></div>
+</article>
+<article class="paper" data-direction="am_biomedical" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#185FA520;color:#185FA5">AM Biomedical Materials</span>
+    <span class="source">pubmed</span>
+    <span class="relevance-level lvl-peripheral">Peripheral</span>
+    <span class="read-action act-ignore">Ignore</span>
+    <span class="validation-kind">none</span>
+    <span class="flag">Review</span>
+  </div>
+  <h3 class="paper-title">Cementless unicompartmental knee arthroplasty is safe and effective at a minimum follow-up of 4.2 years: A systematic review.</h3>
+  <div class="meta">
+    <span class="authors">Pierangelo Za, Giuseppe Francesco Papalia, Umberto Cardile, Pietro Gregori, Sebastiano Vasta et al.</span>
+    <span class="venue">Journal of experimental orthopaedics</span>
+    <span class="date">2025-04-01</span>
+    <span class="doi"><a href="https://doi.org/10.1002/jeo2.70253" target="_blank">10.1002/jeo2.70253</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Department of Orthopaedic and Trauma Surgery Università Campus Bio-Medico di Roma Roma Italy.; Research Unit of Orthopaedic and Trauma Surgery Fondazione Policlinico Universitario Campus Bio-Medico Ro</div>
+  <div class="corresponding"><b>通讯:</b> Rocco Papalia <span class="corresp-aff">@ Department of Orthopaedic and Trauma Surgery Università Campus Bio-Medico di Roma Roma Italy.; Research Unit of Orthopae</span> <i>[推断]</i></div>
+  <div class="relevance"><b>相关性:</b> 该论文是关于骨水泥型膝关节置换的临床综述，不涉及增材制造或力学测试。</div>
+  <div class="why-not-core"><b>边界:</b> This paper is a clinical systematic review of cementless UKA outcomes, with no additive manufacturing, no porous structure design, no mechanical testing (static or fatigue), and no surface morphology characterization.</div>
+  <div class="summary">
+    <div><b>动机·</b> 评估骨水泥型单髁膝关节置换的临床效果和安全性。</div>
+    <div><b>方法·</b> 系统综述纳入15项研究，分析临床评分、翻修率和并发症。</div>
+    <div><b>结果·</b> 骨水泥型UKA翻修率低，5年和10年生存率分别为96.2%和93.6%。</div>
+    <div><b>验证·</b> 基于已发表临床研究的系统综述，无实验验证。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> To evaluate the safety and efficacy of cementless unicompartmental knee arthroplasty (UKA) through a systematic review of clinical outcomes.</div>
+      <div><b>Method·</b> A systematic review was conducted including 15 studies with 3641 UKA procedures, extracting data on clinical scores, revisions, and complications.</div>
+      <div><b>Result·</b> Cementless UKA showed low revision rates (3.85%) and high survival rates of 96.2% at 5 years and 93.6% at 10 years.</div>
+      <div><b>Validation·</b> No experimental validation; the review synthesizes existing clinical studies.</div>
+    </div>
+    <div class="key-terms">
+      <span class="term"><b>cementless unicompartmental knee arthroplasty</b> · 骨水泥型单髁膝关节置换</span><span class="term"><b>systematic review</b> · 系统综述</span><span class="term"><b>implant survival</b> · 假体生存率</span><span class="term"><b>revision rate</b> · 翻修率</span><span class="term"><b>clinical outcomes</b> · 临床结局</span><span class="term"><b>osseointegration</b> · 骨整合</span>
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">knee arthroplasty</span> <span class="tag">cementless</span> <span class="tag">systematic review</span> <span class="tag">clinical outcomes</span></div>
+</article>
+<article class="paper" data-direction="am_biomedical" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#185FA520;color:#185FA5">AM Biomedical Materials</span>
+    <span class="source">pubmed</span>
+    <span class="relevance-level lvl-peripheral">Peripheral</span>
+    <span class="read-action act-ignore">Ignore</span>
+    <span class="validation-kind">mechanical_testing</span>
+    <span class="flag">Exp. validation</span>
+  </div>
+  <h3 class="paper-title">Push-out force evaluation of titanium cylinders attached to implant supported immediate provisional heat-polymerized acrylic resin with various relining material types and thicknesses.</h3>
+  <div class="meta">
+    <span class="authors">Burcu Kanat-Ertürk, Gökçe Zengin, Önjen Tak</span>
+    <span class="venue">American journal of dentistry</span>
+    <span class="date">2025-04-01</span>
+    <span class="doi"><a href="https://pubmed.ncbi.nlm.nih.gov/40324042/" target="_blank">link</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Department of Prosthodontics, Faculty of Dentistry, Kocaeli University, Kocaeli, Turkey, burcukanat@hotmail.com.</div>
+  <div class="corresponding"><b>通讯:</b> Burcu Kanat-Ertürk <span class="corresp-aff">@ Department of Prosthodontics, Faculty of Dentistry, Kocaeli University, Kocaeli, Turkey, burcukanat@hotmail.com.</span></div>
+  <div class="relevance"><b>相关性:</b> 该论文研究牙科临时修复体的树脂黏结力，与用户关注的AM生物医学植入物（多孔结构、应力屏蔽、疲劳）无关。</div>
+  <div class="why-not-core"><b>边界:</b> This paper investigates push-out forces of dental relining resins, with no LPBF fabrication, no porous structural design, no fatigue testing, and no osseointegration metrics.</div>
+  <div class="summary">
+    <div><b>动机·</b> 评估不同树脂材料和连接厚度对钛柱固位力的影响。</div>
+    <div><b>方法·</b> 制作不同孔径的丙烯酸树脂盘，充填不同树脂，热循环后进行推出测试。</div>
+    <div><b>结果·</b> 树脂类型和厚度显著影响推出力，2mm连接厚度普遍最优。</div>
+    <div><b>验证·</b> 力学推出实验及统计分析。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> To compare push-out forces of titanium cylinders bonded to provisional acrylic resins with varying relining materials and thicknesses.</div>
+      <div><b>Method·</b> Heat-polymerized acrylic discs with drilled holes of different diameters were filled with relining resins and titanium cylinders, then subjected to thermal cycling and push-out testing.</div>
+      <div><b>Result·</b> Resin type and connection thickness significantly affected push-out force, with 2 mm thickness generally yielding highest values.</div>
+      <div><b>Validation·</b> Laboratory push-out mechanical testing with statistical analysis.</div>
+    </div>
+    <div class="key-terms">
+      <span class="term"><b>push-out force</b> · 推出力</span><span class="term"><b>relining resin</b> · 衬垫树脂</span><span class="term"><b>titanium cylinder</b> · 钛柱</span><span class="term"><b>connection thickness</b> · 连接厚度</span><span class="term"><b>implant-supported provisional prosthesis</b> · 种植体支持临时修复体</span><span class="term"><b>thermal cycling</b> · 热循环</span><span class="term"><b>fracture type</b> · 断裂类型</span>
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">dental implant</span> <span class="tag">push-out test</span> <span class="tag">relining resin</span> <span class="tag">provisional prosthesis</span></div>
+</article>
+<article class="paper" data-direction="am_biomedical" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#185FA520;color:#185FA5">AM Biomedical Materials</span>
+    <span class="source">pubmed</span>
+    <span class="relevance-level lvl-peripheral">Peripheral</span>
+    <span class="read-action act-ignore">Ignore</span>
+    <span class="validation-kind">clinical</span>
+    <span class="flag">Exp. validation</span> <span class="flag">Patient-specific</span>
+  </div>
+  <h3 class="paper-title">The Effect of an Osseointegration Implant on Gait Kinematics for Extremely Short Transfemoral Amputees: A Case Report.</h3>
+  <div class="meta">
+    <span class="authors">Benjamin K Wilke, Kenton R Kaufman, Aaron Spaulding, Janki H Patel, Steve Pompilio et al.</span>
+    <span class="venue">JBJS case connector</span>
+    <span class="date">2025-04-01</span>
+    <span class="doi"><a href="https://doi.org/10.2106/JBJS.CC.25.00020" target="_blank">10.2106/JBJS.CC.25.00020</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Iowa Orthopedic Center, Des Moines, Iowa.</div>
+  <div class="corresponding"><b>通讯:</b> Howard Weiss <span class="corresp-aff">@ Brooks Rehabilitation Hospital, Jacksonville, Florida.</span> <i>[推断]</i></div>
+  <div class="relevance"><b>相关性:</b> 该论文是关于骨整合假肢的临床病例报告，不涉及增材制造或生物材料力学性能。</div>
+  <div class="why-not-core"><b>边界:</b> This paper is a clinical case report on osseointegration implant for gait kinematics, with no AM fabrication, mechanical testing, porous structure design, or material characterization.</div>
+  <div class="summary">
+    <div><b>动机·</b> 评估骨整合假肢对极短截肢者步态的影响。</div>
+    <div><b>方法·</b> 对一名55岁女性进行术前术后步态分析。</div>
+    <div><b>结果·</b> 患者步态改善，假肢使用时间增加。</div>
+    <div><b>验证·</b> 临床步态分析比较。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> This study evaluates the effect of an osseointegration implant on gait kinematics in a patient with a very short transfemoral amputation.</div>
+      <div><b>Method·</b> Gait analysis was performed before and after osseointegration surgery in a single patient.</div>
+      <div><b>Result·</b> The patient showed improved gait kinematics, increased prosthetic wear time, and achieved functional goals such as walking on the beach.</div>
+      <div><b>Validation·</b> Validation was based on clinical gait analysis from a single case.</div>
+    </div>
+    <div class="key-terms">
+      <span class="term"><b>osseointegration</b> · 骨整合</span><span class="term"><b>transfemoral amputation</b> · 股骨截肢</span><span class="term"><b>gait kinematics</b> · 步态运动学</span><span class="term"><b>prosthetic use</b> · 假肢使用</span><span class="term"><b>case report</b> · 病例报告</span>
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">osseointegration</span> <span class="tag">transfemoral amputation</span> <span class="tag">gait kinematics</span> <span class="tag">case report</span></div>
+</article>
+<article class="paper" data-direction="am_biomedical" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#185FA520;color:#185FA5">AM Biomedical Materials</span>
+    <span class="source">pubmed</span>
+    <span class="relevance-level lvl-peripheral">Peripheral</span>
+    <span class="read-action act-ignore">Ignore</span>
+    <span class="validation-kind">clinical</span>
+    <span class="flag">Exp. validation</span> <span class="flag">Patient-specific</span>
+  </div>
+  <h3 class="paper-title">Assessment of the Accuracy and Reliability of the Three Different Devices Measuring Dental Implant Stability: A Comparative Study.</h3>
+  <div class="meta">
+    <span class="authors">Mohammad Jalaluddin, Pavithra K Ramanna, Narendra V Penumatsa, Shilpa Mailankote, Deepa Basapur Vijayakumar et al.</span>
+    <span class="venue">The journal of contemporary dental practice</span>
+    <span class="date">2025-04-01</span>
+    <span class="doi"><a href="https://doi.org/10.5005/jp-journals-10024-3841" target="_blank">10.5005/jp-journals-10024-3841</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Department of Periodontics and Oral Implantology, Kalinga Institute of Dental Sciences (KIDS), Kalinga Institute of Industrial Technology (KIIT) Deemed to be University, Bhubaneswar, Odisha, India, Ph</div>
+  <div class="corresponding"><b>通讯:</b> Mohammad Jalaluddin <span class="corresp-aff">@ Department of Periodontics and Oral Implantology, Kalinga Institute of Dental Sciences (KIDS), Kalinga Institute of Indu</span></div>
+  <div class="relevance"><b>相关性:</b> 该论文评估临床牙种植体稳定性测量设备，未涉及增材制造、多孔结构或力学测试，与用户研究方向无关。</div>
+  <div class="why-not-core"><b>边界:</b> This paper does not involve LPBF fabrication, mechanical testing, porous structure, or fatigue analysis; it is a purely clinical comparison of implant stability measurement devices.</div>
+  <div class="summary">
+    <div><b>动机·</b> 比较三种牙种植体稳定性测量设备的准确性和可靠性</div>
+    <div><b>方法·</b> 纳入45名患者，使用Osstell、Osstell Mentor和Periotest在基线、1个月和6个月时测量稳定性</div>
+    <div><b>结果·</b> 三种设备测量结果无显著差异，但Osstell Mentor略优</div>
+    <div><b>验证·</b> 临床患者数据统计分析</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> To evaluate the accuracy and reliability of three devices for measuring dental implant stability in clinical settings.</div>
+      <div><b>Method·</b> Forty-five patients with missing teeth received implants, and stability was measured using two resonance frequency analysis devices (Osstell, Osstell Mentor) and one damping capacity analysis device (Periotest) at baseline, 1 month, and 6 months.</div>
+      <div><b>Result·</b> All three devices showed comparable stability values over time with no statistically significant differences, though the Osstell Mentor exhibited slightly higher accuracy.</div>
+      <div><b>Validation·</b> Clinical patient measurements with statistical comparison.</div>
+    </div>
+    <div class="key-terms">
+      <span class="term"><b>dental implant stability</b> · 牙种植体稳定性</span><span class="term"><b>resonance frequency analysis</b> · 共振频率分析</span><span class="term"><b>damping capacity analysis</b> · 阻尼容量分析</span><span class="term"><b>Osstell</b> · Osstell</span><span class="term"><b>Periotest</b> · Periotest</span><span class="term"><b>osseointegration</b> · 骨整合</span>
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">dental implant</span> <span class="tag">stability measurement</span> <span class="tag">resonance frequency analysis</span> <span class="tag">damping capacity analysis</span> <span class="tag">clinical study</span></div>
+</article>
+<article class="paper" data-direction="hip_implant" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#1D9E7520;color:#1D9E75">Hip Implant &amp; Femoral Stem</span>
+    <span class="source">openalex</span>
+    <span class="relevance-level lvl-peripheral">Peripheral</span>
+    <span class="read-action act-ignore">Ignore</span>
+    <span class="validation-kind">clinical</span>
+    
+  </div>
+  <h3 class="paper-title">Thromboembolic Events in Total Hip Arthroplasty:</h3>
+  <div class="meta">
+    <span class="authors">Arielle Richey Levine, Michael Leslie</span>
+    <span class="venue">JBJS Case Connector</span>
+    <span class="date">2025-04-01</span>
+    <span class="doi"><a href="https://doi.org/10.2106/jbjs.cc.24.00604" target="_blank">10.2106/jbjs.cc.24.00604</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Yale Department of Orthopaedics &amp; Rehabilitation at Yale School of Medicine, New Haven, Connecticut,</div>
+  <div class="corresponding"><b>通讯:</b> Arielle Richey Levine <span class="corresp-aff">@ Yale Department of Orthopaedics &amp; Rehabilitation at Yale School of Medicine, New Haven, Connecticut,</span></div>
+  <div class="relevance"><b>相关性:</b> 该论文讨论全髋关节置换术中的血栓栓塞事件，完全不涉及生物力学建模或植入物设计。</div>
+  <div class="why-not-core"><b>边界:</b> This paper focuses on clinical thromboembolic complications during THA, with no biomechanical modeling, implant mechanics, or FEA analysis relevant to stress shielding or micromotion.</div>
+  <div class="summary">
+    <div><b>动机·</b> 探索全髋关节置换术中血栓栓塞事件的风险因素</div>
+    <div><b>方法·</b> 报道3例术中血栓栓塞病例并分析其临床特征</div>
+    <div><b>结果·</b> 强调术前凝血功能评估和术中应急预案的重要性</div>
+    <div><b>验证·</b> 临床病例报告，无对照或定量验证</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> To highlight risk factors and intraoperative management of thromboembolic events during total hip arthroplasty.</div>
+      <div><b>Method·</b> Three case reports of thromboembolic complications occurring during acetabular component implantation.</div>
+      <div><b>Result·</b> Identified coagulopathies and intraoperative steps as critical factors; emphasized preventive measures and contingency planning.</div>
+      <div><b>Validation·</b> Clinical case series without comparative or quantitative validation.</div>
+    </div>
+    <div class="key-terms">
+      <span class="term"><b>total hip arthroplasty</b> · 全髋关节置换术</span><span class="term"><b>thromboembolic event</b> · 血栓栓塞事件</span><span class="term"><b>acetabular component</b> · 髋臼假体</span><span class="term"><b>coagulopathy</b> · 凝血功能障碍</span><span class="term"><b>intraoperative complication</b> · 术中并发症</span>
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">THA</span> <span class="tag">thromboembolism</span> <span class="tag">clinical case series</span></div>
+</article>
+<article class="paper" data-direction="hip_implant" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#1D9E7520;color:#1D9E75">Hip Implant &amp; Femoral Stem</span>
+    <span class="source">openalex</span>
+    <span class="relevance-level lvl-peripheral">Peripheral</span>
+    <span class="read-action act-ignore">Ignore</span>
+    <span class="validation-kind">clinical</span>
+    <span class="flag">Exp. validation</span>
+  </div>
+  <h3 class="paper-title">Clinical comparison between direct anterior approach and posterior lateral approach in total hip arthroplasty and risk factors for lateral femoral cutaneous nerve injury</h3>
+  <div class="meta">
+    <span class="authors">Jian-feng Yan, Le Zhao, Qiang Li</span>
+    <span class="venue">Frontiers in Surgery</span>
+    <span class="date">2025-04-01</span>
+    <span class="doi"><a href="https://doi.org/10.3389/fsurg.2025.1482731" target="_blank">10.3389/fsurg.2025.1482731</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Department of Orthopedics, The Affiliated Changshu Hospital of Nantong University, Changshu No. 2 People&#x27;s Hospital, Changshu, Jiangsu, China</div>
+  <div class="corresponding"><b>通讯:</b> Jian-feng Yan <span class="corresp-aff">@ Department of Orthopedics, The Affiliated Changshu Hospital of Nantong University, Changshu No. 2 People&#x27;s Hospital, Cha</span></div>
+  <div class="relevance"><b>相关性:</b> 该论文专注于手术入路的临床比较和神经损伤风险，未涉及任何生物力学建模或应力分析。</div>
+  <div class="why-not-core"><b>边界:</b> No biomechanics modeling, no implant stress analysis, no FEA, no contact mechanics or micromotion.</div>
+  <div class="summary">
+    <div><b>动机·</b> 比较直接前入路与后外侧入路全髋关节置换的临床效果及股外侧皮神经损伤风险。</div>
+    <div><b>方法·</b> 随机分组200例患者，记录临床数据并分析神经损伤危险因素。</div>
+    <div><b>结果·</b> 直接前入路减少出血和住院时间，但股外侧皮神经损伤率较高。</div>
+    <div><b>验证·</b> 通过随机对照临床试验验证，并建立风险预测模型。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> To compare clinical outcomes and risk factors for lateral femoral cutaneous nerve injury between direct anterior and posterior lateral approaches in THA.</div>
+      <div><b>Method·</b> A randomized controlled trial of 200 patients, collecting clinical parameters and logistic regression for risk analysis.</div>
+      <div><b>Result·</b> Direct anterior approach showed advantages in blood loss and recovery but higher LFCN injury incidence, associated with diabetes and postoperative inflammation.</div>
+      <div><b>Validation·</b> Validated through a prospective randomized clinical study with predictive model discrimination.</div>
+    </div>
+    <div class="key-terms">
+      <span class="term"><b>direct anterior approach</b> · 直接前入路</span><span class="term"><b>posterior lateral approach</b> · 后外侧入路</span><span class="term"><b>total hip arthroplasty</b> · 全髋关节置换术</span><span class="term"><b>lateral femoral cutaneous nerve</b> · 股外侧皮神经</span><span class="term"><b>risk factor</b> · 危险因素</span><span class="term"><b>clinical outcome</b> · 临床结局</span>
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">total hip arthroplasty</span> <span class="tag">direct anterior approach</span> <span class="tag">posterior lateral approach</span> <span class="tag">lateral femoral cutaneous nerve</span> <span class="tag">risk factors</span> <span class="tag">clinical outcomes</span></div>
+</article>
+<article class="paper" data-direction="hip_implant" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#1D9E7520;color:#1D9E75">Hip Implant &amp; Femoral Stem</span>
+    <span class="source">openalex</span>
+    <span class="relevance-level lvl-peripheral">Peripheral</span>
+    <span class="read-action act-ignore">Ignore</span>
+    <span class="validation-kind">clinical</span>
+    
+  </div>
+  <h3 class="paper-title">Assessing Construct Validity of a Pelvic Floor Symptom Scale in Females With Hip Osteoarthritis Undergoing Total Hip Arthroplasty</h3>
+  <div class="meta">
+    <span class="authors">Jennifer A. LaCross, Cara L. Lewis, Joel Wells, Amisha Mehta, Edward P. Mulligan et al.</span>
+    <span class="venue">Journal of Women s &amp; Pelvic Health Physical Therapy</span>
+    <span class="date">2025-04-01</span>
+    <span class="doi"><a href="https://doi.org/10.1097/jwh.0000000000000325" target="_blank">10.1097/jwh.0000000000000325</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Departments of Obstetrics and Gynecology and Mechanical Engineering, University of Michigan—Ann Arbor, Ann Arbor, Michigan</div>
+  <div class="corresponding"><b>通讯:</b> Jennifer A. LaCross <span class="corresp-aff">@ Departments of Obstetrics and Gynecology and Mechanical Engineering, University of Michigan—Ann Arbor, Ann Arbor, Michig</span></div>
+  <div class="relevance"><b>相关性:</b> 该论文仅涉及髋关节置换患者的盆底症状量表验证，与股骨假体生物力学无关。</div>
+  <div class="why-not-core"><b>边界:</b> No biomechanics modeling, no implant stress/strain or micromotion analysis, no contact mechanics, no FEA, and no patient-specific femur geometry.</div>
+  <div class="summary">
+    <div><b>动机·</b> 验证盆底症状量表在髋关节置换女性中的有效性。</div>
+    <div><b>方法·</b> 通过34例患者进行收敛和区分效度分析。</div>
+    <div><b>结果·</b> 量表具有良好的结构效度。</div>
+    <div><b>验证·</b> 基于临床问卷与标准工具的相关性分析。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> To validate the Pelvic Floor Distress Inventory-Short Form 20 in females with hip osteoarthritis undergoing total hip arthroplasty.</div>
+      <div><b>Method·</b> Construct validity was evaluated through convergent and discriminant validity using the ICIQ-UI SF and HOOS in 34 outpatients.</div>
+      <div><b>Result·</b> The PFDI-SF20 demonstrated good convergent and discriminant validity, with a significant positive correlation with ICIQ-UI SF and non-significant correlations with HOOS subscales.</div>
+      <div><b>Validation·</b> Validation relied on clinical questionnaire correlations, not biomechanical measurements.</div>
+    </div>
+    <div class="key-terms">
+      <span class="term"><b>pelvic floor symptoms</b> · 盆底症状</span><span class="term"><b>construct validity</b> · 结构效度</span><span class="term"><b>total hip arthroplasty</b> · 全髋关节置换术</span><span class="term"><b>convergent validity</b> · 收敛效度</span><span class="term"><b>discriminant validity</b> · 区分效度</span>
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">pelvic floor</span> <span class="tag">symptom scale</span> <span class="tag">hip osteoarthritis</span> <span class="tag">total hip arthroplasty</span> <span class="tag">construct validity</span></div>
+</article>
+<article class="paper" data-direction="hip_implant" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#1D9E7520;color:#1D9E75">Hip Implant &amp; Femoral Stem</span>
+    <span class="source">openalex</span>
+    <span class="relevance-level lvl-peripheral">Peripheral</span>
+    <span class="read-action act-ignore">Ignore</span>
+    <span class="validation-kind">clinical</span>
+    <span class="flag">Exp. validation</span>
+  </div>
+  <h3 class="paper-title">Effects of Multiple Intravenous Doses of Perioperative Vitamin C on Pain Management Following Total Hip Arthroplasty</h3>
+  <div class="meta">
+    <span class="authors">Guangtao Han, Yuna Ye, Pengde Kang</span>
+    <span class="venue">Drug Design Development and Therapy</span>
+    <span class="date">2025-04-01</span>
+    <span class="doi"><a href="https://doi.org/10.2147/dddt.s506262" target="_blank">10.2147/dddt.s506262</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> West China hospital of Sichuan University, Chengdu, Sichuan, People&#x27;s Republic of China</div>
+  <div class="corresponding"><b>通讯:</b> Guangtao Han <span class="corresp-aff">@ West China hospital of Sichuan University, Chengdu, Sichuan, People&#x27;s Republic of China</span></div>
+  <div class="relevance"><b>相关性:</b> 该论文研究维生素C对全髋关节置换术后疼痛管理的影响，与髋关节植入物生物力学无关。</div>
+  <div class="why-not-core"><b>边界:</b> This paper is a clinical trial on pain management and does not contain any biomechanics modeling, implant design, stress shielding analysis, or finite element simulation.</div>
+  <div class="summary">
+    <div><b>动机·</b> 评估围手术期多次静脉注射维生素C对全髋关节置换术后疼痛缓解的效果。</div>
+    <div><b>方法·</b> 前瞻性双盲随机对照试验，100例患者分为维生素C组和安慰剂组。</div>
+    <div><b>结果·</b> 维生素C组吗啡用量显著减少，疼痛评分降低，髋关节活动改善。</div>
+    <div><b>验证·</b> 临床随机对照试验验证。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> To evaluate whether multiple perioperative doses of intravenous vitamin C provide sustained pain relief after total hip arthroplasty.</div>
+      <div><b>Method·</b> A prospective, double-blind, placebo-controlled randomized trial with 100 THA patients receiving either 3g vitamin C daily or placebo during the perioperative period.</div>
+      <div><b>Result·</b> The vitamin C group showed significantly reduced morphine consumption, lower VAS pain scores, and better hip motion compared to the placebo group.</div>
+      <div><b>Validation·</b> Validation through a clinical randomized controlled trial with 100 patients.</div>
+    </div>
+    <div class="key-terms">
+      <span class="term"><b>total hip arthroplasty</b> · 全髋关节置换术</span><span class="term"><b>vitamin C</b> · 维生素C</span><span class="term"><b>pain management</b> · 疼痛管理</span><span class="term"><b>randomized controlled trial</b> · 随机对照试验</span><span class="term"><b>morphine consumption</b> · 吗啡用量</span><span class="term"><b>Visual Analog Scale</b> · 视觉模拟评分</span>
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">pain management</span> <span class="tag">total hip arthroplasty</span> <span class="tag">vitamin C</span> <span class="tag">clinical trial</span></div>
+</article>
+<article class="paper" data-direction="hip_implant" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#1D9E7520;color:#1D9E75">Hip Implant &amp; Femoral Stem</span>
+    <span class="source">openalex</span>
+    <span class="relevance-level lvl-peripheral">Peripheral</span>
+    <span class="read-action act-ignore">Ignore</span>
+    <span class="validation-kind">none</span>
+    
+  </div>
+  <h3 class="paper-title">Influence of hip arthroplasty on sarcopenia and quality of life: a prospective cohort study</h3>
+  <div class="meta">
+    <span class="authors">Elisabetta Ferraro, Fabio Penna, Antonio REITANO, Alessandro de Sire, Nicoletta Filigheddu et al.</span>
+    <span class="venue">Minerva Orthopedics</span>
+    <span class="date">2025-04-01</span>
+    <span class="doi"><a href="https://doi.org/10.23736/s2784-8469.24.04521-8" target="_blank">10.23736/s2784-8469.24.04521-8</a></span>
+  </div>
+  
+  
+  <div class="relevance"><b>相关性:</b> 与用户方向无关，本文是临床队列研究，未涉及植入物生物力学或有限元分析。</div>
+  <div class="why-not-core"><b>边界:</b> This paper does not quantify stress/strain in Gruen zones, report micromotion, use FE modeling, or compare intact vs implanted femur.</div>
+  <div class="summary">
+    <div><b>动机·</b> 评估髋关节置换术对肌少症和生活质量的影响。</div>
+    <div><b>方法·</b> 前瞻性队列研究，使用SarQoL问卷和DEXA测量。</div>
+    <div><b>结果·</b> 髋关节置换改善骨关节炎患者的肌少症相关生活质量。</div>
+    <div><b>验证·</b> 临床随访一年，统计学分析。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> To evaluate the effect of hip arthroplasty on sarcopenia and quality of life in patients with femoral fracture or osteoarthritis.</div>
+      <div><b>Method·</b> A prospective cohort study using handgrip strength, DEXA for muscle mass, and SarQoL questionnaire at admission and one year post-surgery.</div>
+      <div><b>Result·</b> Patients with hip osteoarthritis showed significant improvement in sarcopenia-related quality of life after arthroplasty, while femoral fracture patients did not.</div>
+      <div><b>Validation·</b> Clinical one-year follow-up with statistical analysis of associations between predictors and outcomes.</div>
+    </div>
+    <div class="key-terms">
+      <span class="term"><b>hip arthroplasty</b> · 髋关节置换术</span><span class="term"><b>sarcopenia</b> · 肌少症</span><span class="term"><b>quality of life</b> · 生活质量</span><span class="term"><b>SarQoL</b> · 肌少症生活质量问卷</span><span class="term"><b>DEXA</b> · 双能X线吸收测量法</span><span class="term"><b>handgrip strength</b> · 握力</span><span class="term"><b>skeletal muscle mass index</b> · 骨骼肌质量指数</span>
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">hip arthroplasty</span> <span class="tag">sarcopenia</span> <span class="tag">quality of life</span> <span class="tag">clinical study</span></div>
+</article>
+<article class="paper" data-direction="hip_implant" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#1D9E7520;color:#1D9E75">Hip Implant &amp; Femoral Stem</span>
+    <span class="source">openalex</span>
+    <span class="relevance-level lvl-peripheral">Peripheral</span>
+    <span class="read-action act-ignore">Ignore</span>
+    <span class="validation-kind">clinical</span>
+    <span class="flag">Exp. validation</span>
+  </div>
+  <h3 class="paper-title">Comparison of In-Hospital Complications Following Hybrid Versus Cementless Total Hip Arthroplasty in Elderly Patients with Osteoarthritis</h3>
+  <div class="meta">
+    <span class="authors">Kirills Kopiks, Sergejs Zadorožnijs</span>
+    <span class="venue">Proceedings of the Latvian Academy of Sciences Section B Natural Exact and Applied Sciences</span>
+    <span class="date">2025-04-01</span>
+    <span class="doi"><a href="https://doi.org/10.2478/prolas-2025-0002" target="_blank">10.2478/prolas-2025-0002</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Faculty of Medicine and Life Sciences , University of Latvia , 3 Jelgavas Str., Rīga, LV-1004 , Latvia</div>
+  <div class="corresponding"><b>通讯:</b> Kirills Kopiks <span class="corresp-aff">@ Faculty of Medicine and Life Sciences , University of Latvia , 3 Jelgavas Str., Rīga, LV-1004 , Latvia</span></div>
+  <div class="relevance"><b>相关性:</b> 该论文仅关注临床并发症比较，未涉及股骨近端应力、微动或植入物力学性能分析。</div>
+  <div class="why-not-core"><b>边界:</b> No biomechanical modeling, no FEA, no stress shielding or micromotion quantification, no implant design or interface mechanics.</div>
+  <div class="summary">
+    <div><b>动机·</b> 比较老年骨关节炎患者混合型与无水泥全髋置换术的住院并发症。</div>
+    <div><b>方法·</b> 回顾性分析2012年至2023年髋关节置换登记数据。</div>
+    <div><b>结果·</b> 混合组并发症发生率（56.9%）高于无水泥组（47.1%）。</div>
+    <div><b>验证·</b> 基于773例混合和138例无水泥病例的临床随访数据。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> To compare in-hospital complications between hybrid and cementless total hip arthroplasty in elderly osteoarthritis patients.</div>
+      <div><b>Method·</b> Retrospective analysis of arthroplasty registry data from February 2012 to June 2023.</div>
+      <div><b>Result·</b> The hybrid group had a higher overall complication rate (56.9%) than the cementless group (47.1%).</div>
+      <div><b>Validation·</b> Clinical validation using 773 hybrid and 138 cementless cases from a hospital registry.</div>
+    </div>
+    <div class="key-terms">
+      <span class="term"><b>total hip arthroplasty</b> · 全髋关节置换术</span><span class="term"><b>hybrid THA</b> · 混合型全髋置换</span><span class="term"><b>cementless THA</b> · 无水泥全髋置换</span><span class="term"><b>periprosthetic fracture</b> · 假体周围骨折</span><span class="term"><b>hemodynamic reaction</b> · 血流动力学反应</span><span class="term"><b>arthroplasty registry</b> · 关节置换登记系统</span><span class="term"><b>osteoarthritis</b> · 骨关节炎</span>
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">total hip arthroplasty</span> <span class="tag">hybrid</span> <span class="tag">cementless</span> <span class="tag">complications</span> <span class="tag">elderly</span></div>
+</article>
+<article class="paper" data-direction="hip_implant" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#1D9E7520;color:#1D9E75">Hip Implant &amp; Femoral Stem</span>
+    <span class="source">openalex</span>
+    <span class="relevance-level lvl-peripheral">Peripheral</span>
+    <span class="read-action act-ignore">Ignore</span>
+    <span class="validation-kind">clinical</span>
+    
+  </div>
+  <h3 class="paper-title">COMPARING TOTAL HIP ARTHROPLASTY AND EDUCATION AND EXERCISE OUTCOMES BY HIP OSTEOARTHRITIS SYMPTOM SEVERITY USING MATCHED OBSERVATIONAL DATA</h3>
+  <div class="meta">
+    <span class="authors">James J. Young, Michael G. Zywiel, Søren Thorgaard Skou, Vinod Chandran, J Rod Davey et al.</span>
+    <span class="venue">Osteoarthritis and Cartilage</span>
+    <span class="date">2025-04-01</span>
+    <span class="doi"><a href="https://doi.org/10.1016/j.joca.2025.02.701" target="_blank">10.1016/j.joca.2025.02.701</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Department of Sports Science and Clinical Biomechanics, University of Southern Denmark, Odense, Denmark</div>
+  <div class="corresponding"><b>通讯:</b> James J. Young <span class="corresp-aff">@ Department of Sports Science and Clinical Biomechanics, University of Southern Denmark, Odense, Denmark</span></div>
+  <div class="relevance"><b>相关性:</b> 该论文是临床结果比较研究，不涉及任何髋关节假体生物力学分析。</div>
+  <div class="why-not-core"><b>边界:</b> This paper does not quantify femoral stem stress shielding, micromotion, or any biomechanical implant performance; it is a clinical comparison of THA vs non-surgical treatment for hip OA.</div>
+  <div class="summary">
+    <div><b>动机·</b> 比较全髋关节置换与非手术治疗对髋关节炎的疗效。</div>
+    <div><b>方法·</b> 使用匹配观察数据进行分析。</div>
+    <div><b>结果·</b> 未提供摘要，无法总结。</div>
+    <div><b>验证·</b> 临床结果分析。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> To compare clinical outcomes between total hip arthroplasty and non-surgical education and exercise for hip osteoarthritis stratified by symptom severity.</div>
+      <div><b>Method·</b> Matched observational data analysis from cohort studies.</div>
+      <div><b>Result·</b> Results are not available due to missing abstract.</div>
+      <div><b>Validation·</b> Clinical outcome comparison using matched observational data.</div>
+    </div>
+    <div class="key-terms">
+      <span class="term"><b>total hip arthroplasty</b> · 全髋关节置换术</span><span class="term"><b>hip osteoarthritis</b> · 髋关节骨关节炎</span><span class="term"><b>matched observational data</b> · 匹配观察数据</span>
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">hip osteoarthritis</span> <span class="tag">total hip arthroplasty</span> <span class="tag">clinical outcomes</span></div>
+</article>
+<article class="paper" data-direction="hip_implant" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#1D9E7520;color:#1D9E75">Hip Implant &amp; Femoral Stem</span>
+    <span class="source">pubmed</span>
+    <span class="relevance-level lvl-peripheral">Peripheral</span>
+    <span class="read-action act-ignore">Ignore</span>
+    <span class="validation-kind">none</span>
+    <span class="flag">Review</span>
+  </div>
+  <h3 class="paper-title">Investigating the Feasibility and Safety of Osseointegration With Neural Interfaces for Advanced Prosthetic Control.</h3>
+  <div class="meta">
+    <span class="authors">Emma Shiwen Leung, Mohammad Mofatteh</span>
+    <span class="venue">Cureus</span>
+    <span class="date">2025-04-01</span>
+    <span class="doi"><a href="https://doi.org/10.7759/cureus.82567" target="_blank">10.7759/cureus.82567</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Neurosurgery, Neuro International Collaboration (NIC), London, GBR.</div>
+  <div class="corresponding"><b>通讯:</b> Mohammad Mofatteh <span class="corresp-aff">@ School of Medicine, Dentistry and Biomedical Sciences, Queen&#x27;s University Belfast, Belfast, GBR.; Neurosurgery, Neuro In</span> <i>[推断]</i></div>
+  <div class="relevance"><b>相关性:</b> 该论文关注骨整合神经界面用于假肢控制，与髋关节假体应力遮挡或微动分析无关。</div>
+  <div class="why-not-core"><b>边界:</b> This paper does not address hip implant stress shielding, micromotion, or femoral stem biomechanics; it focuses on neural interfaces for prosthetic limbs.</div>
+  <div class="summary">
+    <div><b>动机·</b> 探索骨整合结合神经界面改善假肢控制的可行性与安全性</div>
+    <div><b>方法·</b> 综述骨整合神经界面的系统类型、电极设计及与周围神经接口的整合</div>
+    <div><b>结果·</b> 骨整合神经界面可提高信号保真度、运动控制和感觉反馈，但存在感染和电极退化等挑战</div>
+    <div><b>验证·</b> 无实验验证，为文献综述</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> To investigate the feasibility and safety of combining osseointegration with neural interfaces for advanced prosthetic control.</div>
+      <div><b>Method·</b> This review surveys osseointegrated neural interface systems, including screw-fit and press-fit designs, and their integration with peripheral nerve interfaces.</div>
+      <div><b>Result·</b> Osseointegrated neural interfaces improve signal fidelity, motor control, and sensory feedback compared to surface EMG, but challenges such as infection risk and electrode degradation remain.</div>
+      <div><b>Validation·</b> No experimental validation; this is a review of existing literature.</div>
+    </div>
+    <div class="key-terms">
+      <span class="term"><b>osseointegration</b> · 骨整合</span><span class="term"><b>neural interface</b> · 神经界面</span><span class="term"><b>prosthetic control</b> · 假肢控制</span><span class="term"><b>peripheral nerve interface</b> · 周围神经接口</span><span class="term"><b>biocompatibility</b> · 生物相容性</span>
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">osseointegration</span> <span class="tag">neural interface</span> <span class="tag">prosthetic control</span> <span class="tag">peripheral nerve interface</span> <span class="tag">review</span></div>
+</article>
+
+<script>
+const tabs = document.querySelectorAll('.tab');
+const pfs = document.querySelectorAll('.pf');
+let dirFilter = 'all';
+let prioFilter = 'HighMedium';
+function applyFilters(){
+  document.querySelectorAll('.paper').forEach(p=>{
+    const d = p.dataset.direction;
+    const pr = p.dataset.priority;
+    const dirOk = dirFilter==='all' || dirFilter===d;
+    const prOk = prioFilter==='all'
+                  || (prioFilter==='High' && pr==='High')
+                  || (prioFilter==='HighMedium' && (pr==='High'||pr==='Medium'));
+    p.dataset.hidden = (dirOk && prOk) ? '0' : '1';
+  });
+}
+tabs.forEach(t=>t.onclick=()=>{tabs.forEach(x=>x.classList.remove('active'));t.classList.add('active');dirFilter=t.dataset.filter;applyFilters();});
+pfs.forEach(t=>t.onclick=()=>{pfs.forEach(x=>x.classList.remove('active'));t.classList.add('active');prioFilter=t.dataset.prio;applyFilters();});
+applyFilters();
+</script>
+</body></html>

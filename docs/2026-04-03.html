@@ -1,0 +1,1325 @@
+<!doctype html><html lang="zh"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Research Radar — 2026-04-03</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:980px;margin:2rem auto;padding:0 1rem;color:#222;line-height:1.5}
+h1{font-size:24px;font-weight:500;margin:0 0 .25rem}
+.subtitle{color:#666;font-size:14px;margin-bottom:1.5rem}
+.topbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 0;margin-bottom:1.25rem;border-bottom:.5px solid #e2e0d8}
+.navbtn{font-size:13px;background:#f5f4ef;color:#444;padding:6px 12px;border-radius:8px;text-decoration:none}
+.navbtn:hover{background:#e9e7df}
+.navbtn.disabled{color:#bbb;background:#fafaf6;cursor:default}
+.archive-select{font-size:13px;padding:6px 10px;border:.5px solid #ccc;border-radius:8px;background:#fff;color:#444;cursor:pointer}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1.5rem}
+.stat{background:#f5f4ef;border-radius:8px;padding:.75rem 1rem}
+.stat-label{font-size:12px;color:#666}
+.stat-val{font-size:22px;font-weight:500;margin-top:2px}
+.tabs,.prio-filter{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:.75rem}
+.tab,.pf{background:transparent;border:.5px solid #ccc;border-radius:8px;padding:6px 14px;font-size:13px;cursor:pointer;color:#444}
+.tab.active,.pf.active{background:#222;color:#fff;border-color:#222}
+.paper{background:#fff;border:.5px solid #e2e0d8;border-radius:12px;padding:1rem 1.25rem;margin-bottom:12px}
+.paper-head{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+.priority{font-size:12px;font-weight:500;padding:3px 10px;border-radius:999px}
+.direction-pill{font-size:11px;padding:3px 8px;border-radius:8px}
+.source{font-size:11px;color:#999;text-transform:uppercase}
+.flag{font-size:11px;background:#eef;color:#335;padding:2px 7px;border-radius:6px}
+.paper-title{font-size:15px;font-weight:500;line-height:1.4;margin:4px 0}
+.meta{font-size:12px;color:#666;margin-bottom:10px}
+.meta>span{margin-right:12px}
+.relevance{font-size:13px;background:#fafaf6;padding:6px 10px;border-radius:6px;margin-bottom:8px}
+.summary{font-size:13px;line-height:1.65}
+.summary>div{margin-bottom:4px}
+.tags-row{margin-top:8px}
+.tag{font-size:10px;background:#f1efe8;color:#555;padding:2px 7px;border-radius:6px;margin-right:4px}
+.paper[data-hidden="1"]{display:none}
+footer.run-info{margin-top:3rem;padding-top:1rem;border-top:.5px solid #e2e0d8;font-size:12px;color:#666}
+footer.run-info summary{cursor:pointer;color:#444}
+footer.run-info table{margin-top:8px;font-family:ui-monospace,monospace;font-size:11px}
+footer.run-info td{padding:2px 12px 2px 0;vertical-align:top}
+footer.run-info td:first-child{color:#888;width:140px}
+details.summary-en{margin-top:8px;background:#f8f8f3;border-radius:8px;padding:6px 12px;border:.5px solid #e2e0d8}
+details.summary-en summary{cursor:pointer;font-size:12px;color:#555;font-weight:500}
+details.summary-en[open] summary{margin-bottom:8px}
+.summary.en{font-size:13px;color:#333;line-height:1.55}
+.summary.en>div{margin-bottom:3px}
+.key-terms{margin-top:8px;display:flex;flex-wrap:wrap;gap:6px}
+.term{font-size:11px;background:#fff;border:.5px solid #ddd;padding:3px 8px;border-radius:6px;color:#444}
+.term b{color:#222;font-weight:500}
+.affiliations{font-size:12px;color:#666;margin-top:6px;padding-left:6px;border-left:2px solid #ddd}
+.affiliations b{color:#444;font-weight:500}
+.corresponding{font-size:12px;color:#555;margin-top:3px;padding-left:6px;border-left:2px solid #aac}
+.corresponding b{color:#3F2E7E;font-weight:500}
+.corresp-aff{color:#888}
+.corresponding i{color:#888;font-size:11px}
+.relevance-level{font-size:11px;padding:3px 8px;border-radius:8px;font-weight:500}
+.lvl-direct{background:#D4EBC4;color:#2D5A14}
+.lvl-transferable{background:#E0DDF4;color:#3F2E7E}
+.lvl-peripheral{background:#F1EFE8;color:#666}
+.read-action{font-size:11px;padding:3px 8px;border-radius:8px;font-weight:500;font-style:italic}
+.act-read-now{background:#FFE8D6;color:#7D4515}
+.act-save-for-project{background:#E6E1F5;color:#3A2C7A}
+.act-skim-only{background:#F0F0E8;color:#5C5C50}
+.act-background-only{background:#F5F5F0;color:#777}
+.act-ignore{background:#F5E8E8;color:#7A3A3A}
+.validation-kind{font-size:10px;background:#EDF4FA;color:#1F4A6B;padding:2px 7px;border-radius:6px}
+.why-not-core{font-size:12px;background:#FCF5E8;border-left:3px solid #D8A045;padding:5px 10px;margin-top:4px;color:#5A4318;border-radius:0 6px 6px 0}
+</style></head><body>
+<h1>Research Radar</h1>
+<div class="subtitle">2026-04-03 · AI Bioprinting / Hip Implant / FEA Surrogate / AM Biomedical</div>
+<div class="topbar"><a class="navbtn" href="2026-04-02.html">← 2026-04-02</a><select class="archive-select" onchange="if(this.value)window.location.href=this.value"><option value="2026-12-01.html">2026-12-01</option><option value="2026-10-01.html">2026-10-01</option><option value="2026-08-01.html">2026-08-01</option><option value="2026-07-01.html">2026-07-01</option><option value="2026-06-10.html">2026-06-10</option><option value="2026-06-01.html">2026-06-01</option><option value="2026-05-20.html">2026-05-20</option><option value="2026-05-15.html">2026-05-15</option><option value="2026-05-14.html">2026-05-14</option><option value="2026-05-13.html">2026-05-13</option><option value="2026-05-12.html">2026-05-12</option><option value="2026-05-11.html">2026-05-11</option><option value="2026-05-10.html">2026-05-10</option><option value="2026-05-09.html">2026-05-09</option><option value="2026-05-08.html">2026-05-08</option><option value="2026-05-07.html">2026-05-07</option><option value="2026-05-06.html">2026-05-06</option><option value="2026-05-05.html">2026-05-05</option><option value="2026-05-04.html">2026-05-04</option><option value="2026-05-02.html">2026-05-02</option><option value="2026-05-01.html">2026-05-01</option><option value="2026-04-30.html">2026-04-30</option><option value="2026-04-29.html">2026-04-29</option><option value="2026-04-28.html">2026-04-28</option><option value="2026-04-27.html">2026-04-27</option><option value="2026-04-26.html">2026-04-26</option><option value="2026-04-25.html">2026-04-25</option><option value="2026-04-24.html">2026-04-24</option><option value="2026-04-23.html">2026-04-23</option><option value="2026-04-22.html">2026-04-22</option><option value="2026-04-21.html">2026-04-21</option><option value="2026-04-20.html">2026-04-20</option><option value="2026-04-19.html">2026-04-19</option><option value="2026-04-18.html">2026-04-18</option><option value="2026-04-17.html">2026-04-17</option><option value="2026-04-16.html">2026-04-16</option><option value="2026-04-15.html">2026-04-15</option><option value="2026-04-14.html">2026-04-14</option><option value="2026-04-13.html">2026-04-13</option><option value="2026-04-12.html">2026-04-12</option><option value="2026-04-11.html">2026-04-11</option><option value="2026-04-10.html">2026-04-10</option><option value="2026-04-09.html">2026-04-09</option><option value="2026-04-08.html">2026-04-08</option><option value="2026-04-07.html">2026-04-07</option><option value="2026-04-06.html">2026-04-06</option><option value="2026-04-05.html">2026-04-05</option><option value="2026-04-04.html">2026-04-04</option><option value="2026-04-03.html" selected>2026-04-03</option><option value="2026-04-02.html">2026-04-02</option><option value="2026-04-01.html">2026-04-01</option><option value="2026-03-31.html">2026-03-31</option><option value="2026-03-30.html">2026-03-30</option><option value="2026-03-29.html">2026-03-29</option><option value="2026-03-28.html">2026-03-28</option><option value="2026-03-27.html">2026-03-27</option><option value="2026-03-26.html">2026-03-26</option><option value="2026-03-25.html">2026-03-25</option><option value="2026-03-24.html">2026-03-24</option><option value="2026-03-23.html">2026-03-23</option><option value="2026-03-22.html">2026-03-22</option><option value="2026-03-21.html">2026-03-21</option><option value="2026-03-20.html">2026-03-20</option><option value="2026-03-19.html">2026-03-19</option><option value="2026-03-18.html">2026-03-18</option><option value="2026-03-17.html">2026-03-17</option><option value="2026-03-16.html">2026-03-16</option><option value="2026-03-15.html">2026-03-15</option><option value="2026-03-14.html">2026-03-14</option><option value="2026-03-13.html">2026-03-13</option><option value="2026-03-12.html">2026-03-12</option><option value="2026-03-11.html">2026-03-11</option><option value="2026-03-10.html">2026-03-10</option><option value="2026-03-09.html">2026-03-09</option><option value="2026-03-08.html">2026-03-08</option><option value="2026-03-07.html">2026-03-07</option><option value="2026-03-06.html">2026-03-06</option><option value="2026-03-05.html">2026-03-05</option><option value="2026-03-04.html">2026-03-04</option><option value="2026-03-03.html">2026-03-03</option><option value="2026-03-02.html">2026-03-02</option><option value="2026-03-01.html">2026-03-01</option><option value="2026-02-28.html">2026-02-28</option><option value="2026-02-27.html">2026-02-27</option><option value="2026-02-26.html">2026-02-26</option><option value="2026-02-25.html">2026-02-25</option><option value="2026-02-24.html">2026-02-24</option><option value="2026-02-23.html">2026-02-23</option><option value="2026-02-22.html">2026-02-22</option><option value="2026-02-21.html">2026-02-21</option><option value="2026-02-20.html">2026-02-20</option><option value="2026-02-19.html">2026-02-19</option><option value="2026-02-18.html">2026-02-18</option><option value="2026-02-17.html">2026-02-17</option><option value="2026-02-16.html">2026-02-16</option><option value="2026-02-15.html">2026-02-15</option><option value="2026-02-14.html">2026-02-14</option><option value="2026-02-13.html">2026-02-13</option><option value="2026-02-12.html">2026-02-12</option><option value="2026-02-11.html">2026-02-11</option><option value="2026-02-10.html">2026-02-10</option><option value="2026-02-09.html">2026-02-09</option><option value="2026-02-08.html">2026-02-08</option><option value="2026-02-07.html">2026-02-07</option><option value="2026-02-06.html">2026-02-06</option><option value="2026-02-05.html">2026-02-05</option><option value="2026-02-04.html">2026-02-04</option><option value="2026-02-03.html">2026-02-03</option><option value="2026-02-02.html">2026-02-02</option><option value="2026-02-01.html">2026-02-01</option><option value="2026-01-31.html">2026-01-31</option><option value="2026-01-30.html">2026-01-30</option><option value="2026-01-29.html">2026-01-29</option><option value="2026-01-28.html">2026-01-28</option><option value="2026-01-27.html">2026-01-27</option><option value="2026-01-26.html">2026-01-26</option><option value="2026-01-25.html">2026-01-25</option><option value="2026-01-24.html">2026-01-24</option><option value="2026-01-23.html">2026-01-23</option><option value="2026-01-22.html">2026-01-22</option><option value="2026-01-21.html">2026-01-21</option><option value="2026-01-20.html">2026-01-20</option><option value="2026-01-19.html">2026-01-19</option><option value="2026-01-18.html">2026-01-18</option><option value="2026-01-17.html">2026-01-17</option><option value="2026-01-16.html">2026-01-16</option><option value="2026-01-15.html">2026-01-15</option><option value="2026-01-14.html">2026-01-14</option><option value="2026-01-13.html">2026-01-13</option><option value="2026-01-12.html">2026-01-12</option><option value="2026-01-11.html">2026-01-11</option><option value="2026-01-10.html">2026-01-10</option><option value="2026-01-09.html">2026-01-09</option><option value="2026-01-08.html">2026-01-08</option><option value="2026-01-07.html">2026-01-07</option><option value="2026-01-06.html">2026-01-06</option><option value="2026-01-05.html">2026-01-05</option><option value="2026-01-04.html">2026-01-04</option><option value="2026-01-03.html">2026-01-03</option><option value="2026-01-02.html">2026-01-02</option><option value="2026-01-01.html">2026-01-01</option><option value="2025-12-31.html">2025-12-31</option><option value="2025-12-30.html">2025-12-30</option><option value="2025-12-29.html">2025-12-29</option><option value="2025-12-28.html">2025-12-28</option><option value="2025-12-27.html">2025-12-27</option><option value="2025-12-26.html">2025-12-26</option><option value="2025-12-25.html">2025-12-25</option><option value="2025-12-24.html">2025-12-24</option><option value="2025-12-23.html">2025-12-23</option><option value="2025-12-22.html">2025-12-22</option><option value="2025-12-21.html">2025-12-21</option><option value="2025-12-20.html">2025-12-20</option><option value="2025-12-19.html">2025-12-19</option><option value="2025-12-18.html">2025-12-18</option><option value="2025-12-17.html">2025-12-17</option><option value="2025-12-16.html">2025-12-16</option><option value="2025-12-15.html">2025-12-15</option><option value="2025-12-14.html">2025-12-14</option><option value="2025-12-13.html">2025-12-13</option><option value="2025-12-12.html">2025-12-12</option><option value="2025-12-11.html">2025-12-11</option><option value="2025-12-10.html">2025-12-10</option><option value="2025-12-09.html">2025-12-09</option><option value="2025-12-08.html">2025-12-08</option><option value="2025-12-07.html">2025-12-07</option><option value="2025-12-06.html">2025-12-06</option><option value="2025-12-05.html">2025-12-05</option><option value="2025-12-04.html">2025-12-04</option><option value="2025-12-03.html">2025-12-03</option><option value="2025-12-02.html">2025-12-02</option><option value="2025-12-01.html">2025-12-01</option><option value="2025-11-30.html">2025-11-30</option><option value="2025-11-29.html">2025-11-29</option><option value="2025-11-28.html">2025-11-28</option><option value="2025-11-27.html">2025-11-27</option><option value="2025-11-26.html">2025-11-26</option><option value="2025-11-25.html">2025-11-25</option><option value="2025-11-24.html">2025-11-24</option><option value="2025-11-23.html">2025-11-23</option><option value="2025-11-22.html">2025-11-22</option><option value="2025-11-21.html">2025-11-21</option><option value="2025-11-20.html">2025-11-20</option><option value="2025-11-19.html">2025-11-19</option><option value="2025-11-18.html">2025-11-18</option><option value="2025-11-17.html">2025-11-17</option><option value="2025-11-16.html">2025-11-16</option><option value="2025-11-15.html">2025-11-15</option><option value="2025-11-14.html">2025-11-14</option><option value="2025-11-13.html">2025-11-13</option><option value="2025-11-12.html">2025-11-12</option><option value="2025-11-11.html">2025-11-11</option><option value="2025-11-10.html">2025-11-10</option><option value="2025-11-09.html">2025-11-09</option><option value="2025-11-08.html">2025-11-08</option><option value="2025-11-07.html">2025-11-07</option><option value="2025-11-06.html">2025-11-06</option><option value="2025-11-05.html">2025-11-05</option><option value="2025-11-04.html">2025-11-04</option><option value="2025-11-03.html">2025-11-03</option><option value="2025-11-02.html">2025-11-02</option><option value="2025-11-01.html">2025-11-01</option><option value="2025-10-31.html">2025-10-31</option><option value="2025-10-30.html">2025-10-30</option><option value="2025-10-29.html">2025-10-29</option><option value="2025-10-28.html">2025-10-28</option><option value="2025-10-27.html">2025-10-27</option><option value="2025-10-26.html">2025-10-26</option><option value="2025-10-25.html">2025-10-25</option><option value="2025-10-24.html">2025-10-24</option><option value="2025-10-23.html">2025-10-23</option><option value="2025-10-22.html">2025-10-22</option><option value="2025-10-21.html">2025-10-21</option><option value="2025-10-20.html">2025-10-20</option><option value="2025-10-19.html">2025-10-19</option><option value="2025-10-18.html">2025-10-18</option><option value="2025-10-17.html">2025-10-17</option><option value="2025-10-16.html">2025-10-16</option><option value="2025-10-15.html">2025-10-15</option><option value="2025-10-14.html">2025-10-14</option><option value="2025-10-13.html">2025-10-13</option><option value="2025-10-12.html">2025-10-12</option><option value="2025-10-11.html">2025-10-11</option><option value="2025-10-10.html">2025-10-10</option><option value="2025-10-09.html">2025-10-09</option><option value="2025-10-08.html">2025-10-08</option><option value="2025-10-07.html">2025-10-07</option><option value="2025-10-06.html">2025-10-06</option><option value="2025-10-05.html">2025-10-05</option><option value="2025-10-04.html">2025-10-04</option><option value="2025-10-03.html">2025-10-03</option><option value="2025-10-02.html">2025-10-02</option><option value="2025-10-01.html">2025-10-01</option><option value="2025-09-30.html">2025-09-30</option><option value="2025-09-29.html">2025-09-29</option><option value="2025-09-28.html">2025-09-28</option><option value="2025-09-27.html">2025-09-27</option><option value="2025-09-26.html">2025-09-26</option><option value="2025-09-25.html">2025-09-25</option><option value="2025-09-24.html">2025-09-24</option><option value="2025-09-23.html">2025-09-23</option><option value="2025-09-22.html">2025-09-22</option><option value="2025-09-21.html">2025-09-21</option><option value="2025-09-20.html">2025-09-20</option><option value="2025-09-19.html">2025-09-19</option><option value="2025-09-18.html">2025-09-18</option><option value="2025-09-17.html">2025-09-17</option><option value="2025-09-16.html">2025-09-16</option><option value="2025-09-15.html">2025-09-15</option><option value="2025-09-14.html">2025-09-14</option><option value="2025-09-13.html">2025-09-13</option><option value="2025-09-12.html">2025-09-12</option><option value="2025-09-11.html">2025-09-11</option><option value="2025-09-10.html">2025-09-10</option><option value="2025-09-09.html">2025-09-09</option><option value="2025-09-08.html">2025-09-08</option><option value="2025-09-07.html">2025-09-07</option><option value="2025-09-06.html">2025-09-06</option><option value="2025-09-05.html">2025-09-05</option><option value="2025-09-04.html">2025-09-04</option><option value="2025-09-03.html">2025-09-03</option><option value="2025-09-02.html">2025-09-02</option><option value="2025-09-01.html">2025-09-01</option><option value="2025-08-31.html">2025-08-31</option><option value="2025-08-30.html">2025-08-30</option><option value="2025-08-29.html">2025-08-29</option><option value="2025-08-28.html">2025-08-28</option><option value="2025-08-27.html">2025-08-27</option><option value="2025-08-26.html">2025-08-26</option><option value="2025-08-25.html">2025-08-25</option><option value="2025-08-24.html">2025-08-24</option><option value="2025-08-23.html">2025-08-23</option><option value="2025-08-22.html">2025-08-22</option><option value="2025-08-21.html">2025-08-21</option><option value="2025-08-20.html">2025-08-20</option><option value="2025-08-19.html">2025-08-19</option><option value="2025-08-18.html">2025-08-18</option><option value="2025-08-17.html">2025-08-17</option><option value="2025-08-16.html">2025-08-16</option><option value="2025-08-15.html">2025-08-15</option><option value="2025-08-14.html">2025-08-14</option><option value="2025-08-13.html">2025-08-13</option><option value="2025-08-12.html">2025-08-12</option><option value="2025-08-11.html">2025-08-11</option><option value="2025-08-10.html">2025-08-10</option><option value="2025-08-09.html">2025-08-09</option><option value="2025-08-08.html">2025-08-08</option><option value="2025-08-07.html">2025-08-07</option><option value="2025-08-06.html">2025-08-06</option><option value="2025-08-05.html">2025-08-05</option><option value="2025-08-04.html">2025-08-04</option><option value="2025-08-03.html">2025-08-03</option><option value="2025-08-02.html">2025-08-02</option><option value="2025-08-01.html">2025-08-01</option><option value="2025-07-31.html">2025-07-31</option><option value="2025-07-30.html">2025-07-30</option><option value="2025-07-29.html">2025-07-29</option><option value="2025-07-28.html">2025-07-28</option><option value="2025-07-27.html">2025-07-27</option><option value="2025-07-26.html">2025-07-26</option><option value="2025-07-25.html">2025-07-25</option><option value="2025-07-24.html">2025-07-24</option><option value="2025-07-23.html">2025-07-23</option><option value="2025-07-22.html">2025-07-22</option><option value="2025-07-21.html">2025-07-21</option><option value="2025-07-20.html">2025-07-20</option><option value="2025-07-19.html">2025-07-19</option><option value="2025-07-18.html">2025-07-18</option><option value="2025-07-17.html">2025-07-17</option><option value="2025-07-16.html">2025-07-16</option><option value="2025-07-15.html">2025-07-15</option><option value="2025-07-14.html">2025-07-14</option><option value="2025-07-13.html">2025-07-13</option><option value="2025-07-12.html">2025-07-12</option><option value="2025-07-11.html">2025-07-11</option><option value="2025-07-10.html">2025-07-10</option><option value="2025-07-09.html">2025-07-09</option><option value="2025-07-08.html">2025-07-08</option><option value="2025-07-07.html">2025-07-07</option><option value="2025-07-06.html">2025-07-06</option><option value="2025-07-05.html">2025-07-05</option><option value="2025-07-04.html">2025-07-04</option><option value="2025-07-03.html">2025-07-03</option><option value="2025-07-02.html">2025-07-02</option><option value="2025-07-01.html">2025-07-01</option><option value="2025-06-30.html">2025-06-30</option><option value="2025-06-29.html">2025-06-29</option><option value="2025-06-28.html">2025-06-28</option><option value="2025-06-27.html">2025-06-27</option><option value="2025-06-26.html">2025-06-26</option><option value="2025-06-25.html">2025-06-25</option><option value="2025-06-24.html">2025-06-24</option><option value="2025-06-23.html">2025-06-23</option><option value="2025-06-22.html">2025-06-22</option><option value="2025-06-21.html">2025-06-21</option><option value="2025-06-20.html">2025-06-20</option><option value="2025-06-19.html">2025-06-19</option><option value="2025-06-18.html">2025-06-18</option><option value="2025-06-17.html">2025-06-17</option><option value="2025-06-16.html">2025-06-16</option><option value="2025-06-15.html">2025-06-15</option><option value="2025-06-14.html">2025-06-14</option><option value="2025-06-13.html">2025-06-13</option><option value="2025-06-12.html">2025-06-12</option><option value="2025-06-11.html">2025-06-11</option><option value="2025-06-10.html">2025-06-10</option><option value="2025-06-09.html">2025-06-09</option><option value="2025-06-08.html">2025-06-08</option><option value="2025-06-07.html">2025-06-07</option><option value="2025-06-06.html">2025-06-06</option><option value="2025-06-05.html">2025-06-05</option><option value="2025-06-04.html">2025-06-04</option><option value="2025-06-03.html">2025-06-03</option><option value="2025-06-02.html">2025-06-02</option><option value="2025-06-01.html">2025-06-01</option><option value="2025-05-31.html">2025-05-31</option><option value="2025-05-30.html">2025-05-30</option><option value="2025-05-29.html">2025-05-29</option><option value="2025-05-28.html">2025-05-28</option><option value="2025-05-27.html">2025-05-27</option><option value="2025-05-26.html">2025-05-26</option><option value="2025-05-25.html">2025-05-25</option><option value="2025-05-24.html">2025-05-24</option><option value="2025-05-23.html">2025-05-23</option><option value="2025-05-22.html">2025-05-22</option><option value="2025-05-21.html">2025-05-21</option><option value="2025-05-20.html">2025-05-20</option><option value="2025-05-19.html">2025-05-19</option><option value="2025-05-18.html">2025-05-18</option><option value="2025-05-17.html">2025-05-17</option><option value="2025-05-16.html">2025-05-16</option><option value="2025-05-15.html">2025-05-15</option><option value="2025-05-14.html">2025-05-14</option><option value="2025-05-13.html">2025-05-13</option><option value="2025-05-12.html">2025-05-12</option><option value="2025-05-11.html">2025-05-11</option><option value="2025-05-10.html">2025-05-10</option><option value="2025-05-09.html">2025-05-09</option><option value="2025-05-08.html">2025-05-08</option><option value="2025-05-07.html">2025-05-07</option><option value="2025-05-06.html">2025-05-06</option><option value="2025-05-05.html">2025-05-05</option><option value="2025-05-04.html">2025-05-04</option><option value="2025-05-03.html">2025-05-03</option><option value="2025-05-02.html">2025-05-02</option><option value="2025-05-01.html">2025-05-01</option><option value="2025-04-30.html">2025-04-30</option><option value="2025-04-29.html">2025-04-29</option><option value="2025-04-28.html">2025-04-28</option><option value="2025-04-27.html">2025-04-27</option><option value="2025-04-26.html">2025-04-26</option><option value="2025-04-25.html">2025-04-25</option><option value="2025-04-24.html">2025-04-24</option><option value="2025-04-23.html">2025-04-23</option><option value="2025-04-22.html">2025-04-22</option><option value="2025-04-21.html">2025-04-21</option><option value="2025-04-20.html">2025-04-20</option><option value="2025-04-18.html">2025-04-18</option><option value="2025-04-17.html">2025-04-17</option><option value="2025-04-16.html">2025-04-16</option><option value="2025-04-15.html">2025-04-15</option><option value="2025-04-14.html">2025-04-14</option><option value="2025-04-13.html">2025-04-13</option><option value="2025-04-12.html">2025-04-12</option><option value="2025-04-11.html">2025-04-11</option><option value="2025-04-10.html">2025-04-10</option><option value="2025-04-09.html">2025-04-09</option><option value="2025-04-08.html">2025-04-08</option><option value="2025-04-07.html">2025-04-07</option><option value="2025-04-06.html">2025-04-06</option><option value="2025-04-05.html">2025-04-05</option><option value="2025-04-04.html">2025-04-04</option><option value="2025-04-03.html">2025-04-03</option><option value="2025-04-02.html">2025-04-02</option><option value="2025-04-01.html">2025-04-01</option><option value="2025-03-31.html">2025-03-31</option><option value="2025-03-28.html">2025-03-28</option><option value="2025-03-27.html">2025-03-27</option><option value="2025-03-21.html">2025-03-21</option><option value="2025-03-18.html">2025-03-18</option><option value="2025-03-01.html">2025-03-01</option><option value="2025-02-26.html">2025-02-26</option><option value="2025-02-10.html">2025-02-10</option><option value="2025-02-01.html">2025-02-01</option><option value="2025-01-05.html">2025-01-05</option><option value="2025-01-01.html">2025-01-01</option><option value="2024-12-01.html">2024-12-01</option><option value="2024-11-01.html">2024-11-01</option><option value="2024-10-01.html">2024-10-01</option><option value="2024-09-01.html">2024-09-01</option><option value="2024-08-27.html">2024-08-27</option><option value="2024-08-01.html">2024-08-01</option><option value="2024-06-01.html">2024-06-01</option><option value="2024-05-01.html">2024-05-01</option><option value="2024-04-22.html">2024-04-22</option><option value="2024-04-01.html">2024-04-01</option><option value="2024-03-15.html">2024-03-15</option><option value="2024-03-01.html">2024-03-01</option><option value="2024-02-23.html">2024-02-23</option><option value="2024-02-15.html">2024-02-15</option><option value="2024-02-14.html">2024-02-14</option><option value="2024-02-13.html">2024-02-13</option><option value="2024-02-12.html">2024-02-12</option><option value="2024-02-07.html">2024-02-07</option><option value="2024-02-05.html">2024-02-05</option><option value="2024-02-01.html">2024-02-01</option><option value="2024-01-31.html">2024-01-31</option><option value="2024-01-30.html">2024-01-30</option><option value="2024-01-29.html">2024-01-29</option><option value="2024-01-28.html">2024-01-28</option><option value="2024-01-27.html">2024-01-27</option><option value="2024-01-26.html">2024-01-26</option><option value="2024-01-25.html">2024-01-25</option><option value="2024-01-24.html">2024-01-24</option><option value="2024-01-23.html">2024-01-23</option><option value="2024-01-22.html">2024-01-22</option><option value="2024-01-21.html">2024-01-21</option><option value="2024-01-20.html">2024-01-20</option><option value="2024-01-19.html">2024-01-19</option><option value="2024-01-18.html">2024-01-18</option><option value="2024-01-17.html">2024-01-17</option><option value="2024-01-16.html">2024-01-16</option><option value="2024-01-15.html">2024-01-15</option><option value="2024-01-14.html">2024-01-14</option><option value="2024-01-13.html">2024-01-13</option><option value="2024-01-12.html">2024-01-12</option><option value="2024-01-11.html">2024-01-11</option><option value="2024-01-10.html">2024-01-10</option><option value="2024-01-09.html">2024-01-09</option><option value="2024-01-08.html">2024-01-08</option><option value="2024-01-07.html">2024-01-07</option><option value="2024-01-06.html">2024-01-06</option><option value="2024-01-05.html">2024-01-05</option><option value="2024-01-04.html">2024-01-04</option><option value="2024-01-03.html">2024-01-03</option><option value="2024-01-02.html">2024-01-02</option><option value="2024-01-01.html">2024-01-01</option><option value="2023-12-30.html">2023-12-30</option><option value="2023-12-28.html">2023-12-28</option><option value="2023-12-27.html">2023-12-27</option><option value="2023-12-26.html">2023-12-26</option><option value="2023-12-24.html">2023-12-24</option><option value="2023-12-19.html">2023-12-19</option><option value="2023-12-01.html">2023-12-01</option><option value="2023-11-21.html">2023-11-21</option><option value="2023-11-01.html">2023-11-01</option><option value="2023-08-01.html">2023-08-01</option><option value="2023-06-01.html">2023-06-01</option><option value="2023-01-01.html">2023-01-01</option></select><a class="navbtn" href="2026-04-04.html">2026-04-04 →</a><a class="navbtn" href="weekly/index.html">📅 Weekly</a><a class="navbtn" href="status.html">📊 Status</a><a class="navbtn" href="search.html">🔍 Search</a></div>
+<div class="stats"><div class="stat"><div class="stat-label">Total scored</div><div class="stat-val">30</div></div><div class="stat"><div class="stat-label">High</div><div class="stat-val" style="color:#27500A">0</div></div><div class="stat"><div class="stat-label">Medium</div><div class="stat-val" style="color:#633806">0</div></div><div class="stat"><div class="stat-label">Low</div><div class="stat-val" style="color:#5F5E5A">24</div></div></div>
+<div class="tabs"><button class="tab active" data-filter="all">All</button><button class="tab" data-filter="ai_bioprinting">AI for Bioprinting</button><button class="tab" data-filter="hip_implant">Hip Implant &amp; Femoral Stem</button><button class="tab" data-filter="fea_surrogate">FEA &amp; Surrogate Modelling</button><button class="tab" data-filter="am_biomedical">AM Biomedical Materials</button></div>
+<div class="prio-filter"><button class="pf active" data-prio="HighMedium">High+Medium</button><button class="pf" data-prio="High">High only</button><button class="pf" data-prio="all">Show all</button></div>
+
+<article class="paper" data-direction="ai_bioprinting" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#7F77DD20;color:#7F77DD">AI for Bioprinting</span>
+    <span class="source">arxiv</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Optimal Experimental Design using Eigenvalue-Based Criteria with Pyomo.DoE</h3>
+  <div class="meta">
+    <span class="authors">Daniel J. Laky, Shammah Lilonfe, Shawn B. Martin, Katherine A. Klise, Bethany L. Nicholson et al.</span>
+    <span class="venue">arXiv preprint</span>
+    <span class="date">2026-04-03</span>
+    <span class="doi"><a href="http://arxiv.org/abs/2604.03354v1" target="_blank">link</a></span>
+  </div>
+  
+  
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="ai_bioprinting" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#7F77DD20;color:#7F77DD">AI for Bioprinting</span>
+    <span class="source">arxiv</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">An Intelligent Fault Diagnosis Method for General Aviation Aircraft Based on Multi-Fidelity Digital Twin and FMEA Knowledge Enhancement</h3>
+  <div class="meta">
+    <span class="authors">Zhihuan Wei, Yang Hu, Xinhang Chen, Yiming Zhang, Jie Liu et al.</span>
+    <span class="venue">arXiv preprint</span>
+    <span class="date">2026-04-03</span>
+    <span class="doi"><a href="http://arxiv.org/abs/2604.22777v1" target="_blank">link</a></span>
+  </div>
+  
+  
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="ai_bioprinting" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#7F77DD20;color:#7F77DD">AI for Bioprinting</span>
+    <span class="source">openalex</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Biofabrication strategies for engineered constructs in cardiovascular tissue repair</h3>
+  <div class="meta">
+    <span class="authors">Junjie Yu, Daiki Murata, Manabu Itoh, Koichi Nakayama</span>
+    <span class="venue">Regenerative Therapy</span>
+    <span class="date">2026-04-03</span>
+    <span class="doi"><a href="https://doi.org/10.1016/j.reth.2026.101110" target="_blank">10.1016/j.reth.2026.101110</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Center for Regenerative Medicine Research, Faculty of Medicine, Saga University, Saga, Japan</div>
+  <div class="corresponding"><b>通讯:</b> Koichi Nakayama <span class="corresp-aff">@ Center for Regenerative Medicine Research, Faculty of Medicine, Saga University, Saga, Japan</span></div>
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="ai_bioprinting" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#7F77DD20;color:#7F77DD">AI for Bioprinting</span>
+    <span class="source">openalex</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Abstract 7529: Reproducible 3D bioprinting of patient-derived tumors enables high-fidelity preclinical drug testing</h3>
+  <div class="meta">
+    <span class="authors">H. Nikki March, Ben Kennedy, Olivia Matthews, Andrew McCormack, Abby McSorley et al.</span>
+    <span class="venue">Cancer Research</span>
+    <span class="date">2026-04-03</span>
+    <span class="doi"><a href="https://doi.org/10.1158/1538-7445.am2026-7529" target="_blank">10.1158/1538-7445.am2026-7529</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Carcinotech Ltd., Edinburgh, United Kingdom</div>
+  <div class="corresponding"><b>通讯:</b> H. Nikki March <span class="corresp-aff">@ Carcinotech Ltd., Edinburgh, United Kingdom</span></div>
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="ai_bioprinting" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#7F77DD20;color:#7F77DD">AI for Bioprinting</span>
+    <span class="source">openalex</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">10 | Human myogenic progenitor and 3D bioprinting for volumetric muscle loss recovery in swine model</h3>
+  <div class="meta">
+    <span class="authors">Interuniversity Institute of Myology</span>
+    <span class="venue">European Journal of Translational Myology</span>
+    <span class="date">2026-04-03</span>
+    <span class="doi"><a href="https://doi.org/10.4081/ejtm.2026.15458" target="_blank">10.4081/ejtm.2026.15458</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Interuniversity Institute of Myology • Istituto Interuniversitario di Miologia, Perugia</div>
+  <div class="corresponding"><b>通讯:</b> Interuniversity Institute of Myology <span class="corresp-aff">@ Interuniversity Institute of Myology • Istituto Interuniversitario di Miologia, Perugia</span></div>
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="ai_bioprinting" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#7F77DD20;color:#7F77DD">AI for Bioprinting</span>
+    <span class="source">openalex</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">3D-Bioprinted Gelatin Hydrogels with Human Umbilical Cord Mesenchymal Stem Cell-Derived Small Extracellular Vesicles Promote Cutaneous Wound Healing In Vivo</h3>
+  <div class="meta">
+    <span class="authors">Manal Hussein Taghdi, Ibrahim N. Amirrah, Nurul Izzati Uda Zahli, Kavita Chirara, Mh Busra Fauzi et al.</span>
+    <span class="venue">Polymers</span>
+    <span class="date">2026-04-03</span>
+    <span class="doi"><a href="https://doi.org/10.3390/polym18070882" target="_blank">10.3390/polym18070882</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Department of Anaesthesia and Intensive Care, Faculty of Medical Technology, University of Tripoli, Tripoli P.O. Box 13932, Libya</div>
+  <div class="corresponding"><b>通讯:</b> Yogeswaran Lokanathan <span class="corresp-aff">@ Advance Bioactive Materials-Cells UKM Research Group, Universiti Kebangsaan Malaysia, Bangi 43600, Selangor, Malaysia</span></div>
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="am_biomedical" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#185FA520;color:#185FA5">AM Biomedical Materials</span>
+    <span class="source">openalex</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Corrosion Properties of Wrought Ti-6Al-4V and SLMed Ti-6Al-4V in 0.05 mol/L H2SO4: A Comparison Investigation</h3>
+  <div class="meta">
+    <span class="authors">H. Zhou, Lei Dong, Xiaoru Zhuo, Sheng Lu, Yanxin Qiao</span>
+    <span class="venue">Metals</span>
+    <span class="date">2026-04-03</span>
+    <span class="doi"><a href="https://doi.org/10.3390/met16040397" target="_blank">10.3390/met16040397</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> School of Materials Science and Engineering, Jiangsu University of Science and Technology, Zhenjiang 212100, China</div>
+  <div class="corresponding"><b>通讯:</b> Sheng Lu <span class="corresp-aff">@ School of Materials Science and Engineering, Jiangsu University of Science and Technology, Zhenjiang 212100, China</span> &nbsp;|&nbsp; Yanxin Qiao <span class="corresp-aff">@ School of Materials Science and Engineering, Jiangsu University of Science and Technology, Zhenjiang 212100, China</span></div>
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="am_biomedical" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#185FA520;color:#185FA5">AM Biomedical Materials</span>
+    <span class="source">openalex</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Effect of Process Parameters on the Quality and Dimensional Accuracy of TC11 Titanium Alloy Thin-Walled Parts Fabricated by Laser Powder Bed Fusion</h3>
+  <div class="meta">
+    <span class="authors">Dongwei Wang, Chang Shu, Siyuan Chen, Adel Abdel-Wahab, Khamis Essa et al.</span>
+    <span class="venue">Metals</span>
+    <span class="date">2026-04-03</span>
+    <span class="doi"><a href="https://doi.org/10.3390/met16040396" target="_blank">10.3390/met16040396</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> School of Mechanical Engineering and Intelligent Manufacturing, Ningbo University, Ningbo 315211, China</div>
+  <div class="corresponding"><b>通讯:</b> Xuedao Shu <span class="corresp-aff">@ School of Mechanical Engineering and Intelligent Manufacturing, Ningbo University, Ningbo 315211, China</span></div>
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="am_biomedical" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#185FA520;color:#185FA5">AM Biomedical Materials</span>
+    <span class="source">openalex</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Tailoring the Coefficient of Thermal Expansion of Selective Laser Melting Invar 36 via Post-processing Heat Treatments</h3>
+  <div class="meta">
+    <span class="authors">Antonello Astarita, Antonio Caraviello, Andrea Neri Folchini Cipolletta, Ersilia Cozzolino, Paolo Di Petta et al.</span>
+    <span class="venue">Journal of Materials Engineering and Performance</span>
+    <span class="date">2026-04-03</span>
+    <span class="doi"><a href="https://doi.org/10.1007/s11665-026-13795-1" target="_blank">10.1007/s11665-026-13795-1</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Department of Chemical, Materials and Production Engineering, University of Naples Federico II, P.le Tecchio 80, 80125, Naples, Italy</div>
+  <div class="corresponding"><b>通讯:</b> Umberto Prisco <span class="corresp-aff">@ Department of Chemical, Materials and Production Engineering, University of Naples Federico II, P.le Tecchio 80, 80125, </span></div>
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="am_biomedical" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#185FA520;color:#185FA5">AM Biomedical Materials</span>
+    <span class="source">openalex</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Multiscale Interface Engineering for Orthopedic and Dental Implants: A Review</h3>
+  <div class="meta">
+    <span class="authors">Fiza Ashraf, Ataf Ali Altaf</span>
+    <span class="venue">Journal of Functional Biomaterials</span>
+    <span class="date">2026-04-03</span>
+    <span class="doi"><a href="https://doi.org/10.3390/jfb17040178" target="_blank">10.3390/jfb17040178</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Department of Chemistry, University of Sahiwal, Sahiwal 57000, Pakistan</div>
+  <div class="corresponding"><b>通讯:</b> Ataf Ali Altaf <span class="corresp-aff">@ Institute of Chemistry, Khwaja Fareed University of Engineering and Information Technology, Rahim Yar Khan 64200, Pakist</span></div>
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="fea_surrogate" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#D85A3020;color:#D85A30">FEA &amp; Surrogate Modelling</span>
+    <span class="source">arxiv</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Amalgamation of Physics-Informed Neural Network and LBM for the Prediction of Unsteady Fluid Flows in Fractal-Rough Microchannels</h3>
+  <div class="meta">
+    <span class="authors">Ganesh Sahadeo Meshram, Partha Pratim Chakrabarti, Suman Chakraborty</span>
+    <span class="venue">arXiv preprint</span>
+    <span class="date">2026-04-03</span>
+    <span class="doi"><a href="http://arxiv.org/abs/2604.03504v1" target="_blank">link</a></span>
+  </div>
+  
+  
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="fea_surrogate" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#D85A3020;color:#D85A30">FEA &amp; Surrogate Modelling</span>
+    <span class="source">arxiv</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Lattice-Boltzmann-Driven Physics-Informed Neural Networks for Droplet Wettability on Rough Surfaces</h3>
+  <div class="meta">
+    <span class="authors">Ganesh Sahadeo Meshram, Partha Pratim Chakrabarti, Suman Chakraborty</span>
+    <span class="venue">arXiv preprint</span>
+    <span class="date">2026-04-03</span>
+    <span class="doi"><a href="http://arxiv.org/abs/2604.03481v2" target="_blank">link</a></span>
+  </div>
+  
+  
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="fea_surrogate" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#D85A3020;color:#D85A30">FEA &amp; Surrogate Modelling</span>
+    <span class="source">arxiv</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Learning Without Adversarial Training: A Physics-Informed Neural Network for Secure Power System State Estimation under False Data Injection Attacks</h3>
+  <div class="meta">
+    <span class="authors">Solon Falas, Markos Asprou, Charalambos Konstantinou, Maria K. Michael</span>
+    <span class="venue">arXiv preprint</span>
+    <span class="date">2026-04-03</span>
+    <span class="doi"><a href="http://arxiv.org/abs/2604.22784v1" target="_blank">link</a></span>
+  </div>
+  
+  
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="fea_surrogate" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#D85A3020;color:#D85A30">FEA &amp; Surrogate Modelling</span>
+    <span class="source">arxiv</span>
+    <span class="relevance-level lvl-peripheral">Peripheral</span>
+    <span class="read-action act-background-only">Background only</span>
+    <span class="validation-kind">simulation_case</span>
+    
+  </div>
+  <h3 class="paper-title">Neural Operators for Multi-Task Control and Adaptation</h3>
+  <div class="meta">
+    <span class="authors">David Sewell, Xingjian Li, Stepan Tretiakov, Krishna Kumar, David Fridovich-Keil</span>
+    <span class="venue">arXiv preprint</span>
+    <span class="date">2026-04-03</span>
+    <span class="doi"><a href="http://arxiv.org/abs/2604.03449v1" target="_blank">link</a></span>
+  </div>
+  
+  
+  <div class="relevance"><b>相关性:</b> 该论文关注控制任务中神经算子的应用，与FEA替代模型的采样效率、约束处理、不确定性量化及生物力学设计无直接关联。</div>
+  <div class="why-not-core"><b>边界:</b> No FEA surrogate modeling, no constraint handling, no uncertainty quantification, and no application to biomechanics or implant design.</div>
+  <div class="summary">
+    <div><b>动机·</b> 将神经算子扩展到多任务控制中，学习从任务描述到最优策略的映射。</div>
+    <div><b>方法·</b> 采用置换不变神经算子架构，通过行为克隆训练学习解算子。</div>
+    <div><b>结果·</b> 单个算子能泛化到未见任务、分布外设置及不同观测量。</div>
+    <div><b>验证·</b> 在参数化最优控制环境和运动基准上验证。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> Extending neural operators to multi-task optimal control to learn mappings from task descriptions to optimal control laws.</div>
+      <div><b>Method·</b> A permutation-invariant neural operator architecture is trained via behavioral cloning to approximate the solution operator.</div>
+      <div><b>Result·</b> A single operator generalizes to unseen tasks, out-of-distribution settings, and varying amounts of task observations.</div>
+      <div><b>Validation·</b> Numerical experiments on parametric optimal control environments and a locomotion benchmark.</div>
+    </div>
+    <div class="key-terms">
+      <span class="term"><b>neural operator</b> · 神经算子</span><span class="term"><b>multi-task control</b> · 多任务控制</span><span class="term"><b>behavioral cloning</b> · 行为克隆</span><span class="term"><b>permutation-invariant</b> · 置换不变</span><span class="term"><b>meta-learning</b> · 元学习</span>
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">neural operator</span> <span class="tag">multi-task control</span> <span class="tag">behavioral cloning</span> <span class="tag">meta-learning</span> <span class="tag">permutation-invariant</span></div>
+</article>
+<article class="paper" data-direction="fea_surrogate" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#D85A3020;color:#D85A30">FEA &amp; Surrogate Modelling</span>
+    <span class="source">arxiv</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Adaptive Threshold-Driven Continuous Greedy Method for Scalable Submodular Optimization</h3>
+  <div class="meta">
+    <span class="authors">Mohammadreza Rostami, Solmaz S. Kia</span>
+    <span class="venue">arXiv preprint</span>
+    <span class="date">2026-04-03</span>
+    <span class="doi"><a href="http://arxiv.org/abs/2604.03419v1" target="_blank">link</a></span>
+  </div>
+  
+  
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="fea_surrogate" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#D85A3020;color:#D85A30">FEA &amp; Surrogate Modelling</span>
+    <span class="source">arxiv</span>
+    <span class="relevance-level lvl-peripheral">Peripheral</span>
+    <span class="read-action act-background-only">Background only</span>
+    <span class="validation-kind">simulation_case</span>
+    <span class="flag">UQ</span>
+  </div>
+  <h3 class="paper-title">Diffusion Policy with Bayesian Expert Selection for Active Multi-Target Tracking</h3>
+  <div class="meta">
+    <span class="authors">Haotian Xiang, Qin Lu, Yaakov Bar-Shalom</span>
+    <span class="venue">arXiv preprint</span>
+    <span class="date">2026-04-03</span>
+    <span class="doi"><a href="http://arxiv.org/abs/2604.03404v1" target="_blank">link</a></span>
+  </div>
+  
+  
+  <div class="relevance"><b>相关性:</b> 该论文研究机器人主动多目标跟踪中的扩散策略与贝叶斯专家选择，与有限元代理建模和生物力学设计无直接关联。</div>
+  <div class="why-not-core"><b>边界:</b> This paper does not involve surrogate modeling for expensive simulations, does not address FEA or biomechanics constraints, and is not transferable to implant design.</div>
+  <div class="summary">
+    <div><b>动机·</b> 现有扩散策略隐式选择专家策略，缺乏不确定性量化。</div>
+    <div><b>方法·</b> 提出贝叶斯VBLL模型预测专家性能，结合LCB准则悲观选择策略。</div>
+    <div><b>结果·</b> 在模拟跟踪场景中优于基线和混合专家方法。</div>
+    <div><b>验证·</b> 在室内模拟环境中的多目标跟踪实验验证。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> Diffusion policies for active multi-target tracking lack explicit uncertainty quantification over expert strategy selection.</div>
+      <div><b>Method·</b> A multi-head Variational Bayesian Last Layer model predicts expert performance with uncertainty, and a Lower Confidence Bound criterion selects the best expert pessimistically.</div>
+      <div><b>Result·</b> The proposed method outperforms baseline diffusion policy and standard gating methods in simulated indoor tracking scenarios.</div>
+      <div><b>Validation·</b> Validation is performed through simulation case studies of indoor multi-target tracking.</div>
+    </div>
+    <div class="key-terms">
+      <span class="term"><b>diffusion policy</b> · 扩散策略</span><span class="term"><b>expert selection</b> · 专家选择</span><span class="term"><b>variational Bayesian last layer</b> · 变分贝叶斯最后一层</span><span class="term"><b>lower confidence bound</b> · 下置信界</span><span class="term"><b>offline contextual bandit</b> · 离线上下文赌博机</span><span class="term"><b>uncertainty quantification</b> · 不确定性量化</span>
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">diffusion policy</span> <span class="tag">Bayesian last layer</span> <span class="tag">uncertainty quantification</span> <span class="tag">active tracking</span> <span class="tag">robotics</span></div>
+</article>
+<article class="paper" data-direction="fea_surrogate" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#D85A3020;color:#D85A30">FEA &amp; Surrogate Modelling</span>
+    <span class="source">arxiv</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Scalable Variational Bayesian Fine-Tuning of LLMs via Orthogonalized Low-Rank Adapters</h3>
+  <div class="meta">
+    <span class="authors">Haotian Xiang, Bingcong Li, Qin Lu</span>
+    <span class="venue">arXiv preprint</span>
+    <span class="date">2026-04-03</span>
+    <span class="doi"><a href="http://arxiv.org/abs/2604.03388v1" target="_blank">link</a></span>
+  </div>
+  
+  
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="fea_surrogate" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#D85A3020;color:#D85A30">FEA &amp; Surrogate Modelling</span>
+    <span class="source">arxiv</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">GP-4DGS: Probabilistic 4D Gaussian Splatting from Monocular Video via Variational Gaussian Processes</h3>
+  <div class="meta">
+    <span class="authors">Mijeong Kim, Jungtaek Kim, Bohyung Han</span>
+    <span class="venue">arXiv preprint</span>
+    <span class="date">2026-04-03</span>
+    <span class="doi"><a href="http://arxiv.org/abs/2604.02915v1" target="_blank">link</a></span>
+  </div>
+  
+  
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="fea_surrogate" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#D85A3020;color:#D85A30">FEA &amp; Surrogate Modelling</span>
+    <span class="source">arxiv</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">MatClaw: An Autonomous Code-First LLM Agent for End-to-End Materials Exploration</h3>
+  <div class="meta">
+    <span class="authors">Chenmu Zhang, Boris I. Yakobson</span>
+    <span class="venue">arXiv preprint</span>
+    <span class="date">2026-04-03</span>
+    <span class="doi"><a href="http://arxiv.org/abs/2604.02688v2" target="_blank">link</a></span>
+  </div>
+  
+  
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="fea_surrogate" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#D85A3020;color:#D85A30">FEA &amp; Surrogate Modelling</span>
+    <span class="source">arxiv</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">A Numerical Method for Coupling Parameterized Physics-Informed Neural Networks and FDM for Advanced Thermal-Hydraulic System Simulation</h3>
+  <div class="meta">
+    <span class="authors">Jeesuk Shin, Donggyun Seo, Sihyeong Yu, Joongoo Jeon</span>
+    <span class="venue">arXiv preprint</span>
+    <span class="date">2026-04-03</span>
+    <span class="doi"><a href="http://arxiv.org/abs/2604.02663v1" target="_blank">link</a></span>
+  </div>
+  
+  
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="fea_surrogate" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#D85A3020;color:#D85A30">FEA &amp; Surrogate Modelling</span>
+    <span class="source">arxiv</span>
+    <span class="relevance-level lvl-peripheral">Peripheral</span>
+    <span class="read-action act-background-only">Background only</span>
+    <span class="validation-kind">none</span>
+    <span class="flag">Exp. validation</span>
+  </div>
+  <h3 class="paper-title">Elastomeric Strain Limitation for Design of Soft Pneumatic Actuators</h3>
+  <div class="meta">
+    <span class="authors">Gregory M. Campbell</span>
+    <span class="venue">arXiv preprint</span>
+    <span class="date">2026-04-03</span>
+    <span class="doi"><a href="http://arxiv.org/abs/2604.02609v1" target="_blank">link</a></span>
+  </div>
+  
+  
+  <div class="relevance"><b>相关性:</b> 论文专注于软体气动执行器的设计与控制，与FEA代理建模和生物力学植入物设计方向无关。</div>
+  <div class="why-not-core"><b>边界:</b> This paper does not address FEA surrogate modeling, constraint handling, uncertainty quantification, or biomechanics/implant-based design transferability.</div>
+  <div class="summary">
+    <div><b>动机·</b> 为软体气动执行器提供应变限制策略以保障人机安全。</div>
+    <div><b>方法·</b> 采用电粘附应变限制器和主动学习的神经网络进行逆设计。</div>
+    <div><b>结果·</b> 实现了可变轨迹充气与质量提升控制。</div>
+    <div><b>验证·</b> 通过主动学习和自动化测试验证理论模型。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> To ensure human safety in robot interactions by designing soft pneumatic actuators with embodied mechanical response to simple pressure inputs.</div>
+      <div><b>Method·</b> Electroadhesive strain limiters and active learning with neural networks are used for inverse design and trajectory control under external forces.</div>
+      <div><b>Result·</b> Variable inflation trajectories and quasi-static mass lift trajectories are achieved with simple pressure sweeps.</div>
+      <div><b>Validation·</b> Theoretical models are validated via active learning and automated experimental testing.</div>
+    </div>
+    <div class="key-terms">
+      <span class="term"><b>soft pneumatic actuator</b> · 软体气动执行器</span><span class="term"><b>electroadhesive clutch</b> · 电粘附离合器</span><span class="term"><b>strain limiter</b> · 应变限制器</span><span class="term"><b>active learning</b> · 主动学习</span><span class="term"><b>inverse design</b> · 逆设计</span><span class="term"><b>neural network</b> · 神经网络</span>
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">soft robotics</span> <span class="tag">soft pneumatic actuators</span> <span class="tag">active learning</span> <span class="tag">inverse design</span> <span class="tag">strain limitation</span></div>
+</article>
+<article class="paper" data-direction="hip_implant" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#1D9E7520;color:#1D9E75">Hip Implant &amp; Femoral Stem</span>
+    <span class="source">openalex</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Direct anterior approach for total hip arthroplasty with patients in the lateral decubitus vs supine position: A systematic review and meta-analysis</h3>
+  <div class="meta">
+    <span class="authors">Dimitrios Nikos, Nicholas Dominguez, Christopher Wilson</span>
+    <span class="venue">Journal of Orthopaedics</span>
+    <span class="date">2026-04-03</span>
+    <span class="doi"><a href="https://doi.org/10.1016/j.jor.2026.04.002" target="_blank">10.1016/j.jor.2026.04.002</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Department of Orthopaedic Surgery, Flinders Medical Centre, Bedford Park, South Australia, Australia</div>
+  <div class="corresponding"><b>通讯:</b> Dimitrios Nikos <span class="corresp-aff">@ Department of Orthopaedic Surgery, Flinders Medical Centre, Bedford Park, South Australia, Australia</span></div>
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="hip_implant" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#1D9E7520;color:#1D9E75">Hip Implant &amp; Femoral Stem</span>
+    <span class="source">openalex</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Comparative analysis of postoperative outcomes in men and women following total hip replacement surgery</h3>
+  <div class="meta">
+    <span class="authors">Sandra Ruta, Til Leander Riedl, Patrick Orth, Christian Götze, Filippo Migliorini et al.</span>
+    <span class="venue">Journal of Orthopaedic Surgery and Research</span>
+    <span class="date">2026-04-03</span>
+    <span class="doi"><a href="https://doi.org/10.1186/s13018-026-06811-6" target="_blank">10.1186/s13018-026-06811-6</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Ruhr University Bochum, Bochum, Germany</div>
+  <div class="corresponding"><b>通讯:</b> Sandra Ruta <span class="corresp-aff">@ Ruhr University Bochum, Bochum, Germany</span></div>
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="hip_implant" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#1D9E7520;color:#1D9E75">Hip Implant &amp; Femoral Stem</span>
+    <span class="source">pubmed</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Structure and Mechanical Properties of Ti-38Zr-(8-10)Nb (at. %) Alloys for Medical Use.</h3>
+  <div class="meta">
+    <span class="authors">Konstantin V Sergienko, Sergei V Konushkin, Yaroslava A Morozova, Maria A Sudarchikova, Mikhail A Kaplan et al.</span>
+    <span class="venue">Journal of functional biomaterials</span>
+    <span class="date">2026-04-03</span>
+    <span class="doi"><a href="https://doi.org/10.3390/jfb17040179" target="_blank">10.3390/jfb17040179</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> A.A. Baikov Institute of Metallurgy and Materials Science, Russian Academy of Sciences (IMET RAS), 119334 Moscow, Russia.</div>
+  <div class="corresponding"><b>通讯:</b> Alexey G Kolmakov <span class="corresp-aff">@ A.A. Baikov Institute of Metallurgy and Materials Science, Russian Academy of Sciences (IMET RAS), 119334 Moscow, Russia</span> <i>[推断]</i></div>
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="ai_bioprinting" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#7F77DD20;color:#7F77DD">AI for Bioprinting</span>
+    <span class="source">openalex</span>
+    <span class="relevance-level lvl-peripheral">Peripheral</span>
+    <span class="read-action act-ignore">Ignore</span>
+    <span class="validation-kind">in_vitro</span>
+    <span class="flag">Exp. validation</span> <span class="flag">Patient-specific</span>
+  </div>
+  <h3 class="paper-title">Abstract 4872: 3D bioprinting of fresh NSCLC: The Lung3Dprint proof of concept study</h3>
+  <div class="meta">
+    <span class="authors">Aurélie Cadiou, Clarisse Thiollier-Schmitt, Gabrielle Devret, Raphaele Guelminger, Tanguy Fenouil et al.</span>
+    <span class="venue">Cancer Research</span>
+    <span class="date">2026-04-03</span>
+    <span class="doi"><a href="https://doi.org/10.1158/1538-7445.am2026-4872" target="_blank">10.1158/1538-7445.am2026-4872</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> 1Cancer Research Center of Lyon (CRCL), Lyon, France;</div>
+  <div class="corresponding"><b>通讯:</b> Aurélie Cadiou <span class="corresp-aff">@ 1Cancer Research Center of Lyon (CRCL), Lyon, France;</span></div>
+  <div class="relevance"><b>相关性:</b> 该论文不涉及任何人工智能方法，与AI生物打印方向无关。</div>
+  <div class="why-not-core"><b>边界:</b> This paper does not integrate AI into any bioprinting workflow stage, lacks computational modeling, and does not advance toward autonomous decision-making; it is a purely experimental bioprinting and cell biology study.</div>
+  <div class="summary">
+    <div><b>动机·</b> 开发患者来源的生物打印肺癌模型用于药物筛选。</div>
+    <div><b>方法·</b> 使用纤维蛋白原-海藻酸钠-明胶生物墨水进行挤出式生物打印。</div>
+    <div><b>结果·</b> 模型维持肿瘤异质性和细胞活力达22天。</div>
+    <div><b>验证·</b> 通过细胞活性、流式细胞术和免疫组化验证。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> To develop patient-derived bioprinted lung cancer models that reflect tumor heterogeneity for drug screening.</div>
+      <div><b>Method·</b> Patient-derived NSCLC cells were embedded in fibrinogen-alginate-gelatin bioink and printed via extrusion-based bioprinting.</div>
+      <div><b>Result·</b> The bioprinted models maintained tumor heterogeneity and cell viability for up to 22 days.</div>
+      <div><b>Validation·</b> Validation was performed using PrestoBlue assay, flow cytometry, and immunohistochemistry on cultured models.</div>
+    </div>
+    <div class="key-terms">
+      <span class="term"><b>3D bioprinting</b> · 3D生物打印</span><span class="term"><b>non-small cell lung cancer</b> · 非小细胞肺癌</span><span class="term"><b>bioink</b> · 生物墨水</span><span class="term"><b>patient-derived model</b> · 患者来源模型</span><span class="term"><b>drug screening</b> · 药物筛选</span>
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">3D bioprinting</span> <span class="tag">lung cancer</span> <span class="tag">drug screening</span> <span class="tag">patient-derived model</span></div>
+</article>
+<article class="paper" data-direction="ai_bioprinting" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#7F77DD20;color:#7F77DD">AI for Bioprinting</span>
+    <span class="source">openalex</span>
+    <span class="relevance-level lvl-peripheral">Peripheral</span>
+    <span class="read-action act-ignore">Ignore</span>
+    <span class="validation-kind">none</span>
+    
+  </div>
+  <h3 class="paper-title">Abstract 3400: A 3D bioprinted hydrogel-based tumor model of non-small cell lung cancer for preclinical drug testing</h3>
+  <div class="meta">
+    <span class="authors">Jan Schlegel, Julia Thiel, Kanstantsin Lashuk, Schueler Julia, Thomas E. Mürdter et al.</span>
+    <span class="venue">Cancer Research</span>
+    <span class="date">2026-04-03</span>
+    <span class="doi"><a href="https://doi.org/10.1158/1538-7445.am2026-3400" target="_blank">10.1158/1538-7445.am2026-3400</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> 1Dr. Margarete Fischer-Bosch Institute of Clinical Pharmacology, Stuttgart, Germany;</div>
+  <div class="corresponding"><b>通讯:</b> Jan Schlegel <span class="corresp-aff">@ 1Dr. Margarete Fischer-Bosch Institute of Clinical Pharmacology, Stuttgart, Germany;</span></div>
+  <div class="relevance"><b>相关性:</b> 该论文不涉及人工智能在生物打印中的任何应用，仅描述了一个用于药物测试的3D生物打印肿瘤模型。</div>
+  <div class="why-not-core"><b>边界:</b> This paper does not embed AI/ML into any bioprinting workflow stage, and there is no experimental validation of an AI model.</div>
+  <div class="summary">
+    <div><b>动机·</b> 建立可重现的3D生物打印NSCLC肿瘤模型用于药物筛选。</div>
+    <div><b>方法·</b> 使用海藻酸盐、胶原和Matrigel复合生物墨水打印含肿瘤球体和CAFs的切片模型。</div>
+    <div><b>结果·</b> 模型可培养14天并支持多种功能分析，适用于临床前药物测试。</div>
+    <div><b>验证·</b> 通过细胞毒性、免疫荧光和活体成像验证模型功能。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> To create a reproducible 3D bioprinted tumor model that recapitulates the NSCLC microenvironment for preclinical drug screening.</div>
+      <div><b>Method·</b> Composite bioink of alginate, collagen, and Matrigel was used to directly assemble NSCLC spheroids and CAFs into hydrogel tumor slices.</div>
+      <div><b>Result·</b> The printed constructs maintained architecture and proliferative capacity for 14 days, enabling cytotoxicity, imaging, and immunofluorescence assays.</div>
+      <div><b>Validation·</b> Functional assays including live imaging and multiplex immunofluorescence validated cell viability and tumor-stromal interactions.</div>
+    </div>
+    <div class="key-terms">
+      <span class="term"><b>3D bioprinting</b> · 3D生物打印</span><span class="term"><b>hydrogel</b> · 水凝胶</span><span class="term"><b>tumor model</b> · 肿瘤模型</span><span class="term"><b>non-small cell lung cancer</b> · 非小细胞肺癌</span><span class="term"><b>tumor microenvironment</b> · 肿瘤微环境</span><span class="term"><b>drug screening</b> · 药物筛选</span><span class="term"><b>cancer-associated fibroblasts</b> · 癌相关成纤维细胞</span>
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">3D bioprinting</span> <span class="tag">tumor model</span> <span class="tag">drug testing</span> <span class="tag">NSCLC</span></div>
+</article>
+<article class="paper" data-direction="ai_bioprinting" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#7F77DD20;color:#7F77DD">AI for Bioprinting</span>
+    <span class="source">openalex</span>
+    <span class="relevance-level lvl-peripheral">Peripheral</span>
+    <span class="read-action act-ignore">Ignore</span>
+    <span class="validation-kind">in_vitro</span>
+    <span class="flag">Exp. validation</span>
+  </div>
+  <h3 class="paper-title">Self-healing silk fibroin–gelatin–based 3D-printed bilayer scaffolds with stable interface and bidirectional lineage control for osteochondral regeneration</h3>
+  <div class="meta">
+    <span class="authors">Hong Liu, Danyu Yao, Ling Wang, Mingen Xu</span>
+    <span class="venue">International Journal of Bioprinting</span>
+    <span class="date">2026-04-03</span>
+    <span class="doi"><a href="https://doi.org/10.36922/ijb026050034" target="_blank">10.36922/ijb026050034</a></span>
+  </div>
+  
+  
+  <div class="relevance"><b>相关性:</b> 该论文涉及骨软骨再生的3D生物打印支架，但未包含任何AI或机器学习方法，因此与AI生物打印方向无关。</div>
+  <div class="why-not-core"><b>边界:</b> No AI/ML integration in any bioprinting workflow stage, no digital twin or data-driven optimization.</div>
+  <div class="summary">
+    <div><b>动机·</b> 解决骨软骨界面再生中多层支架界面分层的问题</div>
+    <div><b>方法·</b> 开发基于丝素蛋白和明胶的自愈合生物墨水，通过双喷嘴交替打印构建双层支架</div>
+    <div><b>结果·</b> 双层支架界面稳定，上层促进软骨分化，下层促进骨分化</div>
+    <div><b>验证·</b> 体外细胞实验验证细胞活性和双向分化标记物表达</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> To overcome interfacial delamination in multilayer scaffolds for osteochondral regeneration.</div>
+      <div><b>Method·</b> A self-healing silk fibroin-gelatin based bioink with nano-hydroxyapatite was developed for dual-nozzle alternating printing of bilayer scaffolds.</div>
+      <div><b>Result·</b> The bilayer scaffold exhibited stable interface and layer-specific promotion of chondrogenic and osteogenic differentiation.</div>
+      <div><b>Validation·</b> In vitro cell culture with viability &gt;90% and upregulation of collagen II and RUNX2 markers.</div>
+    </div>
+    <div class="key-terms">
+      <span class="term"><b>self-healing</b> · 自愈合</span><span class="term"><b>silk fibroin</b> · 丝素蛋白</span><span class="term"><b>gelatin</b> · 明胶</span><span class="term"><b>3D bioprinting</b> · 三维生物打印</span><span class="term"><b>bilayer scaffold</b> · 双层支架</span><span class="term"><b>osteochondral regeneration</b> · 骨软骨再生</span><span class="term"><b>nano-hydroxyapatite</b> · 纳米羟基磷灰石</span><span class="term"><b>chondrogenic differentiation</b> · 软骨分化</span><span class="term"><b>osteogenic differentiation</b> · 成骨分化</span>
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">bioprinting</span> <span class="tag">silk fibroin</span> <span class="tag">osteochondral</span> <span class="tag">self-healing</span> <span class="tag">bilayer scaffold</span></div>
+</article>
+<article class="paper" data-direction="am_biomedical" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#185FA520;color:#185FA5">AM Biomedical Materials</span>
+    <span class="source">openalex</span>
+    <span class="relevance-level lvl-peripheral">Peripheral</span>
+    <span class="read-action act-ignore">Ignore</span>
+    <span class="validation-kind">simulation_case</span>
+    
+  </div>
+  <h3 class="paper-title">A Physics-based investigation of solidification morphology and microcracking in a high- &lt;mml:math xmlns:mml=&quot;http://www.w3.org/1998/Math/MathML&quot; altimg=&quot;si1.svg&quot; display=&quot;inline&quot; id=&quot;d1e5108&quot;&gt; &lt;mml:msup&gt; &lt;mml:mrow&gt; &lt;mml:mi&gt;γ&lt;/mml:mi&gt; &lt;/mml:mrow&gt; &lt;mml:mrow&gt; &lt;mml:mo&gt;′&lt;/mml:mo&gt; &lt;/mml:mrow&gt; &lt;/mml:msup&gt; &lt;/mml:math&gt; Ni-based superalloy during Selective Laser Melting</h3>
+  <div class="meta">
+    <span class="authors">M Salem, Hector Basoalto, Miguel Espadero, Hugh James Banes, Prashant Jadhav et al.</span>
+    <span class="venue">Acta Materialia</span>
+    <span class="date">2026-04-03</span>
+    <span class="doi"><a href="https://doi.org/10.1016/j.actamat.2026.122170" target="_blank">10.1016/j.actamat.2026.122170</a></span>
+  </div>
+  
+  
+  <div class="relevance"><b>相关性:</b> 该论文研究镍基高温合金的凝固形态和微裂纹，与生物医学AM材料方向无关。</div>
+  <div class="why-not-core"><b>边界:</b> This paper does not address any biomedical implant materials, porous structures, stress shielding, fatigue, or osseointegration, and uses a non-biocompatible superalloy.</div>
+  <div class="summary">
+    <div><b>动机·</b> 研究SLM过程中镍基高温合金的凝固形态和微裂纹机制。</div>
+    <div><b>方法·</b> 采用物理模型模拟凝固过程并分析裂纹形成。</div>
+    <div><b>结果·</b> 揭示了凝固参数与微裂纹之间的关联。</div>
+    <div><b>验证·</b> 基于模拟结果与已有文献对比验证。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> The motivation is to investigate solidification morphology and microcracking mechanisms during Selective Laser Melting of a Ni-based superalloy.</div>
+      <div><b>Method·</b> A physics-based simulation model was employed to study solidification and crack formation.</div>
+      <div><b>Result·</b> Correlations between process parameters and microcracking were identified.</div>
+      <div><b>Validation·</b> Validation was performed by comparing simulation results with previously reported experimental data.</div>
+    </div>
+    <div class="key-terms">
+      <span class="term"><b>Selective Laser Melting</b> · 选择性激光熔化</span><span class="term"><b>solidification morphology</b> · 凝固形态</span><span class="term"><b>microcracking</b> · 微裂纹</span><span class="term"><b>Ni-based superalloy</b> · 镍基高温合金</span>
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">SLM</span> <span class="tag">superalloy</span> <span class="tag">solidification</span> <span class="tag">microcracking</span></div>
+</article>
+<article class="paper" data-direction="fea_surrogate" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#D85A3020;color:#D85A30">FEA &amp; Surrogate Modelling</span>
+    <span class="source">arxiv</span>
+    <span class="relevance-level lvl-peripheral">Peripheral</span>
+    <span class="read-action act-ignore">Ignore</span>
+    <span class="validation-kind">none</span>
+    
+  </div>
+  <h3 class="paper-title">Multimodal Urban Tree Detection from Satellite and Street-Level Imagery via Annotation-Efficient Deep Learning Strategies</h3>
+  <div class="meta">
+    <span class="authors">In Seon Kim, Ali Moghimi</span>
+    <span class="venue">arXiv preprint</span>
+    <span class="date">2026-04-03</span>
+    <span class="doi"><a href="http://arxiv.org/abs/2604.03505v1" target="_blank">link</a></span>
+  </div>
+  
+  
+  <div class="relevance"><b>相关性:</b> 该论文研究城市树木检测，与用户的FEA替代模型和植入物设计方向无关。</div>
+  <div class="why-not-core"><b>边界:</b> This paper focuses on urban tree detection using satellite and street-level imagery, with no connection to finite element analysis, surrogate modeling, or implant design.</div>
+  <div class="summary">
+    <div><b>动机·</b> 解决城市树木自动检测中标注成本高和泛化性差的问题。</div>
+    <div><b>方法·</b> 提出融合卫星与街景图像的多模态框架，结合半监督、主动和混合学习策略。</div>
+    <div><b>结果·</b> 混合策略达到F1分数0.90，比基线提高12%。</div>
+    <div><b>验证·</b> 在真实城市数据集上评估不同学习策略的性能。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> To enable scalable and annotation-efficient urban tree detection by overcoming high labeling costs and poor generalization across diverse urban environments.</div>
+      <div><b>Method·</b> A multimodal framework integrating satellite and street-level imagery, employing semi-supervised learning, active learning, and their hybrid combination with a transformer-based detector.</div>
+      <div><b>Result·</b> The hybrid strategy achieved an F1-score of 0.90, a 12% improvement over the baseline model.</div>
+      <div><b>Validation·</b> Evaluated on real-world urban datasets, comparing performance of different learning strategies and analyzing error types.</div>
+    </div>
+    <div class="key-terms">
+      <span class="term"><b>urban tree detection</b> · 城市树木检测</span><span class="term"><b>multimodal deep learning</b> · 多模态深度学习</span><span class="term"><b>satellite imagery</b> · 卫星图像</span><span class="term"><b>street-level imagery</b> · 街景图像</span><span class="term"><b>semi-supervised learning</b> · 半监督学习</span><span class="term"><b>active learning</b> · 主动学习</span><span class="term"><b>annotation efficiency</b> · 标注效率</span><span class="term"><b>domain adaptation</b> · 域适应</span>
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">urban tree detection</span> <span class="tag">multimodal deep learning</span> <span class="tag">satellite imagery</span> <span class="tag">street-level imagery</span> <span class="tag">semi-supervised learning</span> <span class="tag">active learning</span></div>
+</article>
+<article class="paper" data-direction="fea_surrogate" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#D85A3020;color:#D85A30">FEA &amp; Surrogate Modelling</span>
+    <span class="source">arxiv</span>
+    <span class="relevance-level lvl-peripheral">Peripheral</span>
+    <span class="read-action act-ignore">Ignore</span>
+    <span class="validation-kind">simulation_case</span>
+    
+  </div>
+  <h3 class="paper-title">An Asynchronous Two-Speed Kalman Filter for Real-Time UUV Cooperative Navigation Under Acoustic Delays</h3>
+  <div class="meta">
+    <span class="authors">Shuyue Li, Miguel López-Benítez, Eng Gee Lim, Fei Ma, Qian Dong et al.</span>
+    <span class="venue">arXiv preprint</span>
+    <span class="date">2026-04-03</span>
+    <span class="doi"><a href="http://arxiv.org/abs/2604.02878v1" target="_blank">link</a></span>
+  </div>
+  
+  
+  <div class="relevance"><b>相关性:</b> 该论文涉及水下无人航行器的协同导航，与有限元代理模型方向无关。</div>
+  <div class="why-not-core"><b>边界:</b> This paper addresses underwater vehicle navigation with Kalman filtering under acoustic delays, not surrogate modeling for FEA, biomechanics, or implant design.</div>
+  <div class="summary">
+    <div><b>动机·</b> 解决水声通信延迟下无人潜航器实时协同导航的漂移问题</div>
+    <div><b>方法·</b> 提出异步双速卡尔曼滤波与变分历史蒸馏投影机制</div>
+    <div><b>结果·</b> 在严重延迟下保持与批处理方法相当的轨迹精度，执行时间亚毫秒</div>
+    <div><b>验证·</b> 仿真验证，对比标准EKF/UKF与批优化方法</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> To overcome unbounded dead-reckoning drift in GNSS-denied underwater environments under severe acoustic communication delays.</div>
+      <div><b>Method·</b> An asynchronous two-speed Kalman filter is proposed, decoupling estimation into a fast GP-compensated dead-reckoning thread and a slow thread for delayed cooperative updates, with a Variational History Distillation projection.</div>
+      <div><b>Result·</b> The filter achieves trajectory RMSE comparable to batch optimization under up to 30 s delays while running sub-millisecond per step.</div>
+      <div><b>Validation·</b> Simulation-based comparison against standard EKF/UKF and batch methods.</div>
+    </div>
+    <div class="key-terms">
+      <span class="term"><b>Kalman filter</b> · 卡尔曼滤波</span><span class="term"><b>UUV</b> · 无人潜航器</span><span class="term"><b>cooperative navigation</b> · 协同导航</span><span class="term"><b>acoustic delay</b> · 水声延迟</span><span class="term"><b>Gaussian process</b> · 高斯过程</span><span class="term"><b>dead reckoning</b> · 航位推算</span><span class="term"><b>out-of-sequence measurements</b> · 乱序测量</span><span class="term"><b>variational history distillation</b> · 变分历史蒸馏</span>
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">UUV</span> <span class="tag">Kalman Filter</span> <span class="tag">Acoustic Delay</span> <span class="tag">Cooperative Navigation</span> <span class="tag">Gaussian Process</span></div>
+</article>
+
+<script>
+const tabs = document.querySelectorAll('.tab');
+const pfs = document.querySelectorAll('.pf');
+let dirFilter = 'all';
+let prioFilter = 'HighMedium';
+function applyFilters(){
+  document.querySelectorAll('.paper').forEach(p=>{
+    const d = p.dataset.direction;
+    const pr = p.dataset.priority;
+    const dirOk = dirFilter==='all' || dirFilter===d;
+    const prOk = prioFilter==='all'
+                  || (prioFilter==='High' && pr==='High')
+                  || (prioFilter==='HighMedium' && (pr==='High'||pr==='Medium'));
+    p.dataset.hidden = (dirOk && prOk) ? '0' : '1';
+  });
+}
+tabs.forEach(t=>t.onclick=()=>{tabs.forEach(x=>x.classList.remove('active'));t.classList.add('active');dirFilter=t.dataset.filter;applyFilters();});
+pfs.forEach(t=>t.onclick=()=>{pfs.forEach(x=>x.classList.remove('active'));t.classList.add('active');prioFilter=t.dataset.prio;applyFilters();});
+applyFilters();
+</script>
+</body></html>

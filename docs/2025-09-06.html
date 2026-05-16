@@ -1,0 +1,587 @@
+<!doctype html><html lang="zh"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Research Radar — 2025-09-06</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:980px;margin:2rem auto;padding:0 1rem;color:#222;line-height:1.5}
+h1{font-size:24px;font-weight:500;margin:0 0 .25rem}
+.subtitle{color:#666;font-size:14px;margin-bottom:1.5rem}
+.topbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 0;margin-bottom:1.25rem;border-bottom:.5px solid #e2e0d8}
+.navbtn{font-size:13px;background:#f5f4ef;color:#444;padding:6px 12px;border-radius:8px;text-decoration:none}
+.navbtn:hover{background:#e9e7df}
+.navbtn.disabled{color:#bbb;background:#fafaf6;cursor:default}
+.archive-select{font-size:13px;padding:6px 10px;border:.5px solid #ccc;border-radius:8px;background:#fff;color:#444;cursor:pointer}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1.5rem}
+.stat{background:#f5f4ef;border-radius:8px;padding:.75rem 1rem}
+.stat-label{font-size:12px;color:#666}
+.stat-val{font-size:22px;font-weight:500;margin-top:2px}
+.tabs,.prio-filter{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:.75rem}
+.tab,.pf{background:transparent;border:.5px solid #ccc;border-radius:8px;padding:6px 14px;font-size:13px;cursor:pointer;color:#444}
+.tab.active,.pf.active{background:#222;color:#fff;border-color:#222}
+.paper{background:#fff;border:.5px solid #e2e0d8;border-radius:12px;padding:1rem 1.25rem;margin-bottom:12px}
+.paper-head{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+.priority{font-size:12px;font-weight:500;padding:3px 10px;border-radius:999px}
+.direction-pill{font-size:11px;padding:3px 8px;border-radius:8px}
+.source{font-size:11px;color:#999;text-transform:uppercase}
+.flag{font-size:11px;background:#eef;color:#335;padding:2px 7px;border-radius:6px}
+.paper-title{font-size:15px;font-weight:500;line-height:1.4;margin:4px 0}
+.meta{font-size:12px;color:#666;margin-bottom:10px}
+.meta>span{margin-right:12px}
+.relevance{font-size:13px;background:#fafaf6;padding:6px 10px;border-radius:6px;margin-bottom:8px}
+.summary{font-size:13px;line-height:1.65}
+.summary>div{margin-bottom:4px}
+.tags-row{margin-top:8px}
+.tag{font-size:10px;background:#f1efe8;color:#555;padding:2px 7px;border-radius:6px;margin-right:4px}
+.paper[data-hidden="1"]{display:none}
+footer.run-info{margin-top:3rem;padding-top:1rem;border-top:.5px solid #e2e0d8;font-size:12px;color:#666}
+footer.run-info summary{cursor:pointer;color:#444}
+footer.run-info table{margin-top:8px;font-family:ui-monospace,monospace;font-size:11px}
+footer.run-info td{padding:2px 12px 2px 0;vertical-align:top}
+footer.run-info td:first-child{color:#888;width:140px}
+details.summary-en{margin-top:8px;background:#f8f8f3;border-radius:8px;padding:6px 12px;border:.5px solid #e2e0d8}
+details.summary-en summary{cursor:pointer;font-size:12px;color:#555;font-weight:500}
+details.summary-en[open] summary{margin-bottom:8px}
+.summary.en{font-size:13px;color:#333;line-height:1.55}
+.summary.en>div{margin-bottom:3px}
+.key-terms{margin-top:8px;display:flex;flex-wrap:wrap;gap:6px}
+.term{font-size:11px;background:#fff;border:.5px solid #ddd;padding:3px 8px;border-radius:6px;color:#444}
+.term b{color:#222;font-weight:500}
+.affiliations{font-size:12px;color:#666;margin-top:6px;padding-left:6px;border-left:2px solid #ddd}
+.affiliations b{color:#444;font-weight:500}
+.corresponding{font-size:12px;color:#555;margin-top:3px;padding-left:6px;border-left:2px solid #aac}
+.corresponding b{color:#3F2E7E;font-weight:500}
+.corresp-aff{color:#888}
+.corresponding i{color:#888;font-size:11px}
+.relevance-level{font-size:11px;padding:3px 8px;border-radius:8px;font-weight:500}
+.lvl-direct{background:#D4EBC4;color:#2D5A14}
+.lvl-transferable{background:#E0DDF4;color:#3F2E7E}
+.lvl-peripheral{background:#F1EFE8;color:#666}
+.read-action{font-size:11px;padding:3px 8px;border-radius:8px;font-weight:500;font-style:italic}
+.act-read-now{background:#FFE8D6;color:#7D4515}
+.act-save-for-project{background:#E6E1F5;color:#3A2C7A}
+.act-skim-only{background:#F0F0E8;color:#5C5C50}
+.act-background-only{background:#F5F5F0;color:#777}
+.act-ignore{background:#F5E8E8;color:#7A3A3A}
+.validation-kind{font-size:10px;background:#EDF4FA;color:#1F4A6B;padding:2px 7px;border-radius:6px}
+.why-not-core{font-size:12px;background:#FCF5E8;border-left:3px solid #D8A045;padding:5px 10px;margin-top:4px;color:#5A4318;border-radius:0 6px 6px 0}
+</style></head><body>
+<h1>Research Radar</h1>
+<div class="subtitle">2025-09-06 · AI Bioprinting / Hip Implant / FEA Surrogate / AM Biomedical</div>
+<div class="topbar"><a class="navbtn" href="2025-09-05.html">← 2025-09-05</a><select class="archive-select" onchange="if(this.value)window.location.href=this.value"><option value="2026-12-01.html">2026-12-01</option><option value="2026-10-01.html">2026-10-01</option><option value="2026-08-01.html">2026-08-01</option><option value="2026-07-01.html">2026-07-01</option><option value="2026-06-10.html">2026-06-10</option><option value="2026-06-01.html">2026-06-01</option><option value="2026-05-20.html">2026-05-20</option><option value="2026-05-15.html">2026-05-15</option><option value="2026-05-14.html">2026-05-14</option><option value="2026-05-13.html">2026-05-13</option><option value="2026-05-12.html">2026-05-12</option><option value="2026-05-11.html">2026-05-11</option><option value="2026-05-10.html">2026-05-10</option><option value="2026-05-09.html">2026-05-09</option><option value="2026-05-08.html">2026-05-08</option><option value="2026-05-07.html">2026-05-07</option><option value="2026-05-06.html">2026-05-06</option><option value="2026-05-05.html">2026-05-05</option><option value="2026-05-04.html">2026-05-04</option><option value="2026-05-02.html">2026-05-02</option><option value="2026-05-01.html">2026-05-01</option><option value="2026-04-30.html">2026-04-30</option><option value="2026-04-29.html">2026-04-29</option><option value="2026-04-28.html">2026-04-28</option><option value="2026-04-27.html">2026-04-27</option><option value="2026-04-26.html">2026-04-26</option><option value="2026-04-25.html">2026-04-25</option><option value="2026-04-24.html">2026-04-24</option><option value="2026-04-23.html">2026-04-23</option><option value="2026-04-22.html">2026-04-22</option><option value="2026-04-21.html">2026-04-21</option><option value="2026-04-20.html">2026-04-20</option><option value="2026-04-19.html">2026-04-19</option><option value="2026-04-18.html">2026-04-18</option><option value="2026-04-17.html">2026-04-17</option><option value="2026-04-16.html">2026-04-16</option><option value="2026-04-15.html">2026-04-15</option><option value="2026-04-14.html">2026-04-14</option><option value="2026-04-13.html">2026-04-13</option><option value="2026-04-12.html">2026-04-12</option><option value="2026-04-11.html">2026-04-11</option><option value="2026-04-10.html">2026-04-10</option><option value="2026-04-09.html">2026-04-09</option><option value="2026-04-08.html">2026-04-08</option><option value="2026-04-07.html">2026-04-07</option><option value="2026-04-06.html">2026-04-06</option><option value="2026-04-05.html">2026-04-05</option><option value="2026-04-04.html">2026-04-04</option><option value="2026-04-03.html">2026-04-03</option><option value="2026-04-02.html">2026-04-02</option><option value="2026-04-01.html">2026-04-01</option><option value="2026-03-31.html">2026-03-31</option><option value="2026-03-30.html">2026-03-30</option><option value="2026-03-29.html">2026-03-29</option><option value="2026-03-28.html">2026-03-28</option><option value="2026-03-27.html">2026-03-27</option><option value="2026-03-26.html">2026-03-26</option><option value="2026-03-25.html">2026-03-25</option><option value="2026-03-24.html">2026-03-24</option><option value="2026-03-23.html">2026-03-23</option><option value="2026-03-22.html">2026-03-22</option><option value="2026-03-21.html">2026-03-21</option><option value="2026-03-20.html">2026-03-20</option><option value="2026-03-19.html">2026-03-19</option><option value="2026-03-18.html">2026-03-18</option><option value="2026-03-17.html">2026-03-17</option><option value="2026-03-16.html">2026-03-16</option><option value="2026-03-15.html">2026-03-15</option><option value="2026-03-14.html">2026-03-14</option><option value="2026-03-13.html">2026-03-13</option><option value="2026-03-12.html">2026-03-12</option><option value="2026-03-11.html">2026-03-11</option><option value="2026-03-10.html">2026-03-10</option><option value="2026-03-09.html">2026-03-09</option><option value="2026-03-08.html">2026-03-08</option><option value="2026-03-07.html">2026-03-07</option><option value="2026-03-06.html">2026-03-06</option><option value="2026-03-05.html">2026-03-05</option><option value="2026-03-04.html">2026-03-04</option><option value="2026-03-03.html">2026-03-03</option><option value="2026-03-02.html">2026-03-02</option><option value="2026-03-01.html">2026-03-01</option><option value="2026-02-28.html">2026-02-28</option><option value="2026-02-27.html">2026-02-27</option><option value="2026-02-26.html">2026-02-26</option><option value="2026-02-25.html">2026-02-25</option><option value="2026-02-24.html">2026-02-24</option><option value="2026-02-23.html">2026-02-23</option><option value="2026-02-22.html">2026-02-22</option><option value="2026-02-21.html">2026-02-21</option><option value="2026-02-20.html">2026-02-20</option><option value="2026-02-19.html">2026-02-19</option><option value="2026-02-18.html">2026-02-18</option><option value="2026-02-17.html">2026-02-17</option><option value="2026-02-16.html">2026-02-16</option><option value="2026-02-15.html">2026-02-15</option><option value="2026-02-14.html">2026-02-14</option><option value="2026-02-13.html">2026-02-13</option><option value="2026-02-12.html">2026-02-12</option><option value="2026-02-11.html">2026-02-11</option><option value="2026-02-10.html">2026-02-10</option><option value="2026-02-09.html">2026-02-09</option><option value="2026-02-08.html">2026-02-08</option><option value="2026-02-07.html">2026-02-07</option><option value="2026-02-06.html">2026-02-06</option><option value="2026-02-05.html">2026-02-05</option><option value="2026-02-04.html">2026-02-04</option><option value="2026-02-03.html">2026-02-03</option><option value="2026-02-02.html">2026-02-02</option><option value="2026-02-01.html">2026-02-01</option><option value="2026-01-31.html">2026-01-31</option><option value="2026-01-30.html">2026-01-30</option><option value="2026-01-29.html">2026-01-29</option><option value="2026-01-28.html">2026-01-28</option><option value="2026-01-27.html">2026-01-27</option><option value="2026-01-26.html">2026-01-26</option><option value="2026-01-25.html">2026-01-25</option><option value="2026-01-24.html">2026-01-24</option><option value="2026-01-23.html">2026-01-23</option><option value="2026-01-22.html">2026-01-22</option><option value="2026-01-21.html">2026-01-21</option><option value="2026-01-20.html">2026-01-20</option><option value="2026-01-19.html">2026-01-19</option><option value="2026-01-18.html">2026-01-18</option><option value="2026-01-17.html">2026-01-17</option><option value="2026-01-16.html">2026-01-16</option><option value="2026-01-15.html">2026-01-15</option><option value="2026-01-14.html">2026-01-14</option><option value="2026-01-13.html">2026-01-13</option><option value="2026-01-12.html">2026-01-12</option><option value="2026-01-11.html">2026-01-11</option><option value="2026-01-10.html">2026-01-10</option><option value="2026-01-09.html">2026-01-09</option><option value="2026-01-08.html">2026-01-08</option><option value="2026-01-07.html">2026-01-07</option><option value="2026-01-06.html">2026-01-06</option><option value="2026-01-05.html">2026-01-05</option><option value="2026-01-04.html">2026-01-04</option><option value="2026-01-03.html">2026-01-03</option><option value="2026-01-02.html">2026-01-02</option><option value="2026-01-01.html">2026-01-01</option><option value="2025-12-31.html">2025-12-31</option><option value="2025-12-30.html">2025-12-30</option><option value="2025-12-29.html">2025-12-29</option><option value="2025-12-28.html">2025-12-28</option><option value="2025-12-27.html">2025-12-27</option><option value="2025-12-26.html">2025-12-26</option><option value="2025-12-25.html">2025-12-25</option><option value="2025-12-24.html">2025-12-24</option><option value="2025-12-23.html">2025-12-23</option><option value="2025-12-22.html">2025-12-22</option><option value="2025-12-21.html">2025-12-21</option><option value="2025-12-20.html">2025-12-20</option><option value="2025-12-19.html">2025-12-19</option><option value="2025-12-18.html">2025-12-18</option><option value="2025-12-17.html">2025-12-17</option><option value="2025-12-16.html">2025-12-16</option><option value="2025-12-15.html">2025-12-15</option><option value="2025-12-14.html">2025-12-14</option><option value="2025-12-13.html">2025-12-13</option><option value="2025-12-12.html">2025-12-12</option><option value="2025-12-11.html">2025-12-11</option><option value="2025-12-10.html">2025-12-10</option><option value="2025-12-09.html">2025-12-09</option><option value="2025-12-08.html">2025-12-08</option><option value="2025-12-07.html">2025-12-07</option><option value="2025-12-06.html">2025-12-06</option><option value="2025-12-05.html">2025-12-05</option><option value="2025-12-04.html">2025-12-04</option><option value="2025-12-03.html">2025-12-03</option><option value="2025-12-02.html">2025-12-02</option><option value="2025-12-01.html">2025-12-01</option><option value="2025-11-30.html">2025-11-30</option><option value="2025-11-29.html">2025-11-29</option><option value="2025-11-28.html">2025-11-28</option><option value="2025-11-27.html">2025-11-27</option><option value="2025-11-26.html">2025-11-26</option><option value="2025-11-25.html">2025-11-25</option><option value="2025-11-24.html">2025-11-24</option><option value="2025-11-23.html">2025-11-23</option><option value="2025-11-22.html">2025-11-22</option><option value="2025-11-21.html">2025-11-21</option><option value="2025-11-20.html">2025-11-20</option><option value="2025-11-19.html">2025-11-19</option><option value="2025-11-18.html">2025-11-18</option><option value="2025-11-17.html">2025-11-17</option><option value="2025-11-16.html">2025-11-16</option><option value="2025-11-15.html">2025-11-15</option><option value="2025-11-14.html">2025-11-14</option><option value="2025-11-13.html">2025-11-13</option><option value="2025-11-12.html">2025-11-12</option><option value="2025-11-11.html">2025-11-11</option><option value="2025-11-10.html">2025-11-10</option><option value="2025-11-09.html">2025-11-09</option><option value="2025-11-08.html">2025-11-08</option><option value="2025-11-07.html">2025-11-07</option><option value="2025-11-06.html">2025-11-06</option><option value="2025-11-05.html">2025-11-05</option><option value="2025-11-04.html">2025-11-04</option><option value="2025-11-03.html">2025-11-03</option><option value="2025-11-02.html">2025-11-02</option><option value="2025-11-01.html">2025-11-01</option><option value="2025-10-31.html">2025-10-31</option><option value="2025-10-30.html">2025-10-30</option><option value="2025-10-29.html">2025-10-29</option><option value="2025-10-28.html">2025-10-28</option><option value="2025-10-27.html">2025-10-27</option><option value="2025-10-26.html">2025-10-26</option><option value="2025-10-25.html">2025-10-25</option><option value="2025-10-24.html">2025-10-24</option><option value="2025-10-23.html">2025-10-23</option><option value="2025-10-22.html">2025-10-22</option><option value="2025-10-21.html">2025-10-21</option><option value="2025-10-20.html">2025-10-20</option><option value="2025-10-19.html">2025-10-19</option><option value="2025-10-18.html">2025-10-18</option><option value="2025-10-17.html">2025-10-17</option><option value="2025-10-16.html">2025-10-16</option><option value="2025-10-15.html">2025-10-15</option><option value="2025-10-14.html">2025-10-14</option><option value="2025-10-13.html">2025-10-13</option><option value="2025-10-12.html">2025-10-12</option><option value="2025-10-11.html">2025-10-11</option><option value="2025-10-10.html">2025-10-10</option><option value="2025-10-09.html">2025-10-09</option><option value="2025-10-08.html">2025-10-08</option><option value="2025-10-07.html">2025-10-07</option><option value="2025-10-06.html">2025-10-06</option><option value="2025-10-05.html">2025-10-05</option><option value="2025-10-04.html">2025-10-04</option><option value="2025-10-03.html">2025-10-03</option><option value="2025-10-02.html">2025-10-02</option><option value="2025-10-01.html">2025-10-01</option><option value="2025-09-30.html">2025-09-30</option><option value="2025-09-29.html">2025-09-29</option><option value="2025-09-28.html">2025-09-28</option><option value="2025-09-27.html">2025-09-27</option><option value="2025-09-26.html">2025-09-26</option><option value="2025-09-25.html">2025-09-25</option><option value="2025-09-24.html">2025-09-24</option><option value="2025-09-23.html">2025-09-23</option><option value="2025-09-22.html">2025-09-22</option><option value="2025-09-21.html">2025-09-21</option><option value="2025-09-20.html">2025-09-20</option><option value="2025-09-19.html">2025-09-19</option><option value="2025-09-18.html">2025-09-18</option><option value="2025-09-17.html">2025-09-17</option><option value="2025-09-16.html">2025-09-16</option><option value="2025-09-15.html">2025-09-15</option><option value="2025-09-14.html">2025-09-14</option><option value="2025-09-13.html">2025-09-13</option><option value="2025-09-12.html">2025-09-12</option><option value="2025-09-11.html">2025-09-11</option><option value="2025-09-10.html">2025-09-10</option><option value="2025-09-09.html">2025-09-09</option><option value="2025-09-08.html">2025-09-08</option><option value="2025-09-07.html">2025-09-07</option><option value="2025-09-06.html" selected>2025-09-06</option><option value="2025-09-05.html">2025-09-05</option><option value="2025-09-04.html">2025-09-04</option><option value="2025-09-03.html">2025-09-03</option><option value="2025-09-02.html">2025-09-02</option><option value="2025-09-01.html">2025-09-01</option><option value="2025-08-31.html">2025-08-31</option><option value="2025-08-30.html">2025-08-30</option><option value="2025-08-29.html">2025-08-29</option><option value="2025-08-28.html">2025-08-28</option><option value="2025-08-27.html">2025-08-27</option><option value="2025-08-26.html">2025-08-26</option><option value="2025-08-25.html">2025-08-25</option><option value="2025-08-24.html">2025-08-24</option><option value="2025-08-23.html">2025-08-23</option><option value="2025-08-22.html">2025-08-22</option><option value="2025-08-21.html">2025-08-21</option><option value="2025-08-20.html">2025-08-20</option><option value="2025-08-19.html">2025-08-19</option><option value="2025-08-18.html">2025-08-18</option><option value="2025-08-17.html">2025-08-17</option><option value="2025-08-16.html">2025-08-16</option><option value="2025-08-15.html">2025-08-15</option><option value="2025-08-14.html">2025-08-14</option><option value="2025-08-13.html">2025-08-13</option><option value="2025-08-12.html">2025-08-12</option><option value="2025-08-11.html">2025-08-11</option><option value="2025-08-10.html">2025-08-10</option><option value="2025-08-09.html">2025-08-09</option><option value="2025-08-08.html">2025-08-08</option><option value="2025-08-07.html">2025-08-07</option><option value="2025-08-06.html">2025-08-06</option><option value="2025-08-05.html">2025-08-05</option><option value="2025-08-04.html">2025-08-04</option><option value="2025-08-03.html">2025-08-03</option><option value="2025-08-02.html">2025-08-02</option><option value="2025-08-01.html">2025-08-01</option><option value="2025-07-31.html">2025-07-31</option><option value="2025-07-30.html">2025-07-30</option><option value="2025-07-29.html">2025-07-29</option><option value="2025-07-28.html">2025-07-28</option><option value="2025-07-27.html">2025-07-27</option><option value="2025-07-26.html">2025-07-26</option><option value="2025-07-25.html">2025-07-25</option><option value="2025-07-24.html">2025-07-24</option><option value="2025-07-23.html">2025-07-23</option><option value="2025-07-22.html">2025-07-22</option><option value="2025-07-21.html">2025-07-21</option><option value="2025-07-20.html">2025-07-20</option><option value="2025-07-19.html">2025-07-19</option><option value="2025-07-18.html">2025-07-18</option><option value="2025-07-17.html">2025-07-17</option><option value="2025-07-16.html">2025-07-16</option><option value="2025-07-15.html">2025-07-15</option><option value="2025-07-14.html">2025-07-14</option><option value="2025-07-13.html">2025-07-13</option><option value="2025-07-12.html">2025-07-12</option><option value="2025-07-11.html">2025-07-11</option><option value="2025-07-10.html">2025-07-10</option><option value="2025-07-09.html">2025-07-09</option><option value="2025-07-08.html">2025-07-08</option><option value="2025-07-07.html">2025-07-07</option><option value="2025-07-06.html">2025-07-06</option><option value="2025-07-05.html">2025-07-05</option><option value="2025-07-04.html">2025-07-04</option><option value="2025-07-03.html">2025-07-03</option><option value="2025-07-02.html">2025-07-02</option><option value="2025-07-01.html">2025-07-01</option><option value="2025-06-30.html">2025-06-30</option><option value="2025-06-29.html">2025-06-29</option><option value="2025-06-28.html">2025-06-28</option><option value="2025-06-27.html">2025-06-27</option><option value="2025-06-26.html">2025-06-26</option><option value="2025-06-25.html">2025-06-25</option><option value="2025-06-24.html">2025-06-24</option><option value="2025-06-23.html">2025-06-23</option><option value="2025-06-22.html">2025-06-22</option><option value="2025-06-21.html">2025-06-21</option><option value="2025-06-20.html">2025-06-20</option><option value="2025-06-19.html">2025-06-19</option><option value="2025-06-18.html">2025-06-18</option><option value="2025-06-17.html">2025-06-17</option><option value="2025-06-16.html">2025-06-16</option><option value="2025-06-15.html">2025-06-15</option><option value="2025-06-14.html">2025-06-14</option><option value="2025-06-13.html">2025-06-13</option><option value="2025-06-12.html">2025-06-12</option><option value="2025-06-11.html">2025-06-11</option><option value="2025-06-10.html">2025-06-10</option><option value="2025-06-09.html">2025-06-09</option><option value="2025-06-08.html">2025-06-08</option><option value="2025-06-07.html">2025-06-07</option><option value="2025-06-06.html">2025-06-06</option><option value="2025-06-05.html">2025-06-05</option><option value="2025-06-04.html">2025-06-04</option><option value="2025-06-03.html">2025-06-03</option><option value="2025-06-02.html">2025-06-02</option><option value="2025-06-01.html">2025-06-01</option><option value="2025-05-31.html">2025-05-31</option><option value="2025-05-30.html">2025-05-30</option><option value="2025-05-29.html">2025-05-29</option><option value="2025-05-28.html">2025-05-28</option><option value="2025-05-27.html">2025-05-27</option><option value="2025-05-26.html">2025-05-26</option><option value="2025-05-25.html">2025-05-25</option><option value="2025-05-24.html">2025-05-24</option><option value="2025-05-23.html">2025-05-23</option><option value="2025-05-22.html">2025-05-22</option><option value="2025-05-21.html">2025-05-21</option><option value="2025-05-20.html">2025-05-20</option><option value="2025-05-19.html">2025-05-19</option><option value="2025-05-18.html">2025-05-18</option><option value="2025-05-17.html">2025-05-17</option><option value="2025-05-16.html">2025-05-16</option><option value="2025-05-15.html">2025-05-15</option><option value="2025-05-14.html">2025-05-14</option><option value="2025-05-13.html">2025-05-13</option><option value="2025-05-12.html">2025-05-12</option><option value="2025-05-11.html">2025-05-11</option><option value="2025-05-10.html">2025-05-10</option><option value="2025-05-09.html">2025-05-09</option><option value="2025-05-08.html">2025-05-08</option><option value="2025-05-07.html">2025-05-07</option><option value="2025-05-06.html">2025-05-06</option><option value="2025-05-05.html">2025-05-05</option><option value="2025-05-04.html">2025-05-04</option><option value="2025-05-03.html">2025-05-03</option><option value="2025-05-02.html">2025-05-02</option><option value="2025-05-01.html">2025-05-01</option><option value="2025-04-30.html">2025-04-30</option><option value="2025-04-29.html">2025-04-29</option><option value="2025-04-28.html">2025-04-28</option><option value="2025-04-27.html">2025-04-27</option><option value="2025-04-26.html">2025-04-26</option><option value="2025-04-25.html">2025-04-25</option><option value="2025-04-24.html">2025-04-24</option><option value="2025-04-23.html">2025-04-23</option><option value="2025-04-22.html">2025-04-22</option><option value="2025-04-21.html">2025-04-21</option><option value="2025-04-20.html">2025-04-20</option><option value="2025-04-18.html">2025-04-18</option><option value="2025-04-17.html">2025-04-17</option><option value="2025-04-16.html">2025-04-16</option><option value="2025-04-15.html">2025-04-15</option><option value="2025-04-14.html">2025-04-14</option><option value="2025-04-13.html">2025-04-13</option><option value="2025-04-12.html">2025-04-12</option><option value="2025-04-11.html">2025-04-11</option><option value="2025-04-10.html">2025-04-10</option><option value="2025-04-09.html">2025-04-09</option><option value="2025-04-08.html">2025-04-08</option><option value="2025-04-07.html">2025-04-07</option><option value="2025-04-06.html">2025-04-06</option><option value="2025-04-05.html">2025-04-05</option><option value="2025-04-04.html">2025-04-04</option><option value="2025-04-03.html">2025-04-03</option><option value="2025-04-02.html">2025-04-02</option><option value="2025-04-01.html">2025-04-01</option><option value="2025-03-31.html">2025-03-31</option><option value="2025-03-28.html">2025-03-28</option><option value="2025-03-27.html">2025-03-27</option><option value="2025-03-21.html">2025-03-21</option><option value="2025-03-18.html">2025-03-18</option><option value="2025-03-01.html">2025-03-01</option><option value="2025-02-26.html">2025-02-26</option><option value="2025-02-10.html">2025-02-10</option><option value="2025-02-01.html">2025-02-01</option><option value="2025-01-05.html">2025-01-05</option><option value="2025-01-01.html">2025-01-01</option><option value="2024-12-01.html">2024-12-01</option><option value="2024-11-01.html">2024-11-01</option><option value="2024-10-01.html">2024-10-01</option><option value="2024-09-01.html">2024-09-01</option><option value="2024-08-27.html">2024-08-27</option><option value="2024-08-01.html">2024-08-01</option><option value="2024-06-01.html">2024-06-01</option><option value="2024-05-01.html">2024-05-01</option><option value="2024-04-22.html">2024-04-22</option><option value="2024-04-01.html">2024-04-01</option><option value="2024-03-15.html">2024-03-15</option><option value="2024-03-01.html">2024-03-01</option><option value="2024-02-23.html">2024-02-23</option><option value="2024-02-15.html">2024-02-15</option><option value="2024-02-14.html">2024-02-14</option><option value="2024-02-13.html">2024-02-13</option><option value="2024-02-12.html">2024-02-12</option><option value="2024-02-07.html">2024-02-07</option><option value="2024-02-05.html">2024-02-05</option><option value="2024-02-01.html">2024-02-01</option><option value="2024-01-31.html">2024-01-31</option><option value="2024-01-30.html">2024-01-30</option><option value="2024-01-29.html">2024-01-29</option><option value="2024-01-28.html">2024-01-28</option><option value="2024-01-27.html">2024-01-27</option><option value="2024-01-26.html">2024-01-26</option><option value="2024-01-25.html">2024-01-25</option><option value="2024-01-24.html">2024-01-24</option><option value="2024-01-23.html">2024-01-23</option><option value="2024-01-22.html">2024-01-22</option><option value="2024-01-21.html">2024-01-21</option><option value="2024-01-20.html">2024-01-20</option><option value="2024-01-19.html">2024-01-19</option><option value="2024-01-18.html">2024-01-18</option><option value="2024-01-17.html">2024-01-17</option><option value="2024-01-16.html">2024-01-16</option><option value="2024-01-15.html">2024-01-15</option><option value="2024-01-14.html">2024-01-14</option><option value="2024-01-13.html">2024-01-13</option><option value="2024-01-12.html">2024-01-12</option><option value="2024-01-11.html">2024-01-11</option><option value="2024-01-10.html">2024-01-10</option><option value="2024-01-09.html">2024-01-09</option><option value="2024-01-08.html">2024-01-08</option><option value="2024-01-07.html">2024-01-07</option><option value="2024-01-06.html">2024-01-06</option><option value="2024-01-05.html">2024-01-05</option><option value="2024-01-04.html">2024-01-04</option><option value="2024-01-03.html">2024-01-03</option><option value="2024-01-02.html">2024-01-02</option><option value="2024-01-01.html">2024-01-01</option><option value="2023-12-30.html">2023-12-30</option><option value="2023-12-28.html">2023-12-28</option><option value="2023-12-27.html">2023-12-27</option><option value="2023-12-26.html">2023-12-26</option><option value="2023-12-24.html">2023-12-24</option><option value="2023-12-19.html">2023-12-19</option><option value="2023-12-01.html">2023-12-01</option><option value="2023-11-21.html">2023-11-21</option><option value="2023-11-01.html">2023-11-01</option><option value="2023-08-01.html">2023-08-01</option><option value="2023-06-01.html">2023-06-01</option><option value="2023-01-01.html">2023-01-01</option></select><a class="navbtn" href="2025-09-07.html">2025-09-07 →</a><a class="navbtn" href="weekly/index.html">📅 Weekly</a><a class="navbtn" href="status.html">📊 Status</a><a class="navbtn" href="search.html">🔍 Search</a></div>
+<div class="stats"><div class="stat"><div class="stat-label">Total scored</div><div class="stat-val">12</div></div><div class="stat"><div class="stat-label">High</div><div class="stat-val" style="color:#27500A">0</div></div><div class="stat"><div class="stat-label">Medium</div><div class="stat-val" style="color:#633806">2</div></div><div class="stat"><div class="stat-label">Low</div><div class="stat-val" style="color:#5F5E5A">5</div></div></div>
+<div class="tabs"><button class="tab active" data-filter="all">All</button><button class="tab" data-filter="ai_bioprinting">AI for Bioprinting</button><button class="tab" data-filter="hip_implant">Hip Implant &amp; Femoral Stem</button><button class="tab" data-filter="fea_surrogate">FEA &amp; Surrogate Modelling</button><button class="tab" data-filter="am_biomedical">AM Biomedical Materials</button></div>
+<div class="prio-filter"><button class="pf active" data-prio="HighMedium">High+Medium</button><button class="pf" data-prio="High">High only</button><button class="pf" data-prio="all">Show all</button></div>
+
+<article class="paper" data-direction="fea_surrogate" data-priority="Medium">
+  <div class="paper-head">
+    <span class="priority" style="background:#FAEEDA;color:#633806">Medium</span>
+    <span class="direction-pill" style="background:#D85A3020;color:#D85A30">FEA &amp; Surrogate Modelling</span>
+    <span class="source">arxiv</span>
+    <span class="relevance-level lvl-transferable">Transferable</span>
+    <span class="read-action act-save-for-project">Save for project</span>
+    <span class="validation-kind">simulation_case</span>
+    
+  </div>
+  <h3 class="paper-title">Hybrid Fourier Neural Operator-Plasma Fluid Model for Fast and Accurate Multiscale Simulations of High Power Microwave Breakdown</h3>
+  <div class="meta">
+    <span class="authors">Kalp Pandya, Pratik Ghosh, Ajeya Mandikal, Shivam Gandha, Bhaskar Chaudhury</span>
+    <span class="venue">arXiv preprint</span>
+    <span class="date">2025-09-06</span>
+    <span class="doi"><a href="http://arxiv.org/abs/2509.05799v1" target="_blank">link</a></span>
+  </div>
+  
+  
+  <div class="relevance"><b>相关性:</b> 该论文的混合FNO-物理模型方法可迁移至生物力学FEA代理建模，但未涉及植入物设计或约束优化。</div>
+  <div class="why-not-core"><b>边界:</b> No biomechanics or implant FEA context; no constraint handling or uncertainty quantification; validation only on plasma streamer simulations.</div>
+  <div class="summary">
+    <div><b>动机·</b> 高功率微波击穿多尺度模拟计算开销大，需快速替代方法。</div>
+    <div><b>方法·</b> 用FNO替代电磁场求解器，与等离子流体模型耦合形成混合代理模型。</div>
+    <div><b>结果·</b> 混合模型在二维流注形成预测中与FDTD结果高度一致，加速比达60倍。</div>
+    <div><b>验证·</b> 对未见入射电场下的流注模拟进行验证，对比FDTD基准。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> Multiscale simulations of high-power microwave breakdown are computationally expensive, motivating a fast surrogate for the electromagnetic solver.</div>
+      <div><b>Method·</b> A Fourier Neural Operator replaces the FDTD-based EM field updates, coupled with a differential plasma fluid solver in a hybrid framework.</div>
+      <div><b>Result·</b> The hybrid model predicts streamer shape, velocity, and evolution accurately for unseen incident fields, achieving 60x speedup.</div>
+      <div><b>Validation·</b> Validated against FDTD plasma-fluid simulations for 2D microwave streamer formation with new incident fields not seen in training.</div>
+    </div>
+    <div class="key-terms">
+      <span class="term"><b>Fourier Neural Operator</b> · 傅里叶神经算子</span><span class="term"><b>surrogate modeling</b> · 代理建模</span><span class="term"><b>multiscale simulation</b> · 多尺度模拟</span><span class="term"><b>high power microwave breakdown</b> · 高功率微波击穿</span><span class="term"><b>plasma fluid model</b> · 等离子体流体模型</span><span class="term"><b>FDTD</b> · 时域有限差分</span><span class="term"><b>neural operator</b> · 神经算子</span><span class="term"><b>hybrid model</b> · 混合模型</span>
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">neural operator</span> <span class="tag">surrogate modeling</span> <span class="tag">multiscale simulation</span> <span class="tag">Fourier Neural Operator</span> <span class="tag">plasma physics</span></div>
+</article>
+<article class="paper" data-direction="hip_implant" data-priority="Medium">
+  <div class="paper-head">
+    <span class="priority" style="background:#FAEEDA;color:#633806">Medium</span>
+    <span class="direction-pill" style="background:#1D9E7520;color:#1D9E75">Hip Implant &amp; Femoral Stem</span>
+    <span class="source">openalex</span>
+    <span class="relevance-level lvl-transferable">Transferable</span>
+    <span class="read-action act-skim-only">Skim only</span>
+    <span class="validation-kind">clinical</span>
+    
+  </div>
+  <h3 class="paper-title">Long-term results of the metaphyseal-loading anterolaterally flared anatomic femoral stem for total hip arthroplasty</h3>
+  <div class="meta">
+    <span class="authors">Makoto Kitade, Tetsuro Tani, Akihiko Matsumine</span>
+    <span class="venue">International Orthopaedics</span>
+    <span class="date">2025-09-06</span>
+    <span class="doi"><a href="https://doi.org/10.1007/s00264-025-06624-y" target="_blank">10.1007/s00264-025-06624-y</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> University of Fukui, Fukui, Japan. makoto8@u-fukui.ac.jp</div>
+  <div class="corresponding"><b>通讯:</b> Makoto Kitade <span class="corresp-aff">@ University of Fukui, Fukui, Japan. makoto8@u-fukui.ac.jp</span></div>
+  <div class="relevance"><b>相关性:</b> 该论文提供了两种股骨柄的长期临床应力遮挡结果，但没有涉及有限元建模或接触力学分析。</div>
+  <div class="why-not-core"><b>边界:</b> No finite element analysis, no micromotion quantification, no patient-specific modeling, and no comparison of intact vs implanted femur mechanics.</div>
+  <div class="summary">
+    <div><b>动机·</b> 评估两种解剖型股骨柄在DDH患者中的长期临床和影像学结果</div>
+    <div><b>方法·</b> 对119例髋关节进行回顾性分析，使用Kaplan-Meier评估生存率</div>
+    <div><b>结果·</b> 两种柄均具有优异长期存活率，但Anatomical Fit柄未减少应力遮挡</div>
+    <div><b>验证·</b> 基于临床影像学（Gruen区）的应力遮挡分级</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> To evaluate the long-term clinical and radiographic outcomes of two metaphyseal-loading anatomic femoral stems in patients with DDH.</div>
+      <div><b>Method·</b> Retrospective analysis of 119 hips with Kaplan-Meier survival estimation and radiographic evaluation of stress shielding.</div>
+      <div><b>Result·</b> Both stems showed excellent long-term survival, but the Anatomic Fit stem did not reduce stress shielding despite design modifications.</div>
+      <div><b>Validation·</b> Clinical radiographic assessment using Gruen zone stress shielding grading.</div>
+    </div>
+    <div class="key-terms">
+      <span class="term"><b>total hip arthroplasty</b> · 全髋关节置换术</span><span class="term"><b>stress shielding</b> · 应力遮挡</span><span class="term"><b>femoral stem</b> · 股骨柄</span><span class="term"><b>developmental dysplasia of the hip</b> · 发育性髋关节发育不良</span><span class="term"><b>Gruen zones</b> · Gruen分区</span><span class="term"><b>Kaplan-Meier survival</b> · Kaplan-Meier生存分析</span>
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">total hip arthroplasty</span> <span class="tag">stress shielding</span> <span class="tag">femoral stem</span> <span class="tag">developmental dysplasia of the hip</span></div>
+</article>
+<article class="paper" data-direction="ai_bioprinting" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#7F77DD20;color:#7F77DD">AI for Bioprinting</span>
+    <span class="source">openalex</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Natural‐Based Nanocomposite Ink Engineering for Seamless Multi‐Material Integration in Extrusion‐Based 3D Printing</h3>
+  <div class="meta">
+    <span class="authors">João Rocha Maia, Miguel Bilo, Daniel Fidalgo, Pedro Rebolo, Ana Sofia Silva et al.</span>
+    <span class="venue">Advanced Healthcare Materials</span>
+    <span class="date">2025-09-06</span>
+    <span class="doi"><a href="https://doi.org/10.1002/adhm.202502733" target="_blank">10.1002/adhm.202502733</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Department of Chemistry CICECO – Aveiro Institute of Materials University of Aveiro  Aveiro 3810‐193 Portugal</div>
+  <div class="corresponding"><b>通讯:</b> Rita Sobreiro‐Almeida <span class="corresp-aff">@ Department of Chemistry CICECO – Aveiro Institute of Materials University of Aveiro  Aveiro 3810‐193 Portugal</span> &nbsp;|&nbsp; João F. Mano <span class="corresp-aff">@ Department of Chemistry CICECO – Aveiro Institute of Materials University of Aveiro  Aveiro 3810‐193 Portugal</span></div>
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="am_biomedical" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#185FA520;color:#185FA5">AM Biomedical Materials</span>
+    <span class="source">arxiv</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Reverse Engineering of Additively Manufactured Parts: Integrating 3D Scanning and Simulation-Driven Distortion Compensation</h3>
+  <div class="meta">
+    <span class="authors">Jannatul Bushra, Md Habibor Rahman, Mohammed Shafae, Hannah D. Budinoff</span>
+    <span class="venue">arXiv preprint</span>
+    <span class="date">2025-09-06</span>
+    <span class="doi"><a href="https://doi.org/10.1108/RPJ-06-2024-0267" target="_blank">10.1108/RPJ-06-2024-0267</a></span>
+  </div>
+  
+  
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="fea_surrogate" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#D85A3020;color:#D85A30">FEA &amp; Surrogate Modelling</span>
+    <span class="source">arxiv</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Data-Driven Stochastic Modeling Using Autoregressive Sequence Models: Translating Event Tables to Queueing Dynamics</h3>
+  <div class="meta">
+    <span class="authors">Daksh Mittal, Shunri Zheng, Jing Dong, Hongseok Namkoong</span>
+    <span class="venue">arXiv preprint</span>
+    <span class="date">2025-09-06</span>
+    <span class="doi"><a href="http://arxiv.org/abs/2509.05839v1" target="_blank">link</a></span>
+  </div>
+  
+  
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="fea_surrogate" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#D85A3020;color:#D85A30">FEA &amp; Surrogate Modelling</span>
+    <span class="source">arxiv</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Performance of Conformal Prediction in Capturing Aleatoric Uncertainty</h3>
+  <div class="meta">
+    <span class="authors">Misgina Tsighe Hagos, Claes Lundström</span>
+    <span class="venue">arXiv preprint</span>
+    <span class="date">2025-09-06</span>
+    <span class="doi"><a href="http://arxiv.org/abs/2509.05826v2" target="_blank">link</a></span>
+  </div>
+  
+  
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="fea_surrogate" data-priority="Low">
+  <div class="paper-head">
+    <span class="priority" style="background:#F1EFE8;color:#5F5E5A">Low</span>
+    <span class="direction-pill" style="background:#D85A3020;color:#D85A30">FEA &amp; Surrogate Modelling</span>
+    <span class="source">arxiv</span>
+    
+    
+    
+    
+  </div>
+  <h3 class="paper-title">Accelerated Design of Mechanically Hard Magnetically Soft High-entropy Alloys via Multi-objective Bayesian Optimization</h3>
+  <div class="meta">
+    <span class="authors">Mian Dai, Yixuan Zhang, Weijia He, Chen Shen, Xiaoqing Li et al.</span>
+    <span class="venue">arXiv preprint</span>
+    <span class="date">2025-09-06</span>
+    <span class="doi"><a href="http://arxiv.org/abs/2509.05702v2" target="_blank">link</a></span>
+  </div>
+  
+  
+  <div class="relevance"><b>相关性:</b> </div>
+  
+  <div class="summary">
+    <div><b>动机·</b> </div>
+    <div><b>方法·</b> </div>
+    <div><b>结果·</b> </div>
+    <div><b>验证·</b> </div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> </div>
+      <div><b>Method·</b> </div>
+      <div><b>Result·</b> </div>
+      <div><b>Validation·</b> </div>
+    </div>
+    <div class="key-terms">
+      
+    </div>
+  </details>
+  <div class="tags-row"></div>
+</article>
+<article class="paper" data-direction="ai_bioprinting" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#7F77DD20;color:#7F77DD">AI for Bioprinting</span>
+    <span class="source">openalex</span>
+    <span class="relevance-level lvl-peripheral">Peripheral</span>
+    <span class="read-action act-ignore">Ignore</span>
+    <span class="validation-kind">in_vitro</span>
+    <span class="flag">Exp. validation</span>
+  </div>
+  <h3 class="paper-title">Engineering Volumetric Tissue Analogs via Assembly of Endothelial Cell‐Covered Spheroidal Microtissues</h3>
+  <div class="meta">
+    <span class="authors">Hyeongkwon Oh, Jae‐Hun Kim, Sunwoo Lee, Jin‐Hyung Shim, Won‐Soo Yun et al.</span>
+    <span class="venue">Advanced Healthcare Materials</span>
+    <span class="date">2025-09-06</span>
+    <span class="doi"><a href="https://doi.org/10.1002/adhm.202502418" target="_blank">10.1002/adhm.202502418</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Research Institute T&amp;amp;R Biofab. Co. Ltd.  242 Pangyo‐ro Seongnam‐si Gyeonggi‐do 13487 Republic of Korea</div>
+  <div class="corresponding"><b>通讯:</b> Songwan Jin <span class="corresp-aff">@ Department of Mechanical Engineering Tech University of Korea  237 Sangidaehak‐ro Siheung‐si Gyeonggi‐do 15073 Republic </span></div>
+  <div class="relevance"><b>相关性:</b> 该论文专注于组织工程中的血管化体积组织构建，未涉及AI或生物打印中的任何智能控制或优化步骤。</div>
+  <div class="why-not-core"><b>边界:</b> This paper does not incorporate AI/ML into any bioprinting workflow stage, lacks experimental validation of AI models, and does not advance toward autonomous decision-making.</div>
+  <div class="summary">
+    <div><b>动机·</b> 组织工程中微血管网络建立困难限制了工程组织的大小。</div>
+    <div><b>方法·</b> 通过预置挤出生物打印和微流控乳化制备内皮细胞覆盖的球状微组织，并组装形成血管化组织。</div>
+    <div><b>结果·</b> 组装后的组织具有功能性微血管网络，通过控制灌注速率可培养7天。</div>
+    <div><b>验证·</b> 体外培养7天验证组织活性和血管结构。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> The lack of microvascular networks limits the size of engineered tissues for transplantation.</div>
+      <div><b>Method·</b> Endothelial cell-covered spheroidal microtissues were fabricated via extrusion bioprinting and microfluidic emulsification, then assembled to form vascularized tissue constructs.</div>
+      <div><b>Result·</b> Assembled tissues exhibited functional microvascular networks and could be cultured for 7 days in vitro with controlled perfusion.</div>
+      <div><b>Validation·</b> In vitro culture for 7 days demonstrated tissue viability and vascular channel preservation.</div>
+    </div>
+    <div class="key-terms">
+      <span class="term"><b>tissue engineering</b> · 组织工程</span><span class="term"><b>vascularization</b> · 血管化</span><span class="term"><b>spheroidal microtissues</b> · 球状微组织</span><span class="term"><b>extrusion bioprinting</b> · 挤出生物打印</span><span class="term"><b>microfluidic emulsification</b> · 微流控乳化</span><span class="term"><b>endothelial cells</b> · 内皮细胞</span><span class="term"><b>perfusion</b> · 灌注</span><span class="term"><b>volumetric tissue</b> · 体积组织</span>
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">tissue engineering</span> <span class="tag">vascularization</span> <span class="tag">spheroidal microtissues</span> <span class="tag">extrusion bioprinting</span> <span class="tag">microfluidic emulsification</span></div>
+</article>
+<article class="paper" data-direction="am_biomedical" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#185FA520;color:#185FA5">AM Biomedical Materials</span>
+    <span class="source">openalex</span>
+    <span class="relevance-level lvl-peripheral">Peripheral</span>
+    <span class="read-action act-ignore">Ignore</span>
+    <span class="validation-kind">simulation_case</span>
+    <span class="flag">Exp. validation</span>
+  </div>
+  <h3 class="paper-title">Selective laser melting-assisted venturi-type nozzle in a pressurized dissolution microbubble generator</h3>
+  <div class="meta">
+    <span class="authors">Minhoo Chung, Dae Won Cho, Upendra Tuladhar, Hyonkee Sohn, Tae Wook Kang et al.</span>
+    <span class="venue">Materials &amp; Design</span>
+    <span class="date">2025-09-06</span>
+    <span class="doi"><a href="https://doi.org/10.1016/j.matdes.2025.114705" target="_blank">10.1016/j.matdes.2025.114705</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Department of Materials Science and Engineering, Seoul National University of Science and Technology, Seoul 01811, Republic of Korea</div>
+  <div class="corresponding"><b>通讯:</b> Changkyoo Park <span class="corresp-aff">@ Department of Materials Science and Engineering, Seoul National University of Science and Technology, Seoul 01811, Repub</span></div>
+  <div class="relevance"><b>相关性:</b> 该论文涉及SLM制造微泡发生器喷嘴，与生物医学植入物的应力屏蔽、疲劳或骨整合无关。</div>
+  <div class="why-not-core"><b>边界:</b> No focus on biomedical implants, no stress shielding or stiffness matching, no fatigue testing, no osseointegration discussion.</div>
+  <div class="summary">
+    <div><b>动机·</b> 利用SLM制造文丘里喷嘴结构以增强微泡生成</div>
+    <div><b>方法·</b> 在喷嘴分布板上构建不同几何形状的SLM结构，进行实验和CFD模拟</div>
+    <div><b>结果·</b> SLM结构通过涡流空化使微泡数量增加75.4%</div>
+    <div><b>验证·</b> 微泡生成实验与CFD模拟验证</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> To enhance microbubble generation efficiency by applying SLM-fabricated structures to a venturi nozzle.</div>
+      <div><b>Method·</b> SLM was used to fabricate stainless steel 316L structures with varying sidewall angles and central empty spaces on the distributor plate of a venturi nozzle, followed by microbubble generation experiments and CFD simulations.</div>
+      <div><b>Result·</b> The SLM structures increased microbubble count by 75.4% via vortex-induced cavitation, producing up to 70,490 bubbles with a mean size of 31.82 μm.</div>
+      <div><b>Validation·</b> Experimental microbubble generation tests and CFD simulations confirmed the mechanism of turbulent vortex cavitation.</div>
+    </div>
+    <div class="key-terms">
+      <span class="term"><b>selective laser melting (SLM)</b> · 选择性激光熔化</span><span class="term"><b>microbubble generation</b> · 微泡生成</span><span class="term"><b>venturi nozzle</b> · 文丘里喷嘴</span><span class="term"><b>cavitation</b> · 空化</span><span class="term"><b>vortex turbulence</b> · 涡流湍流</span><span class="term"><b>stainless steel 316L</b> · 316L不锈钢</span><span class="term"><b>computational fluid dynamics (CFD)</b> · 计算流体动力学</span>
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">SLM</span> <span class="tag">microbubble</span> <span class="tag">venturi nozzle</span> <span class="tag">cavitation</span></div>
+</article>
+<article class="paper" data-direction="fea_surrogate" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#D85A3020;color:#D85A30">FEA &amp; Surrogate Modelling</span>
+    <span class="source">arxiv</span>
+    <span class="relevance-level lvl-peripheral">Peripheral</span>
+    <span class="read-action act-ignore">Ignore</span>
+    <span class="validation-kind">numerical_benchmark</span>
+    
+  </div>
+  <h3 class="paper-title">DQS: A Low-Budget Query Strategy for Enhancing Unsupervised Data-driven Anomaly Detection Approaches</h3>
+  <div class="meta">
+    <span class="authors">Lucas Correia, Jan-Christoph Goos, Thomas Bäck, Anna V. Kononova</span>
+    <span class="venue">arXiv preprint</span>
+    <span class="date">2025-09-06</span>
+    <span class="doi"><a href="http://arxiv.org/abs/2509.05663v3" target="_blank">link</a></span>
+  </div>
+  
+  
+  <div class="relevance"><b>相关性:</b> 该论文专注于时间序列异常检测中的主动学习查询策略，不涉及有限元代理建模、不确定性量化或生物力学设计优化。</div>
+  <div class="why-not-core"><b>边界:</b> This paper addresses anomaly detection and active learning for time series, with no connection to surrogate modeling, finite element analysis, uncertainty quantification, or implant/biomechanics design.</div>
+  <div class="summary">
+    <div><b>动机·</b> 现有无监督异常检测方法因阈值设置不当性能受限。</div>
+    <div><b>方法·</b> 提出基于动态时间规整的差异查询策略DQS，主动标注少量样本优化阈值。</div>
+    <div><b>结果·</b> 小预算下DQS表现最佳，但面对误标注不如其他策略鲁棒。</div>
+    <div><b>验证·</b> 在多个时间序列数据集上与基线查询策略对比验证。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> Existing unsupervised anomaly detection methods suffer from poorly set thresholds, motivating an active learning approach to refine them with minimal labeled data.</div>
+      <div><b>Method·</b> A novel query strategy called dissimilarity-based query strategy (DQS) is introduced, which uses dynamic time warping to maximize sample diversity in anomaly score space.</div>
+      <div><b>Result·</b> DQS outperforms other query strategies in low-budget settings, though it is less robust to labeling errors; all active strategies improve over unsupervised thresholds.</div>
+      <div><b>Validation·</b> Evaluated on multivariate time series datasets comparing detection performance across query strategies and under various mislabeling scenarios.</div>
+    </div>
+    <div class="key-terms">
+      <span class="term"><b>active learning</b> · 主动学习</span><span class="term"><b>anomaly detection</b> · 异常检测</span><span class="term"><b>query strategy</b> · 查询策略</span><span class="term"><b>dynamic time warping</b> · 动态时间规整</span><span class="term"><b>threshold selection</b> · 阈值选择</span>
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">anomaly detection</span> <span class="tag">active learning</span> <span class="tag">time series</span> <span class="tag">query strategy</span> <span class="tag">unsupervised learning</span></div>
+</article>
+<article class="paper" data-direction="hip_implant" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#1D9E7520;color:#1D9E75">Hip Implant &amp; Femoral Stem</span>
+    <span class="source">openalex</span>
+    <span class="relevance-level lvl-peripheral">Peripheral</span>
+    <span class="read-action act-ignore">Ignore</span>
+    <span class="validation-kind">none</span>
+    
+  </div>
+  <h3 class="paper-title">Surgical Approach Does Not Influence Instability Risk in Primary Total Hip Arthroplasty With Monobloc Dual Mobility Cup</h3>
+  <div class="meta">
+    <span class="authors">Axel Machado, Constant Foissey, Elsayed Ahmed Abdelatif, Cécile Batailler, Sébastien Lustıg</span>
+    <span class="venue">The Journal of Arthroplasty</span>
+    <span class="date">2025-09-06</span>
+    <span class="doi"><a href="https://doi.org/10.1016/j.arth.2025.08.081" target="_blank">10.1016/j.arth.2025.08.081</a></span>
+  </div>
+  <div class="affiliations"><b>单位:</b> Orthopaedic Surgery and Sports Medicine Department, FIFA Medical Center of Excellence, Croix-Rousse Hospital, Lyon University Hospital, Lyon, France</div>
+  <div class="corresponding"><b>通讯:</b> Axel Machado <span class="corresp-aff">@ Orthopaedic Surgery and Sports Medicine Department, FIFA Medical Center of Excellence, Croix-Rousse Hospital, Lyon Unive</span></div>
+  <div class="relevance"><b>相关性:</b> 该论文仅关注临床手术入路与脱位风险，未涉及任何生物力学建模、应力遮挡或微动分析。</div>
+  <div class="why-not-core"><b>边界:</b> No biomechanics modeling, no FEA, no stress shielding or micromotion quantification, and no comparison of intact vs. implanted femur.</div>
+  <div class="summary">
+    <div><b>动机·</b> 比较不同手术入路对初次全髋关节置换术后脱位风险的影响</div>
+    <div><b>方法·</b> 回顾性分析单壳双动杯THA患者数据，比较不同入路的脱位率</div>
+    <div><b>结果·</b> 手术入路不影响单壳双动杯THA的脱位风险</div>
+    <div><b>验证·</b> 临床回顾性数据分析</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> To compare dislocation risk among different surgical approaches in primary total hip arthroplasty with monobloc dual mobility cups.</div>
+      <div><b>Method·</b> Retrospective analysis of patient data comparing dislocation rates across posterior, lateral, and anterior approaches.</div>
+      <div><b>Result·</b> No significant difference in dislocation risk was found among surgical approaches.</div>
+      <div><b>Validation·</b> Clinical retrospective cohort study with statistical comparison.</div>
+    </div>
+    <div class="key-terms">
+      <span class="term"><b>total hip arthroplasty</b> · 全髋关节置换术</span><span class="term"><b>dual mobility cup</b> · 双动杯</span><span class="term"><b>surgical approach</b> · 手术入路</span><span class="term"><b>dislocation</b> · 脱位</span><span class="term"><b>instability</b> · 不稳定性</span>
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">total hip arthroplasty</span> <span class="tag">dual mobility cup</span> <span class="tag">surgical approach</span> <span class="tag">instability</span></div>
+</article>
+<article class="paper" data-direction="hip_implant" data-priority="Exclude">
+  <div class="paper-head">
+    <span class="priority" style="background:#FCEBEB;color:#791F1F">Exclude</span>
+    <span class="direction-pill" style="background:#1D9E7520;color:#1D9E75">Hip Implant &amp; Femoral Stem</span>
+    <span class="source">openalex</span>
+    <span class="relevance-level lvl-peripheral">Peripheral</span>
+    <span class="read-action act-ignore">Ignore</span>
+    <span class="validation-kind">clinical</span>
+    <span class="flag">Patient-specific</span>
+  </div>
+  <h3 class="paper-title">Catastrophic Wear-induced Pseudotumor Formation 20 Years Post-total Hip Arthroplasty: A Rare Complication of Non-Metal-on-Metal (MoM) THR</h3>
+  <div class="meta">
+    <span class="authors">Ifeanyi C. Agwulonu, Olusunmade Opeyemi, Hakeem Badmus, Idowu Oluwseyi, Osuala Chinonye et al.</span>
+    <span class="venue"></span>
+    <span class="date">2025-09-06</span>
+    <span class="doi"><a href="https://doi.org/10.9734/ajcrmh/2025/v8i1258" target="_blank">10.9734/ajcrmh/2025/v8i1258</a></span>
+  </div>
+  
+  
+  <div class="relevance"><b>相关性:</b> 该论文为临床病例报告，未涉及生物力学建模或有限元分析。</div>
+  <div class="why-not-core"><b>边界:</b> No biomechanics modeling, no stress shielding or micromotion quantification, no FEA, no implant design comparison.</div>
+  <div class="summary">
+    <div><b>动机·</b> 报告非金属对金属全髋关节置换术后20年因严重磨损导致假瘤形成的罕见并发症。</div>
+    <div><b>方法·</b> 临床病例报告。</div>
+    <div><b>结果·</b> 假瘤形成由磨损引起。</div>
+    <div><b>验证·</b> 单病例临床观察。</div>
+  </div>
+  <details class="summary-en">
+    <summary>English summary &amp; terms</summary>
+    <div class="summary en">
+      <div><b>Motivation·</b> To report a rare complication of catastrophic wear-induced pseudotumor formation 20 years after non-metal-on-metal total hip arthroplasty.</div>
+      <div><b>Method·</b> Clinical case report with patient history and imaging findings.</div>
+      <div><b>Result·</b> Pseudotumor formation was attributed to severe polyethylene wear.</div>
+      <div><b>Validation·</b> Validation based on clinical observation and diagnostic imaging of a single case.</div>
+    </div>
+    <div class="key-terms">
+      <span class="term"><b>total hip arthroplasty</b> · 全髋关节置换术</span><span class="term"><b>pseudotumor</b> · 假瘤</span><span class="term"><b>wear</b> · 磨损</span><span class="term"><b>catastrophic failure</b> · 灾难性失效</span><span class="term"><b>non-metal-on-metal</b> · 非金属对金属</span>
+    </div>
+  </details>
+  <div class="tags-row"><span class="tag">total hip arthroplasty</span> <span class="tag">wear</span> <span class="tag">pseudotumor</span> <span class="tag">clinical case report</span> <span class="tag">catastrophic wear</span></div>
+</article>
+
+<script>
+const tabs = document.querySelectorAll('.tab');
+const pfs = document.querySelectorAll('.pf');
+let dirFilter = 'all';
+let prioFilter = 'HighMedium';
+function applyFilters(){
+  document.querySelectorAll('.paper').forEach(p=>{
+    const d = p.dataset.direction;
+    const pr = p.dataset.priority;
+    const dirOk = dirFilter==='all' || dirFilter===d;
+    const prOk = prioFilter==='all'
+                  || (prioFilter==='High' && pr==='High')
+                  || (prioFilter==='HighMedium' && (pr==='High'||pr==='Medium'));
+    p.dataset.hidden = (dirOk && prOk) ? '0' : '1';
+  });
+}
+tabs.forEach(t=>t.onclick=()=>{tabs.forEach(x=>x.classList.remove('active'));t.classList.add('active');dirFilter=t.dataset.filter;applyFilters();});
+pfs.forEach(t=>t.onclick=()=>{pfs.forEach(x=>x.classList.remove('active'));t.classList.add('active');prioFilter=t.dataset.prio;applyFilters();});
+applyFilters();
+</script>
+</body></html>
