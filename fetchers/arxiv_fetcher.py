@@ -46,7 +46,7 @@ def fetch(categories: list[str], days_back: int = 1,
         cutoff_date = dt.date.today() - dt.timedelta(days=days_back)
         effective_max_results = max_results if max_results is not None else 2000
 
-    wait_seconds = [0, 60, 180]
+    wait_seconds = [0]  # PAUSED retry for 10-year historical backfill 2015-01..2024-12; arxiv 429s fail-fast and run_historical continues without arxiv data this window
     last_error = None
 
     for attempt, wait in enumerate(wait_seconds, 1):
