@@ -4,7 +4,9 @@ All five affordances are rendered server-side by render/build_pages.py into
 static HTML + a copied JS/CSS bundle; behaviour itself is client-side and not
 exercised here. These tests assert the *markup contract* the JS depends on:
 
-  D1  index.html priority-count badges + low-quality day class
+  D1  index.html is a month list (C1) with month-aggregate count badges;
+      month-YYYY-MM.html lists that month's days with per-day badges and
+      a top-paper preview line (A3) for High/Medium days
   D2  high-priority.html / medium-priority.html exist and are single-priority
   D3  each daily page has the priority filter bar + data-priority on cards
   D4  every paper card carries mark + note controls with its identity key
@@ -124,20 +126,44 @@ def _article_priorities(html: str) -> list[str]:
 
 # ---------------------------------------------------------------- D1
 
-def test_d1_index_has_priority_count_badges_and_low_quality_class(built):
+def test_c1_index_is_a_month_list_with_aggregate_counts(built):
     idx = (built / "index.html").read_text(encoding="utf-8")
+    # C1: index links to month pages, not to flat dates anymore.
+    assert "month-2024-12.html" in idx
+    assert "2024-12-10.html" not in idx  # the flat date list is gone
+    # Month-level aggregate count badge. The fixture's only month, 2024-12,
+    # has 2 High (12-09, 12-10), 1 Medium, 2 Low (12-10, 12-11), 2 Exclude.
     assert 'class="rui-daycount"' in idx
-    # 2024-12-10 had 1H 1M 1L 1X
-    assert '<span class="dc-h">1H</span>' in idx
+    assert '<span class="dc-h">2H</span>' in idx
     assert '<span class="dc-m">1M</span>' in idx
-    assert '<span class="dc-l">1L</span>' in idx
-    # The Low+Exclude-only day is greyed, not hidden (ADR-0016 Q1)
-    assert 'class="day-low-quality"' in idx
-    assert "2024-12-11.html" in idx  # still listed, not removed
-    # Cross-corpus + curation entry points linked from the header
+    assert '<span class="dc-l">2L</span>' in idx
+    # Cross-corpus + curation entry points still linked from the header
     for href in ("high-priority.html", "medium-priority.html",
                  "my-marks.html", "my-promotes.html"):
         assert href in idx
+
+
+def test_c1_a3_month_page_lists_days_with_badges_and_previews(built):
+    page = built / "month-2024-12.html"
+    assert page.exists()
+    html = page.read_text(encoding="utf-8")
+    # Lists each day in the month, newest first, with per-day badges.
+    for d in ("2024-12-09.html", "2024-12-10.html", "2024-12-11.html"):
+        assert d in html
+    assert html.index("2024-12-11.html") < html.index("2024-12-09.html")
+    assert '<span class="dc-h">1H</span>' in html  # a per-day badge
+    # Header nav back to the calendar
+    assert 'href="index.html"' in html
+    # The Low+Exclude-only day is greyed, not hidden (ADR-0016 Q1)
+    assert 'class="day-low-quality"' in html
+    # A3: High/Medium days get a one-line top-paper preview...
+    lis = re.findall(r"<li.*?</li>", html, re.S)
+    li_10 = next(li for li in lis if "2024-12-10.html" in li)
+    assert 'class="rui-day-preview"' in li_10
+    assert "High Paper One" in li_10
+    # ...but a Low/Exclude-only day gets no preview line.
+    li_11 = next(li for li in lis if "2024-12-11.html" in li)
+    assert 'class="rui-day-preview"' not in li_11
 
 
 # ---------------------------------------------------------------- D2

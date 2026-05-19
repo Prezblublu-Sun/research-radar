@@ -423,16 +423,126 @@ def _day_count_badge(counts: dict) -> str:
     return '<span class="rui-daycount">' + " ".join(parts) + "</span>"
 
 
-def _render_index(archive_dates, day_counts: dict | None = None):
-    day_counts = day_counts or {}
-    latest = archive_dates[-1] if archive_dates else ""
+def _month_count_badge(day_counts_in_month: list[dict]) -> str:
+    """CHANGE C1: month aggregate badge — sum every day's priority_counts.
+
+    Reuses _day_count_badge's dc-h/dc-m/dc-l/dc-x span markup so a month
+    row reads identically to a day row, just summed (e.g. '25H 87M 247L
+    893X').
+    """
+    agg: dict = {}
+    for c in day_counts_in_month:
+        for k in ("High", "Medium", "Low", "Exclude"):
+            v = c.get(k, 0)
+            if v:
+                agg[k] = agg.get(k, 0) + v
+    return _day_count_badge(agg)
+
+
+def _day_top_paper_preview(papers: list[dict]) -> str:
+    """CHANGE A3: one-line preview of a day's top paper, or "".
+
+    Pick the first High paper in the bucket's list order; if none, the
+    first Medium. Days with only Low/Exclude get no preview (returns "")
+    so low-quality days stay short. Title is truncated to 80 chars; venue
+    falls back to source; tag is the first of p.llm.tags. Any missing
+    field is skipped rather than rendered as "None".
+    """
+    top = None
+    for want in ("High", "Medium"):
+        for p in papers:
+            if p.get("llm", {}).get("priority") == want:
+                top = p
+                break
+        if top is not None:
+            break
+    if top is None:
+        return ""
+
+    spans = []
+    title = (top.get("title") or "").strip()
+    if title:
+        if len(title) > 80:
+            title = title[:80] + "…"
+        spans.append(f'<span class="rui-prev-title">{_esc(title)}</span>')
+    venue = (top.get("venue") or "").strip() or (top.get("source") or "").strip()
+    if venue:
+        spans.append(f'<span class="rui-prev-venue">{_esc(venue)}</span>')
+    tags = top.get("llm", {}).get("tags") or []
+    if tags and str(tags[0]).strip():
+        spans.append(f'<span class="rui-prev-tag">#{_esc(tags[0])}</span>')
+    if not spans:
+        return ""
+    return '<div class="rui-day-preview">' + "".join(spans) + "</div>"
+
+
+def _month_topbar(month_key: str, archive_months: list[str]) -> str:
+    """CHANGE C1: month-page header — back-to-calendar + prev/next month."""
+    months = sorted(archive_months)
+    try:
+        idx = months.index(month_key)
+    except ValueError:
+        idx = len(months) - 1
+    prev_m = months[idx - 1] if idx > 0 else None
+    next_m = months[idx + 1] if idx < len(months) - 1 else None
+    prev_btn = (f'<a class="navbtn" href="month-{prev_m}.html">← {prev_m}</a>'
+                if prev_m else '<span class="navbtn disabled">← oldest</span>')
+    next_btn = (f'<a class="navbtn" href="month-{next_m}.html">{next_m} →</a>'
+                if next_m else '<span class="navbtn disabled">latest →</span>')
+    back = '<a class="navbtn" href="index.html">📅 Back to calendar</a>'
+    return f'<div class="topbar">{back}{prev_btn}{next_btn}</div>'
+
+
+def _render_month_page(month_key, day_dates, day_counts, day_papers_for_preview,
+                       archive_months, directions_cfg):
+    """CHANGE C1+A3: docs/month-YYYY-MM.html — the day list for one month.
+
+    `day_papers_for_preview` maps a bucket date to its precomputed A3
+    preview HTML (computed once during the archive pass so we never hold
+    every day's papers in memory). Days are newest-first, each with the
+    same per-day count badge as the old flat index, plus the top-paper
+    preview line when the day has a High or Medium paper.
+    """
     items = []
-    for d in reversed(archive_dates):
+    for d in sorted(day_dates, reverse=True):
         c = day_counts.get(d, {})
         low_quality = (c.get("High", 0) + c.get("Medium", 0)) == 0
         cls = ' class="day-low-quality"' if low_quality else ""
+        preview = day_papers_for_preview.get(d, "")
         items.append(
-            f'<li{cls}><a href="{d}.html">{d}</a> {_day_count_badge(c)}</li>'
+            f'<li{cls}><a href="{d}.html">{d}</a> '
+            f'{_day_count_badge(c)}{preview}</li>'
+        )
+    links = "".join(items)
+    return f"""<!doctype html><html><head>
+<meta charset="utf-8">
+<title>Research Radar — {_esc(month_key)}</title>
+<style>{CSS}</style>{ASSET_HEAD}</head><body>
+<h1>Research Radar</h1>
+<div class="subtitle">{_esc(month_key)} · {len(day_dates)} day(s) · badges show High/Medium/Low(/Exclude) counts</div>
+{_month_topbar(month_key, archive_months)}
+<p style="color:#666;font-size:13px">Click a date to view that day. Greyed days have no High or Medium papers; days with a High/Medium paper show a one-line preview of their top paper.</p>
+<ul>{links}</ul>
+</body></html>"""
+
+
+def _render_index(months, month_counts: dict | None = None):
+    """CHANGE C1: index.html is now a month list (newest first), not the
+    flat 3554-date list. Navigation is two-step: calendar → month → day.
+    """
+    month_counts = month_counts or {}
+    items = []
+    for mk in sorted(months, reverse=True):
+        per_day = month_counts.get(mk, [])
+        agg = {"High": 0, "Medium": 0}
+        for c in per_day:
+            agg["High"] += c.get("High", 0)
+            agg["Medium"] += c.get("Medium", 0)
+        low_quality = (agg["High"] + agg["Medium"]) == 0
+        cls = ' class="day-low-quality"' if low_quality else ""
+        items.append(
+            f'<li{cls}><a href="month-{mk}.html">{mk}</a> '
+            f'{_month_count_badge(per_day)}</li>'
         )
     links = "".join(items)
     # ADR-0016 D1: index serves as the calendar with priority count badges,
@@ -443,9 +553,9 @@ def _render_index(archive_dates, day_counts: dict | None = None):
 <title>Research Radar</title>
 <style>{CSS}</style>{ASSET_HEAD}</head><body>
 <h1>Research Radar</h1>
-<div class="subtitle">Daily paper digest across 4 research directions · badges show High/Medium/Low(/Exclude) counts</div>
+<div class="subtitle">Daily paper digest across 4 research directions · pick a month, then a day · badges show High/Medium/Low(/Exclude) counts</div>
 {_nav_row()}
-<p style="color:#666;font-size:13px">Click a date to view that day. Badges show priority counts (H/M/L/X); greyed dates have no High or Medium papers.</p>
+<p style="color:#666;font-size:13px">Click a month to see its days. Badges show that month's total priority counts (H/M/L/X); greyed months have no High or Medium papers.</p>
 <ul>{links}</ul>
 </body></html>"""
 
@@ -837,6 +947,7 @@ def build(docs_dir, directions_cfg, manifest=None, touched_dates=None):
     #   day_counts  -> ADR-0016 D1 calendar badges
     #   high/medium -> ADR-0016 D2 cross-corpus pages
     day_counts: dict[str, dict] = {}
+    day_previews: dict[str, str] = {}  # CHANGE A3: date -> top-paper preview HTML
     high_papers: list = []
     medium_papers: list = []
 
@@ -848,6 +959,7 @@ def build(docs_dir, directions_cfg, manifest=None, touched_dates=None):
         try:
             hist_papers, _meta = _load_papers_v2_or_v1(hist_json)
             day_counts[hist_date] = _priority_counts_for(hist_papers, _meta)
+            day_previews[hist_date] = _day_top_paper_preview(hist_papers)
             for p in hist_papers:
                 prio = p.get("llm", {}).get("priority")
                 if prio == "High":
@@ -862,10 +974,26 @@ def build(docs_dir, directions_cfg, manifest=None, touched_dates=None):
         except Exception as e:
             print(f"  (skip re-render {hist_date}: {e})")
 
+    # CHANGE C1: bucket archive dates by month, then render the month-list
+    # index + one month-YYYY-MM.html page per month present in data/daily/.
+    months: dict[str, list[str]] = {}
+    for d in archive:
+        months.setdefault(d[:7], []).append(d)
+    month_counts: dict[str, list[dict]] = {
+        mk: [day_counts.get(d, {}) for d in days] for mk, days in months.items()
+    }
+    archive_months = sorted(months)
+
     (docs_dir / "index.html").write_text(
-        _render_index(archive, day_counts),
+        _render_index(archive_months, month_counts),
         encoding="utf-8",
     )
+    for mk, days in months.items():
+        (docs_dir / f"month-{mk}.html").write_text(
+            _render_month_page(mk, days, day_counts, day_previews,
+                                archive_months, directions_cfg),
+            encoding="utf-8",
+        )
 
     # ADR-0016 D2: cross-corpus high/medium pages
     (docs_dir / "high-priority.html").write_text(
