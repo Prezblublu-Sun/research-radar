@@ -435,7 +435,9 @@ def _render_index(archive_dates, day_counts: dict | None = None):
             f'<li{cls}><a href="{d}.html">{d}</a> {_day_count_badge(c)}</li>'
         )
     links = "".join(items)
-    redirect = f'<meta http-equiv="refresh" content="0; url={latest}.html">' if latest else ""
+    # ADR-0016 D1: index serves as the calendar with priority count badges,
+    # so the previous auto-redirect to the latest daily is removed (user choice 2026-05-19).
+    redirect = ""
     return f"""<!doctype html><html><head>
 <meta charset="utf-8">{redirect}
 <title>Research Radar</title>
@@ -443,7 +445,7 @@ def _render_index(archive_dates, day_counts: dict | None = None):
 <h1>Research Radar</h1>
 <div class="subtitle">Daily paper digest across 4 research directions · badges show High/Medium/Low(/Exclude) counts</div>
 {_nav_row()}
-<p>If you are not redirected, choose a day:</p>
+<p style="color:#666;font-size:13px">Click a date to view that day. Badges show priority counts (H/M/L/X); greyed dates have no High or Medium papers.</p>
 <ul>{links}</ul>
 </body></html>"""
 
