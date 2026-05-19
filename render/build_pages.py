@@ -294,68 +294,91 @@ def _version_footer(manifest: dict | None) -> str:
 </footer>"""
 
 
-CSS = """
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:980px;margin:2rem auto;padding:0 1rem;color:#222;line-height:1.5}
-h1{font-size:24px;font-weight:500;margin:0 0 .25rem}
-.subtitle{color:#666;font-size:14px;margin-bottom:1.5rem}
-.topbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 0;margin-bottom:1.25rem;border-bottom:.5px solid #e2e0d8}
-.navbtn{font-size:13px;background:#f5f4ef;color:#444;padding:6px 12px;border-radius:8px;text-decoration:none}
-.navbtn:hover{background:#e9e7df}
-.navbtn.disabled{color:#bbb;background:#fafaf6;cursor:default}
-.archive-select{font-size:13px;padding:6px 10px;border:.5px solid #ccc;border-radius:8px;background:#fff;color:#444;cursor:pointer}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1.5rem}
-.stat{background:#f5f4ef;border-radius:8px;padding:.75rem 1rem}
-.stat-label{font-size:12px;color:#666}
-.stat-val{font-size:22px;font-weight:500;margin-top:2px}
-.tabs,.prio-filter{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:.75rem}
-.tab,.pf{background:transparent;border:.5px solid #ccc;border-radius:8px;padding:6px 14px;font-size:13px;cursor:pointer;color:#444}
-.tab.active,.pf.active{background:#222;color:#fff;border-color:#222}
-.paper{background:#fff;border:.5px solid #e2e0d8;border-radius:12px;padding:1rem 1.25rem;margin-bottom:12px}
-.paper-head{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
-.priority{font-size:12px;font-weight:500;padding:3px 10px;border-radius:999px}
-.direction-pill{font-size:11px;padding:3px 8px;border-radius:8px}
-.source{font-size:11px;color:#999;text-transform:uppercase}
-.flag{font-size:11px;background:#eef;color:#335;padding:2px 7px;border-radius:6px}
-.paper-title{font-size:15px;font-weight:500;line-height:1.4;margin:4px 0}
-.meta{font-size:12px;color:#666;margin-bottom:10px}
+# V1 design tokens (ADR-0016 visual refresh). Single source of truth for
+# the palette/spacing/shadow scale. Inlined at the top of the base CSS so
+# both the inlined <style> block AND the shared radar-ui.css resolve the
+# same var(--…) values; radar-ui.css repeats an identical :root so it also
+# renders correctly if ever opened standalone.
+DESIGN_TOKENS = """
+:root{
+--c-brand:#1B4D7E;--c-accent:#E89C3A;--c-bg:#FAFAF7;--c-card-bg:#FFFFFF;--c-card-border:#ECEAE3;
+--c-text-primary:#1F2937;--c-text-secondary:#4B5563;--c-text-meta:#8B8980;--c-text-muted:#B5B3AA;
+--c-priority-h:#C8362A;--c-priority-m:#E89C3A;--c-priority-l:#A0A0A0;--c-priority-x:#D5D5D5;
+--c-mark-toread:#E8B538;--c-mark-read:#5B8C5A;--c-mark-int:#4A6FB5;--c-mark-ignore:#999999;
+--space-xs:4px;--space-sm:8px;--space-md:12px;--space-lg:20px;--space-xl:32px;
+--radius-sm:4px;--radius-md:8px;--radius-lg:12px;
+--text-xs:11px;--text-sm:13px;--text-md:14px;--text-lg:16px;--text-xl:22px;--text-h1:28px;
+--shadow-card:0 1px 3px rgba(0,0,0,0.04),0 1px 2px rgba(0,0,0,0.06);
+--shadow-hover:0 4px 12px rgba(27,77,126,0.10),0 2px 4px rgba(0,0,0,0.06);
+}
+"""
+
+# Base typography + the daily-page component rules, all rewritten to
+# consume the tokens above. Selectors and structural box-model values are
+# unchanged (daily-page structure stays per the visual-refresh scope);
+# only colour/radius/shadow values now flow from the token scale.
+CSS = DESIGN_TOKENS + """
+body{font-family:-apple-system,'PingFang SC',BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:980px;margin:2rem auto;padding:0 1rem;background:var(--c-bg);color:var(--c-text-primary);line-height:1.5}
+h1{font-size:var(--text-h1);font-weight:600;margin:0 0 var(--space-xs);color:var(--c-brand)}
+.subtitle{color:var(--c-text-meta);font-size:var(--text-sm);margin-bottom:var(--space-xl)}
+.topbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 0;margin-bottom:1.25rem;border-bottom:1px solid var(--c-card-border)}
+.navbtn{font-size:var(--text-sm);background:var(--c-card-bg);color:var(--c-text-secondary);padding:6px 12px;border:1px solid var(--c-card-border);border-radius:var(--radius-md);text-decoration:none}
+.navbtn:hover{background:var(--c-brand);color:#fff;border-color:var(--c-brand)}
+.navbtn.disabled{color:var(--c-text-muted);background:var(--c-bg);cursor:default}
+.archive-select{font-size:var(--text-sm);padding:6px 10px;border:1px solid var(--c-card-border);border-radius:var(--radius-md);background:var(--c-card-bg);color:var(--c-text-secondary);cursor:pointer}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-md);margin-bottom:1.5rem}
+.stat{background:var(--c-card-bg);border:1px solid var(--c-card-border);border-radius:var(--radius-md);padding:.75rem 1rem}
+.stat-label{font-size:12px;color:var(--c-text-meta)}
+.stat-val{font-size:var(--text-xl);font-weight:600;margin-top:2px}
+.tabs,.prio-filter{display:flex;gap:var(--space-sm);flex-wrap:wrap;margin-bottom:.75rem}
+.tab,.pf{background:transparent;border:1px solid var(--c-card-border);border-radius:var(--radius-md);padding:6px 14px;font-size:var(--text-sm);cursor:pointer;color:var(--c-text-secondary)}
+.tab.active,.pf.active{background:var(--c-brand);color:#fff;border-color:var(--c-brand)}
+.paper{background:var(--c-card-bg);border:1px solid var(--c-card-border);border-radius:var(--radius-lg);padding:1rem 1.25rem;margin-bottom:var(--space-md)}
+.paper-head{display:flex;gap:var(--space-sm);align-items:center;flex-wrap:wrap;margin-bottom:var(--space-sm)}
+.priority{font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px}
+.direction-pill{font-size:var(--text-xs);padding:3px 8px;border-radius:var(--radius-md)}
+.source{font-size:var(--text-xs);color:var(--c-text-muted);text-transform:uppercase}
+.flag{font-size:var(--text-xs);background:#EEF2F8;color:var(--c-brand);padding:2px 7px;border-radius:6px}
+.paper-title{font-size:15px;font-weight:600;line-height:1.4;margin:4px 0;color:var(--c-text-primary)}
+.meta{font-size:12px;color:var(--c-text-meta);margin-bottom:10px}
 .meta>span{margin-right:12px}
-.relevance{font-size:13px;background:#fafaf6;padding:6px 10px;border-radius:6px;margin-bottom:8px}
-.summary{font-size:13px;line-height:1.65}
+.relevance{font-size:var(--text-sm);background:var(--c-bg);padding:6px 10px;border-radius:6px;margin-bottom:var(--space-sm)}
+.summary{font-size:var(--text-sm);line-height:1.65}
 .summary>div{margin-bottom:4px}
-.tags-row{margin-top:8px}
-.tag{font-size:10px;background:#f1efe8;color:#555;padding:2px 7px;border-radius:6px;margin-right:4px}
+.tags-row{margin-top:var(--space-sm)}
+.tag{font-size:var(--text-xs);background:#EEF2F8;color:var(--c-brand);padding:2px 8px;border-radius:10px;font-weight:500;margin-right:4px}
 .paper[data-hidden="1"]{display:none}
-footer.run-info{margin-top:3rem;padding-top:1rem;border-top:.5px solid #e2e0d8;font-size:12px;color:#666}
-footer.run-info summary{cursor:pointer;color:#444}
-footer.run-info table{margin-top:8px;font-family:ui-monospace,monospace;font-size:11px}
+footer.run-info{margin-top:3rem;padding-top:1rem;border-top:1px solid var(--c-card-border);font-size:12px;color:var(--c-text-meta)}
+footer.run-info summary{cursor:pointer;color:var(--c-text-secondary)}
+footer.run-info table{margin-top:var(--space-sm);font-family:ui-monospace,monospace;font-size:var(--text-xs)}
 footer.run-info td{padding:2px 12px 2px 0;vertical-align:top}
-footer.run-info td:first-child{color:#888;width:140px}
-details.summary-en{margin-top:8px;background:#f8f8f3;border-radius:8px;padding:6px 12px;border:.5px solid #e2e0d8}
-details.summary-en summary{cursor:pointer;font-size:12px;color:#555;font-weight:500}
-details.summary-en[open] summary{margin-bottom:8px}
-.summary.en{font-size:13px;color:#333;line-height:1.55}
+footer.run-info td:first-child{color:var(--c-text-meta);width:140px}
+details.summary-en{margin-top:var(--space-sm);background:var(--c-bg);border-radius:var(--radius-md);padding:6px 12px;border:1px solid var(--c-card-border)}
+details.summary-en summary{cursor:pointer;font-size:12px;color:var(--c-text-secondary);font-weight:600}
+details.summary-en[open] summary{margin-bottom:var(--space-sm)}
+.summary.en{font-size:var(--text-sm);color:var(--c-text-secondary);line-height:1.55}
 .summary.en>div{margin-bottom:3px}
-.key-terms{margin-top:8px;display:flex;flex-wrap:wrap;gap:6px}
-.term{font-size:11px;background:#fff;border:.5px solid #ddd;padding:3px 8px;border-radius:6px;color:#444}
-.term b{color:#222;font-weight:500}
-.affiliations{font-size:12px;color:#666;margin-top:6px;padding-left:6px;border-left:2px solid #ddd}
-.affiliations b{color:#444;font-weight:500}
-.corresponding{font-size:12px;color:#555;margin-top:3px;padding-left:6px;border-left:2px solid #aac}
-.corresponding b{color:#3F2E7E;font-weight:500}
-.corresp-aff{color:#888}
-.corresponding i{color:#888;font-size:11px}
-.relevance-level{font-size:11px;padding:3px 8px;border-radius:8px;font-weight:500}
+.key-terms{margin-top:var(--space-sm);display:flex;flex-wrap:wrap;gap:6px}
+.term{font-size:var(--text-xs);background:var(--c-card-bg);border:1px solid var(--c-card-border);padding:3px 8px;border-radius:6px;color:var(--c-text-secondary)}
+.term b{color:var(--c-text-primary);font-weight:600}
+.affiliations{font-size:12px;color:var(--c-text-meta);margin-top:6px;padding-left:6px;border-left:2px solid var(--c-card-border)}
+.affiliations b{color:var(--c-text-secondary);font-weight:600}
+.corresponding{font-size:12px;color:var(--c-text-secondary);margin-top:3px;padding-left:6px;border-left:2px solid #aac}
+.corresponding b{color:#3F2E7E;font-weight:600}
+.corresp-aff{color:var(--c-text-meta)}
+.corresponding i{color:var(--c-text-meta);font-size:var(--text-xs)}
+.relevance-level{font-size:var(--text-xs);padding:3px 8px;border-radius:var(--radius-md);font-weight:600}
 .lvl-direct{background:#D4EBC4;color:#2D5A14}
 .lvl-transferable{background:#E0DDF4;color:#3F2E7E}
 .lvl-peripheral{background:#F1EFE8;color:#666}
-.read-action{font-size:11px;padding:3px 8px;border-radius:8px;font-weight:500;font-style:italic}
+.read-action{font-size:var(--text-xs);padding:3px 8px;border-radius:var(--radius-md);font-weight:600;font-style:italic}
 .act-read-now{background:#FFE8D6;color:#7D4515}
 .act-save-for-project{background:#E6E1F5;color:#3A2C7A}
 .act-skim-only{background:#F0F0E8;color:#5C5C50}
 .act-background-only{background:#F5F5F0;color:#777}
 .act-ignore{background:#F5E8E8;color:#7A3A3A}
 .validation-kind{font-size:10px;background:#EDF4FA;color:#1F4A6B;padding:2px 7px;border-radius:6px}
-.why-not-core{font-size:12px;background:#FCF5E8;border-left:3px solid #D8A045;padding:5px 10px;margin-top:4px;color:#5A4318;border-radius:0 6px 6px 0}
+.why-not-core{font-size:12px;background:#FCF5E8;border-left:3px solid var(--c-accent);padding:5px 10px;margin-top:4px;color:#5A4318;border-radius:0 6px 6px 0}
 """
 
 
@@ -410,25 +433,22 @@ def _nav_row() -> str:
 
 
 def _day_count_badge(counts: dict) -> str:
-    """ADR-0016 D1: '2H 5M 12L' static badge from counts.priority_counts."""
-    h = counts.get("High", 0)
-    m = counts.get("Medium", 0)
-    low = counts.get("Low", 0)
-    x = counts.get("Exclude", 0)
-    parts = [f'<span class="dc-h">{h}H</span>',
-             f'<span class="dc-m">{m}M</span>',
-             f'<span class="dc-l">{low}L</span>']
-    if x:
-        parts.append(f'<span class="dc-x">{x}X</span>')
-    return '<span class="rui-daycount">' + " ".join(parts) + "</span>"
+    """V1: priority-count pills. One `.pill .pill--<level>` per non-zero
+    level (a 0-count level renders no pill, matching the mockup). Caller
+    wraps the result in a `.day-card__pills` / `.month-card__pills` box.
+    """
+    pills = []
+    for key, suffix, mod in (("High", "H", "high"), ("Medium", "M", "medium"),
+                             ("Low", "L", "low"), ("Exclude", "X", "exclude")):
+        n = counts.get(key, 0)
+        if n:
+            pills.append(f'<span class="pill pill--{mod}">{n}{suffix}</span>')
+    return "".join(pills)
 
 
 def _month_count_badge(day_counts_in_month: list[dict]) -> str:
-    """CHANGE C1: month aggregate badge — sum every day's priority_counts.
-
-    Reuses _day_count_badge's dc-h/dc-m/dc-l/dc-x span markup so a month
-    row reads identically to a day row, just summed (e.g. '25H 87M 247L
-    893X').
+    """V1/C1: month aggregate pills — sum each day's priority_counts, then
+    reuse _day_count_badge so a month row reads identically to a day row.
     """
     agg: dict = {}
     for c in day_counts_in_month:
@@ -439,14 +459,19 @@ def _month_count_badge(day_counts_in_month: list[dict]) -> str:
     return _day_count_badge(agg)
 
 
-def _day_top_paper_preview(papers: list[dict]) -> str:
-    """CHANGE A3: one-line preview of a day's top paper, or "".
+def _trunc(s: str, n: int) -> str:
+    s = (s or "").strip()
+    return s if len(s) <= n else s[:n] + "…"
 
-    Pick the first High paper in the bucket's list order; if none, the
-    first Medium. Days with only Low/Exclude get no preview (returns "")
-    so low-quality days stay short. Title is truncated to 80 chars; venue
-    falls back to source; tag is the first of p.llm.tags. Any missing
-    field is skipped rather than rendered as "None".
+
+def _day_top_paper_data(papers: list[dict]) -> dict | None:
+    """V3: extract the Tier 1+2 fields the day-card needs from a day's
+    top paper, or None when there is none.
+
+    Top paper = first High in bucket order; if no High, first Medium;
+    if neither, None (Low/Exclude-only days stay as a bare head). zh
+    summary fields fall back to their en counterparts; empty fields are
+    returned empty so the renderer can skip them rather than print "None".
     """
     top = None
     for want in ("High", "Medium"):
@@ -457,27 +482,91 @@ def _day_top_paper_preview(papers: list[dict]) -> str:
         if top is not None:
             break
     if top is None:
-        return ""
+        return None
 
-    spans = []
-    title = (top.get("title") or "").strip()
-    if title:
-        if len(title) > 80:
-            title = title[:80] + "…"
-        spans.append(f'<span class="rui-prev-title">{_esc(title)}</span>')
-    venue = (top.get("venue") or "").strip() or (top.get("source") or "").strip()
-    if venue:
-        spans.append(f'<span class="rui-prev-venue">{_esc(venue)}</span>')
-    tags = top.get("llm", {}).get("tags") or []
-    if tags and str(tags[0]).strip():
-        spans.append(f'<span class="rui-prev-tag">#{_esc(tags[0])}</span>')
-    if not spans:
-        return ""
-    return '<div class="rui-day-preview">' + "".join(spans) + "</div>"
+    llm = top.get("llm", {}) or {}
+    zh = llm.get("summary_zh", {}) or {}
+    en = llm.get("summary_en", {}) or {}
+
+    def field(name: str) -> str:
+        v = zh.get(name) or en.get(name) or ""
+        return v.strip() if isinstance(v, str) else ""
+
+    return {
+        "title": _trunc(top.get("title") or "", 90),
+        "is_high": llm.get("priority") == "High",
+        "authors": [a for a in (top.get("authors") or []) if str(a).strip()],
+        "direction": top.get("direction", ""),
+        "direction_name": top.get("direction_name", ""),
+        "venue": (top.get("venue") or "").strip()
+        or (top.get("source") or "").strip(),
+        "tags": [str(t).strip() for t in (llm.get("tags") or [])
+                 if str(t).strip()][:3],
+        "motivation": _trunc(field("motivation"), 80),
+        "method": field("method"),
+        "result": field("result"),
+        "validation": field("validation"),
+        "relevance_to_user": (llm.get("relevance_to_user") or "").strip(),
+    }
 
 
-def _month_topbar(month_key: str, archive_months: list[str]) -> str:
-    """CHANGE C1: month-page header — back-to-calendar + prev/next month."""
+def _render_day_card(date, counts, top_data, directions_cfg) -> str:
+    """V2/V3: one `.day-card`. Low-quality days (no High/Medium) keep only
+    the head (date + pills); otherwise the V3 enrichment block is added.
+    """
+    counts = counts or {}
+    head = (
+        '<div class="day-card__head">'
+        f'<a class="day-card__date" href="{_esc(date)}.html">{_esc(date)}</a>'
+        f'<div class="day-card__pills">{_day_count_badge(counts)}</div>'
+        "</div>"
+    )
+    low_quality = (counts.get("High", 0) + counts.get("Medium", 0)) == 0
+    if low_quality or not top_data:
+        return f'<article class="day-card day-card--low-quality">{head}</article>'
+
+    td = top_data
+    star = "★ " if td["is_high"] else ""
+
+    a = td["authors"]
+    authors = (", ".join(_esc(x) for x in a[:2]) + " et al.") if len(a) > 2 \
+        else ", ".join(_esc(x) for x in a)
+    color = directions_cfg.get(td["direction"], {}).get("color", "#888")
+    dpill = (f'<span class="direction-pill" '
+             f'style="background:{color}20;color:{color}">'
+             f'{_esc(td["direction_name"])}</span>') if td["direction_name"] else ""
+    meta_bits = [b for b in (authors, dpill) if b]
+    meta = (f'<div class="day-card__meta">{" · ".join(meta_bits)}</div>'
+            if meta_bits else "")
+
+    chips = ""
+    if td["venue"]:
+        chips += f'<span class="venue">{_esc(td["venue"])}</span>'
+    chips += "".join(f'<span class="tag">#{_esc(t)}</span>' for t in td["tags"])
+    tags = f'<div class="day-card__tags">{chips}</div>' if chips else ""
+
+    motivation = (
+        '<div class="day-card__motivation">'
+        f'<span class="motivation-label">💡</span> {_esc(td["motivation"])}</div>'
+    ) if td["motivation"] else ""
+
+    rows = [f'<div><b>{lbl}</b>: {_esc(td[k])}</div>'
+            for lbl, k in (("方法", "method"), ("结果", "result"),
+                           ("验证", "validation"), ("相关性", "relevance_to_user"))
+            if td[k]]
+    expand = ('<details class="day-card__expand"><summary>Read more</summary>'
+              + "".join(rows) + "</details>") if rows else ""
+
+    top = (
+        '<div class="day-card__top">'
+        f'<div class="day-card__title">{star}{_esc(td["title"])}</div>'
+        f'{meta}{tags}{motivation}{expand}</div>'
+    )
+    return f'<article class="day-card">{head}{top}</article>'
+
+
+def _month_topbar(month_key: str, archive_months: list[str], n_days: int) -> str:
+    """V2/C1: month-page header — back-to-calendar + prev/next month nav."""
     months = sorted(archive_months)
     try:
         idx = months.index(month_key)
@@ -485,78 +574,78 @@ def _month_topbar(month_key: str, archive_months: list[str]) -> str:
         idx = len(months) - 1
     prev_m = months[idx - 1] if idx > 0 else None
     next_m = months[idx + 1] if idx < len(months) - 1 else None
-    prev_btn = (f'<a class="navbtn" href="month-{prev_m}.html">← {prev_m}</a>'
-                if prev_m else '<span class="navbtn disabled">← oldest</span>')
-    next_btn = (f'<a class="navbtn" href="month-{next_m}.html">{next_m} →</a>'
-                if next_m else '<span class="navbtn disabled">latest →</span>')
-    back = '<a class="navbtn" href="index.html">📅 Back to calendar</a>'
-    return f'<div class="topbar">{back}{prev_btn}{next_btn}</div>'
+    prev_btn = (f'<a class="month-topbar__nav" href="month-{prev_m}.html">← {prev_m}</a>'
+                if prev_m else
+                '<span class="month-topbar__nav month-topbar__nav--disabled">← oldest</span>')
+    next_btn = (f'<a class="month-topbar__nav" href="month-{next_m}.html">{next_m} →</a>'
+                if next_m else
+                '<span class="month-topbar__nav month-topbar__nav--disabled">latest →</span>')
+    return (
+        '<div class="month-topbar">'
+        '<a class="month-topbar__back" href="index.html">← Back to calendar</a>'
+        f'{prev_btn}'
+        f'<span class="month-topbar__title">{_esc(month_key)} · {n_days} day(s)</span>'
+        f'{next_btn}</div>'
+    )
 
 
-def _render_month_page(month_key, day_dates, day_counts, day_papers_for_preview,
+def _render_month_page(month_key, day_dates, day_counts, day_papers_full,
                        archive_months, directions_cfg):
-    """CHANGE C1+A3: docs/month-YYYY-MM.html — the day list for one month.
-
-    `day_papers_for_preview` maps a bucket date to its precomputed A3
-    preview HTML (computed once during the archive pass so we never hold
-    every day's papers in memory). Days are newest-first, each with the
-    same per-day count badge as the old flat index, plus the top-paper
-    preview line when the day has a High or Medium paper.
+    """V2/V3 (was C1/A3): docs/month-YYYY-MM.html — a responsive grid of
+    day-cards, newest first. `day_papers_full` maps a bucket date to its
+    full v2 papers list so the card renderer pulls title/authors/tags/
+    motivation/summary on its own (memory budget acknowledged in build()).
     """
-    items = []
+    cards = []
     for d in sorted(day_dates, reverse=True):
         c = day_counts.get(d, {})
-        low_quality = (c.get("High", 0) + c.get("Medium", 0)) == 0
-        cls = ' class="day-low-quality"' if low_quality else ""
-        preview = day_papers_for_preview.get(d, "")
-        items.append(
-            f'<li{cls}><a href="{d}.html">{d}</a> '
-            f'{_day_count_badge(c)}{preview}</li>'
-        )
-    links = "".join(items)
-    return f"""<!doctype html><html><head>
-<meta charset="utf-8">
+        top_data = _day_top_paper_data(day_papers_full.get(d, []))
+        cards.append(_render_day_card(d, c, top_data, directions_cfg))
+    grid = "".join(cards)
+    return f"""<!doctype html><html lang="zh"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Research Radar — {_esc(month_key)}</title>
 <style>{CSS}</style>{ASSET_HEAD}</head><body>
+<div class="container">
 <h1>Research Radar</h1>
-<div class="subtitle">{_esc(month_key)} · {len(day_dates)} day(s) · badges show High/Medium/Low(/Exclude) counts</div>
-{_month_topbar(month_key, archive_months)}
-<p style="color:#666;font-size:13px">Click a date to view that day. Greyed days have no High or Medium papers; days with a High/Medium paper show a one-line preview of their top paper.</p>
-<ul>{links}</ul>
+<div class="subtitle">{_esc(month_key)} · {len(day_dates)} day(s) · cards show the day's top paper; greyed days have no High or Medium papers</div>
+{_month_topbar(month_key, archive_months, len(day_dates))}
+<div class="day-grid">{grid}</div>
+</div>
 </body></html>"""
 
 
 def _render_index(months, month_counts: dict | None = None):
-    """CHANGE C1: index.html is now a month list (newest first), not the
-    flat 3554-date list. Navigation is two-step: calendar → month → day.
+    """C1 + V1: index.html is a flat month grid (newest first), each month
+    a clickable `.month-card` with the new `.pill` count badges. Two-step
+    nav: calendar → month → day. Year-section grouping is deferred.
     """
     month_counts = month_counts or {}
-    items = []
+    cards = []
     for mk in sorted(months, reverse=True):
         per_day = month_counts.get(mk, [])
-        agg = {"High": 0, "Medium": 0}
-        for c in per_day:
-            agg["High"] += c.get("High", 0)
-            agg["Medium"] += c.get("Medium", 0)
-        low_quality = (agg["High"] + agg["Medium"]) == 0
-        cls = ' class="day-low-quality"' if low_quality else ""
-        items.append(
-            f'<li{cls}><a href="month-{mk}.html">{mk}</a> '
-            f'{_month_count_badge(per_day)}</li>'
+        hm = sum(c.get("High", 0) + c.get("Medium", 0) for c in per_day)
+        cls = " month-card--low-quality" if hm == 0 else ""
+        cards.append(
+            f'<a class="month-card{cls}" href="month-{mk}.html">'
+            f'<div class="month-card__label">{_esc(mk)}</div>'
+            f'<div class="month-card__pills">{_month_count_badge(per_day)}</div>'
+            "</a>"
         )
-    links = "".join(items)
-    # ADR-0016 D1: index serves as the calendar with priority count badges,
-    # so the previous auto-redirect to the latest daily is removed (user choice 2026-05-19).
-    redirect = ""
-    return f"""<!doctype html><html><head>
-<meta charset="utf-8">{redirect}
+    grid = "".join(cards)
+    # ADR-0016 D1: index serves as the calendar; the prior auto-redirect to
+    # the latest daily was removed (user choice 2026-05-19).
+    return f"""<!doctype html><html lang="zh"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Research Radar</title>
 <style>{CSS}</style>{ASSET_HEAD}</head><body>
+<div class="container">
 <h1>Research Radar</h1>
-<div class="subtitle">Daily paper digest across 4 research directions · pick a month, then a day · badges show High/Medium/Low(/Exclude) counts</div>
+<div class="subtitle">Daily paper digest across 4 research directions · pick a month, then a day · pills show High/Medium/Low(/Exclude) counts</div>
 {_nav_row()}
-<p style="color:#666;font-size:13px">Click a month to see its days. Badges show that month's total priority counts (H/M/L/X); greyed months have no High or Medium papers.</p>
-<ul>{links}</ul>
+<p style="color:var(--c-text-meta);font-size:var(--text-sm)">Click a month to see its days. Pills show that month's total priority counts; greyed months have no High or Medium papers.</p>
+<div class="month-grid">{grid}</div>
+</div>
 </body></html>"""
 
 
@@ -947,7 +1036,10 @@ def build(docs_dir, directions_cfg, manifest=None, touched_dates=None):
     #   day_counts  -> ADR-0016 D1 calendar badges
     #   high/medium -> ADR-0016 D2 cross-corpus pages
     day_counts: dict[str, dict] = {}
-    day_previews: dict[str, str] = {}  # CHANGE A3: date -> top-paper preview HTML
+    # V3: date -> full v2 papers list, consumed by the month-page day-card
+    # renderer. ~3554 small JSON files held simultaneously (<200MB RAM,
+    # acceptable per the visual-refresh implementation note).
+    day_papers_full: dict[str, list] = {}
     high_papers: list = []
     medium_papers: list = []
 
@@ -959,7 +1051,7 @@ def build(docs_dir, directions_cfg, manifest=None, touched_dates=None):
         try:
             hist_papers, _meta = _load_papers_v2_or_v1(hist_json)
             day_counts[hist_date] = _priority_counts_for(hist_papers, _meta)
-            day_previews[hist_date] = _day_top_paper_preview(hist_papers)
+            day_papers_full[hist_date] = hist_papers
             for p in hist_papers:
                 prio = p.get("llm", {}).get("priority")
                 if prio == "High":
@@ -990,7 +1082,7 @@ def build(docs_dir, directions_cfg, manifest=None, touched_dates=None):
     )
     for mk, days in months.items():
         (docs_dir / f"month-{mk}.html").write_text(
-            _render_month_page(mk, days, day_counts, day_previews,
+            _render_month_page(mk, days, day_counts, day_papers_full,
                                 archive_months, directions_cfg),
             encoding="utf-8",
         )

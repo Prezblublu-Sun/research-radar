@@ -4,9 +4,10 @@ All five affordances are rendered server-side by render/build_pages.py into
 static HTML + a copied JS/CSS bundle; behaviour itself is client-side and not
 exercised here. These tests assert the *markup contract* the JS depends on:
 
-  D1  index.html is a month list (C1) with month-aggregate count badges;
-      month-YYYY-MM.html lists that month's days with per-day badges and
-      a top-paper preview line (A3) for High/Medium days
+  D1  index.html is a month-card grid (C1) with .pill aggregate counts
+      (V1); month-YYYY-MM.html is a day-card grid (V2) where High/Medium
+      days carry the V3 enrichment (★, authors, direction-pill,
+      motivation, <details>) and Low/Exclude-only days stay bare
   D2  high-priority.html / medium-priority.html exist and are single-priority
   D3  each daily page has the priority filter bar + data-priority on cards
   D4  every paper card carries mark + note controls with its identity key
@@ -36,13 +37,14 @@ DIRECTIONS = {
 
 
 def _paper(*, doi: str, priority: str, title: str,
-           direction: str = "fea_surrogate", date: str) -> dict:
+           direction: str = "fea_surrogate", date: str,
+           authors: list[str] | None = None) -> dict:
     return {
         "source": "openalex",
         "doi": doi,
         "title": title,
         "abstract": "Synthetic abstract.",
-        "authors": ["A. Author", "B. Builder"],
+        "authors": authors if authors is not None else ["A. Author", "B. Builder"],
         "venue": "Test Venue",
         "year": int(date[:4]),
         "date": date,
@@ -94,7 +96,8 @@ def built(tmp_path: pathlib.Path) -> pathlib.Path:
     # Day with High + Medium + Low + Exclude
     _write_v2(daily, "2024-12-10", [
         _paper(doi="10.1/h1", priority="High", title="High Paper One",
-               date="2024-12-10"),
+               date="2024-12-10",
+               authors=["Wei Sun", "Jane Doe", "Bob Lee", "Extra Person"]),
         _paper(doi="10.1/m1", priority="Medium", title="Medium Paper One",
                direction="ai_bioprinting", date="2024-12-10"),
         _paper(doi="10.1/l1", priority="Low", title="Low Paper One",
@@ -126,44 +129,65 @@ def _article_priorities(html: str) -> list[str]:
 
 # ---------------------------------------------------------------- D1
 
-def test_c1_index_is_a_month_list_with_aggregate_counts(built):
+def test_v1_index_is_a_month_card_grid_with_pill_counts(built):
     idx = (built / "index.html").read_text(encoding="utf-8")
-    # C1: index links to month pages, not to flat dates anymore.
-    assert "month-2024-12.html" in idx
+    # C1: index links to month pages via clickable month-cards, no flat dates.
+    assert 'class="month-grid"' in idx
+    assert '<a class="month-card" href="month-2024-12.html">' in idx
     assert "2024-12-10.html" not in idx  # the flat date list is gone
-    # Month-level aggregate count badge. The fixture's only month, 2024-12,
-    # has 2 High (12-09, 12-10), 1 Medium, 2 Low (12-10, 12-11), 2 Exclude.
-    assert 'class="rui-daycount"' in idx
-    assert '<span class="dc-h">2H</span>' in idx
-    assert '<span class="dc-m">1M</span>' in idx
-    assert '<span class="dc-l">2L</span>' in idx
+    # V1: pill components, not the old dc-h/dc-m spans. The fixture's only
+    # month, 2024-12, has 2 High (12-09, 12-10), 1 Medium, 2 Low, 2 Exclude.
+    assert "dc-h" not in idx and 'class="rui-daycount"' not in idx
+    assert '<span class="pill pill--high">2H</span>' in idx
+    assert '<span class="pill pill--medium">1M</span>' in idx
+    assert '<span class="pill pill--low">2L</span>' in idx
     # Cross-corpus + curation entry points still linked from the header
     for href in ("high-priority.html", "medium-priority.html",
                  "my-marks.html", "my-promotes.html"):
         assert href in idx
 
 
-def test_c1_a3_month_page_lists_days_with_badges_and_previews(built):
+def _articles(html: str) -> list[str]:
+    return re.findall(r'<article class="day-card.*?</article>', html, re.S)
+
+
+def test_v2_v3_month_page_renders_enriched_day_cards(built):
     page = built / "month-2024-12.html"
     assert page.exists()
     html = page.read_text(encoding="utf-8")
-    # Lists each day in the month, newest first, with per-day badges.
-    for d in ("2024-12-09.html", "2024-12-10.html", "2024-12-11.html"):
-        assert d in html
+
+    # V2: a responsive grid of day-card articles, newest first.
+    assert 'class="day-grid"' in html
+    assert '<article class="day-card' in html
+    assert "<ul>" not in html  # the old list markup is gone
     assert html.index("2024-12-11.html") < html.index("2024-12-09.html")
-    assert '<span class="dc-h">1H</span>' in html  # a per-day badge
-    # Header nav back to the calendar
-    assert 'href="index.html"' in html
-    # The Low+Exclude-only day is greyed, not hidden (ADR-0016 Q1)
-    assert 'class="day-low-quality"' in html
-    # A3: High/Medium days get a one-line top-paper preview...
-    lis = re.findall(r"<li.*?</li>", html, re.S)
-    li_10 = next(li for li in lis if "2024-12-10.html" in li)
-    assert 'class="rui-day-preview"' in li_10
-    assert "High Paper One" in li_10
-    # ...but a Low/Exclude-only day gets no preview line.
-    li_11 = next(li for li in lis if "2024-12-11.html" in li)
-    assert 'class="rui-day-preview"' not in li_11
+    # V2: month topbar back-to-calendar nav
+    assert 'class="month-topbar__back" href="index.html"' in html
+    # V1: pill counts on the cards, no legacy dc-* markup
+    assert '<span class="pill pill--high">1H</span>' in html
+    assert "dc-h" not in html
+
+    cards = _articles(html)
+    high = next(c for c in cards if "2024-12-10.html" in c)
+    low = next(c for c in cards if "2024-12-11.html" in c)
+
+    # V3: a High day card carries the ★ marker and a <details> expander
+    assert "day-card--low-quality" not in high.split(">")[0]
+    assert "★" in high
+    assert "<details class=\"day-card__expand\">" in high
+    # V3: motivation block + direction-pill on the meta line
+    assert 'class="day-card__motivation"' in high
+    assert 'class="direction-pill"' in high
+    assert "FEA &amp; Surrogate" in high  # direction_name, escaped
+    # V3: >2 authors render "First, Second et al."
+    assert "Wei Sun, Jane Doe et al." in high
+    assert "Bob Lee" not in high
+
+    # Low/Exclude-only day: bare low-quality card, no enrichment.
+    assert 'class="day-card day-card--low-quality"' in low
+    assert 'class="day-card__motivation"' not in low
+    assert "day-card__top" not in low
+    assert "★" not in low
 
 
 # ---------------------------------------------------------------- D2
