@@ -1,9 +1,11 @@
 """Render daily HTML pages with top-bar navigation and version footer."""
 
 from __future__ import annotations
+import hashlib
 import html
 import json
 import pathlib
+import re
 
 
 def _load_papers_v2_or_v1(path: pathlib.Path) -> tuple[list[dict], dict]:
@@ -40,7 +42,60 @@ def _esc(s) -> str:
     return html.escape(str(s) if s is not None else "")
 
 
-def _paper_card(p: dict, dir_color: str) -> str:
+def _identity_key(p: dict) -> str:
+    """ADR-0015 §4.4 dedup key: `doi:<doi>` or `arxiv:<arxiv_id>`.
+
+    Mirrors `pipeline.v2_schema.identity_key` rather than importing it, by
+    the same "duplicated, not imported" convention build_pages already uses
+    for `_load_papers_v2_or_v1` (keeps the render layer stdlib-only and
+    importable without the pipeline package). Papers with neither id get a
+    deterministic `noid:` fallback so per-paper marks (ADR-0016 D4) still
+    work for the rare id-less paper instead of all colliding on "".
+    """
+    doi = (p.get("doi") or "").strip()
+    if doi:
+        return f"doi:{doi}"
+    arxiv = (p.get("arxiv_id") or "").strip()
+    if arxiv:
+        return f"arxiv:{arxiv}"
+    seed = f"{p.get('title','')}|{p.get('date','')}".encode("utf-8")
+    return "noid:" + hashlib.sha1(seed).hexdigest()[:12]
+
+
+def _anchor_id(identity_key: str) -> str:
+    """URL/HTML-fragment-safe form of an identity key for in-page anchors."""
+    return re.sub(r"[^A-Za-z0-9_-]", "-", identity_key)
+
+
+def _card_tools(p: dict) -> str:
+    """ADR-0016 D4 (mark + note) and D5 (promote) per-card controls.
+
+    Rendered statically; all behaviour is wired client-side by
+    render/static/radar-ui.js reading the card's `data-identity-key`.
+    """
+    idkey = _identity_key(p)
+    name = f"rui-mark-{_anchor_id(idkey)}"
+    states = [
+        ("to-read", "to-read"), ("read", "read"),
+        ("interesting", "interesting"), ("ignore", "ignore"),
+    ]
+    radios = "".join(
+        f'<label class="m-{val}"><input type="radio" class="rui-mark-radio" '
+        f'name="{_esc(name)}" value="{val}">{_esc(lbl)}</label>'
+        for val, lbl in states
+    )
+    return f"""
+  <div class="rui-card-tools">
+    <span class="rui-mark-group"><b>Mark:</b> {radios}</span>
+    <button type="button" class="rui-note-btn">Note</button>
+    <button type="button" class="rui-promote-btn">Send to lit-system</button>
+    <div class="rui-note-wrap">
+      <textarea class="rui-note-ta" placeholder="Private note (saved on blur, this browser only)"></textarea>
+    </div>
+  </div>"""
+
+
+def _paper_card(p: dict, dir_color: str, daily_link_date: str | None = None) -> str:
     llm = p.get("llm", {})
     priority = llm.get("priority", "Low")
     bg, fg = PRIORITY_COLOR.get(priority, PRIORITY_COLOR["Low"])
@@ -78,8 +133,15 @@ def _paper_card(p: dict, dir_color: str) -> str:
     elif p.get("url"):
         doi_link = f'<a href="{_esc(p["url"])}" target="_blank">link</a>'
 
+    idkey = _identity_key(p)
+    daily_link = ""
+    if daily_link_date:
+        daily_link = (f'<a class="rui-link-tool" '
+                      f'href="{_esc(daily_link_date)}.html#{_anchor_id(idkey)}">'
+                      f'→ {_esc(daily_link_date)} page</a>')
+
     return f"""
-<article class="paper" data-direction="{_esc(p.get('direction',''))}" data-priority="{_esc(priority)}">
+<article class="paper" id="{_anchor_id(idkey)}" data-direction="{_esc(p.get('direction',''))}" data-priority="{_esc(priority)}" data-identity-key="{_esc(idkey)}" data-title="{_esc(p.get('title',''))}" data-date="{_esc(p.get('date',''))}">
   <div class="paper-head">
     <span class="priority" style="background:{bg};color:{fg}">{_esc(priority)}</span>
     <span class="direction-pill" style="background:{dir_color}20;color:{dir_color}">{_esc(p.get('direction_name',''))}</span>
@@ -119,6 +181,8 @@ def _paper_card(p: dict, dir_color: str) -> str:
     </div>
   </details>
   <div class="tags-row">{tags_html}</div>
+  {daily_link}
+  {_card_tools(p)}
 </article>"""
 
 
@@ -140,12 +204,38 @@ def _direction_tabs(directions_cfg: dict) -> str:
     return '<div class="tabs">' + "".join(tabs) + "</div>"
 
 
-def _priority_filter() -> str:
-    return ('<div class="prio-filter">'
-            '<button class="pf active" data-prio="HighMedium">High+Medium</button>'
-            '<button class="pf" data-prio="High">High only</button>'
-            '<button class="pf" data-prio="all">Show all</button>'
-            '</div>')
+def _priority_filter_bar() -> str:
+    """ADR-0016 D3: client-side priority checkboxes.
+
+    Defaults (High+Medium on) live in radar-ui.js; it overrides `checked`
+    here from localStorage `radar:filter:priority` on load, so the static
+    `checked` markup is only the first-visit default.
+    """
+    boxes = []
+    for prio in ("High", "Medium", "Low", "Exclude"):
+        checked = " checked" if prio in ("High", "Medium") else ""
+        boxes.append(
+            f'<label><input type="checkbox" class="rui-pf-cb" '
+            f'value="{prio}"{checked}>{prio}</label>'
+        )
+    return ('<div class="rui-filter-bar" id="rui-priority-filter">'
+            '<b>Priority:</b> ' + " ".join(boxes) + "</div>")
+
+
+def _marks_filter_bar() -> str:
+    """ADR-0016 D4: client-side "filter to my marks" checkboxes."""
+    opts = [
+        ("to-read", "to-read"), ("read", "read"),
+        ("interesting", "interesting"), ("ignore", "ignore"),
+        ("none", "(no mark)"),
+    ]
+    boxes = "".join(
+        f'<label><input type="checkbox" class="rui-mf-cb" '
+        f'value="{val}" checked>{_esc(lbl)}</label>'
+        for val, lbl in opts
+    )
+    return ('<div class="rui-filter-bar" id="rui-marks-filter">'
+            '<b>My marks:</b> ' + boxes + "</div>")
 
 
 def _topbar(date: str, archive_dates: list[str]) -> str:
@@ -174,8 +264,14 @@ def _topbar(date: str, archive_dates: list[str]) -> str:
     weekly_link = '<a class="navbtn" href="weekly/index.html">📅 Weekly</a>'
     status_link = '<a class="navbtn" href="status.html">📊 Status</a>'
     search_link = '<a class="navbtn" href="search.html">🔍 Search</a>'
+    # ADR-0016 D2/D4/D5 entry points, also reachable while browsing a day
+    hi_link = '<a class="navbtn" href="high-priority.html">⭐ High</a>'
+    marks_link = '<a class="navbtn" href="my-marks.html">🔖 Marks</a>'
+    promo_link = '<a class="navbtn" href="my-promotes.html">➜ Promote</a>'
 
-    return f'<div class="topbar">{prev_btn}{dropdown}{next_btn}{weekly_link}{status_link}{search_link}</div>'
+    return (f'<div class="topbar">{prev_btn}{dropdown}{next_btn}'
+            f'{weekly_link}{status_link}{search_link}'
+            f'{hi_link}{marks_link}{promo_link}</div>')
 
 
 def _version_footer(manifest: dict | None) -> str:
@@ -263,26 +359,13 @@ details.summary-en[open] summary{margin-bottom:8px}
 """
 
 
-JS = """
-const tabs = document.querySelectorAll('.tab');
-const pfs = document.querySelectorAll('.pf');
-let dirFilter = 'all';
-let prioFilter = 'HighMedium';
-function applyFilters(){
-  document.querySelectorAll('.paper').forEach(p=>{
-    const d = p.dataset.direction;
-    const pr = p.dataset.priority;
-    const dirOk = dirFilter==='all' || dirFilter===d;
-    const prOk = prioFilter==='all'
-                  || (prioFilter==='High' && pr==='High')
-                  || (prioFilter==='HighMedium' && (pr==='High'||pr==='Medium'));
-    p.dataset.hidden = (dirOk && prOk) ? '0' : '1';
-  });
-}
-tabs.forEach(t=>t.onclick=()=>{tabs.forEach(x=>x.classList.remove('active'));t.classList.add('active');dirFilter=t.dataset.filter;applyFilters();});
-pfs.forEach(t=>t.onclick=()=>{pfs.forEach(x=>x.classList.remove('active'));t.classList.add('active');prioFilter=t.dataset.prio;applyFilters();});
-applyFilters();
-"""
+# NOTE: the former inline daily-page JS (direction tabs + priority buttons)
+# now lives in render/static/radar-ui.js, which also adds ADR-0016 D3/D4/D5.
+# Per ADR-0016 the script is an external, cacheable file — never inlined.
+ASSET_HEAD = (
+    '<link rel="stylesheet" href="radar-ui.css">'
+    '<script src="radar-ui.js" defer></script>'
+)
 
 
 def _render_daily(papers, date, directions_cfg, archive_dates, manifest):
@@ -301,29 +384,65 @@ def _render_daily(papers, date, directions_cfg, archive_dates, manifest):
     return f"""<!doctype html><html lang="zh"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Research Radar — {_esc(date)}</title>
-<style>{CSS}</style></head><body>
+<style>{CSS}</style>{ASSET_HEAD}</head><body>
 <h1>Research Radar</h1>
 <div class="subtitle">{_esc(date)} · AI Bioprinting / Hip Implant / FEA Surrogate / AM Biomedical</div>
 {_topbar(date, archive_dates)}
 {_stats_row(papers, directions_cfg)}
 {_direction_tabs(directions_cfg)}
-{_priority_filter()}
+{_priority_filter_bar()}
+{_marks_filter_bar()}
 {''.join(cards) if cards else '<p style="color:#888">No papers today.</p>'}
 {_version_footer(manifest)}
-<script>{JS}</script>
 </body></html>"""
 
 
-def _render_index(archive_dates):
+def _nav_row() -> str:
+    """ADR-0016 D2/D4/D5 cross-corpus + curation entry points."""
+    return ('<div class="rui-navrow">'
+            '<a href="high-priority.html">⭐ High-priority (all dates)</a>'
+            '<a href="medium-priority.html">Medium-priority (all dates)</a>'
+            '<a href="my-marks.html">🔖 My marks</a>'
+            '<a href="my-promotes.html">➜ Promote queue</a>'
+            '<a href="search.html">🔍 Search</a>'
+            '<a href="status.html">📊 Status</a>'
+            "</div>")
+
+
+def _day_count_badge(counts: dict) -> str:
+    """ADR-0016 D1: '2H 5M 12L' static badge from counts.priority_counts."""
+    h = counts.get("High", 0)
+    m = counts.get("Medium", 0)
+    low = counts.get("Low", 0)
+    x = counts.get("Exclude", 0)
+    parts = [f'<span class="dc-h">{h}H</span>',
+             f'<span class="dc-m">{m}M</span>',
+             f'<span class="dc-l">{low}L</span>']
+    if x:
+        parts.append(f'<span class="dc-x">{x}X</span>')
+    return '<span class="rui-daycount">' + " ".join(parts) + "</span>"
+
+
+def _render_index(archive_dates, day_counts: dict | None = None):
+    day_counts = day_counts or {}
     latest = archive_dates[-1] if archive_dates else ""
-    links = "".join(f'<li><a href="{d}.html">{d}</a></li>' for d in reversed(archive_dates))
+    items = []
+    for d in reversed(archive_dates):
+        c = day_counts.get(d, {})
+        low_quality = (c.get("High", 0) + c.get("Medium", 0)) == 0
+        cls = ' class="day-low-quality"' if low_quality else ""
+        items.append(
+            f'<li{cls}><a href="{d}.html">{d}</a> {_day_count_badge(c)}</li>'
+        )
+    links = "".join(items)
     redirect = f'<meta http-equiv="refresh" content="0; url={latest}.html">' if latest else ""
     return f"""<!doctype html><html><head>
 <meta charset="utf-8">{redirect}
 <title>Research Radar</title>
-<style>{CSS}</style></head><body>
+<style>{CSS}</style>{ASSET_HEAD}</head><body>
 <h1>Research Radar</h1>
-<div class="subtitle">Daily paper digest across 4 research directions</div>
+<div class="subtitle">Daily paper digest across 4 research directions · badges show High/Medium/Low(/Exclude) counts</div>
+{_nav_row()}
 <p>If you are not redirected, choose a day:</p>
 <ul>{links}</ul>
 </body></html>"""
@@ -611,6 +730,93 @@ document.querySelectorAll('.filter').forEach(el => {
     (docs_dir / "search.html").write_text(html, encoding="utf-8")
 
 
+def _page_shell(title: str, subtitle: str, body: str) -> str:
+    """Minimal standalone page reusing the base CSS + the radar-ui bundle."""
+    return f"""<!doctype html><html lang="zh"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Research Radar — {_esc(title)}</title>
+<style>{CSS}</style>{ASSET_HEAD}</head><body>
+<h1>Research Radar — {_esc(title)}</h1>
+<div class="subtitle">{_esc(subtitle)}</div>
+<a class="rui-page-back" href="index.html">← Back to calendar</a>
+{body}
+</body></html>"""
+
+
+def _render_cross_corpus_page(kind: str, dated_papers: list, directions_cfg: dict) -> str:
+    """ADR-0016 D2: flat list of every `kind`-priority paper, newest first.
+
+    `dated_papers` is a list of (bucket_date, paper); bucket_date is the
+    daily-file stem so the per-card deep link lands on the right page.
+    """
+    dated_papers = sorted(dated_papers, key=lambda dp: dp[0], reverse=True)
+    cards = []
+    for bucket_date, p in dated_papers:
+        d = p.get("direction")
+        color = directions_cfg[d]["color"] if d in directions_cfg else "#888"
+        cards.append(_paper_card(p, color, daily_link_date=bucket_date))
+    body = (f'<p style="color:#666;font-size:13px">'
+            f'{len(dated_papers)} {_esc(kind)}-priority papers across the '
+            f'whole corpus, newest first.</p>'
+            + ("".join(cards) if cards
+               else f'<p style="color:#888">No {_esc(kind)}-priority papers.</p>'))
+    return _page_shell(f"{kind}-priority", "All dates · all directions", body)
+
+
+def _render_my_marks_page() -> str:
+    """ADR-0016 D4: localStorage marks listing + export-to-JSON escape hatch."""
+    body = """
+<p style="color:#666;font-size:13px">Reading marks and notes are stored only in
+this browser (ADR-0016 §2 D4 — no sync, no server). Use Export for a backup or
+to hand them elsewhere.</p>
+<p><button type="button" class="rui-btn" id="rui-export-marks">⬇ Export marks to JSON</button></p>
+<div id="rui-marks-list"></div>"""
+    return _page_shell("My marks", "localStorage-backed reading trail", body)
+
+
+def _render_my_promotes_page() -> str:
+    """ADR-0016 D5.A: the localStorage promote queue + copy-out (no git write)."""
+    body = """
+<p style="color:#666;font-size:13px">Papers you queued with "Send to
+lit-system". This is the D5.A manual hand-off: copy the JSON and paste-import it
+on the lit-system side. No automatic git write-back (D5.B is out of scope).</p>
+<p>
+  <button type="button" class="rui-btn" id="rui-copy-promotes">Copy all to clipboard as JSON</button>
+  <button type="button" class="rui-btn rui-secondary" id="rui-clear-promotes">Clear queue</button>
+</p>
+<div id="rui-promote-list"></div>"""
+    return _page_shell("Promote queue", "Pending lit-system hand-off", body)
+
+
+def _copy_static_assets(docs_dir: pathlib.Path) -> None:
+    """Copy render/static/radar-ui.{css,js} into docs/ at render time."""
+    static_dir = pathlib.Path(__file__).resolve().parent / "static"
+    for name in ("radar-ui.css", "radar-ui.js"):
+        src = static_dir / name
+        if src.exists():
+            (docs_dir / name).write_text(
+                src.read_text(encoding="utf-8"), encoding="utf-8"
+            )
+
+
+def _priority_counts_for(papers: list, meta: dict) -> dict:
+    """Prefer the v2 bucket's precomputed counts; recompute only as fallback.
+
+    ADR-0016 D1 says use counts.priority_counts directly. v1 stray files and
+    empty buckets have no such block, so a defensive recompute keeps the
+    badge correct rather than blank.
+    """
+    pc = (meta or {}).get("counts", {}).get("priority_counts")
+    if isinstance(pc, dict) and pc:
+        return pc
+    out: dict = {}
+    for p in papers:
+        prio = p.get("llm", {}).get("priority")
+        if prio:
+            out[prio] = out.get(prio, 0) + 1
+    return out
+
+
 def build(docs_dir, directions_cfg, manifest=None, touched_dates=None):
     """Render every per-publication-date HTML page from disk, refresh index.
 
@@ -625,6 +831,13 @@ def build(docs_dir, directions_cfg, manifest=None, touched_dates=None):
     archive = sorted(p.stem for p in data_daily_dir.glob("20*.json")) if data_daily_dir.exists() else []
     touched = set(touched_dates or ())
 
+    # Accumulated during the single archive pass (avoids a second full scan):
+    #   day_counts  -> ADR-0016 D1 calendar badges
+    #   high/medium -> ADR-0016 D2 cross-corpus pages
+    day_counts: dict[str, dict] = {}
+    high_papers: list = []
+    medium_papers: list = []
+
     for hist_date in archive:
         hist_json = data_daily_dir / f"{hist_date}.json"
         hist_html = docs_dir / f"{hist_date}.html"
@@ -632,6 +845,13 @@ def build(docs_dir, directions_cfg, manifest=None, touched_dates=None):
             continue
         try:
             hist_papers, _meta = _load_papers_v2_or_v1(hist_json)
+            day_counts[hist_date] = _priority_counts_for(hist_papers, _meta)
+            for p in hist_papers:
+                prio = p.get("llm", {}).get("priority")
+                if prio == "High":
+                    high_papers.append((hist_date, p))
+                elif prio == "Medium":
+                    medium_papers.append((hist_date, p))
             page_manifest = manifest if hist_date in touched else None
             hist_html.write_text(
                 _render_daily(hist_papers, hist_date, directions_cfg, archive, page_manifest),
@@ -641,9 +861,26 @@ def build(docs_dir, directions_cfg, manifest=None, touched_dates=None):
             print(f"  (skip re-render {hist_date}: {e})")
 
     (docs_dir / "index.html").write_text(
-        _render_index(archive),
+        _render_index(archive, day_counts),
         encoding="utf-8",
     )
+
+    # ADR-0016 D2: cross-corpus high/medium pages
+    (docs_dir / "high-priority.html").write_text(
+        _render_cross_corpus_page("High", high_papers, directions_cfg),
+        encoding="utf-8",
+    )
+    (docs_dir / "medium-priority.html").write_text(
+        _render_cross_corpus_page("Medium", medium_papers, directions_cfg),
+        encoding="utf-8",
+    )
+
+    # ADR-0016 D4/D5: client-side curation pages + the JS/CSS bundle
+    (docs_dir / "my-marks.html").write_text(
+        _render_my_marks_page(), encoding="utf-8")
+    (docs_dir / "my-promotes.html").write_text(
+        _render_my_promotes_page(), encoding="utf-8")
+    _copy_static_assets(docs_dir)
 
     # W1.x: also render run status page from manifests
     data_dir = docs_dir.parent / "data"
