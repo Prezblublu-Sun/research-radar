@@ -1,0 +1,84 @@
+name: manual-backfill
+
+# Manually-triggered historical backfill, used to fill cron gaps or
+# rerun a window with updated fetcher logic. Mirrors daily.yml's env
+# block + scope_audit + commit pattern, but invokes pipeline.run_historical
+# with user-supplied date range.
+
+on:
+  workflow_dispatch:
+    inputs:
+      from_date:
+        description: "Start of range (YYYY-MM-DD, inclusive)"
+        required: true
+        type: string
+      to_date:
+        description: "End of range (YYYY-MM-DD, inclusive)"
+        required: true
+        type: string
+      dry_run:
+        description: "Skip LLM scoring (fetch + route only)?"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pages: write
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350  # 5h 50m, near the 6h GitHub Actions cap
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -e .
+
+      - name: Run historical backfill
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_BASE_URL: ${{ secrets.OPENAI_BASE_URL }}
+          MODEL_NAME: ${{ vars.MODEL_NAME }}
+          OPENALEX_EMAIL: ${{ vars.OPENALEX_EMAIL }}
+          PUBMED_EMAIL: ${{ vars.PUBMED_EMAIL }}
+          ZOTERO_USER_ID: ${{ secrets.ZOTERO_USER_ID }}
+          ZOTERO_API_KEY: ${{ secrets.ZOTERO_API_KEY }}
+          ZOT_COL_BIOPRINTING: ${{ vars.ZOT_COL_BIOPRINTING }}
+          ZOT_COL_HIP: ${{ vars.ZOT_COL_HIP }}
+          ZOT_COL_FEA: ${{ vars.ZOT_COL_FEA }}
+          ZOT_COL_AM: ${{ vars.ZOT_COL_AM }}
+          SCORER_PROMPT_FILE: scorer_v3.txt
+        run: |
+          python -m pipeline.run_historical \
+            --from-date "${{ inputs.from_date }}" \
+            --to-date   "${{ inputs.to_date }}" \
+            ${{ inputs.dry_run && '--dry-run' || '' }}
+
+      - name: SCOPE.md boundary audit
+        id: scope_audit
+        continue-on-error: true
+        run: |
+          python -m pipeline.scope_audit \
+            --output "data/audit/scope_audit_backfill_$(date -u +%Y-%m-%dT%H-%M-%S).json"
+
+      - name: Commit backfill results
+        run: |
+          git config user.name "research-radar-bot"
+          git config user.email "actions@github.com"
+          git add data/ 2>/dev/null || true
+          if git diff --staged --quiet; then
+            echo "No changes from backfill (already in corpus or dry-run)."
+          else
+            git commit -m "backfill: ${{ inputs.from_date }}..${{ inputs.to_date }}"
+            git push
+          fi
+
+      - name: Fail if scope_audit reported errors
+        if: steps.scope_audit.outcome == 'failure'
+        run: |
+          echo "::error::scope_audit detected SCOPE.md boundary violations."
+          exit 1

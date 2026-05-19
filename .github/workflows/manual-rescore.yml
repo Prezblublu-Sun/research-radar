@@ -1,0 +1,67 @@
+name: manual-rescore
+
+# Manually-triggered re-score of papers whose original LLM scoring
+# silently failed (ADR-0017). Walks data/daily/, finds silent-scored
+# papers (priority set + reasoning empty + priority_reason populated),
+# and re-invokes the retry-aware scorer. Resumable: re-run this
+# workflow as many times as needed until the silent count reaches 0.
+
+on:
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: "Max papers to rescore in this run (e.g. 800 for ~75min)"
+        required: true
+        type: string
+        default: "800"
+
+permissions:
+  contents: write
+
+jobs:
+  rescore:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350  # 5h 50m, near the 6h GitHub Actions cap
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -e .
+
+      - name: Run rescore_silent
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_BASE_URL: ${{ secrets.OPENAI_BASE_URL }}
+          MODEL_NAME: ${{ vars.MODEL_NAME }}
+          SCORER_PROMPT_FILE: scorer_v3.txt
+        run: |
+          python -m scripts.rescore_silent \
+            --limit ${{ inputs.limit }} \
+            --resume
+
+      - name: SCOPE.md boundary audit
+        id: scope_audit
+        continue-on-error: true
+        run: |
+          python -m pipeline.scope_audit \
+            --output "data/audit/scope_audit_rescore_$(date -u +%Y-%m-%dT%H-%M-%S).json"
+
+      - name: Commit rescore results
+        run: |
+          git config user.name "research-radar-bot"
+          git config user.email "actions@github.com"
+          git add data/ 2>/dev/null || true
+          if git diff --staged --quiet; then
+            echo "No changes from rescore (silent count may already be 0)."
+          else
+            git commit -m "rescore: up to ${{ inputs.limit }} silent papers (ADR-0017)"
+            git push
+          fi
+
+      - name: Fail if scope_audit reported errors
+        if: steps.scope_audit.outcome == 'failure'
+        run: |
+          echo "::error::scope_audit detected SCOPE.md boundary violations."
+          exit 1
