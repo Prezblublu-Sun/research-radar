@@ -44,7 +44,10 @@ candidates; lit-system owns everything past that.
 - Cross-paper synthesis beyond the weekly LLM meta-summary
 - Personalization, feedback loops, active learning, re-ranking
 - Chat-with-papers, conversational UI
-- Curation/annotation web UI, reading-progress tracking
+- Curation/annotation web UI on deep-parsed PDFs (lit-system territory)
+  (NOTE 2026-05-19: client-side marks+notes on the Radar browse surface
+  are permitted per ADR-0016. They are a human-curation aid distinct from
+  lit-system's automatic machine annotation of PDFs.)
 
 If a feature touches any of the above, it belongs in lit-system — reject
 or redirect.

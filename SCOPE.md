@@ -69,9 +69,21 @@ These are explicitly out of scope and belong to other systems (primarily lit-sys
 
 ### Acquisition / curation operations beyond fetch+filter
 - Manual ingestion of user-provided PDFs
-- Curation interface (web UI for marking papers)
-- Annotation tools
-- Reading-progress tracking
+
+### Allowed (added 2026-05-19 by ADR-0016, see decisions/ADR-0016-paper-curation-ui.md)
+- Client-side reading marks and notes on the Radar browse surface
+  (to-read / read / interesting / ignore, plus free-text notes per paper).
+  Persisted in localStorage only; no server-side state; no sync.
+- Cross-corpus priority navigation pages (high-priority.html etc).
+- These are human-curation aids on Radar. Distinct from lit-system,
+  which performs automatic machine annotation on deep-parsed PDFs.
+  The user does not hand-edit lit-system annotations; the two layers
+  have non-overlapping responsibilities.
+
+### Still NOT allowed
+- Annotation tools that modify scored data or feed back into scoring
+- Reading-progress tracking that requires server state
+- Personalized re-ranking based on user marks
 
 ---
 

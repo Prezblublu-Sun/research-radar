@@ -1,6 +1,6 @@
 # ADR-0016: Paper curation UI — quality-day filtering + reading marks
 
-**Status**: DRAFT
+**Status**: Accepted (2026-05-19)
 **Date**: 2026-05-18
 **Supersedes**: —
 **Related**: ADR-0015 §7 (deferred UI work)
@@ -115,3 +115,20 @@ All five affordances are client-side. To revert any of them, remove the JavaScri
 - Q1: For D1 priority count badges, should "no Medium+" days be hidden by default with a "Show all days" toggle, or merely greyed? Decision: grey only; user retains the ability to land on any date. Hiding defeats the calendar.
 - Q2: Should D4 marks contribute to D2's high-priority page? E.g., "interesting" papers also appear there. Deferred to Phase B implementation.
 - Q3: For D5.A (localStorage queue), what exactly should the JSON include? Minimum: identity_key, title, date, direction, priority. Specified at Phase C implementation.
+
+
+---
+
+## 8. Scope amendment rationale (2026-05-19)
+
+When SCOPE.md was originally written (2026-05-14), it placed all curation/annotation/mark UI under "What Radar is NOT", redirecting them to lit-system. That was correct at the time: the v2 corpus was small, lit-system was the obvious place for any per-paper user state.
+
+After the 10-year backfill completed 2026-05-19, the corpus is ~34000 papers across 3554 daily pages. The user reports that browsing the radar surface without any per-paper reading trail is no longer sustainable: papers get re-discovered, decisions get re-made. The pain is real and Radar-specific (it happens at the browse-and-triage step, not at the deep-reading step).
+
+Crucially, the user clarified the two systems do not actually conflict:
+- lit-system runs automatic LLM annotation on already-ingested PDFs. The user does not hand-edit those annotations.
+- Radar is where the user manually browses, marks, and notes during triage, before deciding what to send to lit-system.
+
+The two layers have non-overlapping responsibilities: lit-system = machine annotation of deep-parsed PDFs; Radar = human curation of the discovery feed. Both can co-exist without violating the original separation-of-concerns intent.
+
+SCOPE.md and CLAUDE.md are amended in the same commit as this ADR's Accepted promotion to reflect the new boundary.
