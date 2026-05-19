@@ -88,8 +88,27 @@ def _log_scoring_failure(paper: dict, raw_response: str | None, exc: BaseExcepti
         return None  # best-effort logging; do not propagate
 
 
-def score(paper: dict, direction_focus: str) -> dict:
+# ADR-0017 §Decision 1: bounded retry for transient scoring failures.
+# Attempts 2 and 3 prepend this nudge to the system prompt to combat the
+# top observed failure modes (empty response, markdown-fenced JSON,
+# unterminated string, unescaped quote inside Chinese fields).
+_STRICT_JSON_NUDGE = (
+    "CRITICAL: Output ONLY valid JSON. No markdown fences. "
+    "No commentary. No prose before or after."
+)
+_MAX_SCORE_ATTEMPTS = 3
+
+
+def score(paper: dict, direction_focus: str,
+          system_prompt_prefix: str = "") -> dict:
+    """Score one paper. `system_prompt_prefix` is prepended to the system
+    prompt (ADR-0017 §Decision 1, retry attempts 2 and 3 pass the
+    strict-JSON nudge; empty string for the first attempt keeps the
+    historical prompt path bit-identical).
+    """
     system_prompt = _load_system_prompt()
+    if system_prompt_prefix:
+        system_prompt = system_prompt_prefix + "\n\n" + system_prompt
 
     user_msg = f"""Direction this paper was routed to: {paper.get('direction_name', 'unknown')}
 
@@ -128,21 +147,55 @@ Output JSON only."""
 
 
 def score_batch(papers: list[dict], direction_configs: dict) -> tuple[list[dict], list[dict]]:
+    """Score every paper with ADR-0017 §Decision 1 retry semantics.
+
+    Each paper is given up to 3 attempts. Attempt 1 uses the historical
+    prompt verbatim (transient API/parse hiccup tolerance). Attempts 2
+    and 3 prepend the strict-JSON nudge. On a successful attempt, the
+    paper's ``llm`` dict carries the parsed scorer output as before.
+    When all 3 attempts fail, ``llm`` is set to::
+
+        {"priority": None,
+         "scorer_failed": True,
+         "scorer_failed_reason": str(last_exception),
+         "scorer_failed_attempts": 3}
+
+    Note the priority is Python ``None`` (serialises to JSON ``null``),
+    NOT the string ``"Low"`` — this is the key contract change vs the
+    pre-ADR-0017 silent-Low fallback so downstream consumers can filter
+    failures explicitly rather than treating them as genuine Low papers.
+    Every attempt's failure is still logged via ``_log_scoring_failure``
+    so the failures dir captures full retry history.
+    """
     out: list[dict] = []
     raws: list[dict] = []
     for p in papers:
         direction = p.get("direction")
         focus = direction_configs.get(direction, {}).get("llm_prompt_focus", "")
-        try:
-            result = score(p, focus)
+        result: dict | None = None
+        last_exc: BaseException | None = None
+        for attempt in range(1, _MAX_SCORE_ATTEMPTS + 1):
+            prefix = "" if attempt == 1 else _STRICT_JSON_NUDGE
+            try:
+                result = score(p, focus, system_prompt_prefix=prefix)
+                break
+            except Exception as e:
+                last_exc = e
+                # Capture raw LLM text if score() attached it (JSON-decode case);
+                # otherwise fall back to the exception string (network etc).
+                raw_text = getattr(e, "raw_content", None)
+                _log_scoring_failure(p, raw_text, e)
+        if result is not None:
             raws.append({"_raw_model": result.pop("_raw_model", "")})
             p["llm"] = result
-        except Exception as e:
-            # Capture raw LLM text if score() attached it (JSON-decode case);
-            # otherwise fall back to the exception string (network errors etc).
-            raw_text = getattr(e, "raw_content", None)
-            _log_scoring_failure(p, raw_text, e)
-            p["llm"] = {"priority": "Low", "priority_reason": f"scoring failed: {e}"}
+        else:
+            # ADR-0017 §Decision 1: null + flag, never the silent "Low".
+            p["llm"] = {
+                "priority": None,
+                "scorer_failed": True,
+                "scorer_failed_reason": str(last_exc),
+                "scorer_failed_attempts": _MAX_SCORE_ATTEMPTS,
+            }
             raws.append({})
         out.append(p)
     return out, raws
