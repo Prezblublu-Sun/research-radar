@@ -132,9 +132,33 @@
     var rec = markRecord(idk);
     if (rec && rec.state) card.dataset.mark = rec.state;
 
-    // D4 mark radios — 4-state to-read / read / interesting / ignore
+    // D4 mark radios — 4-state to-read / read / interesting / ignore.
+    // CHANGE B1: re-clicking the already-selected radio clears the mark
+    // entirely. The click handler runs before `change` and reads the prior
+    // state from localStorage (the source of truth, not the DOM): if the
+    // clicked value already is the stored state, we deselect instead of
+    // re-affirming — uncheck the radio, drop the mark, refresh the stripe.
     card.querySelectorAll(".rui-mark-radio").forEach(function (r) {
       if (rec && rec.state === r.value) r.checked = true;
+      r.addEventListener("click", function (ev) {
+        var prior = markRecord(idk);
+        var priorState = prior && prior.state ? prior.state : "none";
+        if (priorState !== r.value) return; // not a re-click: let `change` save
+        // Re-click on the current mark: clear it. Standard radios don't
+        // toggle off, so undo the default and unset explicitly.
+        ev.preventDefault();
+        r.checked = false;
+        if (prior && typeof prior.note === "string" && prior.note !== "") {
+          // Preserve a note the user wrote; only the mark state is cleared.
+          prior.state = "";
+          prior.at = new Date().toISOString();
+          lsSet("radar:mark:" + idk, prior);
+        } else {
+          localStorage.removeItem("radar:mark:" + idk);
+        }
+        delete card.dataset.mark; // back to the neutral .paper stripe
+        applyFilters();
+      });
       r.addEventListener("change", function () {
         var cur = markRecord(idk) || { state: "", at: "", note: "" };
         cur.state = r.value;
