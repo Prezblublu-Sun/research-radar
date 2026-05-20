@@ -20,6 +20,17 @@ sys.path.insert(0, str(ROOT))
 from scripts import rescore_silent as rs  # noqa: E402
 
 
+@pytest.fixture(autouse=True)
+def _bind_lazy_scorer():
+    """rescore_silent defers ``from pipeline import llm_scorer`` so that
+    --dry-run is usable without OPENAI_API_KEY. The conftest fixture sets
+    a stub key, so we can safely force-bind ``rs.llm_scorer`` here — tests
+    that monkeypatch ``rs.llm_scorer.score_batch`` then have a real module
+    to patch on, and the script's own ``_ensure_llm_scorer()`` returns the
+    same cached object."""
+    rs._ensure_llm_scorer()
+
+
 # ============================== fixtures =================================
 
 DIRECTIONS_YAML = """

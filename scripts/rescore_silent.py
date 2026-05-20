@@ -36,7 +36,22 @@ import time
 
 import yaml
 
-from pipeline import llm_scorer
+# `pipeline.llm_scorer` constructs the OpenAI client at import time and
+# therefore requires OPENAI_API_KEY in the environment. ``--dry-run``
+# only counts silent papers — it never calls the scorer — so the import
+# is deferred into :func:`rescore_run` to keep dry-run usable without
+# credentials. Tests still patch ``rs.llm_scorer.score_batch`` after
+# this lazy import has bound the attribute.
+llm_scorer = None  # populated by _ensure_llm_scorer()
+
+
+def _ensure_llm_scorer():
+    global llm_scorer
+    if llm_scorer is None:
+        from pipeline import llm_scorer as _ls
+        llm_scorer = _ls
+    return llm_scorer
+
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 DEFAULT_CORPUS_ROOT = ROOT / "data" / "daily"
@@ -156,6 +171,12 @@ def rescore_run(daily_dir: pathlib.Path, directions_cfg: dict,
     of each bucket OR every ``flush_every`` papers within a bucket
     (whichever comes first). Returns final stats.
     """
+    # Bind the lazy-imported scorer module. Tests that monkeypatch
+    # ``rs.llm_scorer.score_batch`` install an autouse fixture that runs
+    # this beforehand, so ``llm_scorer`` is the real module at patch time
+    # and we pick the patched ``score_batch`` up here via the same object.
+    scorer = _ensure_llm_scorer()
+
     # Pre-count so the progress line has a meaningful denominator.
     pre = dry_run_scan(daily_dir)
     total_candidates = pre["total_silent"] + (0 if resume else pre["total_failed"])
@@ -186,7 +207,7 @@ def rescore_run(daily_dir: pathlib.Path, directions_cfg: dict,
                 continue
 
             # Re-invoke the retry-aware scorer for this single paper.
-            llm_scorer.score_batch([p], directions_cfg)
+            scorer.score_batch([p], directions_cfg)
             bucket_dirty = True
             processed += 1
             last_bucket = bp.stem
