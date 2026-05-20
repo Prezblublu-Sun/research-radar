@@ -18,6 +18,12 @@ from openai import OpenAI
 client = OpenAI(
     api_key=os.environ["OPENAI_API_KEY"],
     base_url=os.environ.get("OPENAI_BASE_URL", "https://api.deepseek.com"),
+    # ADR-0017 follow-up: hard timeout + SDK-level retries so a hung
+    # DeepSeek connection cannot stall the whole backfill. Observed a
+    # 38-minute hang on api.deepseek.com (3.173.21.63:443) with no
+    # timeout set — the SDK default left the socket blocking indefinitely.
+    timeout=float(os.environ.get("LLM_TIMEOUT", "60")),
+    max_retries=int(os.environ.get("LLM_MAX_RETRIES", "3")),
 )
 MODEL = os.environ.get("MODEL_NAME", "deepseek-v4-flash")
 TEMPERATURE = float(os.environ.get("LLM_TEMPERATURE", "0.2"))
