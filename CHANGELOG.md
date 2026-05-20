@@ -6,6 +6,15 @@ auto-update marker are preserved.
 
 <!-- AUTO-UPDATE-BELOW -->
 
+## 2026-05-20 (run 2026-05-20T07:06:58+00:00)
+
+Counts: fetched=402, after_dedup=368, after_routing=161, High=5, Medium=23
+
+- `am_biomedical.sources.openalex_concepts` added: ['C2781411149']
+- `fea_surrogate.sources.openalex_concepts` added: ['C135628077', 'C170700871']
+- `hip_implant.sources.openalex_concepts` added: ['C3019025420', 'C2778985418']
+
+
 ## 2026-05-14 (run 2026-05-14T10:43:45+00:00)
 
 Counts: fetched=589, after_dedup=588, after_routing=124, High=3, Medium=13
