@@ -152,56 +152,89 @@ Output JSON only."""
     return parsed
 
 
-def score_batch(papers: list[dict], direction_configs: dict) -> tuple[list[dict], list[dict]]:
-    """Score every paper with ADR-0017 §Decision 1 retry semantics.
+_LLM_CONCURRENCY = int(os.environ.get("LLM_CONCURRENCY", "8"))
 
-    Each paper is given up to 3 attempts. Attempt 1 uses the historical
-    prompt verbatim (transient API/parse hiccup tolerance). Attempts 2
-    and 3 prepend the strict-JSON nudge. On a successful attempt, the
-    paper's ``llm`` dict carries the parsed scorer output as before.
-    When all 3 attempts fail, ``llm`` is set to::
 
-        {"priority": None,
-         "scorer_failed": True,
-         "scorer_failed_reason": str(last_exception),
-         "scorer_failed_attempts": 3}
-
-    Note the priority is Python ``None`` (serialises to JSON ``null``),
-    NOT the string ``"Low"`` — this is the key contract change vs the
-    pre-ADR-0017 silent-Low fallback so downstream consumers can filter
-    failures explicitly rather than treating them as genuine Low papers.
-    Every attempt's failure is still logged via ``_log_scoring_failure``
-    so the failures dir captures full retry history.
+def _score_one_paper(p: dict, direction_configs: dict) -> tuple[dict, dict]:
+    """Score a single paper with ADR-0017 3-attempt retry. Returns
+    (paper_with_llm_set, raw_dict). Mutates p["llm"] in place and also
+    returns p so the caller can keep input ordering. This is the unit of
+    work dispatched to the thread pool by :func:`score_batch`.
     """
-    out: list[dict] = []
-    raws: list[dict] = []
-    for p in papers:
-        direction = p.get("direction")
-        focus = direction_configs.get(direction, {}).get("llm_prompt_focus", "")
-        result: dict | None = None
-        last_exc: BaseException | None = None
-        for attempt in range(1, _MAX_SCORE_ATTEMPTS + 1):
-            prefix = "" if attempt == 1 else _STRICT_JSON_NUDGE
-            try:
-                result = score(p, focus, system_prompt_prefix=prefix)
-                break
-            except Exception as e:
-                last_exc = e
-                # Capture raw LLM text if score() attached it (JSON-decode case);
-                # otherwise fall back to the exception string (network etc).
-                raw_text = getattr(e, "raw_content", None)
-                _log_scoring_failure(p, raw_text, e)
-        if result is not None:
-            raws.append({"_raw_model": result.pop("_raw_model", "")})
-            p["llm"] = result
-        else:
-            # ADR-0017 §Decision 1: null + flag, never the silent "Low".
-            p["llm"] = {
-                "priority": None,
-                "scorer_failed": True,
-                "scorer_failed_reason": str(last_exc),
-                "scorer_failed_attempts": _MAX_SCORE_ATTEMPTS,
-            }
-            raws.append({})
-        out.append(p)
-    return out, raws
+    direction = p.get("direction")
+    focus = direction_configs.get(direction, {}).get("llm_prompt_focus", "")
+    result: dict | None = None
+    last_exc: BaseException | None = None
+    for attempt in range(1, _MAX_SCORE_ATTEMPTS + 1):
+        prefix = "" if attempt == 1 else _STRICT_JSON_NUDGE
+        try:
+            result = score(p, focus, system_prompt_prefix=prefix)
+            break
+        except Exception as e:
+            last_exc = e
+            raw_text = getattr(e, "raw_content", None)
+            _log_scoring_failure(p, raw_text, e)
+    if result is not None:
+        raw = {"_raw_model": result.pop("_raw_model", "")}
+        p["llm"] = result
+    else:
+        # ADR-0017 §Decision 1: null + flag, never the silent "Low".
+        p["llm"] = {
+            "priority": None,
+            "scorer_failed": True,
+            "scorer_failed_reason": str(last_exc),
+            "scorer_failed_attempts": _MAX_SCORE_ATTEMPTS,
+        }
+        raw = {}
+    return p, raw
+
+
+def score_batch(papers: list[dict], direction_configs: dict) -> tuple[list[dict], list[dict]]:
+    """Score every paper with ADR-0017 §Decision 1 retry semantics,
+    dispatched concurrently across a thread pool.
+
+    Each paper is given up to 3 attempts (see :func:`_score_one_paper`):
+    attempt 1 uses the historical prompt verbatim; attempts 2 and 3
+    prepend the strict-JSON nudge. On success the paper's ``llm`` dict
+    carries the parsed scorer output. When all 3 attempts fail, ``llm``
+    becomes ``{"priority": None, "scorer_failed": True, ...}`` — Python
+    ``None`` (JSON ``null``), NOT ``"Low"``.
+
+    Concurrency: papers are scored in parallel via a ThreadPoolExecutor
+    with ``LLM_CONCURRENCY`` workers (default 8). DeepSeek tolerates this
+    (verified 10-way concurrent with zero 429s). The OpenAI SDK client is
+    thread-safe. Output ordering matches input ordering regardless of
+    completion order, so downstream bucket-writing is deterministic.
+    Per-paper retry/failure logging is unchanged — each worker runs the
+    same 3-attempt loop independently.
+    """
+    if not papers:
+        return [], []
+
+    # Single-worker fast path keeps behaviour identical when concurrency
+    # is disabled (LLM_CONCURRENCY=1), useful for debugging / tests.
+    workers = max(1, min(_LLM_CONCURRENCY, len(papers)))
+    if workers == 1:
+        out: list[dict] = []
+        raws: list[dict] = []
+        for p in papers:
+            sp, raw = _score_one_paper(p, direction_configs)
+            out.append(sp)
+            raws.append(raw)
+        return out, raws
+
+    import concurrent.futures as _cf
+    # Preserve input order: map each future to its index, fill a sized list.
+    out_slots: list[dict | None] = [None] * len(papers)
+    raw_slots: list[dict | None] = [None] * len(papers)
+    with _cf.ThreadPoolExecutor(max_workers=workers) as ex:
+        fut_to_idx = {
+            ex.submit(_score_one_paper, p, direction_configs): i
+            for i, p in enumerate(papers)
+        }
+        for fut in _cf.as_completed(fut_to_idx):
+            i = fut_to_idx[fut]
+            sp, raw = fut.result()
+            out_slots[i] = sp
+            raw_slots[i] = raw
+    return [p for p in out_slots if p is not None], [r if r is not None else {} for r in raw_slots]
