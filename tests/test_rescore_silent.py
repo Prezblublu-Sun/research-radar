@@ -239,6 +239,71 @@ def test_resume_skips_scorer_failed_papers(env, monkeypatch):
     assert s4["llm"]["relevance_to_user"] == "rescored OK"
 
 
+def test_score_batch_called_once_per_bucket_with_all_candidates(env, monkeypatch):
+    """ADR-0019: rescore must hand each bucket's candidates to score_batch
+    in a single call so its ThreadPoolExecutor actually engages. The env
+    fixture has 2 silent papers in 2024-05-10 and 1 silent paper in
+    2024-05-11, so we expect exactly 2 score_batch calls with batch
+    sizes [2, 1] (not 3 single-paper calls)."""
+    _, daily, cfg = env
+    calls: list[list[str]] = []
+
+    def recording_score_batch(papers, dirs):
+        calls.append([p["doi"] for p in papers])
+        return _fake_score_batch(papers, dirs)
+
+    monkeypatch.setattr(rs.llm_scorer, "score_batch", recording_score_batch)
+
+    rc = rs.main([
+        "--corpus-root", str(daily), "--directions-yaml", str(cfg),
+    ])
+    assert rc == 0
+
+    # Exactly one call per bucket-that-had-candidates.
+    assert len(calls) == 2, f"expected 2 batched calls, got {len(calls)}: {calls}"
+    # Batches contain ALL silent papers from that bucket — not one-at-a-time.
+    assert sorted(calls[0]) == ["10.1/s1", "10.1/s2"]
+    assert calls[1] == ["10.1/s3"]
+
+
+def test_limit_slices_candidates_within_a_bucket(tmp_path, monkeypatch):
+    """When --limit caps below a bucket's candidate count, the bucket's
+    batch must be sliced to fit the remaining budget — not the whole
+    bucket, and not one paper at a time."""
+    daily = tmp_path / "data" / "daily"
+    _write_bucket(daily, "2024-06-01", [
+        _silent_paper(f"10.1/b{i}") for i in range(5)
+    ])
+    cfg = tmp_path / "directions.yaml"
+    cfg.write_text(DIRECTIONS_YAML, encoding="utf-8")
+
+    calls: list[list[str]] = []
+
+    def recording_score_batch(papers, dirs):
+        calls.append([p["doi"] for p in papers])
+        return _fake_score_batch(papers, dirs)
+
+    monkeypatch.setattr(rs.llm_scorer, "score_batch", recording_score_batch)
+
+    rc = rs.main([
+        "--limit", "2",
+        "--corpus-root", str(daily), "--directions-yaml", str(cfg),
+    ])
+    assert rc == 0
+
+    # One batched call, sized to the budget (2 of 5), not 5 and not 1+1.
+    assert len(calls) == 1
+    assert len(calls[0]) == 2
+
+    # Of the 5 silent papers, exactly 2 are now rescored on disk.
+    data = json.loads((daily / "2024-06-01.json").read_text(encoding="utf-8"))
+    rescored = [p for p in data["papers"]
+                if p["llm"].get("relevance_to_user") == "rescored OK"]
+    silent_remaining = [p for p in data["papers"] if rs.is_silent(p["llm"])]
+    assert len(rescored) == 2
+    assert len(silent_remaining) == 3
+
+
 def test_atomic_write_failure_preserves_original(env, monkeypatch):
     """Simulate a mid-flush rename failure: the original daily file
     content must be byte-for-byte intact."""

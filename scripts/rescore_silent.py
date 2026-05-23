@@ -56,7 +56,6 @@ def _ensure_llm_scorer():
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 DEFAULT_CORPUS_ROOT = ROOT / "data" / "daily"
 DEFAULT_DIRECTIONS_YAML = ROOT / "config" / "directions.yaml"
-FLUSH_EVERY = 25
 
 
 # ============================== predicates =================================
@@ -164,12 +163,12 @@ def _ts() -> str:
 
 
 def rescore_run(daily_dir: pathlib.Path, directions_cfg: dict,
-                limit: int | None = None, resume: bool = False,
-                flush_every: int = FLUSH_EVERY) -> dict:
-    """The actual mutating pass. Re-invokes the retry-aware scorer one
-    paper at a time, flushes the owning daily file atomically at the end
-    of each bucket OR every ``flush_every`` papers within a bucket
-    (whichever comes first). Returns final stats.
+                limit: int | None = None, resume: bool = False) -> dict:
+    """The actual mutating pass. For each bucket, collect its candidate
+    papers and hand them to the retry-aware scorer in a single
+    :func:`score_batch` call so its ``LLM_CONCURRENCY`` worker pool
+    actually engages (ADR-0019). Buckets are written atomically once
+    after their candidates have all been scored. Returns final stats.
     """
     # Bind the lazy-imported scorer module. Tests that monkeypatch
     # ``rs.llm_scorer.score_batch`` install an autouse fixture that runs
@@ -198,35 +197,41 @@ def rescore_run(daily_dir: pathlib.Path, directions_cfg: dict,
         if not data:
             continue
         papers = data.get("papers", [])
-        bucket_dirty = False
 
-        for p in papers:
-            if limit is not None and processed >= limit:
-                break
-            if not is_candidate(p, resume):
-                continue
+        # Collect this bucket's candidates by reference so score_batch's
+        # in-place mutation of paper["llm"] is what eventually lands on
+        # disk when we rewrite ``data``.
+        candidates = [p for p in papers if is_candidate(p, resume)]
 
-            # Re-invoke the retry-aware scorer for this single paper.
-            scorer.score_batch([p], directions_cfg)
-            bucket_dirty = True
-            processed += 1
-            last_bucket = bp.stem
+        # Honour --limit exactly: cap candidates to the remaining budget
+        # before dispatching, so total processed across all buckets never
+        # exceeds limit.
+        if limit is not None:
+            remaining = limit - processed
+            candidates = candidates[:remaining]
 
-            new_llm = p.get("llm", {}) or {}
+        if not candidates:
+            continue
+
+        # One concurrent batch per bucket. score_batch fans out across
+        # LLM_CONCURRENCY workers, preserves input order, and applies
+        # the ADR-0017 3-attempt retry per paper.
+        scorer.score_batch(candidates, directions_cfg)
+
+        for cp in candidates:
+            new_llm = cp.get("llm", {}) or {}
             if new_llm.get("scorer_failed"):
                 failed += 1
             elif new_llm.get("priority"):
                 succeeded += 1
+        processed += len(candidates)
+        last_bucket = bp.stem
 
-            if processed % flush_every == 0:
-                atomic_write_json(bp, data)
-                bucket_dirty = False
-                pct = 100.0 * processed / max(total_candidates, 1)
-                print(f"[{_ts()}] rescore: {processed} / {total_candidates} "
-                      f"({pct:.1f}%) — last bucket {last_bucket}", flush=True)
+        atomic_write_json(bp, data)
 
-        if bucket_dirty:
-            atomic_write_json(bp, data)
+        pct = 100.0 * processed / max(total_candidates, 1)
+        print(f"[{_ts()}] rescore: {processed} / {total_candidates} "
+              f"({pct:.1f}%) — last bucket {last_bucket}", flush=True)
 
     elapsed = time.time() - started
     print(f"[{_ts()}] DONE — processed={processed} succeeded={succeeded} "
