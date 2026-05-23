@@ -48,6 +48,11 @@ from collections import Counter, defaultdict
 KNOWN_DIRECTIONS = ("ai_bioprinting", "am_biomedical", "fea_surrogate", "hip_implant")
 KNOWN_PRIORITIES = ("High", "Medium", "Low", "Exclude")
 PRIMARY_SCORER = "v3"
+FOOTNOTE = (
+    "Counts reflect the radar fetched corpus, not total field output. "
+    "Per-day fetch yield dropped ~2023 (fetcher behavior); "
+    "see FINDING-2023-fetch-yield-drop.md."
+)
 OTHER_LABEL = "OTHER"
 
 
@@ -192,11 +197,13 @@ def render_stacked_bar(yearly: Counter, out_path: pathlib.Path) -> None:
     ax.set_title(f"Papers per year by direction (scorer_{PRIMARY_SCORER} only)")
     ax.set_xlabel("Year")
     ax.set_ylabel("Paper count")
+    fig.text(0.5, 0.01, FOOTNOTE, ha="center", va="bottom",
+             fontsize=7, color="gray", wrap=True)
     if directions:
         ax.legend(loc="upper left", fontsize="small")
     if years:
         ax.tick_params(axis="x", rotation=45)
-    fig.tight_layout()
+    fig.tight_layout(rect=(0, 0.04, 1, 1))
     out_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out_path, dpi=120)
     plt.close(fig)
@@ -238,11 +245,14 @@ def render_priority_ratio(yearly: Counter, out_path: pathlib.Path) -> None:
     ax.set_xlabel("Year")
     ax.set_ylabel("Share of High+Medium papers")
     ax.set_ylim(0.0, 1.0)
+    fig.text(0.5, 0.01,
+             "scorer_v3 only. Source: radar fetched corpus (see FINDING-2023-fetch-yield-drop.md).",
+             ha="center", va="bottom", fontsize=7, color="gray", wrap=True)
     if directions_present:
         ax.legend(loc="best", fontsize="small")
     if all_years:
         ax.tick_params(axis="x", rotation=45)
-    fig.tight_layout()
+    fig.tight_layout(rect=(0, 0.04, 1, 1))
     out_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out_path, dpi=120)
     plt.close(fig)
