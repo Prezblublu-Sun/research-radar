@@ -2018,29 +2018,2593 @@
       "schema_version": "v2",
       "scorer_version": "v3",
       "first_seen_at": "2026-05-21T06:54:58Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2605.06934v1",
+      "doi": "",
+      "arxiv_id": "2605.06934v1",
+      "title": "Learned Lyapunov Shielding for Adaptive Control",
+      "abstract": "We augment the Slotine--Li adaptive controller for Euler--Lagrange systems with three learned components: a structured-quadratic Lyapunov function \\(V_ψ\\) whose positive-definiteness follows from a Cholesky parameterization, a residual Soft Actor--Critic policy that adds bounded torque corrections to the analytic baseline, and a physics-informed neural network that estimates unmodeled dynamics. A closed-form safety filter, derived from the single affine constraint \\(\\dot V_ψ+ αV_ψ\\le 0\\), projects every policy output onto the safe set without requiring an online QP solver. We prove: global feasibility of the filter under a drift-decay condition on the control-degeneracy set; exponential stability under exact shielding, with a robust extension whose margin depends on the PINN approximation error; almost-sure convergence of the three-timescale policy--certificate--multiplier updates to a KKT point; and a PAC generalization bound for the certificate over compacts. On a 2-DOF manipulator with nonlinear friction and variable payload, the learned certificate accounts for most of the empirical gain: tracking error drops by 41\\% on nominal friction and 24\\% on aggressive friction at the centroid of the training distribution. A 7-DOF scalability study on a Franka Emika Panda confirms clean convergence of the full pipeline at industrial scale, identifies the conditions under which gains over exact model-based baselines should and should not be expected, and documents a warm-start pathology of the learned certificate that has practical implications for deployment.",
+      "authors": [
+        "Giansalvo Cirrincione",
+        "Adriano Fagiolini"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-05-07",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2605.06934v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.LG"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "fea_surrogate"
+      ],
+      "direction": "fea_surrogate",
+      "direction_name": "FEA & Surrogate Modelling",
+      "routing_matches": {
+        "fea_surrogate": [
+          "physics-informed neural network",
+          "PINN"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该论文关注自适应控制与安全滤波，与FEA替代建模或生物力学设计无直接关联。",
+        "why_not_core": "This paper does not address expensive simulation sampling, constraint handling in optimization, uncertainty quantification, or implant/biomechanics design.",
+        "validation_kind": "simulation_case",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "adaptive control",
+          "Lyapunov shielding",
+          "PINN",
+          "robot manipulator"
+        ],
+        "summary_zh": {
+          "motivation": "提升自适应控制器在不确定环境下的安全性与稳定性。",
+          "method": "结合学习型Lyapunov函数、SAC策略和PINN估计，构建安全滤波。",
+          "result": "在2-DOF和7-DOF机械臂上验证了跟踪误差降低和可扩展性。",
+          "validation": "在仿真机械臂模型上测试，无实验验证。"
+        },
+        "summary_en": {
+          "motivation": "To enhance safety and stability of adaptive controllers under model uncertainty and unmodeled dynamics.",
+          "method": "Augments Slotine-Li adaptive control with a learned Lyapunov certificate, residual SAC policy, and PINN for unmodeled dynamics, with a closed-form safety filter.",
+          "result": "Demonstrates reduced tracking error on 2-DOF and 7-DOF manipulators, with theoretical guarantees on stability and convergence.",
+          "validation": "Validated through simulation case studies on robotic manipulators with nonlinear friction and variable payload."
+        },
+        "key_terms": [
+          {
+            "en": "Lyapunov function",
+            "zh": "李雅普诺夫函数"
+          },
+          {
+            "en": "adaptive control",
+            "zh": "自适应控制"
+          },
+          {
+            "en": "safety filter",
+            "zh": "安全滤波器"
+          },
+          {
+            "en": "PINN",
+            "zh": "物理信息神经网络"
+          },
+          {
+            "en": "Soft Actor-Critic",
+            "zh": "软演员-评论家"
+          },
+          {
+            "en": "Euler-Lagrange system",
+            "zh": "欧拉-拉格朗日系统"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-05-23T13:09:03Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2605.06916v1",
+      "doi": "",
+      "arxiv_id": "2605.06916v1",
+      "title": "Tyche: One Step Flow for Efficient Probabilistic Weather Forecasting",
+      "abstract": "Probabilistic weather forecasting requires not only accurate trajectories, but calibrated distributions over plausible atmospheric futures. Recent data-driven systems have achieved remarkable deterministic skill, and diffusion-based ensemble forecasters have substantially improved sample realism and uncertainty quantification. However, their inference cost scales with forecast horizon, ensemble size, and the number of denoising steps required for each transition, making large operational ensembles expensive. To address this, we present Tyche, a one-step conditional flow model for efficient probabilistic weather forecasting. Tyche models the conditional forecast distribution with a destination-aware average-velocity flow that maps Gaussian noise directly to future weather states in a single function evaluation (1-NFE). To make this one-step transport learnable in high-dimensional geophysical fields, we derive a JVP-regularized rectification objective that enforces temporal self-consistency across source and destination flow timesteps without explicitly forming Jacobians. The transport field is parameterized by an isotropic Swin-style transformer that preserves fine-scale spatial structure while remaining scalable on global grids. To improve ensemble reliability under autoregressive forecasting, we further introduce a rollout-based finetuning stage with curriculum CRPS calibration supervision. Experiments on ERA5 at 1.5$^\\circ$ and 6-hour resolution show that our Tyche, using merely a single NFE, matches or exceeds the forecast skill and calibration of state-of-the-art multi-step generative baselines and the operational ECMWF IFS ensemble.",
+      "authors": [
+        "Fan Xu",
+        "Yuan Gao",
+        "Kun Wang",
+        "Rui Su",
+        "Fenghua Ling",
+        "Hao Wu",
+        "Wanli Ouyang"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-05-07",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2605.06916v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.LG"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "fea_surrogate"
+      ],
+      "direction": "fea_surrogate",
+      "direction_name": "FEA & Surrogate Modelling",
+      "routing_matches": {
+        "fea_surrogate": [
+          "uncertainty quantification"
+        ]
+      },
+      "llm": {
+        "priority": "Medium",
+        "relevance_level": "Transferable",
+        "read_action": "Save for project",
+        "relevance_to_user": "该论文提出了一种高效的单步条件流模型用于概率天气预报，其方法可迁移至生物力学代理模型中的不确定性量化与高效采样。",
+        "why_not_core": "This paper does not address FEA surrogate modeling, implant biomechanics, or any biomedical design context; it focuses on weather forecasting.",
+        "validation_kind": "numerical_benchmark",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": true,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "probabilistic forecasting",
+          "conditional flow model",
+          "one-step generation",
+          "uncertainty quantification",
+          "weather forecasting"
+        ],
+        "summary_zh": {
+          "motivation": "降低概率天气预报中扩散模型的推理成本",
+          "method": "提出单步条件流模型Tyche，使用JVP正则化整流目标实现一步生成",
+          "result": "单步评估即可匹配或超越多步生成模型和ECMWF IFS集合预报的精度",
+          "validation": "在ERA5全球再分析数据上验证预报技巧和校准性"
+        },
+        "summary_en": {
+          "motivation": "To reduce the inference cost of diffusion-based probabilistic weather forecasting while maintaining forecast skill and calibration.",
+          "method": "Tyche employs a one-step conditional flow with a JVP-regularized rectification objective and an isotropic Swin transformer to map noise directly to future states.",
+          "result": "With a single function evaluation, Tyche matches or exceeds the performance of multi-step generative baselines and the operational ECMWF IFS ensemble.",
+          "validation": "Validated on ERA5 reanalysis data at 1.5° and 6-hour resolution, comparing forecast skill and CRPS calibration."
+        },
+        "key_terms": [
+          {
+            "en": "probabilistic weather forecasting",
+            "zh": "概率天气预报"
+          },
+          {
+            "en": "conditional flow model",
+            "zh": "条件流模型"
+          },
+          {
+            "en": "one-step generation",
+            "zh": "单步生成"
+          },
+          {
+            "en": "uncertainty quantification",
+            "zh": "不确定性量化"
+          },
+          {
+            "en": "rectification objective",
+            "zh": "整流目标"
+          },
+          {
+            "en": "Swin transformer",
+            "zh": "Swin变换器"
+          },
+          {
+            "en": "CRPS",
+            "zh": "连续排序概率评分"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-05-23T13:09:03Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2605.06788v1",
+      "doi": "",
+      "arxiv_id": "2605.06788v1",
+      "title": "Conformal Agent Error Attribution",
+      "abstract": "When multi-agent systems (MAS) fail, identifying where the decisive error occurred is the first step for automated recovery to an earlier state. Error attribution remains a fundamental challenge due to the long interaction traces that large language model-based MAS generate. This paper presents a framework for error attribution based on conformal prediction (CP) which provides finite-sample, distribution-free coverage guarantees. We introduce new algorithms for filtration-based CP designed for sequential data such as agent trajectories. Unlike existing CP algorithms, our approach predicts sets that are contiguous sequences to enable efficient recovery and debugging. We verify our theoretical guarantees on a variety of agents and datasets, show that errors can be precisely isolated, then use prediction sets to rollback MAS to correct their own errors. Our overall approach is model-agnostic, and offers a principled uncertainty layer for MAS error attribution. We release code at https://github.com/layer6ai-labs/conformal-agent-error-attribution.",
+      "authors": [
+        "Naihe Feng",
+        "Yi Sui",
+        "Shiyi Hou",
+        "Ga Wu",
+        "Jesse C. Cresswell"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-05-07",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2605.06788v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.LG",
+        "cs.MA"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "fea_surrogate"
+      ],
+      "direction": "fea_surrogate",
+      "direction_name": "FEA & Surrogate Modelling",
+      "routing_matches": {
+        "fea_surrogate": [
+          "conformal prediction"
+        ]
+      },
+      "llm": {
+        "priority": "Exclude",
+        "relevance_level": "Peripheral",
+        "read_action": "Ignore",
+        "relevance_to_user": "该论文关注多智能体系统中的错误归因，与有限元代理建模或生物力学设计无关。",
+        "why_not_core": "This paper does not address expensive simulation sampling, surrogate modeling, uncertainty quantification for FEA, or implant/biomechanics design.",
+        "validation_kind": "none",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": true,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "multi-agent systems",
+          "conformal prediction",
+          "error attribution",
+          "large language models"
+        ],
+        "summary_zh": {
+          "motivation": "多智能体系统失败时难以定位错误源头。",
+          "method": "基于共形预测的序列过滤算法进行错误归因。",
+          "result": "算法能精确隔离错误并实现系统回滚。",
+          "validation": "在多种智能体和数据集上验证理论保证。"
+        },
+        "summary_en": {
+          "motivation": "Identifying the decisive error in multi-agent systems with long interaction traces remains a fundamental challenge.",
+          "method": "A conformal prediction framework with filtration-based algorithms for sequential data is proposed to attribute errors.",
+          "result": "The approach provides finite-sample coverage guarantees and enables precise error isolation and rollback.",
+          "validation": "Theoretical guarantees are verified on various agents and datasets."
+        },
+        "key_terms": [
+          {
+            "en": "multi-agent systems",
+            "zh": "多智能体系统"
+          },
+          {
+            "en": "conformal prediction",
+            "zh": "共形预测"
+          },
+          {
+            "en": "error attribution",
+            "zh": "错误归因"
+          },
+          {
+            "en": "sequential data",
+            "zh": "序列数据"
+          },
+          {
+            "en": "rollback",
+            "zh": "回滚"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-05-23T13:09:03Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2605.06646v1",
+      "doi": "",
+      "arxiv_id": "2605.06646v1",
+      "title": "Inductive Venn-Abers and related regressors",
+      "abstract": "Venn-Abers predictors are probabilistic predictors that enjoy appealing properties of validity, but their major limitation is that they are applicable only to the case of binary classification, with a recent extension to bounded regression. We generalize them to the case of unbounded regression, which requires adding an element of conformal prediction. In our simulation and empirical studies we investigate the predictive efficiency of point regressors derived from Venn-Abers regressors and argue that they somewhat improve the predictive efficiency of standard regressors for larger training sets.",
+      "authors": [
+        "Ivan Petej",
+        "Vladimir Vovk"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-05-07",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2605.06646v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.LG"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "fea_surrogate"
+      ],
+      "direction": "fea_surrogate",
+      "direction_name": "FEA & Surrogate Modelling",
+      "routing_matches": {
+        "fea_surrogate": [
+          "conformal prediction"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该论文关注回归预测的不确定性量化方法，但未涉及有限元代理模型或生物力学设计。",
+        "why_not_core": "This paper focuses on probabilistic regression for general machine learning, with no application to FEA surrogate modeling, no constraint handling, and no implant/biomechanics context.",
+        "validation_kind": "numerical_benchmark",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": true,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "Venn-Abers",
+          "conformal prediction",
+          "uncertainty quantification",
+          "regression"
+        ],
+        "summary_zh": {
+          "motivation": "扩展Venn-Abers预测器至无界回归问题",
+          "method": "结合共形预测理论推广Venn-Abers方法",
+          "result": "在大训练集上点预测效率略有提升",
+          "validation": "模拟与实证研究对比标准回归器"
+        },
+        "summary_en": {
+          "motivation": "To extend Venn-Abers probabilistic predictors from binary classification and bounded regression to unbounded regression settings.",
+          "method": "Generalize Venn-Abers regressors by incorporating conformal prediction elements to handle unbounded targets.",
+          "result": "The derived point regressors show modest improvements in predictive efficiency over standard regressors on larger training sets.",
+          "validation": "Simulation and empirical studies comparing predictive efficiency against standard regressors."
+        },
+        "key_terms": [
+          {
+            "en": "Venn-Abers predictors",
+            "zh": "Venn-Abers预测器"
+          },
+          {
+            "en": "conformal prediction",
+            "zh": "共形预测"
+          },
+          {
+            "en": "probabilistic regression",
+            "zh": "概率回归"
+          },
+          {
+            "en": "unbounded regression",
+            "zh": "无界回归"
+          },
+          {
+            "en": "predictive efficiency",
+            "zh": "预测效率"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-05-23T13:09:03Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2605.06618v1",
+      "doi": "",
+      "arxiv_id": "2605.06618v1",
+      "title": "MTRBO: Multiple trust-region based Bayesian optimization",
+      "abstract": "Bayesian Optimization (BO) is a popular framework for optimizing black-box functions. Despite its effectiveness, BO is often inefficient for high-dimensional problems due to the exponential growth of the search space, heterogeneity of the objective function, and low sampling budget. To overcome these issues, this work proposes a multiple trust region-based Bayesian optimization technique(MTRBO). A trust region is a localized region within which an optimization model is trusted to approximate the objective function accurately. Assuming a Gaussian process (GP) as a prior belief about the objective function and based on the posterior mean and variance functions, the method adaptively exploits near the promising current solution inside a trust region. Also explores the most uncertain region in the search space inside another trust region. The theoretical global convergence property of the proposed method is established. Then the work is benchmarked against other state-of-the-art trust-region-based Bayesian optimization algorithms, demonstrating superior performance on a variety of non-convex and high-dimensional test functions. The proposed method outperforms others in terms of solution quality within the sampling budget (the number of function evaluations). The proposed method is applied to the portfolio optimization problem to verify its applicability in real-world scenarios.",
+      "authors": [
+        "Sourav Das",
+        "Debjani Chakraborty",
+        "Pabitra Mitra"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-05-07",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2605.06618v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "math.OC"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "fea_surrogate"
+      ],
+      "direction": "fea_surrogate",
+      "direction_name": "FEA & Surrogate Modelling",
+      "routing_matches": {
+        "fea_surrogate": [
+          "Bayesian optimization",
+          "Gaussian process"
+        ]
+      },
+      "llm": {
+        "priority": "Medium",
+        "relevance_level": "Transferable",
+        "read_action": "Save for project",
+        "relevance_to_user": "该方法通过多信任区域策略提升高维贝叶斯优化的采样效率，可迁移至植入物设计中的昂贵仿真优化问题。",
+        "why_not_core": "No application to FEA or biomechanics; no constraint handling or uncertainty quantification beyond GP posterior.",
+        "validation_kind": "numerical_benchmark",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": true,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "Bayesian optimization",
+          "trust region",
+          "high-dimensional optimization",
+          "surrogate modeling",
+          "portfolio optimization"
+        ],
+        "summary_zh": {
+          "motivation": "高维贝叶斯优化采样效率低，需改进信任区域策略。",
+          "method": "提出多信任区域贝叶斯优化，同时利用后验均值和方差进行局部开发和全局探索。",
+          "result": "在多种非凸高维测试函数上优于现有方法，并验证于投资组合优化。",
+          "validation": "数值基准测试和投资组合优化案例验证。"
+        },
+        "summary_en": {
+          "motivation": "Bayesian optimization suffers from inefficiency in high-dimensional problems due to search space explosion and limited sampling budget.",
+          "method": "A multiple trust-region Bayesian optimization method is proposed, adaptively exploiting near promising solutions and exploring uncertain regions using GP posterior mean and variance.",
+          "result": "The method outperforms state-of-the-art trust-region BO algorithms on non-convex high-dimensional test functions and is validated on a portfolio optimization problem.",
+          "validation": "Numerical benchmarks on synthetic test functions and a real-world portfolio optimization case."
+        },
+        "key_terms": [
+          {
+            "en": "Bayesian optimization",
+            "zh": "贝叶斯优化"
+          },
+          {
+            "en": "trust region",
+            "zh": "信任区域"
+          },
+          {
+            "en": "Gaussian process",
+            "zh": "高斯过程"
+          },
+          {
+            "en": "high-dimensional optimization",
+            "zh": "高维优化"
+          },
+          {
+            "en": "surrogate model",
+            "zh": "代理模型"
+          },
+          {
+            "en": "global convergence",
+            "zh": "全局收敛性"
+          },
+          {
+            "en": "portfolio optimization",
+            "zh": "投资组合优化"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-05-23T13:09:03Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2605.06612v1",
+      "doi": "",
+      "arxiv_id": "2605.06612v1",
+      "title": "Online Bayesian Calibration under Gradual and Abrupt System Changes",
+      "abstract": "Bayesian model calibration is central to digital twins and computer experiments, as it aligns model outputs with field observations by estimating calibration parameters and correcting systematic model bias. Classical Bayesian calibration introduces latent parameters and a discrepancy function to model bias, but suffers from parameter--discrepancy confounding and is typically formulated as an offline procedure under a stationary data-generating assumption. These limitations are restrictive in modern digital twin applications, where systems evolve over time and may exhibit gradual drift and abrupt regime shifts. While data assimilation methods enable sequential updates, they generally do not explicitly model systematic bias and are less effective under abrupt changes. We propose Bayesian Recursive Projected Calibration (BRPC), an online Bayesian calibration framework for streaming data under simulator mismatch and nonstationarity. BRPC extends projected calibration to the online setting by separating a discrepancy-free particle update for calibration parameters from a conditional Gaussian process update for discrepancy, preserving identifiability while enabling bias-aware adaptation under gradual system evolution. To handle abrupt changes, BRPC is integrated with restart mechanisms that detect regime shifts and reset the calibration process. We establish theoretical guarantees for both components, including tracking performance under gradual evolution and false-alarm and detection behavior for restart mechanisms. Empirical studies on synthetic and plant-simulation benchmarks show that BRPC improves calibration accuracy under gradual changes, while restart-augmented BRPC further improves robustness and predictive performance under abrupt regime shifts compared to sliding-window Bayesian calibration and data assimilation baselines.",
+      "authors": [
+        "Yang Xu",
+        "Chiwoo Park"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-05-07",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2605.06612v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.LG",
+        "cs.ET",
+        "stat.ML"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "ai_bioprinting",
+        "fea_surrogate"
+      ],
+      "direction": "ai_bioprinting",
+      "direction_name": "AI for Bioprinting",
+      "routing_matches": {
+        "ai_bioprinting": [
+          "digital twin"
+        ],
+        "fea_surrogate": [
+          "Gaussian process"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该论文提出了一种在线贝叶斯校准方法，但未涉及生物打印或AI驱动的打印过程控制。",
+        "why_not_core": "This paper does not embed AI into any bioprinting workflow stage, lacks experimental validation in bioprinting, and does not address autonomous decision-making for bioprinting.",
+        "validation_kind": "numerical_benchmark",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": true,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "online calibration",
+          "Bayesian",
+          "digital twin",
+          "nonstationary",
+          "abrupt changes"
+        ],
+        "summary_zh": {
+          "motivation": "现有贝叶斯校准方法无法处理在线数据和非平稳系统变化。",
+          "method": "提出贝叶斯递归投影校准框架，结合粒子滤波和高斯过程，并加入重启机制应对突变。",
+          "result": "在合成和植物仿真基准上，该方法在渐变和突变场景下均优于基线。",
+          "validation": "数值基准测试验证校准精度和突变检测性能。"
+        },
+        "summary_en": {
+          "motivation": "Existing Bayesian calibration methods are offline and assume stationarity, limiting their applicability to evolving digital twin systems with gradual drift and abrupt shifts.",
+          "method": "We propose Bayesian Recursive Projected Calibration (BRPC), an online framework that separates discrepancy-free particle updates for calibration parameters from conditional Gaussian process updates for bias, with restart mechanisms for abrupt changes.",
+          "result": "BRPC improves calibration accuracy under gradual changes and, with restart augmentation, enhances robustness and predictive performance under abrupt regime shifts compared to baselines.",
+          "validation": "Validation is performed on synthetic and plant-simulation benchmarks, demonstrating tracking performance and detection behavior."
+        },
+        "key_terms": [
+          {
+            "en": "Bayesian calibration",
+            "zh": "贝叶斯校准"
+          },
+          {
+            "en": "digital twin",
+            "zh": "数字孪生"
+          },
+          {
+            "en": "online learning",
+            "zh": "在线学习"
+          },
+          {
+            "en": "nonstationarity",
+            "zh": "非平稳性"
+          },
+          {
+            "en": "abrupt change detection",
+            "zh": "突变检测"
+          },
+          {
+            "en": "Gaussian process",
+            "zh": "高斯过程"
+          },
+          {
+            "en": "particle filter",
+            "zh": "粒子滤波"
+          },
+          {
+            "en": "model discrepancy",
+            "zh": "模型偏差"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-05-23T13:09:03Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2605.06564v1",
+      "doi": "",
+      "arxiv_id": "2605.06564v1",
+      "title": "Dynamic Treatment on Networks",
+      "abstract": "In networks, effective dynamic treatment allocation requires deciding both whom to treat and also when, so as to amplify policy impact through spillovers. An early intervention at a well-connected node can trigger cascades that change which nodes are worth targeting in the next period. Existing treatment strategies under network interference are largely static while dynamic treatment frameworks typically ignore network structure altogether. We integrate these perspectives and propose Q-Ising, a three-stage pipeline that (i) estimates network adoption dynamics via a Bayesian dynamic Ising model from a single observed panel, (ii) augments treatment adoption histories with continuous posterior latent states, and (iii) learns a dynamic policy via offline reinforcement learning. The Bayesian mechanism enables uncertainty quantification over dynamic decisions, yielding posterior ensemble policies with interpretable spillover estimates. We provide a finite-sample regret upper bound that decomposes into standard offline-RL uncertainty, network abstraction error, and first stage error in Ising state estimation. We apply our method to data from Indian village microfinance networks and synthetic stochastic block models under simulated heterogeneous susceptible-infected-susceptible (SIS) dynamics and demonstrate that adaptive targeting outperforms static centrality benchmarks.",
+      "authors": [
+        "Bengusu Nar",
+        "Jiguang Li",
+        "Veronika Ročková",
+        "Panos Toulis"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-05-07",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2605.06564v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "stat.ML",
+        "cs.LG"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "fea_surrogate"
+      ],
+      "direction": "fea_surrogate",
+      "direction_name": "FEA & Surrogate Modelling",
+      "routing_matches": {
+        "fea_surrogate": [
+          "uncertainty quantification"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该论文研究网络上的动态治疗分配，与FEA替代建模和植入物设计无直接关联。",
+        "why_not_core": "This paper focuses on dynamic treatment allocation on networks with spillovers, not on surrogate modeling for expensive finite element simulations, and lacks any biomechanics or implant design context.",
+        "validation_kind": "simulation_case",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": true,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "dynamic treatment",
+          "network interference",
+          "Bayesian Ising model",
+          "offline reinforcement learning",
+          "spillover effects"
+        ],
+        "summary_zh": {
+          "motivation": "现有网络干扰下的治疗策略多为静态，缺乏动态框架。",
+          "method": "提出Q-Ising三阶段流程，结合贝叶斯动态Ising模型和离线强化学习。",
+          "result": "自适应策略优于静态中心性基准。",
+          "validation": "在印度村庄微金融网络和合成随机块模型上验证。"
+        },
+        "summary_en": {
+          "motivation": "Existing treatment strategies under network interference are largely static, while dynamic treatment frameworks typically ignore network structure.",
+          "method": "Proposes Q-Ising, a three-stage pipeline combining Bayesian dynamic Ising model estimation, posterior latent state augmentation, and offline reinforcement learning for dynamic policy learning.",
+          "result": "Adaptive targeting outperforms static centrality benchmarks on microfinance and synthetic network data.",
+          "validation": "Validated on real Indian village microfinance networks and synthetic stochastic block models with simulated SIS dynamics."
+        },
+        "key_terms": [
+          {
+            "en": "dynamic treatment",
+            "zh": "动态治疗"
+          },
+          {
+            "en": "network interference",
+            "zh": "网络干扰"
+          },
+          {
+            "en": "Bayesian Ising model",
+            "zh": "贝叶斯伊辛模型"
+          },
+          {
+            "en": "offline reinforcement learning",
+            "zh": "离线强化学习"
+          },
+          {
+            "en": "spillover effects",
+            "zh": "溢出效应"
+          },
+          {
+            "en": "uncertainty quantification",
+            "zh": "不确定性量化"
+          },
+          {
+            "en": "regret bound",
+            "zh": "遗憾界"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-05-23T13:09:03Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2605.06526v1",
+      "doi": "",
+      "arxiv_id": "2605.06526v1",
+      "title": "Reduced-Order Modeling of Parameterized Visco-Plastic Shallow Flows",
+      "abstract": "We propose a non-intrusive reduced-order modeling framework for parametrized visco-plastic free-surface flows governed by a shallow-water formulation of Herschel--Bulkley fluids. These flows exhibit strong nonlinearities, non-smooth rheology, moving fronts, and yield surfaces, making efficient surrogate modeling particularly challenging. To address this challenge, we employ a tensor-based approach in which the solution manifold is approximated using a low-rank representation obtained via higher-order singular value decomposition of snapshot data over a structured parameter space.   The resulting tensorial reduced-order model (TROM) enables rapid online evaluation by directly reconstructing solution trajectories from the compressed representation, thereby avoiding the need to perform time integration of a reduced dynamical system. The proposed non-intrusive framework can be interpreted as an encoder--decoder architecture with a compressed latent representation and efficient multilinear decoding. Numerical experiments demonstrate that the proposed approach accurately captures key flow features, including front propagation, plug and shear regions, and near-stopping dynamics, while achieving substantial computational speedups relative to full-order simulations.",
+      "authors": [
+        "Md Rezwan Bin Mizan",
+        "Ilya Timofeyev",
+        "Maxim Olshanskii"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-05-07",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2605.06526v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "physics.flu-dyn",
+        "math.NA"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "fea_surrogate"
+      ],
+      "direction": "fea_surrogate",
+      "direction_name": "FEA & Surrogate Modelling",
+      "routing_matches": {
+        "fea_surrogate": [
+          "reduced-order model"
+        ]
+      },
+      "llm": {
+        "priority": "Medium",
+        "relevance_level": "Transferable",
+        "read_action": "Save for project",
+        "relevance_to_user": "该论文提出的非侵入式降阶建模方法可迁移至生物力学有限元代理建模，但未涉及植入物设计或不确定性量化。",
+        "why_not_core": "This paper does not address implant design, biomechanics, or uncertainty quantification; it focuses on visco-plastic shallow flows with no biomedical context.",
+        "validation_kind": "numerical_benchmark",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "reduced-order modeling",
+          "surrogate modeling",
+          "visco-plastic flows",
+          "Herschel-Bulkley",
+          "tensor decomposition"
+        ],
+        "summary_zh": {
+          "motivation": "参数化粘塑性浅水流动的高效代理建模面临强非线性和非光滑流变挑战。",
+          "method": "基于张量分解的非侵入式降阶模型，利用高阶奇异值分解压缩解流形。",
+          "result": "准确捕捉前沿传播、塞流和剪切区域，实现显著计算加速。",
+          "validation": "通过数值实验与全阶模拟对比验证精度和加速比。"
+        },
+        "summary_en": {
+          "motivation": "Efficient surrogate modeling of parametrized visco-plastic shallow flows is challenging due to strong nonlinearities and non-smooth rheology.",
+          "method": "A non-intrusive reduced-order model based on tensor decomposition (higher-order SVD) compresses the solution manifold and enables rapid online evaluation via multilinear decoding.",
+          "result": "The method accurately captures key flow features such as front propagation, plug and shear regions, and achieves substantial computational speedups.",
+          "validation": "Numerical experiments compare the reduced-order model against full-order simulations to assess accuracy and speedup."
+        },
+        "key_terms": [
+          {
+            "en": "reduced-order modeling",
+            "zh": "降阶建模"
+          },
+          {
+            "en": "visco-plastic flow",
+            "zh": "粘塑性流动"
+          },
+          {
+            "en": "Herschel-Bulkley fluid",
+            "zh": "赫谢尔-巴克利流体"
+          },
+          {
+            "en": "tensor decomposition",
+            "zh": "张量分解"
+          },
+          {
+            "en": "higher-order singular value decomposition",
+            "zh": "高阶奇异值分解"
+          },
+          {
+            "en": "surrogate modeling",
+            "zh": "代理建模"
+          },
+          {
+            "en": "non-intrusive",
+            "zh": "非侵入式"
+          },
+          {
+            "en": "encoder-decoder",
+            "zh": "编码器-解码器"
+          },
+          {
+            "en": "parameterized",
+            "zh": "参数化"
+          },
+          {
+            "en": "free-surface flow",
+            "zh": "自由表面流动"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-05-23T13:09:03Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2605.06756v1",
+      "doi": "",
+      "arxiv_id": "2605.06756v1",
+      "title": "Physics-based Digital Twins for Integrated Thermal Energy Systems Using Active Learning",
+      "abstract": "Real-time supervisory control of thermal energy distribution systems requires digital twins that are accurate, interpretable, and uncertainty-aware, yet remain data and computationally efficient. High-fidelity simulations alone are costly, while purely data-driven surrogates often lack robustness. To address these challenges, this work proposes an active learning (AL) framework that couples system-level Modelica simulations with four simpler physics-informed and data-driven surrogate modeling approaches: deterministic Sparse Identification of Nonlinear Dynamics with Control (SINDyC), its probabilistic multivariate-Gaussian extension (MvG-SINDyC), feedforward neural network (FNN), and gated recurrent unit (GRU) network. Tailored to each surrogate, model-specific AL query strategies are employed, including Mahalanobis-distance sampling in coefficient space for MvG-SINDyC and error-based sampling in prediction space for SINDyC, FNN, and GRU, allowing the learning process to prioritize dynamically informative trajectories.   The proposed approach is demonstrated on the glycol heat exchanger (GHX) subsystem of the Thermal Energy Distribution System (TEDS) at Idaho National Laboratory. Across key GHX outputs--the bypass mass flow rate $\\dot{m}_{\\mathrm{GHX}}$ and heat transfer rate $Q_{\\mathrm{GHX}}$-the AL framework achieves comparable predictive accuracy using as few as one-fifth of the simulation trajectories required by random sampling. Among the evaluated surrogates, the GRU achieves the highest predictive fidelity, while SINDyC remains the most computationally efficient and interpretable. The probabilistic MvG-SINDyC surrogate further enables uncertainty quantification and exhibits the largest computational gains under AL.",
+      "authors": [
+        "Umme Mahbuba Nabila",
+        "Paul Seurin",
+        "Linyu Lin",
+        "Majdi I. Radaideh"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-05-07",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2605.06756v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.LG",
+        "eess.SY"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "fea_surrogate"
+      ],
+      "direction": "fea_surrogate",
+      "direction_name": "FEA & Surrogate Modelling",
+      "routing_matches": {
+        "fea_surrogate": [
+          "active learning",
+          "uncertainty quantification",
+          "active learning + simulation"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该论文研究热能量系统的数字孪生，与生物力学植入物设计或有限元代理建模无直接关联。",
+        "why_not_core": "This paper focuses on thermal energy systems and does not address implant biomechanics, stress shielding, or FEA surrogate modeling for biomedical applications.",
+        "validation_kind": "simulation_case",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": true,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "active learning",
+          "digital twin",
+          "surrogate modeling",
+          "thermal energy system",
+          "uncertainty quantification"
+        ],
+        "summary_zh": {
+          "motivation": "热能量系统实时控制需要高效且不确定感知的数字孪生。",
+          "method": "提出主动学习框架，结合Modelica仿真与多种代理模型。",
+          "result": "主动学习仅需五分之一仿真轨迹即可达到随机采样的预测精度。",
+          "validation": "在爱达荷国家实验室的乙二醇换热器子系统上验证。"
+        },
+        "summary_en": {
+          "motivation": "Real-time supervisory control of thermal energy systems requires digital twins that are accurate, interpretable, and uncertainty-aware while remaining computationally efficient.",
+          "method": "An active learning framework is proposed that couples system-level Modelica simulations with four surrogate models (SINDyC, MvG-SINDyC, FNN, GRU) using model-specific query strategies.",
+          "result": "The active learning framework achieves comparable predictive accuracy using as few as one-fifth of the simulation trajectories required by random sampling.",
+          "validation": "The approach is validated on the glycol heat exchanger subsystem of the Thermal Energy Distribution System at Idaho National Laboratory."
+        },
+        "key_terms": [
+          {
+            "en": "active learning",
+            "zh": "主动学习"
+          },
+          {
+            "en": "digital twin",
+            "zh": "数字孪生"
+          },
+          {
+            "en": "surrogate modeling",
+            "zh": "代理建模"
+          },
+          {
+            "en": "uncertainty quantification",
+            "zh": "不确定性量化"
+          },
+          {
+            "en": "SINDyC",
+            "zh": "带控制的稀疏识别动力学"
+          },
+          {
+            "en": "GRU",
+            "zh": "门控循环单元"
+          },
+          {
+            "en": "thermal energy system",
+            "zh": "热能量系统"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-05-23T13:09:03Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2605.06484v1",
+      "doi": "",
+      "arxiv_id": "2605.06484v1",
+      "title": "Estimate Level Adjustment For Inference With Proxies Under Random Distribution Shifts",
+      "abstract": "In many scientific domains, including experimentation, researchers rely on measurements of proxy outcomes to achieve faster and more frequent reads, especially when the primary outcome of interest is challenging to measure directly. While proxies offer a more readily accessible observation for inference, the ultimate goal is to draw statistical inferences about the primary outcome parameter and proxy data are typically imperfect in some ways. To correct for these imperfections, current statistical inference methods often depend on strict identifying assumptions (such as surrogacy, covariate/label shift, or missingness assumptions). These assumptions can be difficult to validate and may be violated by various additional sources of distribution shift, potentially leading to biased parameter estimates and miscalibrated uncertainty quantification. We introduce an estimate-level framework, inspired by domain adaptation techniques, to empirically calibrate proxy-based inference. This framework models the proxy-primary metric discrepancy as a random effect at the parameter level, estimating its distribution from aggregated historical observations across past domains (e.g., experiments, time periods, or distinct segments). This method avoids the requirement for retaining individual-level response data. Additionally, this adjustment can be layered on top of existing proxy-correction methods (such as prediction-powered inference or importance weighting) to account for additional biases not addressed by those corrections. To manage uncertainty when the number of historical domains is limited, we provide both a method-of-moments estimator and a domain bootstrap procedure. We further validate this approach using publicly available datasets and real-world experiments.",
+      "authors": [
+        "Steven Wilkins-Reeves",
+        "Alexandra N. M. Darmon",
+        "Deeksha Sinha"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-05-07",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2605.06484v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "stat.ME",
+        "cs.LG",
+        "stat.ML"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "fea_surrogate"
+      ],
+      "direction": "fea_surrogate",
+      "direction_name": "FEA & Surrogate Modelling",
+      "routing_matches": {
+        "fea_surrogate": [
+          "uncertainty quantification"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该论文关注代理指标推断中的分布偏移校准，与FEA替代建模或生物力学设计无直接关联。",
+        "why_not_core": "This paper does not address surrogate modeling for expensive simulations, constraint handling, uncertainty quantification in FEA, or implant/biomechanics design.",
+        "validation_kind": "none",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": true,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "proxy inference",
+          "distribution shift",
+          "domain adaptation",
+          "statistical calibration"
+        ],
+        "summary_zh": {
+          "motivation": "代理指标推断常因分布偏移导致偏差，需校准方法。",
+          "method": "提出估计级框架，将代理-主指标差异建模为随机效应，利用历史域分布校准。",
+          "result": "方法无需个体级数据，可叠加现有代理校正方法，并提供矩估计和域自助法。",
+          "validation": "通过公开数据集和真实实验验证。"
+        },
+        "summary_en": {
+          "motivation": "Proxy-based inference suffers from distribution shifts that violate strict identifying assumptions, leading to biased estimates and miscalibrated uncertainty.",
+          "method": "An estimate-level framework models the proxy-primary discrepancy as a random effect across historical domains, using method-of-moments and domain bootstrap for calibration.",
+          "result": "The approach avoids individual-level data requirements and can be layered on existing proxy-correction methods to handle additional biases.",
+          "validation": "Validated on publicly available datasets and real-world experiments."
+        },
+        "key_terms": [
+          {
+            "en": "proxy outcome",
+            "zh": "代理指标"
+          },
+          {
+            "en": "distribution shift",
+            "zh": "分布偏移"
+          },
+          {
+            "en": "domain adaptation",
+            "zh": "域适应"
+          },
+          {
+            "en": "random effect",
+            "zh": "随机效应"
+          },
+          {
+            "en": "method-of-moments",
+            "zh": "矩估计"
+          },
+          {
+            "en": "bootstrap",
+            "zh": "自助法"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-05-23T13:09:03Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2605.06475v1",
+      "doi": "",
+      "arxiv_id": "2605.06475v1",
+      "title": "Probabilistic Dating of Historical Manuscripts via Evidential Deep Regression on Visual Script Features",
+      "abstract": "We introduce a probabilistic approach for dating historical manuscript pages from visual features alone. Instead of aggregating centuries into classes as is standard in the previous literature, we pose dating as an evidential deep regression problem over a continuous year axis, allowing our neural network to output a full predictive distribution with decomposed aleatoric and epistemic uncertainty in a single forward pass. Our architecture combines an EfficientNet-B2 backbone with a Normal-Inverse-Gamma (NIG) output head trained with a joint negative-log-likelihood and evidence-regularization objective. On the DIVA-HisDB benchmark (150 pages, 3 medieval codices, 151,936 patches), our model scores a test MAE of 5.4 years, well below the 50-year century-label supervision granularity, with 93\\% of patches within 5 years and 97\\% within 10 years. Our approach achieves \\textbf{PICP=92.6\\%}, the best calibration among all compared methods, in a single forward pass, outperforming MC Dropout (PICP=88.2\\%, 50 passes) and Deep Ensembles (PICP=79.7\\%, 5 models) at $5\\times$ lower inference cost. Uncertainty decomposition shows aleatoric uncertainty is a strong predictor of dating error (Spearman $ρ=0.729$), and a selective prediction about the most certain 20\\% of patches can provide \\textbf{0.5 years MAE}. We show that predicted uncertainty increases as image degradation worsens, spatial decomposition maps explain which script regions cause aleatoric uncertainty, and page-level aggregation reduces MAE to 4.5 years with $ρ=0.905$ between uncertainty and page-level error.",
+      "authors": [
+        "Ranjith Chodavarapu"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-05-07",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2605.06475v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.AI",
+        "cs.CV"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "fea_surrogate"
+      ],
+      "direction": "fea_surrogate",
+      "direction_name": "FEA & Surrogate Modelling",
+      "routing_matches": {
+        "fea_surrogate": [
+          "deep ensembles"
+        ]
+      },
+      "llm": {
+        "priority": "Exclude",
+        "relevance_level": "Peripheral",
+        "read_action": "Ignore",
+        "relevance_to_user": "该论文研究历史手稿年代预测，与用户关注的有限元代理建模、植入物设计或生物力学优化完全无关。",
+        "why_not_core": "This paper does not address any aspect of finite element analysis, surrogate modeling, uncertainty quantification for engineering design, or biomechanical implant optimization.",
+        "validation_kind": "none",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": true,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "historical manuscripts",
+          "evidential deep regression",
+          "uncertainty quantification"
+        ],
+        "summary_zh": {
+          "motivation": "利用视觉特征对历史手稿进行概率性年代预测。",
+          "method": "采用EfficientNet-B2结合Normal-Inverse-Gamma输出头的证据深度回归。",
+          "result": "在DIVA-HisDB基准上达到MAE 5.4年，PICP 92.6%。",
+          "validation": "在151,936个补丁上评估MAE、PICP和不确定性校准。"
+        },
+        "summary_en": {
+          "motivation": "To probabilistically date historical manuscript pages from visual features alone, avoiding coarse century-level classification.",
+          "method": "An evidential deep regression network with an EfficientNet-B2 backbone and Normal-Inverse-Gamma output head trained with NLL and evidence regularization.",
+          "result": "Achieves test MAE of 5.4 years, PICP of 92.6%, and selective prediction on top 20% certain patches yields 0.5 years MAE.",
+          "validation": "Evaluated on the DIVA-HisDB benchmark with 151,936 patches, comparing calibration and inference cost against MC Dropout and Deep Ensembles."
+        },
+        "key_terms": [
+          {
+            "en": "evidential deep regression",
+            "zh": "证据深度回归"
+          },
+          {
+            "en": "uncertainty quantification",
+            "zh": "不确定性量化"
+          },
+          {
+            "en": "historical manuscript dating",
+            "zh": "历史手稿年代测定"
+          },
+          {
+            "en": "Normal-Inverse-Gamma",
+            "zh": "正态逆伽马分布"
+          },
+          {
+            "en": "PICP",
+            "zh": "预测区间覆盖概率"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-05-23T13:09:03Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2605.06454v1",
+      "doi": "",
+      "arxiv_id": "2605.06454v1",
+      "title": "ORTHOBO: Orthogonal Bayesian Hyperparameter Optimization",
+      "abstract": "Bayesian optimization is widely used for hyperparameter optimization when model evaluations are expensive; however, noisy acquisition estimates can lead to unstable decisions. We identify acquisition estimation noise as a failure mode that was previously overlooked: even when the surrogate model and acquisition target are correctly specified, finite-sample Monte Carlo error can perturb acquisition values. This can, in turn, flip candidate rankings and lead to suboptimal BO decisions. As a remedy, we aim at variance reduction and propose an orthogonal acquisition estimator that subtracts an optimally weighted score-function control variate, which yields an acquisition residual orthogonal to posterior score directions and which thus reduces Monte Carlo variance. We further introduce OrthoBO: a Bayesian optimization framework that combines our orthogonal acquisition estimator with ensemble surrogates and an outer log transformation. We show theoretically that our estimator preserves the target, leads to variance reduction, and improves pairwise ranking stability. We further verify the theoretical properties of OrthoBO through numerical experiments where our framework reduces acquisition estimation variance, stabilizes candidate rankings, and achieves strong performance. We also demonstrate the downstream utility of OrthoBO in hyperparameter optimization for neural network training and fine-tuning.",
+      "authors": [
+        "Maresa Schröder",
+        "Pascal Janetzky",
+        "Michael Klar",
+        "Stefan Feuerriegel"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-05-07",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2605.06454v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "fea_surrogate"
+      ],
+      "direction": "fea_surrogate",
+      "direction_name": "FEA & Surrogate Modelling",
+      "routing_matches": {
+        "fea_surrogate": [
+          "Bayesian optimization"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该论文专注于贝叶斯优化的超参数调优，与FEA替代建模或生物力学设计无直接关联。",
+        "why_not_core": "No FEA surrogate modeling, no biomechanics or implant design context, no constraint handling or uncertainty quantification for physical simulations.",
+        "validation_kind": "numerical_benchmark",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": true,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "Bayesian optimization",
+          "hyperparameter tuning",
+          "variance reduction",
+          "Monte Carlo",
+          "surrogate model"
+        ],
+        "summary_zh": {
+          "motivation": "贝叶斯优化中采集估计噪声导致决策不稳定，需降低方差。",
+          "method": "提出正交采集估计器，结合控制变量和集成代理减少蒙特卡洛方差。",
+          "result": "理论证明方差降低和排序稳定性提升，数值实验验证性能。",
+          "validation": "通过数值实验和神经网络超参数调优验证。"
+        },
+        "summary_en": {
+          "motivation": "Acquisition estimation noise in Bayesian optimization can cause suboptimal decisions, motivating variance reduction.",
+          "method": "An orthogonal acquisition estimator using score-function control variates and ensemble surrogates is proposed to reduce Monte Carlo variance.",
+          "result": "Theoretical guarantees and numerical experiments show reduced variance, improved ranking stability, and strong performance in hyperparameter tuning.",
+          "validation": "Numerical benchmarks and neural network hyperparameter optimization experiments."
+        },
+        "key_terms": [
+          {
+            "en": "Bayesian optimization",
+            "zh": "贝叶斯优化"
+          },
+          {
+            "en": "hyperparameter optimization",
+            "zh": "超参数优化"
+          },
+          {
+            "en": "acquisition function",
+            "zh": "采集函数"
+          },
+          {
+            "en": "control variate",
+            "zh": "控制变量"
+          },
+          {
+            "en": "variance reduction",
+            "zh": "方差缩减"
+          },
+          {
+            "en": "Monte Carlo",
+            "zh": "蒙特卡洛"
+          },
+          {
+            "en": "surrogate model",
+            "zh": "代理模型"
+          },
+          {
+            "en": "ensemble",
+            "zh": "集成"
+          },
+          {
+            "en": "ranking stability",
+            "zh": "排序稳定性"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-05-23T13:09:03Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2605.06413v1",
+      "doi": "",
+      "arxiv_id": "2605.06413v1",
+      "title": "Decoupled PFNs: Identifiable Epistemic-Aleatoric Decomposition via Structured Synthetic Priors",
+      "abstract": "Prior-Fitted Networks (PFNs) amortize Bayesian prediction by meta-learning over a synthetic task prior, but their standard output is a posterior predictive distribution over noisy observations. For sequential decision-making, such as active learning and Bayesian optimization, acquisition should prioritize epistemic uncertainty about the latent signal rather than irreducible aleatoric observation noise. We show that this epistemic--aleatoric split is not identifiable in general from the posterior predictive distribution alone, even when that distribution is known exactly. We then exploit a distinctive advantage of PFNs: because the synthetic data-generating process is under our control, each task can contain an explicit latent signal and noise function, and the generator can provide query-level labels for both the noiseless target and the observation-noise variance. We use these labels to train a decoupled PFN with separate latent-signal and aleatoric heads. The observation-level predictive is induced by convolving the latent signal distribution with the learned noise model. Empirically, epistemic-only acquisition mitigates the failure mode of total-variance exploration in noisy and heteroscedastic settings. In matched comparisons, decoupled models usually improve over tuned observation-level baselines, with the clearest gains in HPO; in broader sweeps, a decoupled model obtains the best average rank in both HPO and synthetic BO.",
+      "authors": [
+        "Richard Bergna",
+        "Stefan Depeweg",
+        "José Miguel Hernández-Lobato"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-05-07",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2605.06413v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "stat.ML",
+        "cs.LG"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "fea_surrogate"
+      ],
+      "direction": "fea_surrogate",
+      "direction_name": "FEA & Surrogate Modelling",
+      "routing_matches": {
+        "fea_surrogate": [
+          "active learning",
+          "Bayesian optimization"
+        ]
+      },
+      "llm": {
+        "priority": "Medium",
+        "relevance_level": "Transferable",
+        "read_action": "Save for project",
+        "relevance_to_user": "该论文提出了一种解耦认知不确定性与偶然不确定性的方法，可迁移至代理模型中的不确定性量化，但未涉及生物力学或植入物设计。",
+        "why_not_core": "No FEA validation, no biomedical context, no implant mechanics.",
+        "validation_kind": "numerical_benchmark",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": true,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "uncertainty quantification",
+          "Bayesian optimization",
+          "active learning",
+          "Prior-Fitted Networks",
+          "epistemic uncertainty"
+        ],
+        "summary_zh": {
+          "motivation": "标准PFN无法区分认知与偶然不确定性，导致主动学习/贝叶斯优化中探索策略失效。",
+          "method": "利用合成数据生成过程的可控性，训练解耦PFN分别预测无噪声信号和噪声方差。",
+          "result": "解耦模型在超参数优化和合成BO中优于基线，缓解了总方差探索的失败模式。",
+          "validation": "在合成基准和超参数优化任务上对比验证。"
+        },
+        "summary_en": {
+          "motivation": "Standard Prior-Fitted Networks fail to separate epistemic and aleatoric uncertainty, leading to suboptimal exploration in active learning and Bayesian optimization.",
+          "method": "Exploiting the controllable synthetic data generation process, a decoupled PFN is trained with separate heads for the latent signal and observation noise variance, and the predictive is induced by convolution.",
+          "result": "Decoupled models mitigate the failure mode of total-variance exploration in noisy settings and achieve the best average rank in HPO and synthetic BO.",
+          "validation": "Empirical validation on synthetic benchmarks and hyperparameter optimization tasks."
+        },
+        "key_terms": [
+          {
+            "en": "Prior-Fitted Networks",
+            "zh": "先验拟合网络"
+          },
+          {
+            "en": "epistemic uncertainty",
+            "zh": "认知不确定性"
+          },
+          {
+            "en": "aleatoric uncertainty",
+            "zh": "偶然不确定性"
+          },
+          {
+            "en": "Bayesian optimization",
+            "zh": "贝叶斯优化"
+          },
+          {
+            "en": "active learning",
+            "zh": "主动学习"
+          },
+          {
+            "en": "synthetic prior",
+            "zh": "合成先验"
+          },
+          {
+            "en": "uncertainty decomposition",
+            "zh": "不确定性分解"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-05-23T13:09:03Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2605.06337v1",
+      "doi": "",
+      "arxiv_id": "2605.06337v1",
+      "title": "Earth-o1: A Grid-free Observation-native Atmospheric World Model",
+      "abstract": "Despite the unprecedented volume of multimodal data provided by modern Earth observation systems, our ability to model atmospheric dynamics remains constrained. Traditional modeling frameworks force heterogeneous measurements into predefined spatial grids, inherently limiting the full exploitation of raw sensor data and creating severe computational bottlenecks. Here we present Earth-o1, an observation-native atmospheric world model that overcomes these structural limitations. Rather than relying on conventional atmospheric dynamical modeling systems or traditional data assimilation, Earth-o1 directly learns the continuous, three-dimensional physical evolution of the Earth system from ungridded observational data. By integrating diverse sensor inputs into a unified, grid-free dynamical field, the model autonomously advances the atmospheric state in space and time. We show that this fundamentally distinct paradigm enables direct, real-time forecasting and cross-sensor inference without the overhead of explicit numerical solvers. In hindcast evaluations, Earth-o1 achieves surface forecast skill comparable to the operational Integrated Forecasting System (IFS). These results establish that continuous, observation-driven world models -- a new class of fully observation-native geophysical simulators -- can match the fidelity of established physical frameworks, providing a scalable data-driven foundation for a digital twin of the Earth.",
+      "authors": [
+        "Junchao Gong",
+        "Kaiyi Xu",
+        "Wangxu Wei",
+        "Siwei Tu",
+        "Jingyi Xu",
+        "Zili Liu",
+        "Hang Fan",
+        "Zhiwang Zhou",
+        "Tao Han",
+        "Yi Xiao",
+        "Xinyu Gu",
+        "Zhangrui Li",
+        "Wenlong Zhang",
+        "Hao Chen",
+        "Xiaokang Yang",
+        "Yaqiang Wang",
+        "Lijing Cheng",
+        "Pierre Gentine",
+        "Wanli Ouyang",
+        "Feng Zhang",
+        "Zhe-Min Tan",
+        "Bowen Zhou",
+        "Fenghua Ling",
+        "Ben Fei",
+        "Lei Bai"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-05-07",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2605.06337v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.CV"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "ai_bioprinting"
+      ],
+      "direction": "ai_bioprinting",
+      "direction_name": "AI for Bioprinting",
+      "routing_matches": {
+        "ai_bioprinting": [
+          "digital twin"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该论文研究地球大气建模，与生物打印方向无关。",
+        "why_not_core": "No bioprinting, no biomedical context, no experimental validation related to bioprinting.",
+        "validation_kind": "numerical_benchmark",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "atmospheric modeling",
+          "world model",
+          "grid-free",
+          "digital twin",
+          "Earth observation"
+        ],
+        "summary_zh": {
+          "motivation": "克服传统网格化大气建模对观测数据的限制。",
+          "method": "提出观测原生、无网格的连续三维大气世界模型Earth-o1。",
+          "result": "在表面预报技能上与IFS相当。",
+          "validation": "通过后报评估与IFS对比验证。"
+        },
+        "summary_en": {
+          "motivation": "To overcome the limitations of gridded atmospheric models that fail to fully exploit raw observational data.",
+          "method": "Earth-o1 learns continuous 3D atmospheric dynamics directly from ungridded observational data without explicit numerical solvers.",
+          "result": "The model achieves surface forecast skill comparable to the operational Integrated Forecasting System.",
+          "validation": "Hindcast evaluations comparing forecast skill against the IFS."
+        },
+        "key_terms": [
+          {
+            "en": "world model",
+            "zh": "世界模型"
+          },
+          {
+            "en": "grid-free",
+            "zh": "无网格"
+          },
+          {
+            "en": "observation-native",
+            "zh": "观测原生"
+          },
+          {
+            "en": "atmospheric dynamics",
+            "zh": "大气动力学"
+          },
+          {
+            "en": "digital twin",
+            "zh": "数字孪生"
+          },
+          {
+            "en": "data assimilation",
+            "zh": "数据同化"
+          },
+          {
+            "en": "forecast skill",
+            "zh": "预报技能"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-05-23T13:09:03Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2605.06333v1",
+      "doi": "",
+      "arxiv_id": "2605.06333v1",
+      "title": "TinyBayes: Closed-Form Bayesian Inference via Jacobi Prior for Real-Time Image Classification on Edge Devices",
+      "abstract": "Cocoa (Theobroma cacao) is a critical cash crop for millions of smallholder farmers in West Africa, where Cocoa Swollen Shoot Virus Disease (CSSVD) and anthracnose cause devastating yield losses. Automated disease detection from leaf images is essential for early intervention, yet deploying such systems in resource-constrained settings demands models that are small, fast, and require no internet connectivity. Existing edge-deployable plant disease systems rely on end-to-end deep learning without uncertainty quantification, while Bayesian methods for edge devices focus on hardware-level inference architectures rather than agricultural applications. We bridge this gap with TinyBayes, the first framework to combine a closed-form Bayesian classifier with a mobile-grade computer vision pipeline for crop disease detection. Our pipeline uses YOLOv8-Nano (5.9 MB) for lesion localisation, MobileNetV3-Small (3.5 MB) for feature extraction, and the Jacobi prior; a Bayesian method that provides a closed form non-iterative estimators via projection, for the classification. The Jacobi-DMR (Distributed Multinomial Regression) classifier adds only 13.5 KB to the pipeline, bringing the total model size within 9.5 MB, while achieving 78.7% accuracy on the Amini Cocoa Contamination Challenge dataset and enabling end-to-end CPU inference under 150 ms per image. We benchmark against seven classifiers including Random Forest, SVM, Ridge, Lasso, Elastic Net, XGBoost, and Jacobi-GP, and demonstrate that the Jacobi-DMR offers the best trade-off between accuracy, model size, and inference speed for edge deployment. We have proved the asymptotic equivalence and consistency, asymptotic normality and the bias correction of Jacobi-DMR. All data and codes are available here: https://github.com/shouvik-sardar/TinyBayes",
+      "authors": [
+        "Shouvik Sardar",
+        "Sourish Das"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-05-07",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2605.06333v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.CV",
+        "cs.AI",
+        "cs.LG",
+        "stat.AP",
+        "stat.ML"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "fea_surrogate"
+      ],
+      "direction": "fea_surrogate",
+      "direction_name": "FEA & Surrogate Modelling",
+      "routing_matches": {
+        "fea_surrogate": [
+          "uncertainty quantification"
+        ]
+      },
+      "llm": {
+        "priority": "Exclude",
+        "relevance_level": "Peripheral",
+        "read_action": "Ignore",
+        "relevance_to_user": "该论文专注于边缘设备上的植物病害图像分类，与FEA代理建模或生物力学设计无关。",
+        "why_not_core": "This paper addresses agricultural disease detection with Bayesian image classification, not surrogate modeling, FEA, or implant/biomechanics design.",
+        "validation_kind": "numerical_benchmark",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": true,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "Bayesian inference",
+          "edge deployment",
+          "plant disease detection",
+          "image classification"
+        ],
+        "summary_zh": {
+          "motivation": "在资源受限的边缘设备上实现带不确定性的植物病害检测。",
+          "method": "结合YOLOv8-Nano、MobileNetV3-Small和Jacobi先验的贝叶斯分类器。",
+          "result": "总模型9.5 MB，准确率78.7%，CPU推理<150 ms。",
+          "validation": "在Amini Cocoa数据集上对比七种分类器。"
+        },
+        "summary_en": {
+          "motivation": "To enable real-time, uncertainty-aware crop disease detection on edge devices with limited resources.",
+          "method": "A pipeline combining YOLOv8-Nano for lesion localization, MobileNetV3-Small for feature extraction, and a closed-form Bayesian classifier using Jacobi prior.",
+          "result": "The TinyBayes framework achieves 78.7% accuracy with a total model size of 9.5 MB and CPU inference under 150 ms per image.",
+          "validation": "Benchmarked against seven classifiers on the Amini Cocoa Contamination Challenge dataset."
+        },
+        "key_terms": [
+          {
+            "en": "Bayesian inference",
+            "zh": "贝叶斯推断"
+          },
+          {
+            "en": "Jacobi prior",
+            "zh": "Jacobi先验"
+          },
+          {
+            "en": "edge deployment",
+            "zh": "边缘部署"
+          },
+          {
+            "en": "plant disease detection",
+            "zh": "植物病害检测"
+          },
+          {
+            "en": "YOLOv8-Nano",
+            "zh": "YOLOv8-Nano"
+          },
+          {
+            "en": "MobileNetV3-Small",
+            "zh": "MobileNetV3-Small"
+          },
+          {
+            "en": "uncertainty quantification",
+            "zh": "不确定性量化"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-05-23T13:09:03Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2605.06246v1",
+      "doi": "",
+      "arxiv_id": "2605.06246v1",
+      "title": "Structure-Preserving Gaussian Processes Via Discrete Euler-Lagrange Equations",
+      "abstract": "In this paper, we propose Lagrangian Gaussian Processes (LGPs) for probabilistic and data-efficient learning of dynamics via discrete forced Euler-Lagrange equations. Importantly, the geometric structure of the Lagrange-d'Alembert principle, which governs the motion of dynamical systems, is preserved by construction in the absence of external forces. This allows learning physically consistent models that overcome erroneous drift in the system's energy, thereby providing stable long-term predictions. At the core of our approach lie linear operators for Gaussian process conditioning, constructed from discrete forced Euler-Lagrange equations and variational discretization schemes. Thereby and unlike prior work, the method enables learning dynamics from discrete position snapshots, i.e., without access to a system's velocities or momenta. This is particularly relevant for a large class of practical scenarios where only position measurements are available, for instance, in motion capture or visual servoing applications. We demonstrate the data-efficiency and generalization capabilities of the LGPs in various synthetic and real-world case studies, including a real-world soft robot with hysteresis. The experimental results underscore that the LGPs learn physically consistent dynamics with uncertainty quantification solely from sparse positional data and enable stable long-term predictions.",
+      "authors": [
+        "Jan-Hendrik Ewering",
+        "Kathrin Flaßkamp",
+        "Niklas Wahlström",
+        "Thomas B. Schön",
+        "Thomas Seel"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-05-07",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2605.06246v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.LG",
+        "cs.RO"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "fea_surrogate"
+      ],
+      "direction": "fea_surrogate",
+      "direction_name": "FEA & Surrogate Modelling",
+      "routing_matches": {
+        "fea_surrogate": [
+          "uncertainty quantification",
+          "Gaussian process"
+        ]
+      },
+      "llm": {
+        "priority": "Medium",
+        "relevance_level": "Transferable",
+        "read_action": "Save for project",
+        "relevance_to_user": "该方法通过保持几何结构的Gaussian Process学习动力学，可迁移到生物力学或植入物设计的代理建模中，但未直接处理有限元仿真或约束优化。",
+        "why_not_core": "This paper focuses on learning dynamics from position data using structure-preserving GPs, but does not address expensive finite element sampling, constraint handling, or implant/biomechanics design.",
+        "validation_kind": "simulation_case",
+        "flags": {
+          "has_experimental_validation": true,
+          "has_uncertainty_quantification": true,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "Gaussian process",
+          "structure-preserving",
+          "Lagrangian mechanics",
+          "dynamics learning",
+          "uncertainty quantification"
+        ],
+        "summary_zh": {
+          "motivation": "从离散位置数据中学习物理一致的动力学，避免能量漂移。",
+          "method": "提出拉格朗日高斯过程，利用离散欧拉-拉格朗日方程构建条件算子。",
+          "result": "在合成和真实案例中实现数据高效、长期稳定的预测。",
+          "validation": "通过软机器人等案例验证物理一致性和不确定性量化。"
+        },
+        "summary_en": {
+          "motivation": "To learn physically consistent dynamics from discrete position measurements while preserving geometric structure and avoiding energy drift.",
+          "method": "Lagrangian Gaussian Processes (LGPs) are proposed, conditioning on discrete forced Euler-Lagrange equations derived from variational discretization.",
+          "result": "LGPs achieve data-efficient learning and stable long-term predictions with uncertainty quantification, demonstrated on synthetic and real-world soft robot data.",
+          "validation": "Validation includes synthetic benchmarks and a real-world soft robot with hysteresis, showing physically consistent dynamics from sparse positional data."
+        },
+        "key_terms": [
+          {
+            "en": "Gaussian process",
+            "zh": "高斯过程"
+          },
+          {
+            "en": "Lagrangian mechanics",
+            "zh": "拉格朗日力学"
+          },
+          {
+            "en": "structure-preserving",
+            "zh": "结构保持"
+          },
+          {
+            "en": "discrete Euler-Lagrange equations",
+            "zh": "离散欧拉-拉格朗日方程"
+          },
+          {
+            "en": "uncertainty quantification",
+            "zh": "不确定性量化"
+          },
+          {
+            "en": "soft robot",
+            "zh": "软体机器人"
+          },
+          {
+            "en": "hysteresis",
+            "zh": "迟滞"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-05-23T13:09:03Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2605.06204v1",
+      "doi": "",
+      "arxiv_id": "2605.06204v1",
+      "title": "When Does Trimming Help Conformal Prediction? A Retained-Law Diagnostic under Calibration Contamination",
+      "abstract": "Trimming suspicious calibration points is a common response to contamination in conformal prediction. Its effect on clean-target coverage, however, is governed by the retained law induced by trimming, not by the contamination level alone. We analyse fixed-threshold trimming as conditioning rather than purification. It replaces the contaminated calibration law with a retained law, reducing clean-target coverage to a one-dimensional score-CDF transfer problem with an exact finite-sample identity. A componentwise bound on the transfer gap gives a population-level diagnostic. This separates a clean-side covariance cost from a retained-contamination cost, governed by the dirty-to-clean retention ratio. Trimming helps when the anomaly score separates retention probabilities while remaining score-neutral on the clean population. Otherwise, it cannot substantially reduce contamination through the retained mixture coefficient. We also give finite-sample certificate templates that provide numerical guarantees under independent audit.",
+      "authors": [
+        "Congye Wang"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-05-07",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2605.06204v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "stat.ML",
+        "cs.LG"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "fea_surrogate"
+      ],
+      "direction": "fea_surrogate",
+      "direction_name": "FEA & Surrogate Modelling",
+      "routing_matches": {
+        "fea_surrogate": [
+          "conformal prediction"
+        ]
+      },
+      "llm": {
+        "priority": "Exclude",
+        "relevance_level": "Peripheral",
+        "read_action": "Ignore",
+        "relevance_to_user": "该论文讨论共形预测中的修剪方法，与有限元代理建模或生物力学设计无关。",
+        "why_not_core": "This paper is about conformal prediction trimming diagnostics, with no FEA, surrogate modeling, uncertainty quantification for physical simulations, or biomedical implant design context.",
+        "validation_kind": "theoretical",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": true,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "conformal prediction",
+          "trimming",
+          "calibration contamination",
+          "retained law"
+        ],
+        "summary_zh": {
+          "motivation": "分析修剪对共形预测中清洁目标覆盖率的影响。",
+          "method": "将固定阈值修剪视为条件化，推导保留律下的覆盖率转移公式。",
+          "result": "修剪有效当异常分数能分离保留概率且对清洁群体保持分数中性。",
+          "validation": "理论分析和有限样本证书模板。"
+        },
+        "summary_en": {
+          "motivation": "To understand when trimming suspicious calibration points improves clean-target coverage in conformal prediction under contamination.",
+          "method": "Formalizes fixed-threshold trimming as conditioning, deriving an exact finite-sample identity for coverage transfer under the retained law.",
+          "result": "Trimming helps only if the anomaly score separates retention probabilities while remaining score-neutral on the clean population.",
+          "validation": "Theoretical analysis with componentwise bounds and finite-sample certificate templates."
+        },
+        "key_terms": [
+          {
+            "en": "conformal prediction",
+            "zh": "共形预测"
+          },
+          {
+            "en": "trimming",
+            "zh": "修剪"
+          },
+          {
+            "en": "calibration contamination",
+            "zh": "校准污染"
+          },
+          {
+            "en": "retained law",
+            "zh": "保留律"
+          },
+          {
+            "en": "coverage transfer",
+            "zh": "覆盖率转移"
+          },
+          {
+            "en": "finite-sample identity",
+            "zh": "有限样本恒等式"
+          },
+          {
+            "en": "anomaly score",
+            "zh": "异常分数"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-05-23T13:09:03Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2605.06203v1",
+      "doi": "",
+      "arxiv_id": "2605.06203v1",
+      "title": "Adaptive Coordinate Transforms for Neural Operators",
+      "abstract": "Neural operators have achieved promising performance on partial differential equations (PDEs), but most existing models are built on fixed Eulerian coordinates. This mismatch between evolving physical structures and static coordinates creates spatial misalignment, leading to unnecessarily non-local operator mappings and reinforcing a smoothness preference near sharp transitions. Inspired by adaptive coordinate transformations in classical PDE analysis, we propose the Adaptive Coordinate Transform (ACT) block, a plug-and-play module for data-driven geometric adaptation in neural operators. ACT blocks resolve this structural limitation by learning adaptive coordinate systems within the operator learning pipeline. Specifically, given an input feature, the ACT block learns a coordinate transformation and represents the same feature under the transformed coordinates via differentiable sampling. This operation preserves the underlying signal while changing its spatial representation, equivalent to expressing the same physical quantity in different coordinate systems. By adapting the coordinate system to the data, ACT allows the network to better track evolving structures, reduce operator complexity, and dynamically focus on critical features to improve learning. We evaluate the proposed approach across diverse PDE benchmarks and multiple neural operator architectures. Experimental results demonstrate consistent and significant improvements in predictive accuracy, indicating that learning coordinate systems provides a powerful mechanism for enhancing operator learning.",
+      "authors": [
+        "Chaoyu Liu",
+        "Zhonghao Li",
+        "Gaohang Chen",
+        "Zakhar Shumaylov",
+        "Zhongying Deng",
+        "Qian Zhang",
+        "Zhonghua Qiao",
+        "Carola-Bibiane Schönlieb"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-05-07",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2605.06203v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.CE"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "fea_surrogate"
+      ],
+      "direction": "fea_surrogate",
+      "direction_name": "FEA & Surrogate Modelling",
+      "routing_matches": {
+        "fea_surrogate": [
+          "neural operator"
+        ]
+      },
+      "llm": {
+        "priority": "Medium",
+        "relevance_level": "Transferable",
+        "read_action": "Save for project",
+        "relevance_to_user": "该论文提出了一种自适应坐标变换模块，可提升神经算子在PDE求解中的精度，其方法可迁移至生物力学FEA代理建模，但未涉及约束处理、不确定性量化或植入物设计。",
+        "why_not_core": "This paper does not address constraint handling, uncertainty quantification, or implant/biomechanics design; it focuses on improving neural operator accuracy for general PDE benchmarks without biomedical or FEA surrogate validation.",
+        "validation_kind": "numerical_benchmark",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "neural operator",
+          "adaptive coordinate transform",
+          "PDE",
+          "surrogate modeling",
+          "geometric adaptation"
+        ],
+        "summary_zh": {
+          "motivation": "现有神经算子基于固定欧拉坐标，难以适应动态物理结构，导致预测精度受限。",
+          "method": "提出自适应坐标变换模块，通过可微采样学习数据驱动的坐标变换，提升算子表达能力。",
+          "result": "在多个PDE基准和算子架构上，该方法一致显著提高了预测精度。",
+          "validation": "在标准PDE数值基准上验证，未涉及实验或生物力学案例。"
+        },
+        "summary_en": {
+          "motivation": "Existing neural operators rely on fixed Eulerian coordinates, causing spatial misalignment with evolving physical structures and limiting predictive accuracy.",
+          "method": "The Adaptive Coordinate Transform (ACT) block learns a coordinate transformation and applies differentiable sampling to represent features under transformed coordinates, enabling geometric adaptation within the operator learning pipeline.",
+          "result": "The proposed method consistently and significantly improves predictive accuracy across diverse PDE benchmarks and multiple neural operator architectures.",
+          "validation": "Validation is performed on standard numerical PDE benchmarks without experimental or biomechanical case studies."
+        },
+        "key_terms": [
+          {
+            "en": "neural operator",
+            "zh": "神经算子"
+          },
+          {
+            "en": "adaptive coordinate transform",
+            "zh": "自适应坐标变换"
+          },
+          {
+            "en": "partial differential equations",
+            "zh": "偏微分方程"
+          },
+          {
+            "en": "surrogate modeling",
+            "zh": "代理建模"
+          },
+          {
+            "en": "geometric adaptation",
+            "zh": "几何自适应"
+          },
+          {
+            "en": "differentiable sampling",
+            "zh": "可微采样"
+          },
+          {
+            "en": "operator learning",
+            "zh": "算子学习"
+          },
+          {
+            "en": "coordinate transformation",
+            "zh": "坐标变换"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-05-23T13:09:03Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2605.06011v1",
+      "doi": "",
+      "arxiv_id": "2605.06011v1",
+      "title": "Distortion-minimized de-homogenization for optimization of cell-size distribution in TPMS structures",
+      "abstract": "This paper presents a homogenized topology optimization (TO) method for spatially optimizing cell-size distribution of triply-periodic minimal surface (TPMS) structures, with high accuracy in the optimized structural response after de-homogenization. To achieve this, we introduce a novel de-homogenization technique that directly minimizes the difference between the wavenumbers obtained from the target and actual size distributions. This minimization problem is efficiently solved as a typical Poisson's equation utilizing the discrete cosine transform. We first verify the proposed de-homogenization method through numerical examples, showcasing its capability in significantly reducing the known distortion of the de-homogenized TPMS structures from the conventional periodic modulation (PM) method. Then, we apply the proposed method to a stiffness maximization problem, to demonstrate its effectiveness in improving the structural response compared to the PM method. The proposed method successfully reduced the distortion of the de-homogenized structures compared to the PM method, leading to 0.8% difference in the strain energy compared to the homogenized model, as opposed to 63.6% difference in the PM method. The optimized structure from the proposed method shows a significant improvement in the strain energy by 50.1% compared to the uniform case in the FE analysis on the de-homogenized models, while the PM method results in a significant decrease of 45.8%. The experimental validation shows that the effective stiffness of the optimized structure from the proposed method is 54.2% higher than that of the uniform case, while the PM method results in a significant decrease by 77.3%. These results exhibit the proposed method effectively increases the accuracy of the de-homogenization, thereby maximizing the potential of the homogenized TO for the spatial cell-size optimization of TPMS structures.",
+      "authors": [
+        "Hiroki Kawabe",
+        "Kaito Ohtani",
+        "Yusibo Yang",
+        "Musaddiq Al Ali",
+        "Kentaro Yaji"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-05-07",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2605.06011v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "math.OC"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "am_biomedical"
+      ],
+      "direction": "am_biomedical",
+      "direction_name": "AM Biomedical Materials",
+      "routing_matches": {
+        "am_biomedical": [
+          "TPMS"
+        ]
+      },
+      "llm": {
+        "priority": "Medium",
+        "relevance_level": "Transferable",
+        "read_action": "Save for project",
+        "relevance_to_user": "该论文提出的TPMS结构去均质化方法可用于优化多孔植入物的刚度分布，但未涉及应力遮挡或生物力学验证。",
+        "why_not_core": "This paper focuses on TPMS cell-size optimization and de-homogenization accuracy, but does not address stress shielding, fatigue testing, surface roughness, or osseointegration relevant to biomedical implants.",
+        "validation_kind": "mechanical_testing",
+        "flags": {
+          "has_experimental_validation": true,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "TPMS",
+          "de-homogenization",
+          "topology optimization",
+          "stiffness optimization",
+          "additive manufacturing"
+        ],
+        "summary_zh": {
+          "motivation": "提高TPMS结构空间胞元尺寸优化的去均质化精度",
+          "method": "提出基于波数最小化的去均质化方法，利用离散余弦变换求解泊松方程",
+          "result": "优化后结构刚度比均匀结构提高54.2%，远优于传统周期调制法",
+          "validation": "数值算例和实验压缩测试验证有效刚度"
+        },
+        "summary_en": {
+          "motivation": "To improve the accuracy of de-homogenization for spatially optimized TPMS structures, enabling effective stiffness maximization.",
+          "method": "A novel de-homogenization technique minimizes the wavenumber difference between target and actual size distributions by solving a Poisson equation via discrete cosine transform.",
+          "result": "The optimized structure achieves 54.2% higher effective stiffness than the uniform case in experiments, compared to a 77.3% decrease with the conventional periodic modulation method.",
+          "validation": "Numerical examples and experimental compression tests on additively manufactured TPMS specimens validate the effective stiffness improvement."
+        },
+        "key_terms": [
+          {
+            "en": "TPMS",
+            "zh": "三周期极小曲面"
+          },
+          {
+            "en": "de-homogenization",
+            "zh": "去均质化"
+          },
+          {
+            "en": "topology optimization",
+            "zh": "拓扑优化"
+          },
+          {
+            "en": "cell-size distribution",
+            "zh": "胞元尺寸分布"
+          },
+          {
+            "en": "stiffness maximization",
+            "zh": "刚度最大化"
+          },
+          {
+            "en": "additive manufacturing",
+            "zh": "增材制造"
+          },
+          {
+            "en": "Poisson's equation",
+            "zh": "泊松方程"
+          },
+          {
+            "en": "discrete cosine transform",
+            "zh": "离散余弦变换"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-05-23T13:09:03Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2605.05973v1",
+      "doi": "",
+      "arxiv_id": "2605.05973v1",
+      "title": "Towards Reliable LLM Evaluation: Correcting the Winner's Curse in Adaptive Benchmarking",
+      "abstract": "Adaptive prompt and program search makes LLM evaluation selection-sensitive. Once benchmark items are reused inside tuning, the observed winner's score need not estimate the fresh-data performance of the full tune-then-deploy procedure. We study inference for this procedure-level target under explicit tuning budgets. We propose SIREN, a selection-aware repeated-split reporting protocol that freezes the post-search shortlist, separates splitwise selection from held-out evaluation, and uses an item-level Gaussian multiplier bootstrap for uncertainty quantification. In a fixed-shortlist regime with smooth stabilized selection, the estimator admits a first-order item-level representation, and the bootstrap yields valid simultaneous inference on a finite budget grid. This supports confidence intervals for procedure-performance curves and pre-specified equal-budget and cross-budget comparisons. Controlled simulations and MMLU-Pro tuning experiments show that winner-based reporting can be optimistic and can change deployment conclusions, while SIREN remains close to the finite-sample reporting target.",
+      "authors": [
+        "Yang Xu",
+        "Jiefu Zhang",
+        "Haixiang Sun",
+        "Zihan Zhou",
+        "Tianyu Cao",
+        "Vaneet Aggarwal"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-05-07",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2605.05973v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "stat.ML",
+        "cs.AI",
+        "cs.LG",
+        "stat.AP"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "fea_surrogate"
+      ],
+      "direction": "fea_surrogate",
+      "direction_name": "FEA & Surrogate Modelling",
+      "routing_matches": {
+        "fea_surrogate": [
+          "uncertainty quantification"
+        ]
+      },
+      "llm": {
+        "priority": "Exclude",
+        "relevance_level": "Peripheral",
+        "read_action": "Ignore",
+        "relevance_to_user": "该论文关注LLM评估中的偏差校正，与FEA代理建模或生物力学设计无关。",
+        "why_not_core": "This paper addresses statistical inference for LLM evaluation, not surrogate modeling, FEA, or any biomedical/mechanical design optimization.",
+        "validation_kind": "numerical_benchmark",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": true,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "LLM evaluation",
+          "winner's curse",
+          "adaptive benchmarking",
+          "uncertainty quantification"
+        ],
+        "summary_zh": {
+          "motivation": "纠正自适应基准测试中胜者诅咒导致的评估偏差",
+          "method": "提出SIREN协议，使用分割选择与高斯乘子自助法进行推断",
+          "result": "SIREN能提供有效的置信区间，避免乐观偏差",
+          "validation": "通过模拟和MMLU-Pro实验验证"
+        },
+        "summary_en": {
+          "motivation": "To correct the winner's curse in adaptive LLM benchmarking that leads to overoptimistic performance estimates.",
+          "method": "Proposes SIREN, a selection-aware repeated-split protocol with item-level Gaussian multiplier bootstrap for uncertainty quantification.",
+          "result": "SIREN yields valid confidence intervals for procedure-performance curves and avoids optimistic bias in deployment conclusions.",
+          "validation": "Validated through controlled simulations and MMLU-Pro tuning experiments."
+        },
+        "key_terms": [
+          {
+            "en": "winner's curse",
+            "zh": "胜者诅咒"
+          },
+          {
+            "en": "adaptive benchmarking",
+            "zh": "自适应基准测试"
+          },
+          {
+            "en": "uncertainty quantification",
+            "zh": "不确定性量化"
+          },
+          {
+            "en": "bootstrap",
+            "zh": "自助法"
+          },
+          {
+            "en": "confidence interval",
+            "zh": "置信区间"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-05-23T13:09:03Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2605.05743v2",
+      "doi": "",
+      "arxiv_id": "2605.05743v2",
+      "title": "Fourier Feature Methods for Nonlinear Causal Discovery: FFML Scoring, TRFF Scoring, and FFCI Testing in Mixed Data",
+      "abstract": "Gaussian process (GP) marginal likelihood scores and kernel conditional independence tests are theoretically appealing for nonlinear causal discovery but computationally prohibitive at scale. We present three complementary RFF-based methods forming a practical toolkit for score-based, constraint-based, and hybrid causal discovery.   The Fourier Feature Marginal Likelihood (FFML) score approximates the exact GP marginal likelihood by replacing the $n x n$ kernel Gram matrix with a finite-dimensional feature representation, reducing cost to $O(nm^2 + m^3)$ while retaining the probabilistic interpretation and automatic complexity penalty of the exact score. FFML extends to mixed (continuous and discrete) parent sets via a product-kernel construction, with a Kronecker path for small discrete parent sets and a Hadamard-product path otherwise.   The Tetrad Random Fourier Feature (TRFF) score is a complementary BIC-style alternative using penalized Student-t regression with random Fourier features. TRFF offers robustness to heavy-tailed noise and faster runtime than FFML. Empirically, TRFF and FFML exhibit a complementary precision-recall profile: TRFF achieves higher precision while FFML achieves better recall and lower SHD overall.   The Fourier Feature Conditional Independence (FFCI) test is a fast nonparametric CI test for mixed data, using ridge residualization in feature space and a Frobenius-norm cross-covariance statistic approximated as a weighted sum of chi-squared variables. Empirically, BOSS+FFML achieves the lowest SHD on nonlinear data, while BOSS+TRFF offers the highest precision. When run through PC-Max, FFCI and RCIT exhibit complementary precision-recall profiles: RCIT is more precise while FFCI achieves better recall and substantially lower SHD, at approximately twice the runtime.",
+      "authors": [
+        "Joseph D. Ramsey"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-05-07",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2605.05743v2",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "stat.ML",
+        "cs.AI",
+        "cs.LG"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "fea_surrogate"
+      ],
+      "direction": "fea_surrogate",
+      "direction_name": "FEA & Surrogate Modelling",
+      "routing_matches": {
+        "fea_surrogate": [
+          "Gaussian process"
+        ]
+      },
+      "llm": {
+        "priority": "Exclude",
+        "relevance_level": "Peripheral",
+        "read_action": "Ignore",
+        "relevance_to_user": "该论文专注于因果发现中的非线性方法，与有限元代理建模或生物力学设计无直接关联。",
+        "why_not_core": "This paper does not address FEA surrogate modeling, expensive simulation sampling, constraint handling, uncertainty quantification, or biomechanics/implant design.",
+        "validation_kind": "numerical_benchmark",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "causal discovery",
+          "Gaussian process",
+          "random Fourier features",
+          "nonlinear",
+          "mixed data"
+        ],
+        "summary_zh": {
+          "motivation": "非线性因果发现中GP边际似然和核条件独立检验计算成本高",
+          "method": "提出三种基于随机傅里叶特征的方法：FFML、TRFF和FFCI",
+          "result": "FFML召回率最高，TRFF精度最高，FFCI在PC-Max中SHD最低",
+          "validation": "在合成和基准数据集上比较SHD、精度和召回率"
+        },
+        "summary_en": {
+          "motivation": "Gaussian process marginal likelihood and kernel conditional independence tests are computationally prohibitive for large-scale nonlinear causal discovery.",
+          "method": "Three complementary methods based on random Fourier features are proposed: FFML (score-based), TRFF (BIC-style), and FFCI (conditional independence test).",
+          "result": "FFML achieves the best recall and lowest SHD, TRFF achieves the highest precision, and FFCI achieves lower SHD than RCIT at twice the runtime.",
+          "validation": "Empirical evaluation on synthetic and benchmark datasets using SHD, precision, and recall metrics."
+        },
+        "key_terms": [
+          {
+            "en": "causal discovery",
+            "zh": "因果发现"
+          },
+          {
+            "en": "Gaussian process",
+            "zh": "高斯过程"
+          },
+          {
+            "en": "random Fourier features",
+            "zh": "随机傅里叶特征"
+          },
+          {
+            "en": "marginal likelihood",
+            "zh": "边际似然"
+          },
+          {
+            "en": "conditional independence test",
+            "zh": "条件独立性检验"
+          },
+          {
+            "en": "mixed data",
+            "zh": "混合数据"
+          },
+          {
+            "en": "nonlinear",
+            "zh": "非线性"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-05-23T13:09:03Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2605.05703v2",
+      "doi": "",
+      "arxiv_id": "2605.05703v2",
+      "title": "Active Learning for Communication Structure Optimization in LLM-Based Multi-Agent Systems",
+      "abstract": "Optimizing the communication structure of large language model based multi-agent systems (LLM-MAS) has been shown to improve downstream performance and reduce token usage. Existing methods typically rely on randomly sampled training tasks. However, tasks may differ substantially in difficulty and domain, and thus they are not equally informative for updating communication structure, making optimization under limited training budgets often unstable and highly sensitive to the particular training set. To actively identify the most valuable tasks for communication-structure optimization, we propose an ensemble-based information-theoretic task selection framework. The proposed method estimates task informativeness by how much a candidate task changes the distribution over graph parameters, using ensemble Kalman inversion as an efficient and derivative-free approximation of the corresponding Bayesian update. The resulting estimator is especially suitable for black-box and noisy multi-agent systems. To enhance scalability, we construct a compact candidate pool through embedding-based representative selection and combine the informative selection with surrogate modeling and batch Thompson sampling. We validate our method in both benign settings and settings with agent attacks, demonstrating its effectiveness for communication-structure optimization under constrained computational budgets.",
+      "authors": [
+        "Huchen Yang",
+        "Xinghao Dong",
+        "Dan Negrut",
+        "Jin-Long Wu"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-05-07",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2605.05703v2",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.MA",
+        "cs.AI",
+        "cs.LG"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "fea_surrogate"
+      ],
+      "direction": "fea_surrogate",
+      "direction_name": "FEA & Surrogate Modelling",
+      "routing_matches": {
+        "fea_surrogate": [
+          "active learning"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该论文关注LLM多智能体系统的通信结构优化，与用户关注的FEA替代模型和生物力学设计无直接关联。",
+        "why_not_core": "This paper does not address FEA surrogate modeling, implant biomechanics, or any biomedical engineering context; it focuses on LLM-based multi-agent systems.",
+        "validation_kind": "simulation_case",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": true,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "active learning",
+          "multi-agent systems",
+          "LLM",
+          "communication structure",
+          "ensemble Kalman inversion"
+        ],
+        "summary_zh": {
+          "motivation": "现有LLM多智能体系统通信结构优化依赖随机采样任务，效率低且不稳定。",
+          "method": "提出基于集成卡尔曼反演的主动学习框架，选择信息量最大的任务优化通信结构。",
+          "result": "在良性环境和攻击环境下均验证了方法的有效性，降低了计算预算。",
+          "validation": "通过模拟实验在两种场景下验证方法性能。"
+        },
+        "summary_en": {
+          "motivation": "Existing methods for optimizing communication structures in LLM-based multi-agent systems rely on randomly sampled tasks, which are inefficient and unstable under limited budgets.",
+          "method": "An ensemble-based information-theoretic task selection framework using ensemble Kalman inversion to estimate task informativeness for communication-structure optimization.",
+          "result": "The proposed method effectively optimizes communication structures under constrained computational budgets in both benign and adversarial settings.",
+          "validation": "Validation through simulation experiments in benign and agent-attack scenarios."
+        },
+        "key_terms": [
+          {
+            "en": "active learning",
+            "zh": "主动学习"
+          },
+          {
+            "en": "multi-agent systems",
+            "zh": "多智能体系统"
+          },
+          {
+            "en": "large language model",
+            "zh": "大语言模型"
+          },
+          {
+            "en": "communication structure",
+            "zh": "通信结构"
+          },
+          {
+            "en": "ensemble Kalman inversion",
+            "zh": "集成卡尔曼反演"
+          },
+          {
+            "en": "Thompson sampling",
+            "zh": "汤普森采样"
+          },
+          {
+            "en": "surrogate modeling",
+            "zh": "代理模型"
+          },
+          {
+            "en": "information theory",
+            "zh": "信息论"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-05-23T13:09:03Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2605.05581v1",
+      "doi": "",
+      "arxiv_id": "2605.05581v1",
+      "title": "A Scalable Digital Twin Framework for Energy Optimization in Data Centers",
+      "abstract": "This study proposes a scalable Digital Twin framework for energy optimization in data centers.The framework integrates IoT-based data acquisition, cloud computing, and machine learning techniques to enable real-time monitoring, forecasting, and intelligent energy management. A controlled small-scale data center environment was developed to monitor variables such as power consumption, temperature, and computational workload. Long Short-Term Memory (LSTM) models were employed to predict energy demand and support operational decision-making. Experimental results demonstrated improvements in energy efficiency, including reductions in power consumption and enhancements in Power Usage Effectiveness (PUE). Despite being evaluated in a constrained environment, the proposed framework demonstrates strong potential as a scalable and cost-effective solution for sustainable data center management.",
+      "authors": [
+        "Raphael Hendrigo de Souza Gonçalves",
+        "Wendel Marcos dos Santos"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-05-07",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2605.05581v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.DC",
+        "cs.LG"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "ai_bioprinting"
+      ],
+      "direction": "ai_bioprinting",
+      "direction_name": "AI for Bioprinting",
+      "routing_matches": {
+        "ai_bioprinting": [
+          "digital twin"
+        ]
+      },
+      "llm": {
+        "priority": "Exclude",
+        "relevance_level": "Peripheral",
+        "read_action": "Ignore",
+        "relevance_to_user": "该论文研究数据中心能效优化，与生物打印方向无关。",
+        "why_not_core": "This paper focuses on data center energy optimization, with no mention of bioprinting, AI-driven bioprinting workflow, or any biomedical application.",
+        "validation_kind": "simulation_case",
+        "flags": {
+          "has_experimental_validation": true,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "data center",
+          "digital twin",
+          "energy optimization",
+          "LSTM"
+        ],
+        "summary_zh": {
+          "motivation": "数据中心能耗高，需智能优化。",
+          "method": "提出数字孪生框架，集成IoT、云和LSTM预测能耗。",
+          "result": "实验显示能耗降低，PUE改善。",
+          "validation": "小规模数据中心实验验证。"
+        },
+        "summary_en": {
+          "motivation": "Data centers consume significant energy, necessitating intelligent optimization strategies.",
+          "method": "A scalable Digital Twin framework integrating IoT, cloud computing, and LSTM models for energy demand prediction and management.",
+          "result": "Experimental results showed reduced power consumption and improved Power Usage Effectiveness (PUE).",
+          "validation": "Validation was performed in a controlled small-scale data center environment."
+        },
+        "key_terms": [
+          {
+            "en": "Digital Twin",
+            "zh": "数字孪生"
+          },
+          {
+            "en": "energy optimization",
+            "zh": "能效优化"
+          },
+          {
+            "en": "LSTM",
+            "zh": "长短期记忆网络"
+          },
+          {
+            "en": "Power Usage Effectiveness",
+            "zh": "电能使用效率"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-05-23T13:09:03Z"
+    },
+    {
+      "source": "pubmed",
+      "id": "pubmed:42136480",
+      "doi": "10.2174/0115748871449923260330194138",
+      "pmid": "42136480",
+      "title": "Hydrogel-based Advances in Dermatological Therapy: Insights from Patents and Clinical Research.",
+      "abstract": "Treating skin conditions, chronic wounds, and soft tissue injuries remains a major challenge in contemporary healthcare, with substantial financial costs and impacts on patients' quality of life. Hydrogels comprise interconnected networks of hydrophilic polymers characterized by high water content. They have emerged as a promising class of biomaterials in dermatology due to their structural similarity to the extracellular matrix, excellent biocompatibility, and adjustable mechanical properties. With a focus on wound healing, skin tissue engineering, the treatment of chronic inflammatory illnesses (such as acne, psoriasis, and eczema), and cosmetic and anti-aging procedures, this review provides a thorough overview of the development and application of hydrogel-based systems in dermatology. This review discusses the functional characteristics, therapeutic action, and clinical advantages of various formulations-including natural, synthetic, hybrid, and nanocomposite hydrogels. Additionally, a review of current patents and clinical studies provides an example of the new hydrogel technology landscape, which includes bioactive and smart hydrogels as well as multifunctional composites for enhanced skin regeneration and controlled drug delivery. Combining hydrogels with innovative technologies such as nanomaterials, 3D bioprinting, and responsive biomaterials further underscores the revolutionary potential in dermatological therapy. The research suggests that hydrogel-based methods are redefining the future of skin regeneration, repair, and cosmetic treatment by offering improved aesthetic outcomes, quicker healing, and higher patient compliance.",
+      "authors": [
+        "Monika Verma",
+        "Neha Yadav",
+        "Smita Narwal",
+        "Nisha Grewal",
+        "Ashwani K Dhingra",
+        "Bhawna Chopra"
+      ],
+      "first_author_affiliation": "Department of Pharmacy, Global Research Institute of Pharmacy, Radaur, Yamuna Nagar, 135133, Haryana, India.",
+      "corresponding_authors": [
+        {
+          "name": "Bhawna Chopra",
+          "affiliation": "Department of Pharmacy, Guru Gobind Singh College of Pharmacy, Yamuna Nagar, 135001, Haryana, India.",
+          "inferred": true
+        }
+      ],
+      "venue": "Reviews on recent clinical trials",
+      "year": 2026,
+      "date": "2026-05-07",
+      "date_precision": "day",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/42136480/",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [],
+      "raw_type": "journal article",
+      "directions": [
+        "ai_bioprinting"
+      ],
+      "direction": "ai_bioprinting",
+      "direction_name": "AI for Bioprinting",
+      "routing_matches": {
+        "ai_bioprinting": [
+          "3D bioprinting"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该综述提及3D生物打印，但未涉及AI在生物打印中的集成或实验验证。",
+        "why_not_core": "This paper is a clinical review of hydrogels in dermatology, with no AI integration, no experimental validation, and no autonomous decision-making in bioprinting.",
+        "validation_kind": "none",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": true
+        },
+        "tags": [
+          "hydrogel",
+          "dermatology",
+          "review",
+          "3D bioprinting"
+        ],
+        "summary_zh": {
+          "motivation": "综述水凝胶在皮肤病治疗中的进展",
+          "method": "回顾专利和临床研究，总结水凝胶类型与功能",
+          "result": "水凝胶结合3D打印等技术有望改善皮肤再生",
+          "validation": "无实验验证，仅文献综述"
+        },
+        "summary_en": {
+          "motivation": "This review summarizes hydrogel-based systems for dermatological therapy, including wound healing and skin regeneration.",
+          "method": "It surveys patents and clinical studies covering natural, synthetic, hybrid, and nanocomposite hydrogels.",
+          "result": "Hydrogels combined with 3D bioprinting and nanomaterials show potential for improved skin repair and cosmetic outcomes.",
+          "validation": "No experimental validation; the paper is a literature review."
+        },
+        "key_terms": [
+          {
+            "en": "hydrogel",
+            "zh": "水凝胶"
+          },
+          {
+            "en": "dermatology",
+            "zh": "皮肤病学"
+          },
+          {
+            "en": "3D bioprinting",
+            "zh": "3D生物打印"
+          },
+          {
+            "en": "wound healing",
+            "zh": "伤口愈合"
+          },
+          {
+            "en": "skin tissue engineering",
+            "zh": "皮肤组织工程"
+          },
+          {
+            "en": "smart hydrogels",
+            "zh": "智能水凝胶"
+          },
+          {
+            "en": "nanocomposite",
+            "zh": "纳米复合材料"
+          },
+          {
+            "en": "drug delivery",
+            "zh": "药物递送"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-05-23T13:09:03Z"
+    },
+    {
+      "source": "pubmed",
+      "id": "pubmed:42105884",
+      "doi": "10.1016/j.aanat.2026.152850",
+      "pmid": "42105884",
+      "title": "The effect of two different abutment designs on marginal bone loss: a pilot randomised controlled clinical trial.",
+      "abstract": "OBJECTIVE: A new implant system allows the use of both platform and conical abutments within the same implant design. The aim of this pilot clinical study was to preliminarily describe the marginal bone behaviour associated with these abutment connection designs. METHOD: A randomized controlled clinical study was initiated to evaluate conical and platform abutments. After successful osseointegration, platform and conical abutments were randomly applied to the implant. Then, all patients were scheduled for clinical follow-up appointments at 6, 12, and 24 months, after the placement of the final restorations. The probing depth and marginal bone level of each implant were measured. RESULTS: A total of 33 patients with 86 dental implants were followed over the 2-year period. At all-time points, the probing depth and marginal bone level of the 45 (52,3%) conical abutment was lower than that of the 41(47.7%) platform abutments. The probing depth in the anterior region is consistently greater than that in the posterior region, while marginal bone level is typically greater in the posterior region compared to the anterior region. CONCLUSIONS: The two abutments in this implant system demonstrate good long-term stability across various implant-supported restorations. Notably, the conical abutments are more effective than platform abutments in maintaining the height of peri-implant soft and hard tissues.",
+      "authors": [
+        "B Xie",
+        "I Gloßner",
+        "T Mundt",
+        "F Heinemann",
+        "I Dörsam"
+      ],
+      "first_author_affiliation": "Oral Technology, University of Bonn, Welschnonnenstr. 17, 53111 Bonn, Germany.",
+      "corresponding_authors": [
+        {
+          "name": "I Dörsam",
+          "affiliation": "Oral Technology, University of Bonn, Welschnonnenstr. 17, 53111 Bonn, Germany; Department of Prosthodontics, Preclinical Education and Dental Materials Science, University of Bonn Rheinische Friedrich-Wilhelms University, Welschnonnenstr. 17, 53111 Bonn, Germany. Electronic address: Istabrak.doersam@uni-bonn.de."
+        }
+      ],
+      "venue": "Annals of anatomy = Anatomischer Anzeiger : official organ of the Anatomische Gesellschaft",
+      "year": 2026,
+      "date": "2026-05-07",
+      "date_precision": "day",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/42105884/",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [],
+      "raw_type": "journal article",
+      "directions": [
+        "am_biomedical"
+      ],
+      "direction": "am_biomedical",
+      "direction_name": "AM Biomedical Materials",
+      "routing_matches": {
+        "am_biomedical": [
+          "osseointegration"
+        ]
+      },
+      "llm": {
+        "priority": "Exclude",
+        "relevance_level": "Peripheral",
+        "read_action": "Ignore",
+        "relevance_to_user": "该论文研究牙科种植体基台设计对边缘骨丢失的影响，未涉及多孔结构、应力遮挡、LPBF制造或疲劳测试。",
+        "why_not_core": "This paper is a clinical dental implant study with no LPBF fabrication, no mechanical testing, no porous structure, and no stress shielding analysis.",
+        "validation_kind": "clinical",
+        "flags": {
+          "has_experimental_validation": true,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "dental implant",
+          "abutment design",
+          "marginal bone loss",
+          "clinical trial"
+        ],
+        "summary_zh": {
+          "motivation": "比较两种基台设计对种植体周围边缘骨丢失的影响",
+          "method": "随机对照临床试验，随访2年测量探诊深度和边缘骨水平",
+          "result": "锥形基台比平台基台更有效维持软硬组织高度",
+          "validation": "临床随访数据验证"
+        },
+        "summary_en": {
+          "motivation": "To compare the effect of conical versus platform abutments on peri-implant marginal bone loss in a new implant system.",
+          "method": "A pilot randomized controlled clinical trial with 33 patients and 86 implants, followed for 2 years with probing depth and marginal bone level measurements.",
+          "result": "Conical abutments showed lower probing depth and better marginal bone preservation than platform abutments at all time points.",
+          "validation": "Clinical follow-up data at 6, 12, and 24 months."
+        },
+        "key_terms": [
+          {
+            "en": "abutment design",
+            "zh": "基台设计"
+          },
+          {
+            "en": "marginal bone loss",
+            "zh": "边缘骨丢失"
+          },
+          {
+            "en": "dental implant",
+            "zh": "牙科种植体"
+          },
+          {
+            "en": "platform abutment",
+            "zh": "平台基台"
+          },
+          {
+            "en": "conical abutment",
+            "zh": "锥形基台"
+          },
+          {
+            "en": "probing depth",
+            "zh": "探诊深度"
+          },
+          {
+            "en": "osseointegration",
+            "zh": "骨整合"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-05-23T13:09:03Z"
     }
   ],
   "counts": {
-    "fetched_total": 17,
+    "fetched_total": 42,
     "by_source": {
-      "openalex": 17
+      "openalex": 17,
+      "arxiv": 23,
+      "pubmed": 2
     },
-    "after_dedup": 17,
-    "after_routing": 17,
+    "after_dedup": 42,
+    "after_routing": 42,
     "by_direction": {
       "hip_implant": 4,
-      "ai_bioprinting": 1,
-      "am_biomedical": 5,
-      "fea_surrogate": 7
+      "ai_bioprinting": 5,
+      "am_biomedical": 7,
+      "fea_surrogate": 26
     },
     "routed_by_source": {
-      "openalex": 17
+      "openalex": 17,
+      "arxiv": 23,
+      "pubmed": 2
     },
-    "scored": 17,
+    "scored": 42,
     "priority_counts": {
-      "Exclude": 5,
-      "Low": 8,
-      "Medium": 4
+      "Exclude": 13,
+      "Low": 18,
+      "Medium": 11
     }
   }
 }
