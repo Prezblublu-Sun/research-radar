@@ -135,8 +135,59 @@
         ]
       },
       "llm": {
-        "priority": "Low",
-        "priority_reason": "scoring failed: Expecting value: line 34 column 1 (char 1846)"
+        "priority": "Medium",
+        "relevance_level": "Transferable",
+        "read_action": "Save for project",
+        "relevance_to_user": "该论文提出的默认感知贝叶斯优化方法可迁移至植入物设计中的多目标约束优化问题，但未涉及有限元代理模型或生物力学验证。",
+        "why_not_core": "This paper does not address FEA surrogate modeling, constraint handling in multi-objective optimization, or uncertainty quantification for implant biomechanics.",
+        "validation_kind": "numerical_benchmark",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "Bayesian optimization",
+          "default-aware",
+          "sparsity",
+          "interpretability",
+          "GP-UCB"
+        ],
+        "summary_zh": {
+          "motivation": "标准贝叶斯优化常将弱相关参数推向边界，增加验证负担。",
+          "method": "提出BONSAI策略，通过修剪低影响偏差并控制采集值损失实现默认感知优化。",
+          "result": "在保持优化性能的同时大幅减少非默认参数数量，计算开销仅为标准BO的1.5倍。",
+          "validation": "在多个真实世界基准问题上进行数值实验验证。"
+        },
+        "summary_en": {
+          "motivation": "Standard Bayesian optimization often pushes weakly relevant parameters to the boundary, complicating the vetting of recommendations.",
+          "method": "BONSAI introduces a default-aware acquisition policy that prunes low-impact deviations while explicitly controlling the loss in acquisition value.",
+          "result": "BONSAI substantially reduces the number of non-default parameters while maintaining competitive optimization performance, with only 1.5x the candidate-generation cost of standard BO.",
+          "validation": "Empirical validation on multiple real-world benchmark problems demonstrates the effectiveness of the proposed method."
+        },
+        "key_terms": [
+          {
+            "en": "Bayesian optimization",
+            "zh": "贝叶斯优化"
+          },
+          {
+            "en": "default-aware",
+            "zh": "默认感知"
+          },
+          {
+            "en": "sparsity",
+            "zh": "稀疏性"
+          },
+          {
+            "en": "GP-UCB",
+            "zh": "高斯过程上置信界"
+          },
+          {
+            "en": "regret bound",
+            "zh": "遗憾界"
+          }
+        ]
       },
       "schema_version": "v2",
       "scorer_version": "v3",
@@ -176,8 +227,71 @@
         ]
       },
       "llm": {
-        "priority": "Low",
-        "priority_reason": "scoring failed: Unterminated string starting at: line 17 column 15 (char 828)"
+        "priority": "High",
+        "relevance_level": "Transferable",
+        "read_action": "Save for project",
+        "relevance_to_user": "该论文提出了一个基于图的代理模型用于心脏力学全周期模拟，其方法（图编码器、循环一致性、时序建模）可直接迁移到植入物生物力学代理建模中。",
+        "why_not_core": "This paper focuses on cardiac mechanics rather than implant/bone biomechanics, and does not address stress shielding, micromotion, or implant-specific constraints.",
+        "validation_kind": "simulation_case",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": true,
+          "is_review": false
+        },
+        "tags": [
+          "graph neural network",
+          "surrogate modeling",
+          "cardiac biomechanics",
+          "cycle consistency",
+          "finite element analysis"
+        ],
+        "summary_zh": {
+          "motivation": "传统有限元模拟心脏力学耗时，需快速代理模型",
+          "method": "提出基于图神经网络的代理模型，集成全局-局部图编码器、GRU时序编码器和循环一致性双向框架",
+          "result": "模型高保真复现FEA结果，生成生理合理的压力-容积环，且减少FEA监督数据需求",
+          "validation": "基于大规模FEA仿真数据集进行监督训练和验证"
+        },
+        "summary_en": {
+          "motivation": "To accelerate patient-specific left ventricular biomechanics simulation by replacing expensive finite-element analysis with a fast surrogate model.",
+          "method": "A graph-based surrogate (CGFENet) integrating a global-local graph encoder, a GRU temporal encoder conditioned on volume-time signals, and a cycle-consistent bidirectional formulation for full-cycle prediction.",
+          "result": "The surrogate achieves high fidelity to FEA ground truths, produces physiologically plausible pressure-volume loops, and reduces required FEA supervision with minimal accuracy loss.",
+          "validation": "Validated against a large dataset of FEA simulations of left ventricular mechanics."
+        },
+        "key_terms": [
+          {
+            "en": "graph neural network",
+            "zh": "图神经网络"
+          },
+          {
+            "en": "surrogate model",
+            "zh": "代理模型"
+          },
+          {
+            "en": "cardiac biomechanics",
+            "zh": "心脏生物力学"
+          },
+          {
+            "en": "cycle consistency",
+            "zh": "循环一致性"
+          },
+          {
+            "en": "finite element analysis",
+            "zh": "有限元分析"
+          },
+          {
+            "en": "patient-specific simulation",
+            "zh": "患者特异性模拟"
+          },
+          {
+            "en": "pressure-volume loop",
+            "zh": "压力-容积环"
+          },
+          {
+            "en": "gated recurrent unit",
+            "zh": "门控循环单元"
+          }
+        ]
       },
       "schema_version": "v2",
       "scorer_version": "v3",
@@ -219,8 +333,67 @@
         ]
       },
       "llm": {
-        "priority": "Low",
-        "priority_reason": "scoring failed: Unterminated string starting at: line 22 column 19 (char 871)"
+        "priority": "Medium",
+        "relevance_level": "Transferable",
+        "read_action": "Skim only",
+        "relevance_to_user": "该论文研究深度学习混合PDE求解器的可靠性，其物理感知加速方法可迁移至生物力学有限元代理模型的训练与迭代优化。",
+        "why_not_core": "This paper does not apply the method to biomedical implant design or biomechanics FEA, nor does it address multi-objective constraints or uncertainty quantification.",
+        "validation_kind": "numerical_benchmark",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "deep learning hybrid solver",
+          "neural operator",
+          "Anderson acceleration",
+          "PDE solver reliability",
+          "physics-aware acceleration"
+        ],
+        "summary_zh": {
+          "motivation": "深度学习混合PDE求解器可能停滞在虚假不动点，可靠性存疑。",
+          "method": "提出物理感知的Anderson加速（PA-AA），最小化物理残差而非不动点更新。",
+          "result": "PA-AA在更少迭代次数内恢复可靠收敛，解决AI求解器争议。",
+          "validation": "在DeepONet和Fourier神经求解器上进行数值实验验证。"
+        },
+        "summary_en": {
+          "motivation": "Deep learning-based hybrid PDE solvers may stagnate at false fixed points, raising reliability concerns in scientific computing.",
+          "method": "Physics-aware Anderson acceleration (PA-AA) is introduced to minimize the physical residual instead of the fixed-point update.",
+          "result": "PA-AA restores reliable convergence in substantially fewer iterations, addressing controversies around AI-based PDE solvers.",
+          "validation": "Numerical experiments on DeepONet-based HINTS and FFT-based Fourier neural solver validate the method."
+        },
+        "key_terms": [
+          {
+            "en": "deep learning hybrid iterative method",
+            "zh": "深度学习混合迭代方法"
+          },
+          {
+            "en": "neural operator",
+            "zh": "神经算子"
+          },
+          {
+            "en": "Anderson acceleration",
+            "zh": "安德森加速"
+          },
+          {
+            "en": "physical residual",
+            "zh": "物理残差"
+          },
+          {
+            "en": "false fixed point",
+            "zh": "虚假不动点"
+          },
+          {
+            "en": "physics-aware acceleration",
+            "zh": "物理感知加速"
+          },
+          {
+            "en": "PDE solver reliability",
+            "zh": "PDE求解器可靠性"
+          }
+        ]
       },
       "schema_version": "v2",
       "scorer_version": "v3",
@@ -261,7 +434,69 @@
       },
       "llm": {
         "priority": "Low",
-        "priority_reason": "scoring failed: Unterminated string starting at: line 23 column 15 (char 994)"
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该论文研究的是量子力学中的不确定量化问题，与生物力学有限元代理模型无直接关联。",
+        "why_not_core": "This paper focuses on quantum dynamics and semiclassical Schrödinger equations, with no FEA surrogate modeling, no implant biomechanics, and no biomedical context.",
+        "validation_kind": "numerical_benchmark",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": true,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "dynamical low-rank approximation",
+          "uncertainty quantification",
+          "semiclassical Schrödinger equation",
+          "stochastic Galerkin"
+        ],
+        "summary_zh": {
+          "motivation": "解决半经典薛定谔方程中空间和随机高频振荡带来的计算挑战。",
+          "method": "采用投影分裂和非传统积分器的动态低秩逼近框架。",
+          "result": "动态低秩方法比标准随机伽辽金方法计算效率更高，且秩增长主要由势能的随机性和正则性驱动。",
+          "validation": "通过大量数值实验验证方法的准确性和效率。"
+        },
+        "summary_en": {
+          "motivation": "To overcome computational challenges from dual high-frequency oscillations in space and random dimensions for the semiclassical Schrödinger equation with uncertainties.",
+          "method": "A dynamical low-rank approximation framework is proposed, extending projector-splitting and unconventional integrators to evolve the solution on a low-rank manifold.",
+          "result": "The DLR method achieves high fidelity with a remarkably small numerical rank, significantly outperforming the standard stochastic Galerkin method in efficiency.",
+          "validation": "Extensive numerical experiments demonstrate the method's accuracy and computational gains across various test cases."
+        },
+        "key_terms": [
+          {
+            "en": "dynamical low-rank approximation",
+            "zh": "动态低秩逼近"
+          },
+          {
+            "en": "semiclassical Schrödinger equation",
+            "zh": "半经典薛定谔方程"
+          },
+          {
+            "en": "uncertainty quantification",
+            "zh": "不确定量化"
+          },
+          {
+            "en": "projector-splitting integrator",
+            "zh": "投影分裂积分器"
+          },
+          {
+            "en": "unconventional integrator",
+            "zh": "非常规积分器"
+          },
+          {
+            "en": "stochastic Galerkin method",
+            "zh": "随机伽辽金方法"
+          },
+          {
+            "en": "low-rank manifold",
+            "zh": "低秩流形"
+          },
+          {
+            "en": "high-frequency oscillations",
+            "zh": "高频振荡"
+          }
+        ]
       },
       "schema_version": "v2",
       "scorer_version": "v3",
@@ -748,7 +983,70 @@
       },
       "llm": {
         "priority": "Low",
-        "priority_reason": "scoring failed: Unterminated string starting at: line 17 column 15 (char 728)"
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该论文涉及3D生物打印，但核心是碳捕获而非AI驱动的生物打印流程。",
+        "why_not_core": "This paper does not incorporate AI/ML into any bioprinting workflow stage, lacks experimental validation of AI models, and does not advance towards autonomous decision-making.",
+        "validation_kind": "mechanical_testing",
+        "flags": {
+          "has_experimental_validation": true,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "3D bioprinting",
+          "carbon capture",
+          "biomineralization",
+          "bactoink",
+          "mechanical testing"
+        ],
+        "summary_zh": {
+          "motivation": "开发一种通过微生物矿化捕获CO2的3D生物打印方法。",
+          "method": "制备含Sporosarcina pasteurii细菌的活体生物墨水，打印后通过碳酸酐酶催化CO2转化为CaCO3。",
+          "result": "打印结构在矿化2天后抗压强度达8.6 MPa，CaCO3沉淀经SEM、XRD和拉曼光谱确认。",
+          "validation": "通过力学测试和材料表征验证矿化效果。"
+        },
+        "summary_en": {
+          "motivation": "To develop a novel approach for carbon capture by integrating microbial mineralization into 3D bioprinted constructs.",
+          "method": "A living bactoink containing Sporosarcina pasteurii bacteria was formulated and printed, enabling in situ biomineralization of CO2 into CaCO3 via carbonic anhydrase.",
+          "result": "The printed constructs achieved a compressive strength of 8.6 MPa after 2 days of mineralization, with CaCO3 precipitation confirmed by SEM, XRD, and Raman spectroscopy.",
+          "validation": "Mechanical testing and material characterization were performed to validate the mineralization and strength gain."
+        },
+        "key_terms": [
+          {
+            "en": "3D bioprinting",
+            "zh": "3D生物打印"
+          },
+          {
+            "en": "carbon capture",
+            "zh": "碳捕获"
+          },
+          {
+            "en": "biomineralization",
+            "zh": "生物矿化"
+          },
+          {
+            "en": "bactoink",
+            "zh": "活体生物墨水"
+          },
+          {
+            "en": "carbonic anhydrase",
+            "zh": "碳酸酐酶"
+          },
+          {
+            "en": "Sporosarcina pasteurii",
+            "zh": "巴氏芽孢杆菌"
+          },
+          {
+            "en": "CaCO3 precipitation",
+            "zh": "碳酸钙沉淀"
+          },
+          {
+            "en": "compressive strength",
+            "zh": "抗压强度"
+          }
+        ]
       },
       "schema_version": "v2",
       "scorer_version": "v3",
@@ -807,7 +1105,65 @@
       },
       "llm": {
         "priority": "Low",
-        "priority_reason": "scoring failed: Unterminated string starting at: line 35 column 47 (char 1947)"
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该综述涵盖3D生物打印在癌症建模中的应用，但未涉及AI集成或自主决策。",
+        "why_not_core": "This is a general review of 3D bioprinting for cancer modeling with no AI integration, experimental validation, or autonomous decision-making.",
+        "validation_kind": "none",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": true
+        },
+        "tags": [
+          "3D bioprinting",
+          "cancer modeling",
+          "personalized medicine",
+          "review"
+        ],
+        "summary_zh": {
+          "motivation": "综述3D生物打印在癌症建模和个性化医疗中的最新进展。",
+          "method": "概述FDM、SLA、半固体挤出等3D打印技术及其在肿瘤学中的应用。",
+          "result": "3D打印可制造患者特异性结构，改善药物递送和手术精度。",
+          "validation": "无实验验证，为文献综述。"
+        },
+        "summary_en": {
+          "motivation": "This review summarizes recent advances in 3D bioprinting for cancer modeling and personalized medicine.",
+          "method": "It surveys various 3D printing techniques including FDM, SLA, and semisolid extrusion, and their integration into oncology.",
+          "result": "3D printing enables fabrication of patient-specific structures for drug delivery, implants, and radiation therapy.",
+          "validation": "No experimental validation is provided; it is a literature review."
+        },
+        "key_terms": [
+          {
+            "en": "3D bioprinting",
+            "zh": "3D生物打印"
+          },
+          {
+            "en": "cancer modeling",
+            "zh": "癌症建模"
+          },
+          {
+            "en": "personalized medicine",
+            "zh": "个性化医疗"
+          },
+          {
+            "en": "fused deposition modeling",
+            "zh": "熔融沉积建模"
+          },
+          {
+            "en": "stereolithography",
+            "zh": "立体光刻"
+          },
+          {
+            "en": "drug delivery",
+            "zh": "药物递送"
+          },
+          {
+            "en": "patient-specific",
+            "zh": "患者特异性"
+          }
+        ]
       },
       "schema_version": "v2",
       "scorer_version": "v3",
@@ -978,7 +1334,69 @@
       },
       "llm": {
         "priority": "Low",
-        "priority_reason": "scoring failed: Unterminated string starting at: line 34 column 46 (char 1764)"
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该综述涵盖3D生物打印在癌症模型和个性化医疗中的应用，但未涉及AI集成或实验验证。",
+        "why_not_core": "This paper is a general review of 3D bioprinting for oncology, with no AI integration, no experimental validation of AI models, and no autonomous decision-making in the bioprinting workflow.",
+        "validation_kind": "none",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": true
+        },
+        "tags": [
+          "3D bioprinting",
+          "cancer modeling",
+          "personalized medicine",
+          "review"
+        ],
+        "summary_zh": {
+          "motivation": "综述3D打印技术在癌症研究和个性化医疗中的最新进展。",
+          "method": "概述FDM、SLA、半固体挤出等3D打印方法及其在肿瘤学中的应用。",
+          "result": "3D打印可制造患者特异性结构，改善药物递送、手术精度和放疗准确性。",
+          "validation": "无实验验证，为文献综述。"
+        },
+        "summary_en": {
+          "motivation": "This review summarizes recent advances in 3D printing technologies for cancer modeling and personalized medicine.",
+          "method": "It surveys various 3D printing methods including FDM, SLA, and semisolid extrusion, and their integration into oncology applications.",
+          "result": "3D printing enables fabrication of patient-specific constructs that improve drug delivery, surgical precision, and radiotherapy accuracy.",
+          "validation": "No experimental validation is provided; the paper is a literature review."
+        },
+        "key_terms": [
+          {
+            "en": "3D bioprinting",
+            "zh": "3D生物打印"
+          },
+          {
+            "en": "cancer modeling",
+            "zh": "癌症建模"
+          },
+          {
+            "en": "personalized medicine",
+            "zh": "个性化医疗"
+          },
+          {
+            "en": "fused deposition modeling",
+            "zh": "熔融沉积建模"
+          },
+          {
+            "en": "stereolithography",
+            "zh": "立体光刻"
+          },
+          {
+            "en": "drug delivery systems",
+            "zh": "药物递送系统"
+          },
+          {
+            "en": "patient-specific implants",
+            "zh": "患者特异性植入物"
+          },
+          {
+            "en": "radiation therapy",
+            "zh": "放射治疗"
+          }
+        ]
       },
       "schema_version": "v2",
       "scorer_version": "v3",
@@ -1037,7 +1455,70 @@
       },
       "llm": {
         "priority": "Low",
-        "priority_reason": "scoring failed: Unterminated string starting at: line 27 column 3 (char 1361)"
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该综述涵盖3D生物打印在癌症建模中的应用，但未涉及AI集成或实验验证。",
+        "why_not_core": "This is a general review on 3D bioprinting for cancer modeling with no AI integration, no experimental validation, and no autonomous decision-making.",
+        "validation_kind": "none",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": true
+        },
+        "tags": [
+          "review",
+          "3D bioprinting",
+          "cancer modeling",
+          "personalized medicine",
+          "no AI"
+        ],
+        "summary_zh": {
+          "motivation": "综述3D生物打印在癌症建模和个性化医疗中的进展",
+          "method": "总结FDM、SLA、半固体挤出等打印方法及其在肿瘤学中的应用",
+          "result": "3D打印可制造患者特异性结构，加速药物发现和临床转化",
+          "validation": "无实验验证，为文献综述"
+        },
+        "summary_en": {
+          "motivation": "This review summarizes recent advances in 3D bioprinting for cancer modeling and personalized medicine.",
+          "method": "It covers various 3D printing techniques including FDM, SLA, and semisolid extrusion, and their applications in oncology.",
+          "result": "3D printing enables fabrication of patient-specific structures, accelerating drug discovery and improving clinical outcomes.",
+          "validation": "No experimental validation; this is a literature review."
+        },
+        "key_terms": [
+          {
+            "en": "3D bioprinting",
+            "zh": "3D生物打印"
+          },
+          {
+            "en": "cancer modeling",
+            "zh": "癌症建模"
+          },
+          {
+            "en": "personalized medicine",
+            "zh": "个性化医疗"
+          },
+          {
+            "en": "fused deposition modeling",
+            "zh": "熔融沉积建模"
+          },
+          {
+            "en": "stereolithography",
+            "zh": "立体光刻"
+          },
+          {
+            "en": "drug delivery",
+            "zh": "药物递送"
+          },
+          {
+            "en": "patient-specific implant",
+            "zh": "患者特异性植入物"
+          },
+          {
+            "en": "radiation therapy",
+            "zh": "放射治疗"
+          }
+        ]
       },
       "schema_version": "v2",
       "scorer_version": "v3",
@@ -1103,7 +1584,70 @@
       },
       "llm": {
         "priority": "Low",
-        "priority_reason": "scoring failed: Unterminated string starting at: line 24 column 15 (char 1331)"
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该论文涉及金属增材制造的数字孪生，但未涉及生物打印或AI集成。",
+        "why_not_core": "No AI integration, no bioprinting context, no experimental validation with biological materials.",
+        "validation_kind": "simulation_case",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "digital twin",
+          "metal additive manufacturing",
+          "process optimization",
+          "Taguchi",
+          "ANOVA"
+        ],
+        "summary_zh": {
+          "motivation": "优化金属增材制造的设计与制造过程。",
+          "method": "构建数字孪生层次结构，结合拓扑优化、工艺参数优化和热机械分析。",
+          "result": "实现28.5%减重，确定最优工艺参数。",
+          "validation": "通过热机械仿真和Taguchi/ANOVA验证。"
+        },
+        "summary_en": {
+          "motivation": "To develop a digital twin hierarchy for optimizing design and manufacturing of metal additive manufactured components.",
+          "method": "A digital twin framework integrating topology optimization, support generation, and thermomechanical simulations with Taguchi and ANOVA for parameter optimization.",
+          "result": "Achieved 28.5% mass reduction and identified optimal layer thickness, hatch spacing, and scanning speed.",
+          "validation": "Validated through thermomechanical process simulations and statistical analysis of process parameters."
+        },
+        "key_terms": [
+          {
+            "en": "digital twin",
+            "zh": "数字孪生"
+          },
+          {
+            "en": "metal additive manufacturing",
+            "zh": "金属增材制造"
+          },
+          {
+            "en": "selective laser melting",
+            "zh": "选择性激光熔化"
+          },
+          {
+            "en": "Ti6Al4V",
+            "zh": "Ti6Al4V合金"
+          },
+          {
+            "en": "Taguchi method",
+            "zh": "田口方法"
+          },
+          {
+            "en": "ANOVA",
+            "zh": "方差分析"
+          },
+          {
+            "en": "process parameters",
+            "zh": "工艺参数"
+          },
+          {
+            "en": "topology optimization",
+            "zh": "拓扑优化"
+          }
+        ]
       },
       "schema_version": "v2",
       "scorer_version": "v3",
@@ -1274,7 +1818,70 @@
       },
       "llm": {
         "priority": "Low",
-        "priority_reason": "scoring failed: Unterminated string starting at: line 23 column 15 (char 997)"
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该论文涉及钛植入体表面改性以促进骨整合，但未涉及多孔结构、应力遮挡、LPBF制造或疲劳测试。",
+        "why_not_core": "This paper does not cover porous structure design, stress shielding, LPBF fabrication, or mechanical testing (static or fatigue).",
+        "validation_kind": "in_vitro",
+        "flags": {
+          "has_experimental_validation": true,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "titanium implant",
+          "anatase coating",
+          "osseointegration",
+          "surface modification",
+          "in vitro"
+        ],
+        "summary_zh": {
+          "motivation": "通过表面涂层增强钛植入体的早期骨整合能力。",
+          "method": "采用反应脉冲直流磁控溅射在喷砂酸蚀钛表面沉积锐钛矿TiO2涂层。",
+          "result": "涂层形成超亲水高能表面，促进羟基磷灰石形成和成骨细胞功能。",
+          "validation": "通过体外模拟体液浸泡和成骨细胞实验验证生物活性。"
+        },
+        "summary_en": {
+          "motivation": "To improve early osseointegration of titanium implants by depositing a bioactive anatase coating on clinically relevant sandblasted, acid-etched surfaces.",
+          "method": "A hierarchical anatase TiO2 coating was deposited on Ti-SLA using reactive pulsed DC magnetron sputtering, and characterized for surface morphology, wettability, and surface free energy.",
+          "result": "The coating converted the hydrophobic Ti-SLA to a superhydrophilic high-energy surface, promoted homogeneous hydroxyapatite formation in 2× SBF, and enhanced osteoblast adhesion, viability, ALP activity, gene expression, and mineralization.",
+          "validation": "In vitro bioactivity was validated via hydroxyapatite formation in simulated body fluid and osteoblast cell culture assays."
+        },
+        "key_terms": [
+          {
+            "en": "anatase TiO2 coating",
+            "zh": "锐钛矿TiO2涂层"
+          },
+          {
+            "en": "sandblasted acid-etched titanium",
+            "zh": "喷砂酸蚀钛"
+          },
+          {
+            "en": "superhydrophilic",
+            "zh": "超亲水"
+          },
+          {
+            "en": "surface free energy",
+            "zh": "表面自由能"
+          },
+          {
+            "en": "hydroxyapatite",
+            "zh": "羟基磷灰石"
+          },
+          {
+            "en": "osteoblast",
+            "zh": "成骨细胞"
+          },
+          {
+            "en": "osseointegration",
+            "zh": "骨整合"
+          },
+          {
+            "en": "reactive pulsed DC magnetron sputtering",
+            "zh": "反应脉冲直流磁控溅射"
+          }
+        ]
       },
       "schema_version": "v2",
       "scorer_version": "v3",
@@ -1324,8 +1931,68 @@
         ]
       },
       "llm": {
-        "priority": "Low",
-        "priority_reason": "scoring failed: Unterminated string starting at: line 16 column 19 (char 668)"
+        "priority": "Medium",
+        "relevance_level": "Transferable",
+        "read_action": "Skim only",
+        "relevance_to_user": "该论文研究了高粘度剪切变稀水凝胶生物墨水的微滴形成机理，但未涉及AI集成，其物理建模方法可迁移至AI辅助生物打印中的过程建模。",
+        "why_not_core": "This paper does not embed AI into any bioprinting workflow stage; it focuses on mechanistic CFD and experimental validation without machine learning or autonomous decision-making.",
+        "validation_kind": "in_vitro",
+        "flags": {
+          "has_experimental_validation": true,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "droplet formation",
+          "shear-thinning",
+          "hydrogel bioink",
+          "drop-on-demand",
+          "CFD",
+          "experimental validation"
+        ],
+        "summary_zh": {
+          "motivation": "高粘度剪切变稀水凝胶难以通过喷墨打印稳定喷射，需稀释或改配方。",
+          "method": "提出瞬态剪切喷射法，结合高频电磁阀和CFD建模优化驱动参数。",
+          "result": "实现了2.5%海藻酸钠的稳定液滴生成，液滴尺寸可通过行程长度调节。",
+          "validation": "通过实验验证液滴生成稳定性，并与CFD模拟结果对比。"
+        },
+        "summary_en": {
+          "motivation": "High-viscosity shear-thinning hydrogel bioinks are difficult to jet stably in drop-on-demand inkjet bioprinting without dilution or reformulation.",
+          "method": "A transient shear-enabled jetting method using a high-frequency electromagnetic microvalve is developed, coupled with a rheology-informed CFD and FEM modeling framework to link actuation parameters to droplet formation.",
+          "result": "Stable droplet generation of 2.5% sodium alginate is achieved with tunable droplet size via stroke length and driving conditions.",
+          "validation": "Experimental validation of droplet stability and size control is performed, corroborated by CFD simulations."
+        },
+        "key_terms": [
+          {
+            "en": "drop-on-demand bioprinting",
+            "zh": "按需滴落生物打印"
+          },
+          {
+            "en": "shear-thinning",
+            "zh": "剪切变稀"
+          },
+          {
+            "en": "hydrogel bioink",
+            "zh": "水凝胶生物墨水"
+          },
+          {
+            "en": "microvalve",
+            "zh": "微阀"
+          },
+          {
+            "en": "computational fluid dynamics",
+            "zh": "计算流体动力学"
+          },
+          {
+            "en": "droplet formation",
+            "zh": "液滴形成"
+          },
+          {
+            "en": "sodium alginate",
+            "zh": "海藻酸钠"
+          }
+        ]
       },
       "schema_version": "v2",
       "scorer_version": "v3",
