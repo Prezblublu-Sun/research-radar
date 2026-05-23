@@ -276,6 +276,38 @@ def _run_month(month_key: str, window_from: str, window_to: str,
     by_direction = Counter(p.get("direction") for p in routed)
     routed_by_source = Counter(p.get("source") for p in routed)
 
+    # ADR-0020: pre-dedup against the corpus BEFORE scoring. Drop any routed
+    # paper whose v2.identity_key already exists in the target bucket on disk,
+    # so score_batch only sees genuinely-new papers. Keys MUST be identity_key
+    # (not _dedup_key) to match the first-seen-wins comparison at write time.
+    # Papers with empty identity_key cannot be deduped and fall through.
+    # Dry-run skips this: it writes nothing, so there is no corpus to compare
+    # against in tests/light runs, and after_routing is reported unchanged.
+    skipped_existing = 0
+    if not dry_run and routed:
+        daily_dir = data_root / "daily"
+        bucket_existing_keys: dict[str, set[str]] = {}
+        novel: list[dict] = []
+        for p in routed:
+            k = v2.identity_key(p)
+            if not k:
+                novel.append(p)
+                continue
+            bucket_date = (p.get("date") or "").strip()
+            if bucket_date not in bucket_existing_keys:
+                existing_papers, _meta = v2.load_existing_v2(
+                    daily_dir / f"{bucket_date}.json"
+                )
+                bucket_existing_keys[bucket_date] = {
+                    ek for ek in (v2.identity_key(x) for x in existing_papers)
+                    if ek
+                }
+            if k in bucket_existing_keys[bucket_date]:
+                skipped_existing += 1
+            else:
+                novel.append(p)
+        routed = novel
+
     # Score (skipped in dry-run).
     scored_count = 0
     priority_counts = None
@@ -374,6 +406,7 @@ def _run_month(month_key: str, window_from: str, window_to: str,
         "after_routing": after_routing,
         "by_direction": dict(by_direction),
         "routed_by_source": dict(routed_by_source),
+        "skipped_existing": skipped_existing,
         "scored": scored_count,
         "priority_counts": priority_counts,
         # v2 diagnostics
@@ -385,8 +418,9 @@ def _run_month(month_key: str, window_from: str, window_to: str,
             f"no bucket files written")
     else:
         total_added = sum(touched_buckets.values())
-        log(f"  -> scored {scored_count}; wrote {total_added} new paper(s) "
-            f"across {len(touched_buckets)} bucket(s)")
+        log(f"  -> routed {after_routing}, {skipped_existing} already in "
+            f"corpus, scored {scored_count}; wrote {total_added} new "
+            f"paper(s) across {len(touched_buckets)} bucket(s)")
         if missing_date:
             log(f"     (skipped {missing_date} paper(s) with empty date)")
 
