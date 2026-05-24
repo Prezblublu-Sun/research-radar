@@ -759,13 +759,20 @@ code{{font-family:ui-monospace,monospace;font-size:11px;color:#888;background:#f
 
 
 def _build_search_index(docs_dir, data_dir):
-    """Scan all daily JSONs and build a search index for client-side search."""
+    """Scan all daily JSONs and build a per-year search index for client-side search.
+
+    ADR-0022: splits the index into docs/search-index-YYYY.json files plus a
+    docs/search-index-manifest.json, and slims the per-record blob by dropping
+    summary_en (abstract[:500] already supplies English text for matching).
+    """
     import json as _json
+    from datetime import datetime, timezone
+
     daily_dir = data_dir / "daily"
     if not daily_dir.exists():
-        return
+        return 0
 
-    index = []
+    by_year: dict[str, list] = {}
     for jpath in sorted(daily_dir.glob("20*.json")):
         date = jpath.stem
         papers, _meta = _load_papers_v2_or_v1(jpath)
@@ -774,15 +781,14 @@ def _build_search_index(docs_dir, data_dir):
         for p in papers:
             llm = p.get("llm", {}) or {}
             s_zh = llm.get("summary_zh", {}) or {}
-            s_en = llm.get("summary_en", {}) or {}
-            # build searchable text blob (lowercased for fast match)
+            # build searchable text blob (lowercased for fast match);
+            # summary_en intentionally omitted per ADR-0022.
             blob_parts = [
                 p.get("title", ""),
                 p.get("abstract", "")[:500],  # truncate to keep index small
                 llm.get("relevance_to_user", ""),
                 llm.get("why_not_core", ""),
                 " ".join(s_zh.values()) if isinstance(s_zh, dict) else "",
-                " ".join(s_en.values()) if isinstance(s_en, dict) else "",
                 " ".join(llm.get("tags", []) or []),
                 " ".join(t.get("en", "") + " " + t.get("zh", "") for t in (llm.get("key_terms", []) or [])),
                 ", ".join(p.get("authors", [])[:5]),
@@ -790,7 +796,7 @@ def _build_search_index(docs_dir, data_dir):
                 p.get("first_author_affiliation", "") or "",
             ]
             blob = " ".join(b for b in blob_parts if b).lower()
-            index.append({
+            record = {
                 "date": date,
                 "title": p.get("title", "")[:200],
                 "authors": ", ".join(p.get("authors", [])[:3]) + (" et al." if len(p.get("authors", [])) > 3 else ""),
@@ -805,11 +811,30 @@ def _build_search_index(docs_dir, data_dir):
                 "date_precision": p.get("date_precision", "day"),
                 "scorer_version": p.get("scorer_version", ""),
                 "blob": blob,
-            })
+            }
+            year = ((p.get("date") or jpath.stem) or "")[:4]
+            by_year.setdefault(year, []).append(record)
 
-    out = docs_dir / "search-index.json"
-    out.write_text(_json.dumps(index, ensure_ascii=False), encoding="utf-8")
-    return len(index)
+    years = sorted(by_year.keys())
+    counts = {y: len(by_year[y]) for y in years}
+    total = sum(counts.values())
+
+    for y in years:
+        (docs_dir / f"search-index-{y}.json").write_text(
+            _json.dumps(by_year[y], ensure_ascii=False), encoding="utf-8"
+        )
+
+    manifest = {
+        "years": years,
+        "counts": counts,
+        "total": total,
+        "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+    }
+    (docs_dir / "search-index-manifest.json").write_text(
+        _json.dumps(manifest, ensure_ascii=False), encoding="utf-8"
+    )
+
+    return total
 
 
 def _render_search_page(docs_dir):
@@ -873,10 +898,15 @@ h1{font-size:24px;font-weight:500;margin:0 0 .25rem}
 let INDEX = [];
 const filters = { direction: '', priority: '', relevance_level: '' };
 
-fetch('search-index.json').then(r => r.json()).then(data => {
-  INDEX = data;
-  render();
-});
+fetch('search-index-manifest.json')
+  .then(r => r.json())
+  .then(m => Promise.all(
+    m.years.map(y => fetch('search-index-' + y + '.json').then(r => r.json()))
+  ))
+  .then(chunks => {
+    INDEX = chunks.flat();
+    render();
+  });
 
 function applyFilters(items) {
   return items.filter(p => {

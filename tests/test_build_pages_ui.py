@@ -275,3 +275,144 @@ def test_static_bundle_copied_into_docs(built):
     js = (built / "radar-ui.js").read_text(encoding="utf-8")
     assert "radar:promote-queue" in js
     assert "radar:mark:" in js
+
+
+# ---------------------------------------------------------------- ADR-0022
+# Search index: per-year split + manifest, blob drops summary_en but
+# keeps why_not_core and summary_zh.
+
+SEARCH_INDEX_DISPLAY_FIELDS = {
+    "date", "title", "authors", "venue", "direction", "direction_name",
+    "priority", "relevance_level", "read_action", "source", "doi",
+    "date_precision", "scorer_version", "blob",
+}
+
+# Distinctive tokens we can search for to assert blob composition.
+EN_ONLY_TOKEN = "zogglefritz"   # only in summary_en
+ZH_ONLY_TOKEN = "啧噬咕"         # only in summary_zh
+WHY_NOT_TOKEN = "snorgflarble"  # only in why_not_core
+
+
+def _search_paper(*, doi: str, date: str, year_unique: str) -> dict:
+    return {
+        "source": "openalex",
+        "doi": doi,
+        "title": f"Paper {year_unique}",
+        "abstract": "Abstract text.",
+        "authors": ["A. Author", "B. Builder"],
+        "venue": "Test Venue",
+        "year": int(date[:4]),
+        "date": date,
+        "date_precision": "day",
+        "url": f"https://doi.org/{doi}",
+        "direction": "fea_surrogate",
+        "direction_name": "FEA & Surrogate",
+        "scorer_version": "v3",
+        "llm": {
+            "priority": "High",
+            "relevance_level": "Direct",
+            "read_action": "Read",
+            "summary_zh": {"motivation": ZH_ONLY_TOKEN, "method": "方法"},
+            "summary_en": {"motivation": EN_ONLY_TOKEN, "method": "Method"},
+            "why_not_core": WHY_NOT_TOKEN,
+            "relevance_to_user": "Relevant because synthetic.",
+            "tags": ["t1"],
+            "key_terms": [],
+            "flags": {},
+        },
+    }
+
+
+@pytest.fixture()
+def search_built(tmp_path: pathlib.Path) -> tuple[pathlib.Path, int]:
+    """Run _build_search_index on a multi-year fixture; return (docs, total)."""
+    docs = tmp_path / "docs"
+    docs.mkdir(parents=True, exist_ok=True)
+    daily = tmp_path / "data" / "daily"
+    _write_v2(daily, "2024-12-10", [
+        _search_paper(doi="10.1/a", date="2024-12-10", year_unique="2024-a"),
+        _search_paper(doi="10.1/b", date="2024-12-10", year_unique="2024-b"),
+    ])
+    _write_v2(daily, "2025-06-01", [
+        _search_paper(doi="10.2/a", date="2025-06-01", year_unique="2025-a"),
+    ])
+    _write_v2(daily, "2026-05-23", [
+        _search_paper(doi="10.3/a", date="2026-05-23", year_unique="2026-a"),
+    ])
+    total = build_pages._build_search_index(docs, tmp_path / "data")
+    return docs, total
+
+
+def test_adr0022_search_index_writes_per_year_files_and_manifest(search_built):
+    docs, total = search_built
+    assert not (docs / "search-index.json").exists()
+    manifest_path = docs / "search-index-manifest.json"
+    assert manifest_path.exists()
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert manifest["years"] == ["2024", "2025", "2026"]
+    assert manifest["counts"] == {"2024": 2, "2025": 1, "2026": 1}
+    assert manifest["total"] == 4
+    assert total == 4
+    assert sum(manifest["counts"].values()) == manifest["total"]
+    assert "generated_at" in manifest
+
+    written = sorted(p.name for p in docs.glob("search-index-*.json")
+                     if p.name != "search-index-manifest.json")
+    assert written == [
+        "search-index-2024.json",
+        "search-index-2025.json",
+        "search-index-2026.json",
+    ]
+    for year, expected in manifest["counts"].items():
+        records = json.loads(
+            (docs / f"search-index-{year}.json").read_text(encoding="utf-8"))
+        assert isinstance(records, list)
+        assert len(records) == expected
+        for rec in records:
+            assert rec["date"].startswith(year)
+
+
+def test_adr0022_blob_drops_summary_en_keeps_why_not_core_and_summary_zh(search_built):
+    docs, _ = search_built
+    records = json.loads(
+        (docs / "search-index-2024.json").read_text(encoding="utf-8"))
+    assert records
+    for rec in records:
+        blob = rec["blob"]
+        assert EN_ONLY_TOKEN.lower() not in blob
+        assert WHY_NOT_TOKEN.lower() in blob
+        assert ZH_ONLY_TOKEN in blob  # zh token isn't ASCII-affected by .lower()
+        assert blob == blob.lower()   # still lowercased
+
+
+def test_adr0022_search_index_display_fields_unchanged(search_built):
+    docs, _ = search_built
+    records = json.loads(
+        (docs / "search-index-2025.json").read_text(encoding="utf-8"))
+    assert records
+    sample = records[0]
+    assert set(sample.keys()) == SEARCH_INDEX_DISPLAY_FIELDS
+    assert sample["date"] == "2025-06-01"
+    assert sample["direction"] == "fea_surrogate"
+    assert sample["direction_name"] == "FEA & Surrogate"
+    assert sample["priority"] == "High"
+    assert sample["relevance_level"] == "Direct"
+    assert sample["read_action"] == "Read"
+    assert sample["scorer_version"] == "v3"
+    assert sample["date_precision"] == "day"
+
+
+def test_adr0022_search_page_loads_manifest_then_per_year_files(built):
+    """The inline search JS should be manifest-driven, not a single fetch."""
+    search_html = (built / "search.html").read_text(encoding="utf-8")
+    assert "fetch('search-index.json')" not in search_html
+    assert "fetch('search-index-manifest.json')" in search_html
+    assert "search-index-' + y + '.json" in search_html
+
+
+def test_adr0022_build_emits_per_year_index_through_full_build(built):
+    """The full build pipeline (build_pages.build) writes the new files."""
+    assert not (built / "search-index.json").exists()
+    assert (built / "search-index-manifest.json").exists()
+    # fixture spans 2024 only
+    assert (built / "search-index-2024.json").exists()
