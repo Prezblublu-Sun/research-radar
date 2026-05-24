@@ -57,10 +57,15 @@ h1{font-size:24px;font-weight:500;margin:0 0 .25rem}
 let INDEX = [];
 const filters = { direction: '', priority: '', relevance_level: '' };
 
-fetch('search-index.json').then(r => r.json()).then(data => {
-  INDEX = data;
-  render();
-});
+fetch('search-index-manifest.json')
+  .then(r => r.json())
+  .then(m => Promise.all(
+    m.years.map(y => fetch('search-index-' + y + '.json').then(r => r.json()))
+  ))
+  .then(chunks => {
+    INDEX = chunks.flat();
+    render();
+  });
 
 function applyFilters(items) {
   return items.filter(p => {
