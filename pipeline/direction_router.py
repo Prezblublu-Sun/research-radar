@@ -69,3 +69,26 @@ def route(paper: dict, directions_cfg: dict, exclusions: dict,
 
 def filter_routed(papers: list[dict]) -> list[dict]:
     return [p for p in papers if p.get("direction")]
+
+
+def apply_crossover_boost(papers: list[dict]) -> int:
+    """ADR-0021: papers routed into BOTH rl_world_model AND fea_surrogate
+    get priority bumped one level. The only boost rule. Returns count of
+    papers boosted. Idempotent."""
+    BUMP = {"Low": "Medium", "Medium": "High"}
+    boosted = 0
+    for p in papers:
+        dirs = set(p.get("directions") or [])
+        if {"rl_world_model", "fea_surrogate"} <= dirs:
+            llm = p.get("llm") or {}
+            if llm.get("priority_boosted"):
+                continue
+            pri = llm.get("priority")
+            if pri in BUMP:
+                llm["priority_pre_boost"] = pri
+                llm["priority"] = BUMP[pri]
+                llm["priority_boosted"] = True
+                llm["boost_reason"] = "RL × FEA/surrogate crossover (ADR-0021)"
+                p["llm"] = llm
+                boosted += 1
+    return boosted

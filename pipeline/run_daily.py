@@ -125,6 +125,8 @@ def run(days_back: int = 2, skip_zotero: bool = False, force: bool = False) -> d
 
     _print(f"LLM scoring {len(routed)} papers (prompt={prompt_path.name})")
     scored, raw_responses = llm_scorer.score_batch(routed, directions)
+    n_boosted = direction_router.apply_crossover_boost(scored)
+    _print(f"  -> crossover boost applied to {n_boosted} paper(s)")
     priority_counts = {"High": 0, "Medium": 0, "Low": 0, "Exclude": 0}
     for p in scored:
         priority_counts[p.get("llm", {}).get("priority", "Low")] += 1

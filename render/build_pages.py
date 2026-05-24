@@ -615,12 +615,13 @@ def _render_month_page(month_key, day_dates, day_counts, day_papers_full,
 </body></html>"""
 
 
-def _render_index(months, month_counts: dict | None = None):
+def _render_index(months, month_counts: dict | None = None, directions_cfg: dict | None = None):
     """C1 + V1: index.html is a flat month grid (newest first), each month
     a clickable `.month-card` with the new `.pill` count badges. Two-step
     nav: calendar → month → day. Year-section grouping is deferred.
     """
     month_counts = month_counts or {}
+    n_directions = len(directions_cfg) if directions_cfg else 0
     cards = []
     for mk in sorted(months, reverse=True):
         per_day = month_counts.get(mk, [])
@@ -641,7 +642,7 @@ def _render_index(months, month_counts: dict | None = None):
 <style>{CSS}</style>{ASSET_HEAD}</head><body>
 <div class="container">
 <h1>Research Radar</h1>
-<div class="subtitle">Daily paper digest across 4 research directions · pick a month, then a day · pills show High/Medium/Low(/Exclude) counts</div>
+<div class="subtitle">Daily paper digest across {n_directions} research directions · pick a month, then a day · pills show High/Medium/Low(/Exclude) counts</div>
 {_nav_row()}
 <p style="color:var(--c-text-meta);font-size:var(--text-sm)">Click a month to see its days. Pills show that month's total priority counts; greyed months have no High or Medium papers.</p>
 <div class="month-grid">{grid}</div>
@@ -837,8 +838,12 @@ def _build_search_index(docs_dir, data_dir):
     return total
 
 
-def _render_search_page(docs_dir):
+def _render_search_page(docs_dir, directions_cfg: dict):
     """Generate docs/search.html with client-side search UI."""
+    direction_chips = "\n".join(
+        f'  <span class="filter" data-key="direction" data-val="{_esc(dkey)}">{_esc(dcfg["display_name"])}</span>'
+        for dkey, dcfg in directions_cfg.items()
+    )
     html = """<!doctype html><html lang="zh"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Research Radar — Search</title>
@@ -875,10 +880,7 @@ h1{font-size:24px;font-weight:500;margin:0 0 .25rem}
 
 <div class="filters">
   <span class="filter active" data-key="direction" data-val="">All directions</span>
-  <span class="filter" data-key="direction" data-val="ai_bioprinting">AI Bioprinting</span>
-  <span class="filter" data-key="direction" data-val="hip_implant">Hip Implant</span>
-  <span class="filter" data-key="direction" data-val="fea_surrogate">FEA Surrogate</span>
-  <span class="filter" data-key="direction" data-val="am_biomedical">AM Biomedical</span>
+""" + direction_chips + """
 </div>
 <div class="filters">
   <span class="filter active" data-key="priority" data-val="">Any priority</span>
@@ -1107,7 +1109,7 @@ def build(docs_dir, directions_cfg, manifest=None, touched_dates=None):
     archive_months = sorted(months)
 
     (docs_dir / "index.html").write_text(
-        _render_index(archive_months, month_counts),
+        _render_index(archive_months, month_counts, directions_cfg),
         encoding="utf-8",
     )
     for mk, days in months.items():
@@ -1140,4 +1142,4 @@ def build(docs_dir, directions_cfg, manifest=None, touched_dates=None):
         _render_status_page(docs_dir, data_dir)
         n_indexed = _build_search_index(docs_dir, data_dir)
         if n_indexed:
-            _render_search_page(docs_dir)
+            _render_search_page(docs_dir, directions_cfg)
