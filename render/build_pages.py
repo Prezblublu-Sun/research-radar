@@ -261,6 +261,7 @@ def _topbar(date: str, archive_dates: list[str]) -> str:
     )
     dropdown = f'<select class="archive-select" onchange="if(this.value)window.location.href=this.value">{options}</select>'
 
+    calendar_link = '<a class="navbtn" href="index.html">☀️ Calendar</a>'
     weekly_link = '<a class="navbtn" href="weekly/index.html">📅 Weekly</a>'
     status_link = '<a class="navbtn" href="status.html">📊 Status</a>'
     search_link = '<a class="navbtn" href="search.html">🔍 Search</a>'
@@ -270,7 +271,7 @@ def _topbar(date: str, archive_dates: list[str]) -> str:
     promo_link = '<a class="navbtn" href="my-promotes.html">➜ Promote</a>'
 
     return (f'<div class="topbar">{prev_btn}{dropdown}{next_btn}'
-            f'{weekly_link}{status_link}{search_link}'
+            f'{calendar_link}{weekly_link}{status_link}{search_link}'
             f'{hi_link}{marks_link}{promo_link}</div>')
 
 
