@@ -6,6 +6,13 @@ auto-update marker are preserved.
 
 <!-- AUTO-UPDATE-BELOW -->
 
+## 2026-05-25 (run 2026-05-25T07:19:19+00:00)
+
+Counts: fetched=400, after_dedup=140, after_routing=17, High=2, Medium=4
+
+- direction added: `rl_world_model`
+
+
 ## 2026-05-20 (run 2026-05-20T07:06:58+00:00)
 
 Counts: fetched=402, after_dedup=368, after_routing=161, High=5, Medium=23
