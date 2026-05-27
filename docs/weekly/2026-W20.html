@@ -36,7 +36,76 @@ h2{font-size:18px;font-weight:500;margin-top:2rem;margin-bottom:.5rem}
 <div class="topbar"><span class="navbtn disabled">← oldest</span><span class="navbtn disabled">latest →</span><a class="navbtn" href="../index.html">📰 Back to daily</a></div>
 <div class="stats"><div class="stat"><div class="stat-label">Total scored</div><div class="stat-val">0</div></div><div class="stat"><div class="stat-label">High</div><div class="stat-val" style="color:#27500A">0</div></div><div class="stat"><div class="stat-label">Medium</div><div class="stat-val" style="color:#633806">0</div></div><div class="stat"><div class="stat-label">Days w/ data</div><div class="stat-val">1/7</div></div><div class="stat"><div class="stat-label">Total fetched</div><div class="stat-val">0</div></div></div>
 <div class="daily-counts"><span>2026-05-12: H0 M0</span></div>
-<div class="coming-soon">📊 Trend analysis and 📝 LLM weekly summary coming soon. (Phase 2 — will compare keyword frequency week-over-week, and add an AI-generated narrative overview.)</div>
+<div class="weekly-summary">
+<h1>Research Radar 周报：2026-W20（5 月 11 日 – 5 月 17 日）</h1>
+<blockquote>Pilot 第二周。W21 已确认流程可信；本周延续主循环 + 新装的 harness 文章-完整性 门控 + ADR 假设跟踪。<strong>本周方向密度：fea_surrogate 49 篇（77%）/ am_biomedical 9 篇（14%）/ ai_bioprinting 5 篇（8%）/ hip_implant 1 篇（1.5%）</strong>——比 W21 更&quot;重 fea_surrogate&quot;。</blockquote>
+<p>---</p>
+<h2>一、本周概览</h2>
+<ul><li><strong>覆盖周期</strong>：ISO 周 2026-W20（2026-05-11 周一 至 2026-05-17 周日）</li><li><strong>共入精读库</strong>：64 篇（High 12 + Medium 52）—— 比 W21（27 篇）多一倍以上</li><li><strong>处理结果</strong>：精读 39 篇 + 复核 25 篇</li><li><strong>PDF 获取成功率</strong>：39/64 ≈ <strong>61%</strong>（新装的 sanity check 准确拦下 ~25 篇 landing pages 与 stub PDF，体感真实命中率上升）</li><li><strong>方向分布</strong>：</li><li><strong>fea_surrogate</strong>：49 篇——绝对主力。其中 11 High + 38 Medium。</li><li><strong>am_biomedical</strong>：9 篇——含 2 High（LPBF TPMS 疲劳 + SLM gyroid AlSi10Mg FE）</li><li><strong>ai_bioprinting</strong>：5 篇——含 1 High（W19 边界附近）</li><li><strong>hip_implant</strong>：1 篇——直接命中的 acoustic THA 术中评估</li></ul>
+<p>---</p>
+<h2>二、重点论文（按&quot;对 user 实际影响&quot;排序，非按 scorer priority）</h2>
+<h3>Top-2（W21+W20 整个 pilot 中对 user 最直接相关）★★★</h3>
+<p>1. <strong>NEST: Neural-Schwarz Tiling</strong>（arxiv:2605.12343v1，Imperial+AI4I）— <strong>Geometry-Universal PDE solving + 实例化在 nonlinear neo-Hookean solids</strong> （= 生物力学本构！）。3×3×3 voxel patches 学局部 + 经典 Schwarz 算法层全局 assembly。<strong>直接对接 user 患者特异 FEA 的核心痛点</strong>——训一次 local solver， 所有患者复用。本周该框架是对 user 工作潜在影响最大的论文。 <strong>scorer priority=High 正确，但应被 user 单独标记为 W20 头号跟进</strong>。</p>
+<p>2. <strong>Real-time hip biomechanics PINN via smart garments</strong> （doi:10.64898/2026.05.06.26352104，Griffith PRECISE）— hip 关节角度/力矩/ 接触力实时估计 from IMU+EMG，<strong>直接对接 hip_implant 术后康复 + fea_surrogate 方法学</strong>。RMSE：角度 &lt;6°、力矩 0.12-0.30 N·m/kg、接触力 6-16%。临床可部署 的 PINN。<strong>当前 priority=Medium 偏低</strong>——routing 漏判 hip_implant，scorer 未识别&quot;临床部署级 + 多方向交叉&quot;。详见 §五·5.1。</p>
+<h3>High Tier — 神经算子方法学密集创新（本周最强 cluster）</h3>
+<p>3. <strong>MNO: Martingale Neural Operator</strong>（arxiv:2605.15806v1，UW）— Doob-Meyer 分解 作为 architectural prior，FNO 双头给 conditional mean + low-rank covariance。 Wasserstein 距离降 <strong>120×</strong>，~3× 快于 conditional diffusion。<strong>算子学习 + UQ 的最优雅方案</strong>，单次 forward 给 closed-form mean+variance。 4. <strong>SON: Stochastic Operator Network</strong>（arxiv:2605.17107v1，FSU+ORNL）— DeepONet + Stochastic NN + Hamiltonian-SMP 训练。与 MNO 是本周<strong>&quot;算子学习 + UQ&quot;双标杆</strong>， 两条独立路线同周提出，说明这是真正热点。 5. <strong>MMGUNet: Mask-Morph Graph U-Net</strong>（arxiv:2605.15231v1，Imperial+TUM+NVIDIA）— 碰撞分析 surrogate，但<strong>&quot;大几何变化 + 跨组件迁移&quot;完全是患者特异 FEA 的方法 同构</strong>。Barycentric coarse graph morphing + node masking pretraining。 6. <strong>AOT-POT: Adaptive Operator Transformation</strong>（arxiv:2605.15793v1）— <strong>PDE foundation model 路线的关键扩展</strong>：解决多 PDE 预训练的算子结构异构性 （Sinkhorn 投影统一），12 benchmark 平均误差降 40.9%，OOD 89%。 7. <strong>GRAFT-ATHENA</strong>（arxiv:2605.11117v1，Brown，<strong>Karniadakis 组</strong>）— self-improving agentic 框架自主发现新数值方法（含<strong>指数收敛 spectral PINN</strong>）。 验证案例含 shear-thinning 血液流变学（与生物流体相关）。Karniadakis 是 PINN 原创团队，工作很少不重要。 8. <strong>Compositional Neural Operators</strong>（arxiv:2605.11691v1）— 预训练基础算子模块 + aggregator 学习非线性交互，与 Therm-FM/AOT-POT 同 &quot;PDE foundation&quot;路线。 9. <strong>IGANets</strong>（doi:10.1007/s00366-026-02312-6）— Isogeometric Analysis + PINN， CAD 直接用作 FE 模型（与 NEST 形成对照——voxel vs spline 两条路线）。 10. <strong>Per-Loss Adapters for PINN Gradient Conflict</strong>（arxiv:2605.10136v1）— 低秩 适配器为每个 loss 创建独立参数子空间，60+ PDE 配置验证。</p>
+<h3>High Tier — am_biomedical 方向直接命中</h3>
+<p>11. <strong>TPMS LPBF Fatigue Multi-scale</strong>（doi:10.1016/j.ijfatigue.2026.109749）— IJ Fatigue 上 LPBF TPMS 结构疲劳裂纹扩展多尺度建模，<strong>对 user 髋柄认证有 直接借鉴</strong>。 12. <strong>SLM Gyroid AlSi10Mg FE</strong>（doi:10.1007/s40964-026-01715-7）— &quot;complex FE methods&quot; 评估 gyroid 力学，含<strong>预测方程给任意体积分数</strong>，可直接平移到 Ti6Al4V 髋柄段。</p>
+<h3>单一 hip_implant 直接命中（重要但 priority 偏低）</h3>
+<p>13. <strong>Acoustic THA 术中评估</strong>（doi:10.1088/2057-1976/ae6dc9）— 118 例手术的 cementless 股骨柄初始稳定性声学评估，0.834 准确率，分层验证不同骨质量与 假体设计。<strong>Medium 偏低，应 High</strong>。详见 §五·5.1。</p>
+<h3>Medium 复核要点</h3>
+<ul><li><strong>NiTi LPBF 超弹性</strong>（doi:10.3390/ma19102092）— <strong>10 循环后 9.93% 可恢复 应变</strong>——本周对 W21 NiTi 综述的具体实验补充。</li><li><strong>多孔钽 LPBF 55% 孔隙率最优</strong>（doi:10.1111/os.70328）— Orthopaedic Surgery 期刊，与 W21 多孔钛综述呼应。</li><li><strong>FDM-钛多孔支架</strong>（doi:10.3390/met16050518）— 弹性模量 1.2-1.6 GPa <strong>完美 匹配松质骨</strong>——应力屏蔽痛点的关键工艺方向。</li><li><strong>Collagen 3D 打印纤维</strong>（doi:10.1088/1758-5090/ae6371）— 0.64 GPa 抗拉强度 + 8.9 GPa 模量<strong>超过天然肌腱</strong>。</li></ul>
+<p>---</p>
+<h2>三、跨论文趋势 / 共同主题</h2>
+<h3>趋势 1：神经算子方法学密度炸裂（本周 ≥10 篇）★</h3>
+<p>W20 是 pilot 至今神经算子方法学<strong>密度最高</strong>的一周：</p>
+<ul><li><strong>表达力</strong>: IKNO（W21）/ Compositional Operators / U-HNO（hybrid global-local）</li><li><strong>几何</strong>: PACE-FNO（W21 对称性）/ NEST（Schwarz tiling）/ IGANets / MMGUNet / Hodge Decomposition / UFO（domain-unification-free）</li><li><strong>UQ</strong>: MNO / SON / Interval NN / Random-Set GNN / SSLA / Conformal Prediction（×2）</li><li><strong>基础模型/迁移</strong>: Therm-FM（W21）/ AOT-POT / Compositional / Adaptive Basis</li><li><strong>训练改进</strong>: Per-Loss Adapters / Chebyshev Direction / PI-SWNO（时空解耦）/ Spatial Correlation Curriculum-PINN / NTK+BO 边界</li><li><strong>基础设施</strong>: jNO（JAX 库）/ NIMO（MCP-based SDL）</li></ul>
+<p>合在一起：<strong>SciML &quot;neural operator + foundation model + UQ&quot; 范式已经多面开花</strong>， 任何 fea_surrogate 工作都不能忽视这一波。</p>
+<h3>趋势 2：LLM-augmented BO/AL 持续热点（W20 +1）</h3>
+<p>W21 已有 LABO/LGBO/LLM-AL 三篇；本周 +Elicitation-Augmented BO（pairwise，非 LLM 但同问题域）。BO 工程优化 + 专家先验的方向<strong>已是 W21+W20 两周持续 trend</strong>。</p>
+<h3>趋势 3：am_biomedical &quot;多孔金属 + 骨整合&quot;持续</h3>
+<p>W21 多孔钛综述 + jmbbm 径向梯度 SS 晶格（W23）+ IMechE TPMS 设计；W20 多孔 钽（55% 孔隙率最优）+ FDM-钛（1.2-1.6 GPa 匹配松质骨）+ TPMS LPBF 疲劳 + SLM gyroid AlSi10Mg + NiTi LPBF 超弹性（10 cyc 9.93%）。 <strong>&quot;多孔金属 + 工艺-力学-生物性能&quot;</strong> 是 am_biomedical 方向连续两周最稳定 cluster。</p>
+<h3>趋势 4：PDE foundation model 路线收敛</h3>
+<p>W21 Therm-FM 是开门红；W20 AOT-POT（算子异构性）+ Compositional Operators 共同推进。<strong>预计未来 4-8 周会有&quot;生物力学 PDE foundation model&quot;工作出现</strong>—— 这是 user 应密切关注的方向。</p>
+<h3>趋势 5：fea_surrogate routing 长尾噪声继续累积（ADR-0024 验证）</h3>
+<p>W20 新增长尾命中：管道流 PINN（10.1007/s40430-026-06434-2）、Catenary 桥梁 代理（zenodo）、地热油藏（10.2118/232332-ms）、CFRP 板挠度 PINN （10.1016/j.tws.2026.115042）、reservoir seepage（10.3390/pr14101578）、切削 加工（10.1007/s40430-026-06362-1）、同心管手术机器人（W7161354968）。 <strong>W20 长尾约 7 篇</strong> + W21 长尾约 4 篇 = <strong>两周 11 篇</strong>——ADR-0024 草案的 &quot;应用域电子/工程 + 方法 incremental&quot;模式得到强化验证。</p>
+<p>---</p>
+<h2>四、值得跟进的具体线索</h2>
+<p>1. <strong>NEST 框架可行性实验</strong>：在简化 hip stem 几何上跑 NEST 流程（用 neo-Hookean 本构），验证迁移可行性。是本周潜在影响最大的方向。 2. <strong>MNO + Therm-FM 组合 idea</strong>：把 MNO 的 drift+covariance split 嵌入 Therm-FM 的 foundation model framework，得&quot;geometry-universal + UQ-aware + transferable&quot;三合一架构。这是个明显的下一篇论文方向。 3. <strong>hip 生物力学 PINN（Griffith PRECISE）</strong>：关注后续工作（Pizzolato/Saxby/ Lloyd/Diamond），可能是术后非手术管理的方法工具。 4. <strong>Karniadakis GRAFT-ATHENA 自动发现的 spectral PINN with exp convergence</strong>： 如能复现到生物力学 PDE，是 game changer。 5. <strong>HKU Yeung Kelvin / Wei Qiao 骨科生物材料实验室</strong>（W21 起跟踪）+ Twente Mehrshad Mehrpouya NiTi LPBF 实验室持续跟。 6. <strong>W19 W18 W17 W16 backlog 261 篇</strong> 继续处理。</p>
+<p>---</p>
+<h2>五、对评分系统 / harness 的反馈</h2>
+<h3>5.1 ★ scorer priority 偏低的两类系统性观察（升级为假设）</h3>
+<p><strong>两个连续两周的信号</strong>：</p>
+<p>a) <strong>临床部署级 + 直接命中 user 方向的论文 priority 偏低</strong>：</p>
+<ul><li>W20 hip 生物力学 PINN（10.64898/...）—— Medium，应 High</li><li>W20 acoustic THA 评估（10.1088/2057-1976/ae6dc9）—— Medium，应 High</li><li>W20 NiTi LPBF 超弹性（10.3390/ma19102092）—— Medium，应 High</li><li>W20 多孔钽 55% 孔隙率（10.1111/os.70328）—— Medium，应 High</li><li>W21 LPBF 疲劳 ML（10.1007/s43939-026-00696-2）—— Medium，应 High</li><li>W21 dental microrough 表面 + push-out 能量 2.5×（10.1016/j.dental.2026.03.145） —— Medium，应 High</li></ul>
+<p>b) <strong>综述类 priority 偏低</strong>（W21 已观察，本周未新增综述样本）：</p>
+<ul><li>W21 多孔钛表面综述 + NiTi-X LPBF 综述都被判 Medium。</li></ul>
+<p><strong>假设池</strong>（暂不改 scorer，4 周累计后再决定）：</p>
+<blockquote>假设 H1：scorer 对&quot;临床外科应用 + 具体临床指标（push-out / 接触力 / BIC / 准确率%）&quot;的论文系统性低估，因为它没有方法学新颖度信号。 假设 H2：scorer 对主题与 user 核心方向重合度 ≥80% 的综述系统性低估。</blockquote>
+<p>记入 backlog，<strong>W22/W23/W24 三周累计 ≥10 篇这类样本后再决定</strong>。</p>
+<h3>5.2 ★ Cross-source dedup gap — 急需 ADR-0026 草案</h3>
+<p>W20 出现 <strong>4 组</strong>跨源重复（同一论文以 arxiv + OpenAlex 两个 identity_key 出现）： 1. Curriculum-PINN Spatial Correlation 2. Elicitation-Augmented BO 3. Per-Loss Adapters PINN 4. Online Sharp-Calibrated BO</p>
+<p>加 W21 的 2 组 figshare 版本重复 = <strong>两周累计 6 组重复</strong>，约 7% 的精读循环 时间被浪费。</p>
+<p><strong>根因</strong>：OpenAlex fetcher 没把 OpenAlex 条目里的 <code>ids.openalex_works[&quot;arxiv_id&quot;]</code> 或 abstract 中的 arxiv 引用解析出来填到 <code>arxiv_id</code> 字段。下次 fetch 同源条目 （即 arxiv 直接 fetch）时被认为是不同 paper。</p>
+<p><strong>建议</strong>：升级为 <strong>ADR-0026 草案</strong>（&quot;OpenAlex 条目的 arxiv_id 回补&quot;）— fetcher 层从 OpenAlex 响应解析 arxiv_id 并写入。比 ADR-0025（figshare/Zenodo namespace 规范化）紧迫性更高，因为发生率明显更高。</p>
+<h3>5.3 ★ Harness gate 调优（W20 实战修正）</h3>
+<p>W20 处理 GRAFT-ATHENA（238KB 真正文）时，<strong>新装的 sanity check 误判为 landing page</strong>——bullet ratio 17.1% 超过 0.15 阈值。<strong>已调整阈值到 0.25</strong>， 通过验证：</p>
+<ul><li>9 篇 W21 read 全部仍 pass（最高 5.8%）</li><li>4 篇已知 landing page 全部仍 fail（最低 20.7%，markers 检查同时拦下）</li><li>GRAFT-ATHENA 现在 pass ✓</li></ul>
+<p>新阈值在 (bullet &lt; 0.25 AND markers &gt;= 5) 双重保护下稳健。</p>
+<h3>5.4 摘要质量分布观察</h3>
+<p>W20 64 篇 LLM 摘要质量分布大致：</p>
+<ul><li><strong>质量优</strong>（数据具体 + 技术名词完整）：约 25 条（含 NEST/MNO/SON/IKNO/MMGUNet/ NiTi 数据/多孔钽数据/Collagen 强度等）。</li><li><strong>质量中</strong>：约 30 条。</li><li><strong>质量偏弱</strong>：约 9 条（含 jmapro LPBF meltpool、本周个别 surrogate 描述）。</li></ul>
+<p>整体比 W21 略好——可能因 W20 论文中 arxiv preprint 占比高，原文摘要本身写 得更具体。</p>
+<h3>5.5 PDF 获取失败模式分类（W20 数据）</h3>
+<p><code>not_article_like_or_landing_page</code>: ~10 篇（新 gate 主要拦下出版商导航页） <code>no_open_access_link</code>: ~12 篇（Elsevier / Wiley / Sage / Emerald / Springer 期刊） <code>HTTP 403</code>: ~3 篇（MDPI 反爬） <code>download_error</code>: ~2 篇（PDF 损坏 / 重定向死循环） <code>extract_failed_or_scanned</code>: ~1 篇（部分扫描 PDF）</p>
+<p><strong>Failure modes 不在 user 控制内</strong>，但 acquisition rate 61% 是 pilot 健康水平。</p>
+<p>---</p>
+<h2>六、本周累计指标对照</h2>
+<p>| 指标 | W21 | W20 | 趋势 | |---|---|---|---| | 总数 | 27 | 64 | W20 是 W21 的 2.4× | | Read 比例 | 33% (9/27) | 61% (39/64) | 显著上升（gate 修复 + 多 arxiv 占比） | | fea_surrogate 占比 | 52% | 77% | 上升——本周 SciML 论文密集 | | 长尾噪声估计 | ~4 篇 | ~7 篇 | 累积达 11 篇，支撑 ADR-0024 | | 跨源/版本重复 | 2 组 (figshare) | 4 组 (OpenAlex/arxiv) | 6 组累计，ADR-0026 急 | | hip_implant 直接命中 | 0 | 1 | 稀缺但有 ★ |</p>
+<p>---</p>
+<h2>七、下一步</h2>
+<ul><li>继续处理 W19 backlog（65 篇）。<strong>W19 是 W17-W21 之间 paper 数最多的一周</strong>—— 与 W20 类似的 fea_surrogate 密度可期。</li><li>W21 + W20 累计的两个 priority 假设（临床部署级低估 + 综述低估）继续观察。</li><li>ADR-0026 草案在 W19 完成后起草。</li></ul>
+</div>
 <h2>Top picks by direction (Priority ≥ Medium)</h2>
 <div class="dir-section"><span class="dir-pill" style="background:#7F77DD">AI for Bioprinting</span><p style="color:#888;font-size:13px">No High/Medium picks this week.</p></div><div class="dir-section"><span class="dir-pill" style="background:#1D9E75">Hip Implant &amp; Femoral Stem</span><p style="color:#888;font-size:13px">No High/Medium picks this week.</p></div><div class="dir-section"><span class="dir-pill" style="background:#D85A30">FEA &amp; Surrogate Modelling</span><p style="color:#888;font-size:13px">No High/Medium picks this week.</p></div><div class="dir-section"><span class="dir-pill" style="background:#185FA5">AM Biomedical Materials</span><p style="color:#888;font-size:13px">No High/Medium picks this week.</p></div>
 </body></html>
