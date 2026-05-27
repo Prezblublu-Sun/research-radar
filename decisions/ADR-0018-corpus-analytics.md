@@ -92,6 +92,8 @@ This is the central purpose of this ADR. Read carefully.
 
 The principle: **descriptive statistics summarize what is already in the data; topic modeling, embeddings, and graphs invent new structure.** This ADR permits the former, not the latter.
 
+**2026-05-27 update (ADR-0026):** The "LLM-generated narrative synthesis" prohibition above remains in force for the analytics workstream. ADR-0026 permits layered LLM aggregation in the review-loop workstream only; that permission does NOT propagate to analytics. `scripts/build_analytics.py` remains narrative-free.
+
 If a future analytics request would require any prohibited operation, that request belongs in lit-system or requires its own new ADR — not a stretch of this one.
 
 ---

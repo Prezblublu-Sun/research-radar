@@ -41,7 +41,7 @@ candidates; lit-system owns everything past that.
 - OCR, equation/figure/table extraction
 - Chunking, embeddings, vector stores (Chroma, Qdrant, FAISS)
 - RAG, knowledge graphs, citation-graph analysis
-- Cross-paper synthesis beyond the weekly LLM meta-summary
+- Cross-paper synthesis outside the review-loop layered chain (per-paper → weekly → monthly → quarterly → annual; ADR-0026)
 - Personalization, feedback loops, active learning, re-ranking
 - Chat-with-papers, conversational UI
 - Curation/annotation web UI on deep-parsed PDFs (lit-system territory)

@@ -53,7 +53,7 @@ These are explicitly out of scope and belong to other systems (primarily lit-sys
 - Author / institution disambiguation beyond what OpenAlex provides
 
 ### Deep semantic operations
-- Multi-paper synthesis beyond the weekly LLM meta-summary
+- Multi-paper synthesis beyond what the review loop produces (per-paper → weekly → monthly → quarterly → annual, each layer consuming only the layer below; ADR-0026). Ad-hoc multi-paper synthesis outside this chain remains out of scope.
 - Cross-paper comparison
 - Literature review generation
 - Research gap identification
