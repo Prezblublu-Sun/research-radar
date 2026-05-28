@@ -43,6 +43,16 @@ These are explicitly out of scope and belong to other systems (primarily lit-sys
 - OCR
 - Equation / figure / table extraction
 
+> **Documented exception — `review_harness.py`.** A single personal
+> reading tool, `review_harness.py`, intentionally parses paper PDFs
+> (PyMuPDF/pdfplumber) to produce per-paper Chinese reading-note
+> summaries under `data/review/`. This is a deliberate, recorded
+> exception to the no-PDF-parsing rule, kept in the radar repo for the
+> user's workflow convenience. It is NOT part of the daily cron pipeline
+> and does not feed corpus routing/scoring/rendering. Its forbidden
+> import is suppressed narrowly via `# noqa: SCOPE-FI001` on that one
+> line; the blanket prohibition on full-text parsing elsewhere stands.
+
 ### Knowledge construction
 - Chunking
 - Embedding (any vector model)

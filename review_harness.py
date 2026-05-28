@@ -276,7 +276,7 @@ def extract_text(pdf_path: Path) -> str:
     except Exception:
         pass
     try:
-        import pdfplumber
+        import pdfplumber  # noqa: SCOPE-FI001 (personal reading tool; intentional full-text parse, see SCOPE.md exception)
         with pdfplumber.open(pdf_path) as pdf:
             return "\n".join((pg.extract_text() or "") for pg in pdf.pages)
     except Exception as e:
