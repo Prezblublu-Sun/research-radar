@@ -1,0 +1,1755 @@
+{
+  "schema_version": "v2",
+  "date": "2026-07-14",
+  "date_precision": "day",
+  "papers": [
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2607.13033v1",
+      "doi": "",
+      "arxiv_id": "2607.13033v1",
+      "title": "DenseReward: Dense Reward Learning via Failure Synthesis for Robotic Manipulation",
+      "abstract": "Reinforcement learning holds great promise for improving robot policies beyond the limits of imitation learning. However, its practical adoption remains bottlenecked by the lack of reliable vision-language reward models that provide dense and informative feedback. Two key challenges remain: acquiring diverse failure data at scale and obtaining fine-grained reward signals beyond sparse trajectory-level success labels. Collecting failure trajectories typically requires laborious human effort, while pseudo-failures constructed by relabeling successful demonstrations fail to capture the diverse physical failure modes that arise during robot execution. Meanwhile, existing reward models often predict sparse binary or trajectory-level rewards, which provide limited guidance for efficient policy optimization. We introduce DenseReward, a dense robotic reward model that addresses both challenges. To train DenseReward, we develop an automated failure data generation pipeline that synthesizes physically realistic failure trajectories in simulation without human labeling, covering diverse failure modes such as collisions, missed grasps, object drops, and recovery behaviors. DenseReward predicts dense frame-level reward scores from visual observations and language instructions, enabling fine-grained estimation of task progress throughout an episode. Experiments show that DenseReward outperforms general-purpose VLMs and existing robotic reward models in dense reward prediction across both simulated and real-world manipulation. We further demonstrate that DenseReward provides effective reward guidance for downstream model predictive control and reinforcement learning. We release the dataset, trained reward models, and evaluation suite to support the development of failure-aware dense reward modeling for robot learning.",
+      "authors": [
+        "Yu Fang",
+        "Wanxi Dong",
+        "Jiaqi Liu",
+        "Yue Yang",
+        "Mingxiao Huo",
+        "Yao Mu",
+        "Huaxiu Yao",
+        "Li Erran Li",
+        "Daniel Szafir",
+        "Mingyu Ding"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-07-14",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2607.13033v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.RO"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "model predictive control",
+          "reinforcement learning + simulation"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该论文专注于机器人操作的密集奖励学习，未涉及工程仿真或FEA/FEM数据，与用户的研究方向无直接关联。",
+        "why_not_core": "This paper does not connect model-based RL or world models to engineering simulation, surrogate models, FEA/FEM data, physics simulators, or design optimization; it focuses on robotic manipulation reward learning with no mention of physics-based simulation or biomechanics.",
+        "validation_kind": "simulation_case",
+        "flags": {
+          "has_experimental_validation": true,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "robotic manipulation",
+          "dense reward",
+          "failure synthesis",
+          "reinforcement learning",
+          "no engineering simulation"
+        ],
+        "summary_zh": {
+          "motivation": "解决机器人强化学习中缺乏密集奖励信号和多样化失败数据的问题。",
+          "method": "提出DenseReward模型，通过仿真自动生成物理真实的失败轨迹并预测密集帧级奖励。",
+          "result": "在模拟和真实操作任务中，密集奖励预测优于现有模型，并有效支持下游控制和学习。",
+          "validation": "在模拟环境和真实机器人上验证奖励预测和下游任务性能。"
+        },
+        "summary_en": {
+          "motivation": "To address the lack of dense reward signals and diverse failure data in reinforcement learning for robotic manipulation.",
+          "method": "DenseReward generates physically realistic failure trajectories in simulation automatically and predicts dense frame-level reward scores from visual observations and language instructions.",
+          "result": "DenseReward outperforms existing reward models in dense reward prediction and provides effective guidance for model predictive control and reinforcement learning.",
+          "validation": "Validation is performed in both simulated and real-world manipulation tasks, including reward prediction accuracy and downstream policy performance."
+        },
+        "key_terms": [
+          {
+            "en": "dense reward",
+            "zh": "密集奖励"
+          },
+          {
+            "en": "failure synthesis",
+            "zh": "失败合成"
+          },
+          {
+            "en": "robotic manipulation",
+            "zh": "机器人操作"
+          },
+          {
+            "en": "reinforcement learning",
+            "zh": "强化学习"
+          },
+          {
+            "en": "reward model",
+            "zh": "奖励模型"
+          },
+          {
+            "en": "simulation",
+            "zh": "仿真"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-07-15T05:26:53Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2607.13028v1",
+      "doi": "",
+      "arxiv_id": "2607.13028v1",
+      "title": "TerraZero: Procedural Driving Simulation for Zero-Demonstration Self-Play at Scale",
+      "abstract": "Training robust autonomous driving agents requires a simulator that is fast enough for reinforcement learning at scale, realistic enough to ground behavior in real-world map structure, and diverse enough to cover the safety-critical long tail that logged data rarely contains. We present TerraZero, a procedural driving simulator and self-play training stack. A configurable C engine runs simulation on the CPU and policy inference on the GPU over a zero-copy path, sustaining 1.3M agent-steps per second on a single server-grade GPU, far faster than existing object-level simulators, while keeping fidelity lighter single-agent systems omit: heterogeneous agents, multiple dynamics models, and full traffic-rule enforcement. TerraZero treats logged data only as a source of real-world map geometry, populating each map with randomized rule-based road users and signal controllers and randomizing agent dynamics, rewards, and sizes per episode, so a map yields an unbounded set of scenarios. Every reported policy trains from scratch by reinforcement learning alone on a compute-efficient self-play recipe across GPUs, with zero human demonstrations and no fallback planner at inference. Policies generalize zero-shot across cities and datasets, including emergent left-hand-traffic driving without explicit supervision. As an ego policy, TerraZero is the first fully learned policy to top the InterPlan long-tail benchmark, ahead of larger learned planners; on routine-driving val14 it ranks among the best approaches and is the safest, posting the best collision and time-to-collision scores. On Waymo Open Sim Agents realism the same recipe outperforms other demonstration-free methods and is competitive with the strongest reference-anchored self-play method. One stack serves both roles: driving policies across dynamics for cars and trucks, and sim agents that jointly control vehicles, pedestrians, and cyclists.",
+      "authors": [
+        "Zhouchonghao Wu",
+        "Akshay Rangesh",
+        "Weixin Li",
+        "Wei-Jer Chang",
+        "Zachary Lee",
+        "Tim Wang",
+        "Wei Zhan"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-07-14",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2607.13028v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.LG",
+        "cs.AI",
+        "cs.RO"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "reinforcement learning + simulation"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该论文专注于自动驾驶的驾驶模拟器和强化学习，未涉及工程仿真或生物力学设计。",
+        "why_not_core": "This paper does not connect model-based RL or world models to engineering simulation (e.g., FEA/FEM, surrogate models, design optimization) and is purely focused on autonomous driving.",
+        "validation_kind": "simulation_case",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "autonomous driving",
+          "reinforcement learning",
+          "driving simulator",
+          "self-play",
+          "world models"
+        ],
+        "summary_zh": {
+          "motivation": "需要快速、真实且多样化的驾驶模拟器以训练鲁棒的自动驾驶智能体。",
+          "method": "提出TerraZero，一个程序化驾驶模拟器和自博弈训练栈，支持大规模强化学习。",
+          "result": "策略在零演示下从头训练，在InterPlan长尾基准上达到最优，且零样本泛化到不同城市。",
+          "validation": "在多个驾驶基准和模拟器上评估性能，包括碰撞率和时间到碰撞指标。"
+        },
+        "summary_en": {
+          "motivation": "Training robust autonomous driving agents requires a simulator that is fast, realistic, and diverse enough to cover safety-critical scenarios.",
+          "method": "TerraZero is a procedural driving simulator and self-play training stack that runs simulation on CPU and policy inference on GPU with zero-copy, achieving high throughput.",
+          "result": "Policies trained from scratch with zero demonstrations outperform prior methods on the InterPlan benchmark and generalize zero-shot across cities.",
+          "validation": "The approach is validated on the InterPlan long-tail benchmark, val14 routine-driving benchmark, and Waymo Open Sim Agents realism benchmark."
+        },
+        "key_terms": [
+          {
+            "en": "procedural driving simulation",
+            "zh": "程序化驾驶模拟"
+          },
+          {
+            "en": "self-play",
+            "zh": "自博弈"
+          },
+          {
+            "en": "reinforcement learning",
+            "zh": "强化学习"
+          },
+          {
+            "en": "zero-shot generalization",
+            "zh": "零样本泛化"
+          },
+          {
+            "en": "autonomous driving",
+            "zh": "自动驾驶"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-07-15T05:26:53Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2607.12856v1",
+      "doi": "",
+      "arxiv_id": "2607.12856v1",
+      "title": "Verifier-Based Reinforcement Fine-Tuning of Reasoning Models for Thermal Energy Storage Control",
+      "abstract": "Buildings are expected to shift cooling loads in response to grid conditions. Thermal energy storage (TES) enables this shift, but scheduling it well requires planning hours ahead under storage constraints. Model predictive control (MPC) and reinforcement learning are difficult to scale across buildings. This study instead adapts an open-weight reasoning model through reinforcement learning with verifiable rewards (RLVR). We convert exact offline dynamic-programming (DP) action values into dense rewards for every candidate action. Using only 30 training prompts, reinforcement fine-tuning (RFT) trains the model as an upper-level scheduler that outputs hourly heat-pump setpoints from text-based states and forecasts. Evaluation uses a deliberately simple office-building TES benchmark where exact DP is tractable and the optimum is known. RFT reduces the open-weight model's emissions from 70.5 to 61.2 kg-CO2, close to the DP optimum of 60.8 kg-CO2. GPT-5 nearly matches DP and MPC without task-specific training, while GPT-4o, a non-reasoning LLM, produces higher emissions than the no-storage baseline, so inference-time reasoning appears important. Trace analysis shows that RFT mainly stabilizes observable planning patterns (candidate comparison, look-ahead, and feasibility checking) rather than creating a new strategy. Robustness and generalization tests clarify what transfers: the reinforced planning patterns persist under forecast errors and an unseen TES condition and carry over to a battery task, but its different structure limits the gains. DP-based verifiable rewards offer a practical way to adapt open-weight reasoning models to building storage scheduling. These results motivate higher-fidelity tests of whole-building control and scalable verifiers for city-scale energy management.",
+      "authors": [
+        "Takumi Shioda",
+        "Kohei Terashima",
+        "Tatsuo Nagai"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-07-14",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2607.12856v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.LG"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "model predictive control"
+        ]
+      },
+      "llm": {
+        "priority": "Medium",
+        "relevance_level": "Transferable",
+        "read_action": "Skim only",
+        "relevance_to_user": "该论文将强化学习与推理模型结合用于建筑热能存储控制，其方法可迁移至工程仿真优化，但未涉及生物力学或有限元分析。",
+        "why_not_core": "This paper does not address FEA-based implant design, biomechanics, or any biomedical engineering simulation context.",
+        "validation_kind": "simulation_case",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "reinforcement learning",
+          "world models",
+          "engineering simulation",
+          "thermal energy storage",
+          "model predictive control"
+        ],
+        "summary_zh": {
+          "motivation": "建筑热能存储调度需要高效控制方法，但传统MPC和RL难以规模化。",
+          "method": "采用基于可验证奖励的强化微调（RLVR）训练推理模型，输出热泵设定点。",
+          "result": "微调后模型排放接近动态规划最优，推理模式稳定且可迁移。",
+          "validation": "在简单办公建筑TES基准上对比动态规划最优解。"
+        },
+        "summary_en": {
+          "motivation": "Building thermal energy storage scheduling requires scalable control methods beyond traditional MPC and RL.",
+          "method": "An open-weight reasoning model is fine-tuned via reinforcement learning with verifiable rewards derived from offline dynamic programming action values.",
+          "result": "The fine-tuned model achieves emissions close to the DP optimum, with stabilized planning patterns that transfer to unseen conditions and a battery task.",
+          "validation": "Validation is performed on a simple office-building TES benchmark where exact DP optimum is known."
+        },
+        "key_terms": [
+          {
+            "en": "reinforcement learning with verifiable rewards",
+            "zh": "可验证奖励强化学习"
+          },
+          {
+            "en": "reasoning model",
+            "zh": "推理模型"
+          },
+          {
+            "en": "thermal energy storage",
+            "zh": "热能存储"
+          },
+          {
+            "en": "model predictive control",
+            "zh": "模型预测控制"
+          },
+          {
+            "en": "dynamic programming",
+            "zh": "动态规划"
+          },
+          {
+            "en": "building control",
+            "zh": "建筑控制"
+          },
+          {
+            "en": "engineering simulation",
+            "zh": "工程仿真"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-07-15T05:26:53Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2607.12833v1",
+      "doi": "",
+      "arxiv_id": "2607.12833v1",
+      "title": "ANGLE: Angular Neural Generative Learning via Engression",
+      "abstract": "Circular data, representing angles or directions, are frequently encountered in computer vision, biology, geology, and meteorology. Traditional regression targets the conditional mean, which is often geometrically misleading for circular responses under multimodal, skewed, or asymmetric data structures. To address these limitations, a lightweight deep generative framework, namely ANGLE, is introduced for non-parametric distributional regression on the circle. The full conditional distribution of an angular response, given Euclidean and circular covariates, is learned through a generative map optimized via a generalized circular energy score (GCES) loss. Desirable theoretical properties, including the strict propriety of the loss and the rotational equivariance of the estimators, are established. Furthermore, both pre- and post-additive noise models are accommodated. A unified toolbox is provided for advancing previously underexplored challenges in circular statistics: extrapolation, sufficient dimension reduction, and conditional distribution equality testing. The framework's efficacy is demonstrated through extensive simulations and real-world applications. Specifically, the proposal is utilized for object pose estimation from imagery and wind direction prediction, which are integral to surveillance, autonomous vehicles, and energy systems, respectively. Superior predictive performance and robust uncertainty quantification of the proposed method in these tasks are revealed.",
+      "authors": [
+        "Rajdeep Pathak",
+        "Archi Roy",
+        "Tanujit Chakraborty"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-07-14",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2607.12833v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "stat.ML",
+        "cs.LG",
+        "math.ST"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "fea_surrogate"
+      ],
+      "direction": "fea_surrogate",
+      "direction_name": "FEA & Surrogate Modelling",
+      "routing_matches": {
+        "fea_surrogate": [
+          "uncertainty quantification"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该论文专注于圆形数据的生成式回归，与FEA替代模型或生物力学设计无直接关联。",
+        "why_not_core": "This paper does not address FEA surrogate modeling, constraint handling, or implant/biomechanics design; it focuses on circular statistics for angular data.",
+        "validation_kind": "numerical_benchmark",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": true,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "circular regression",
+          "generative learning",
+          "uncertainty quantification",
+          "angular data"
+        ],
+        "summary_zh": {
+          "motivation": "传统回归对圆形数据预测效果差，需要非参数分布回归方法。",
+          "method": "提出ANGLE框架，通过广义圆形能量分数损失优化生成映射。",
+          "result": "在物体姿态估计和风向预测中展示了优越性能和不确定性量化。",
+          "validation": "通过模拟和真实世界应用验证。"
+        },
+        "summary_en": {
+          "motivation": "Traditional regression fails for circular data with multimodal or skewed distributions, motivating a non-parametric generative approach.",
+          "method": "ANGLE framework learns the full conditional distribution of angular responses via a generative map optimized with a generalized circular energy score loss.",
+          "result": "Superior predictive performance and robust uncertainty quantification are demonstrated in object pose estimation and wind direction prediction.",
+          "validation": "Extensive simulations and real-world applications validate the method."
+        },
+        "key_terms": [
+          {
+            "en": "circular data",
+            "zh": "圆形数据"
+          },
+          {
+            "en": "generative learning",
+            "zh": "生成式学习"
+          },
+          {
+            "en": "energy score",
+            "zh": "能量分数"
+          },
+          {
+            "en": "uncertainty quantification",
+            "zh": "不确定性量化"
+          },
+          {
+            "en": "angular regression",
+            "zh": "角度回归"
+          },
+          {
+            "en": "conditional distribution",
+            "zh": "条件分布"
+          },
+          {
+            "en": "rotational equivariance",
+            "zh": "旋转等变性"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-07-15T05:26:53Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2607.12801v1",
+      "doi": "",
+      "arxiv_id": "2607.12801v1",
+      "title": "Autonomous Tracking and Terminal Guidance of Moving Targets for Fixed-Wing UAVs",
+      "abstract": "This study introduces a unified control framework for fixed-wing unmanned aerial vehicles (UAVs) fitted with a pan-tilt (PT) camera, intended to perform an end-to-end mission spanning from initial target detection to accurate terminal engagement. The proposed system employs a three-phase strategy: a vision-based target acquisition phase, an NMPC-based tracking phase, and a terminal guidance phase. During tracking, the framework uses an Unscented Kalman Filter (UKF) to fuse YOLO-based visual detections with inertial measurements, enabling robust target state estimation under unknown dynamics. To ensure reliable visual contact, we introduce a constraint-aware Nonlinear Model Predictive Control (NMPC) strategy that incorporates Control Barrier Functions (CBFs) to explicitly prevent UAV self-occlusion -- a common limitation in fixed-wing tracking. Upon satisfying terminal engagement conditions, the system seamlessly transitions control to a quaternion-based Biased Proportional Navigation Guidance (BPNG) law, enforcing precise impact angle constraints. High-fidelity simulations demonstrate that the framework achieves stable, robust tracking and accurate terminal interception while strictly respecting the vehicle's dynamic limits and camera field-of-view constraints.",
+      "authors": [
+        "Wei-Hao Liou",
+        "Teng-Hu Cheng"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-07-14",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2607.12801v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.RO",
+        "cs.AI",
+        "eess.SY"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "model predictive control"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该论文专注于固定翼无人机跟踪与制导，与用户的工程仿真（FEA/生物力学）方向无直接关联。",
+        "why_not_core": "This paper does not involve surrogate modeling, FEA/FEM data, physics simulators, or design optimization for engineering simulation.",
+        "validation_kind": "simulation_case",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "fixed-wing UAV",
+          "target tracking",
+          "terminal guidance",
+          "NMPC",
+          "control barrier functions",
+          "no engineering simulation"
+        ],
+        "summary_zh": {
+          "motivation": "实现固定翼无人机从目标检测到精确拦截的端到端自主控制。",
+          "method": "提出三阶段框架：视觉获取、NMPC跟踪（含CBF防遮挡）、偏置比例导引终端制导。",
+          "result": "高保真仿真验证了稳定跟踪和精确拦截，满足动态与视场约束。",
+          "validation": "高保真仿真验证。"
+        },
+        "summary_en": {
+          "motivation": "To achieve end-to-end autonomous control from target detection to precise interception for fixed-wing UAVs.",
+          "method": "A three-phase framework is proposed: vision-based acquisition, NMPC tracking with Control Barrier Functions to prevent occlusion, and quaternion-based Biased Proportional Navigation Guidance for terminal engagement.",
+          "result": "High-fidelity simulations demonstrate stable tracking and accurate interception while respecting dynamic and field-of-view constraints.",
+          "validation": "High-fidelity simulation case."
+        },
+        "key_terms": [
+          {
+            "en": "fixed-wing UAV",
+            "zh": "固定翼无人机"
+          },
+          {
+            "en": "Nonlinear Model Predictive Control (NMPC)",
+            "zh": "非线性模型预测控制"
+          },
+          {
+            "en": "Control Barrier Function (CBF)",
+            "zh": "控制障碍函数"
+          },
+          {
+            "en": "Unscented Kalman Filter (UKF)",
+            "zh": "无迹卡尔曼滤波"
+          },
+          {
+            "en": "Biased Proportional Navigation Guidance (BPNG)",
+            "zh": "偏置比例导引律"
+          },
+          {
+            "en": "pan-tilt camera",
+            "zh": "云台相机"
+          },
+          {
+            "en": "target tracking",
+            "zh": "目标跟踪"
+          },
+          {
+            "en": "terminal guidance",
+            "zh": "终端制导"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-07-15T05:26:53Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2607.12784v1",
+      "doi": "",
+      "arxiv_id": "2607.12784v1",
+      "title": "Directional Constraints for Efficient Exploration in Safe Reinforcement Learning",
+      "abstract": "Reinforcement Learning has revolutionized the landscape of robotic research, allowing robust learning of complex robotic skills in simulation. However, real-world deployment in open-ended environments requires strong safety guarantees to prevent dangerous or harmful behaviors. Safe Reinforcement Learning methods address this requirement by enforcing safety constraints. Nevertheless, learning under constraints often reduces learning speed and could lead to suboptimal task performance, as the agent must solve a more complex constrained optimization problem compared to unconstrained settings. To tackle this issue, in this work, we propose an extension of the ATACOM framework, a state-of-the-art reliable safety layer that can be integrated with existing Reinforcement Learning algorithms to enforce constraints derived from prior knowledge of the system or learned directly from data. Our proposed method, named ATACOM Directional Constraints (ATACOM-DC), significantly improves the safety-performance trade-off by introducing directional constraints that distinguish between actions approaching and moving away from constraint boundaries, activating constraint enforcement only when necessary. We evaluate our method across a range of challenging robotic control tasks in simulation, analyzing both constraint-violation costs and achieved task performance. Code and additional material at https://atacom-dc.robot-learning.net.",
+      "authors": [
+        "Paolo Magliano",
+        "Puze Liu",
+        "Jan Peters",
+        "Davide Tateo",
+        "Raffaello Camoriano"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-07-14",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2607.12784v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.RO",
+        "cs.LG"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "reinforcement learning + simulation"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该论文关注安全强化学习中的约束方法，未涉及工程仿真或FEA数据，与用户基于FEA的植入物设计方向关联较弱。",
+        "why_not_core": "This paper does not connect to engineering simulation, surrogate modeling, or FEA/FEM data; it focuses on safe RL for robotic control with no physics simulation or design optimization tie-in.",
+        "validation_kind": "simulation_case",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "safe reinforcement learning",
+          "directional constraints",
+          "robotic control"
+        ],
+        "summary_zh": {
+          "motivation": "提升安全强化学习中约束下的学习效率与任务性能。",
+          "method": "提出ATACOM-DC方法，引入方向性约束区分接近与远离约束边界的动作。",
+          "result": "在多种机器人控制任务中改善了安全与性能的权衡。",
+          "validation": "在仿真环境中评估约束违反成本和任务性能。"
+        },
+        "summary_en": {
+          "motivation": "To improve learning speed and task performance under safety constraints in reinforcement learning by reducing unnecessary constraint enforcement.",
+          "method": "Proposes ATACOM Directional Constraints (ATACOM-DC), an extension of the ATACOM framework that introduces directional constraints to activate safety enforcement only when actions approach constraint boundaries.",
+          "result": "The method achieves a better safety-performance trade-off across several challenging robotic control tasks in simulation.",
+          "validation": "Evaluated in simulation environments by measuring both constraint violation costs and achieved task performance."
+        },
+        "key_terms": [
+          {
+            "en": "safe reinforcement learning",
+            "zh": "安全强化学习"
+          },
+          {
+            "en": "directional constraints",
+            "zh": "方向性约束"
+          },
+          {
+            "en": "ATACOM",
+            "zh": "ATACOM框架"
+          },
+          {
+            "en": "constraint enforcement",
+            "zh": "约束执行"
+          },
+          {
+            "en": "robotic control",
+            "zh": "机器人控制"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-07-15T05:26:53Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2607.12775v1",
+      "doi": "",
+      "arxiv_id": "2607.12775v1",
+      "title": "Learning-enabled Acceleration of Scenario-based Model Predictive Control",
+      "abstract": "Scenario-based model predictive control (SBMPC) is a variant of model predictive control (MPC) that explicitly accounts for uncertainty by optimizing control actions over multiple predicted scenarios. However, its computational complexity increases rapidly with the number of scenarios and prediction horizon, limiting is applicability to real-time planning and control. This paper presents a learning-accelerated Alternating Direction Method of Multipliers (ADMM) algorithm for efficiently solving SBMPC problems by leveraging parallel computing and Moreau envelope learning, while maintaining high solution accuracy. We reformulate the SBMPC problems into consensus forms that can be decomposed via ADMM, separating the scenario-dependent dynamics from non-anticipativity constraints and enabling parallel updates across scenarios and time steps. Building on this decomposition, we utilize existing learning-to-optimize schemes, which leverages Moreau envelope learning of the cost function to accelerate the primal update in ADMM, thereby reducing computation time. The proposed framework is evaluated on a microgrid energy management problem subject to load and renewable generation uncertainties. Comparisons with IPOPT and MadNLP, popular and modern nonlinear programming solvers, demonstrate substantial computational speedups while maintaining reliable closed-loop control performance.",
+      "authors": [
+        "Trinh Tran",
+        "Binh Nguyen",
+        "Truong X. Nghiem"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-07-14",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2607.12775v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "math.OC",
+        "cs.LG",
+        "eess.SY"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "model predictive control"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该论文关注控制优化算法加速，未涉及工程仿真或生物力学应用。",
+        "why_not_core": "No connection to engineering simulation, FEA, biomechanics, or implant design; pure control methods paper.",
+        "validation_kind": "simulation_case",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": true,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "model predictive control",
+          "ADMM",
+          "learning-to-optimize",
+          "microgrid"
+        ],
+        "summary_zh": {
+          "motivation": "加速情景模型预测控制的计算。",
+          "method": "利用学习加速ADMM算法并行求解。",
+          "result": "在微电网问题上实现显著加速。",
+          "validation": "与IPOPT和MadNLP对比验证。"
+        },
+        "summary_en": {
+          "motivation": "To reduce the computational burden of scenario-based model predictive control for real-time applications.",
+          "method": "A learning-accelerated ADMM algorithm with parallel decomposition and Moreau envelope learning.",
+          "result": "Substantial speedups over IPOPT and MadNLP on a microgrid energy management problem.",
+          "validation": "Simulation case study on microgrid with load and renewable uncertainties."
+        },
+        "key_terms": [
+          {
+            "en": "scenario-based model predictive control",
+            "zh": "情景模型预测控制"
+          },
+          {
+            "en": "ADMM",
+            "zh": "交替方向乘子法"
+          },
+          {
+            "en": "Moreau envelope",
+            "zh": "Moreau包络"
+          },
+          {
+            "en": "learning-to-optimize",
+            "zh": "学习优化"
+          },
+          {
+            "en": "microgrid",
+            "zh": "微电网"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-07-15T05:26:53Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2607.12570v1",
+      "doi": "",
+      "arxiv_id": "2607.12570v1",
+      "title": "Deep Learning-based Surrogate Modelling of the LOD Method for Multiscale Problems",
+      "abstract": "Multiscale problems are notoriously difficult to tackle using traditional numerical methods, as accurately resolving fine-scale features often requires prohibitively fine discretizations. This challenge is particularly pronounced in applications such as materials science, fluid dynamics, climate systems, chemical processes, and complex networks. Recent neural operator models provide a promising data-driven alternative, but frequently struggle to achieve sufficient accuracy in the presence of strongly heterogeneous or oscillatory coefficients. In this work, we focus on the solution of elliptic PDEs with rough and high-contrast inputs. The Localized Orthogonal Decomposition (LOD) method is a well-established numerical approach for such problems, but it comes, however, at a substantial computational cost. We investigate the performance of popular neural operator architectures on these challenging multiscale problems and identify key limitations in their ability to resolve fine-scale structure. To overcome these challenges, we introduce LOD-MSNO (LOD-Multiscale Neural Operator), a hybrid approach that leverages the LOD method as a strong multiscale prior by building on its representation of the solution as a linear combination of problem-adapted basis functions, while addressing its main computational bottlenecks through data-driven operator learning. We further provide theoretical error estimates for the proposed coefficient-learning framework. Lastly, we demonstrate the potential of our proposed method to outperform current neural operator baselines in terms of accuracy for challenging multiscale inputs, while mainly retaining the computational efficiency of neural operator models.",
+      "authors": [
+        "Marc Haltmayer",
+        "Jaemin Seo",
+        "Yuseung Lee",
+        "Sungyeop Lee",
+        "Jaehoon Jeong",
+        "Jae Yong Lee"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-07-14",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2607.12570v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "math.NA",
+        "cs.AI",
+        "cs.LG"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "fea_surrogate"
+      ],
+      "direction": "fea_surrogate",
+      "direction_name": "FEA & Surrogate Modelling",
+      "routing_matches": {
+        "fea_surrogate": [
+          "neural operator"
+        ]
+      },
+      "llm": {
+        "priority": "Medium",
+        "relevance_level": "Transferable",
+        "read_action": "Save for project",
+        "relevance_to_user": "该论文提出的混合神经算子方法可迁移至生物力学多尺度问题，但未涉及植入物设计或不确定性量化。",
+        "why_not_core": "No implant or biomechanics context, no constraint handling, no uncertainty quantification.",
+        "validation_kind": "numerical_benchmark",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "neural operator",
+          "multiscale",
+          "LOD",
+          "surrogate modeling",
+          "elliptic PDE"
+        ],
+        "summary_zh": {
+          "motivation": "传统数值方法求解多尺度问题计算成本高，神经算子精度不足。",
+          "method": "提出LOD-MSNO混合方法，将LOD方法作为多尺度先验与神经算子结合。",
+          "result": "在挑战性多尺度输入上精度优于现有神经算子基线，计算效率接近纯数据驱动模型。",
+          "validation": "在标准多尺度椭圆PDE基准上数值验证。"
+        },
+        "summary_en": {
+          "motivation": "Multiscale problems are computationally expensive for traditional numerical methods, and neural operators often lack accuracy for strongly heterogeneous coefficients.",
+          "method": "A hybrid LOD-MSNO approach is introduced, leveraging the LOD method as a multiscale prior and learning the coefficient-to-solution map via neural operators.",
+          "result": "The proposed method outperforms existing neural operator baselines in accuracy on challenging multiscale inputs while maintaining computational efficiency.",
+          "validation": "Numerical benchmarks on elliptic PDEs with rough and high-contrast coefficients."
+        },
+        "key_terms": [
+          {
+            "en": "neural operator",
+            "zh": "神经算子"
+          },
+          {
+            "en": "multiscale",
+            "zh": "多尺度"
+          },
+          {
+            "en": "Localized Orthogonal Decomposition",
+            "zh": "局部正交分解"
+          },
+          {
+            "en": "surrogate modeling",
+            "zh": "代理建模"
+          },
+          {
+            "en": "elliptic PDE",
+            "zh": "椭圆型偏微分方程"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-07-15T05:26:53Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2607.12480v1",
+      "doi": "",
+      "arxiv_id": "2607.12480v1",
+      "title": "TRACE: An Operational Reasoning Schema for Auditable Agentic Commitments",
+      "abstract": "This paper defines TRACE (Typed Reasoning And Commitment Evidence): a typed, versioned schema for recording reasoning traces, a reference procedure for writing records against it, and one operating discipline, no durable state change without a record. The paper argues in three layers that reasoning is not in the language model: the autoregressive mechanism natively computes association; chain-of-thought and reinforcement learning inherit its limits; and the formal constructs of reasoning theory, from Socratic procedure to Pearl's ladder, are absent as machinery. The schema answers the absence with fields and tests: the TraceRecord and its causal specialization, an eight-stage reference writer, a gate-first measurement regime, the TRACE-Bench protocol, and the consumers, memory admission, plan gating, temporal regret, and verdict reuse, whose more auditable decisions are the measure of the record. A record-consumer contract states what a record guarantees and what a consumer must honor in return, making the schema an operational interface rather than a passive document. Two worked examples run in the main text: a music-lessons argument traced from sentence to typed verdict, separating association, intervention, and prescription; and a flood search-and-rescue vignette in which a predictive world model reports confident plan success that its own support and out-of-distribution scores contradict, so the record defers the commitment, requests a bounded observation, revises append-only, and clears a different branch. The vignette is illustrative, not empirical; closed-loop evaluation is left to future work, so the contribution is the schema and its contract, not a performance claim. Appendices carry the full schema, writer algorithms and cost model, clinical and policy illustrations, the benchmark protocol, convergence metrics, and usage scenarios.",
+      "authors": [
+        "Edward Y. Chang",
+        "Emily J. Chang"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-07-14",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2607.12480v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.AI"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "world model",
+          "reinforcement learning + world model"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该论文关注AI推理的可审计性，未涉及工程仿真或生物力学设计。",
+        "why_not_core": "No connection to engineering simulation, surrogate modeling, FEA/FEM, or biomechanical design; purely a reasoning schema for AI agents.",
+        "validation_kind": "none",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "world model",
+          "reasoning trace",
+          "auditability",
+          "no engineering simulation"
+        ],
+        "summary_zh": {
+          "motivation": "解决AI推理过程不可审计的问题",
+          "method": "提出TRACE模式，记录推理轨迹并定义审计契约",
+          "result": "通过音乐课和洪水救援示例展示模式运作",
+          "validation": "仅作说明性示例，无实证评估"
+        },
+        "summary_en": {
+          "motivation": "To address the lack of auditability in AI reasoning processes by formalizing a schema for recording reasoning traces.",
+          "method": "Proposes TRACE, a typed and versioned schema with a reference procedure for writing records and a contract between records and consumers.",
+          "result": "Demonstrates the schema through two illustrative examples: a music-lessons argument and a flood search-and-rescue vignette.",
+          "validation": "No empirical validation; the contribution is the schema and its contract, with closed-loop evaluation left to future work."
+        },
+        "key_terms": [
+          {
+            "en": "reasoning trace",
+            "zh": "推理轨迹"
+          },
+          {
+            "en": "auditability",
+            "zh": "可审计性"
+          },
+          {
+            "en": "world model",
+            "zh": "世界模型"
+          },
+          {
+            "en": "commitment",
+            "zh": "承诺"
+          },
+          {
+            "en": "causal reasoning",
+            "zh": "因果推理"
+          },
+          {
+            "en": "schema",
+            "zh": "模式"
+          },
+          {
+            "en": "record-consumer contract",
+            "zh": "记录-消费者契约"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-07-15T05:26:53Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2607.12409v1",
+      "doi": "",
+      "arxiv_id": "2607.12409v1",
+      "title": "Mechanical Analysis of Parachute Suspension Line Deployment with Binding Tapes Using PINN",
+      "abstract": "Parachutes are widely utilized in aviation, aerospace and lifesaving missions. As the initial stage of parachute deployment, suspension line extraction and straightening directly determines the smooth implementation of subsequent inflation procedures. This ultra-short process involves intricate dynamic load variations. Most existing studies adopt numerical integration of ordinary differential equations to calculate line tension, yet this method fails to rapidly acquire tension values at arbitrary positions along suspension lines. This paper develops a physics-informed neural network (PINN) algorithm for tension prediction during line extraction and straightening, which outperforms traditional integration methods in both computational efficiency and numerical accuracy. Furthermore, the regulatory law of binding tape parameters on line dynamic tension is investigated. Comparative validations against flight test data and conventional numerical results verify the reliability and effectiveness of the proposed PINN framework.",
+      "authors": [
+        "Xiang Zhao",
+        "Ronghui Quan",
+        "Yaqi Xiao",
+        "Junlin Chen"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-07-14",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2607.12409v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.LG"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "fea_surrogate"
+      ],
+      "direction": "fea_surrogate",
+      "direction_name": "FEA & Surrogate Modelling",
+      "routing_matches": {
+        "fea_surrogate": [
+          "physics-informed neural network",
+          "PINN"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该论文将PINN应用于降落伞绳索动力学，而非生物力学或植入物设计，与用户研究方向无直接关联。",
+        "why_not_core": "This paper does not address implant biomechanics, FEA surrogate modeling for biomedical design, or uncertainty quantification; it focuses on parachute suspension line dynamics.",
+        "validation_kind": "simulation_case",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "PINN",
+          "parachute dynamics",
+          "tension prediction",
+          "surrogate modeling"
+        ],
+        "summary_zh": {
+          "motivation": "快速获取降落伞绳索任意位置张力值",
+          "method": "采用物理信息神经网络(PINN)预测绳索张力",
+          "result": "PINN在效率和精度上优于传统数值积分方法",
+          "validation": "与飞行测试数据和传统数值结果对比验证"
+        },
+        "summary_en": {
+          "motivation": "To rapidly obtain tension values at arbitrary positions along parachute suspension lines during deployment.",
+          "method": "A physics-informed neural network (PINN) is developed to predict dynamic tension during line extraction and straightening.",
+          "result": "The PINN framework outperforms traditional numerical integration in both computational efficiency and numerical accuracy.",
+          "validation": "Validation against flight test data and conventional numerical results confirms the reliability of the proposed PINN."
+        },
+        "key_terms": [
+          {
+            "en": "physics-informed neural network",
+            "zh": "物理信息神经网络"
+          },
+          {
+            "en": "parachute suspension line",
+            "zh": "降落伞悬挂绳"
+          },
+          {
+            "en": "tension prediction",
+            "zh": "张力预测"
+          },
+          {
+            "en": "binding tape",
+            "zh": "绑带"
+          },
+          {
+            "en": "numerical integration",
+            "zh": "数值积分"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-07-15T05:26:53Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2607.12275v1",
+      "doi": "",
+      "arxiv_id": "2607.12275v1",
+      "title": "Flatness-Preserving Residual Learning for Real-Time Tight Quadrotor Formation Flight",
+      "abstract": "Quadrotors flying in tight formations are severely affected by turbulent aerodynamic interactions, such as downwash, that can cause catastrophic collisions if left unmodeled. To compensate for these effects, we propose a physics-informed residual dynamics learning framework that captures complex aerodynamic interactions while ensuring the joint multi-quadrotor system remains differentially flat. We leverage this preserved flatness to design a computationally efficient feedback linearization controller that is easily tunable with linear control techniques and cancels aerodynamic disturbances via feedforward compensation. Hardware experiments demonstrate our framework reduces average tracking errors by 31% compared to nominal baselines. Crucially, our lightweight approach matches the tracking performance of state-of-the-art nonlinear model predictive control (NMPC) while requiring an order of magnitude less computation. We are the first to show that stable, tight formation flight can be achieved with under 30 seconds of training data and a 5ms loop rate, unlocking high-fidelity aerodynamic compensation for compute-constrained flight stacks.",
+      "authors": [
+        "Pei-An Hsieh",
+        "Fengjun Yang",
+        "Nikolai Matni",
+        "M. Ani Hsieh"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-07-14",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2607.12275v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.RO",
+        "eess.SY"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "model predictive control"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该论文将残差学习与反馈线性化结合用于四旋翼编队飞行，未涉及工程仿真或生物力学设计。",
+        "why_not_core": "This paper focuses on quadrotor formation flight control with aerodynamic compensation, with no connection to engineering simulation, FEA/FEM, surrogate modeling, or biomechanical design.",
+        "validation_kind": "mechanical_testing",
+        "flags": {
+          "has_experimental_validation": true,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "quadrotor",
+          "formation flight",
+          "physics-informed learning",
+          "differential flatness",
+          "feedback linearization",
+          "aerodynamic compensation"
+        ],
+        "summary_zh": {
+          "motivation": "四旋翼紧密编队受气动干扰影响，需补偿未建模动力学。",
+          "method": "提出保平坦性的残差学习框架，结合反馈线性化控制器。",
+          "result": "跟踪误差降低31%，计算量比NMPC少一个数量级。",
+          "validation": "硬件实验验证，与基线及NMPC对比。"
+        },
+        "summary_en": {
+          "motivation": "Tight quadrotor formations suffer from aerodynamic disturbances that can cause collisions if unmodeled.",
+          "method": "A physics-informed residual learning framework preserves differential flatness, enabling a computationally efficient feedback linearization controller with feedforward compensation.",
+          "result": "The approach reduces average tracking errors by 31% compared to baselines and matches NMPC performance with an order of magnitude less computation.",
+          "validation": "Hardware experiments on real quadrotors demonstrate the effectiveness of the proposed method."
+        },
+        "key_terms": [
+          {
+            "en": "residual learning",
+            "zh": "残差学习"
+          },
+          {
+            "en": "differential flatness",
+            "zh": "微分平坦性"
+          },
+          {
+            "en": "feedback linearization",
+            "zh": "反馈线性化"
+          },
+          {
+            "en": "aerodynamic compensation",
+            "zh": "气动补偿"
+          },
+          {
+            "en": "tight formation flight",
+            "zh": "紧密编队飞行"
+          },
+          {
+            "en": "physics-informed learning",
+            "zh": "物理信息学习"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-07-15T05:26:53Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2607.12271v1",
+      "doi": "",
+      "arxiv_id": "2607.12271v1",
+      "title": "A hybrid analytical-PINN model for subsurface simulation of geothermal heat exchangers in heterogeneous underground",
+      "abstract": "In this paper, a parametric physics-informed neural network for solving the heterogeneous soil thermal problem with borehole heat exchangers (BHEs) as singular sources is developed. There are three novel features in the present framework; namely, (i) the singularity is naturally removed by using analytical line source models; (ii) using the explicit formulation for gradient thermal conductivity enables physics-informed learning of the parametrization featuring the conductivity; (iii) the learned correction is utilized as an efficient universal corrector via superposition principles. We first introduce the decomposition of the temperature change and transform the approximation of the entire heterogeneous response to the correction compensating the difference between the practical solution and idealized homogeneous approximation. In such a way, the delta function singularity is excluded and the bulk heat transfer is captured for the sake of facilitating the effective training of the neural network. The original problem is then reformulated as a governing correction diffusion or advection-diffusion equation subject to a homogeneous initial condition. The linearly varying thermal conductivity is used to model the soil heterogeneity. We propose a physics-informed neural network to approximate a universal corrector with respect to a single borehole with unit heat extraction rate. As a result, the network is trained by minimizing the physics-informed and data-anchored loss function that is evaluated for sampled conductivity parameters on adaptively selected training points. In addition, we include the location indicator function regarding the source as a feature input of network and find that it helps the network to process the local information. We perform numerical tests to exhibit the effectiveness of the proposed method based on three different analytical models.",
+      "authors": [
+        "Moke Rao",
+        "Thomas Hamacher",
+        "Smajil Halilovic"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-07-14",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2607.12271v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.LG"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "fea_surrogate"
+      ],
+      "direction": "fea_surrogate",
+      "direction_name": "FEA & Surrogate Modelling",
+      "routing_matches": {
+        "fea_surrogate": [
+          "physics-informed neural network",
+          "PINN"
+        ]
+      },
+      "llm": {
+        "priority": "Medium",
+        "relevance_level": "Transferable",
+        "read_action": "Save for project",
+        "relevance_to_user": "该论文提出的混合解析-PINN方法可迁移至生物力学FEA代理建模，但未涉及植入物设计或约束优化。",
+        "why_not_core": "This paper does not address implant biomechanics, stress shielding, or multi-objective constrained optimization; it focuses on geothermal heat transfer with heterogeneous conductivity.",
+        "validation_kind": "numerical_benchmark",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "PINN",
+          "heterogeneous",
+          "heat transfer",
+          "singular source",
+          "surrogate model"
+        ],
+        "summary_zh": {
+          "motivation": "解决地热换热器异质土壤传热模拟中奇异源和参数化难题。",
+          "method": "提出混合解析-PINN模型，用解析线源消除奇异性，学习异质修正项。",
+          "result": "数值测试表明该方法能有效预测异质土壤温度场。",
+          "validation": "基于三种解析模型进行数值验证。"
+        },
+        "summary_en": {
+          "motivation": "To efficiently simulate subsurface heat transfer with borehole heat exchangers in heterogeneous soil while handling singular sources and parameterized conductivity.",
+          "method": "A hybrid analytical-PINN framework decomposes temperature into a homogeneous analytical solution and a learned correction, trained with physics-informed and data-anchored losses.",
+          "result": "Numerical tests on three analytical models demonstrate the method's effectiveness in predicting heterogeneous temperature fields.",
+          "validation": "Validation is performed through numerical benchmarks against analytical solutions."
+        },
+        "key_terms": [
+          {
+            "en": "physics-informed neural network",
+            "zh": "物理信息神经网络"
+          },
+          {
+            "en": "borehole heat exchanger",
+            "zh": "地埋管换热器"
+          },
+          {
+            "en": "heterogeneous soil",
+            "zh": "异质土壤"
+          },
+          {
+            "en": "singular source",
+            "zh": "奇异源"
+          },
+          {
+            "en": "line source model",
+            "zh": "线源模型"
+          },
+          {
+            "en": "correction function",
+            "zh": "修正函数"
+          },
+          {
+            "en": "superposition principle",
+            "zh": "叠加原理"
+          },
+          {
+            "en": "thermal conductivity",
+            "zh": "热导率"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-07-15T05:26:53Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2607.12231v1",
+      "doi": "",
+      "arxiv_id": "2607.12231v1",
+      "title": "The GEST-Engine: From Event Graphs to Synthetic Video. A Full Technical Report",
+      "abstract": "We present the GEST-Engine, a complete system that goes from natural-language text to fully-annotated multi-actor video. At its core is an explicit world model: rather than encoding state as a learned latent, the engine maintains a complete, inspectable representation of the world (which actors exist, where they are, what they are doing, which objects they hold, and how events relate in time and space), expressed as a formal Graph of Events in Space and Time (GEST) and realized deterministically inside the open world of a commercial game engine driven through an open-source multiplayer scripting framework. GESTs are produced either procedurally or by an agentic text-to-GEST system in which an LLM Director plans a story through tool calls validated by a programmatic state backend, so every generated specification is executable by construction. A GEST then enters a four-stage execution pipeline: graph parsing and validation, entity and action grounding, temporal orchestration (Allen-style constraints resolved by Floyd-Warshall transitive closure), and execution and capture. In a single simulation pass the engine emits frame-aligned RGB video, dense per-pixel depth, instance segmentation, per-actor skeletal pose, per-frame pairwise spatial-relation graphs, 2D bounding boxes, event-to-frame temporal mappings, and natural-language descriptions, all at zero marginal annotation cost. We further describe an in-game world editor, runtime capability extraction, a text-generation pipeline, and a production system that renders corpora at scale across parallel virtual machines. Because every frame traces back to a semantic specification, the engine guarantees object permanence, multi-actor coordination, and temporal consistency by construction, making its output valuable as training data, evaluation benchmarks, and diagnostic tools for video understanding.",
+      "authors": [
+        "Nicolae Cudlenco",
+        "Mihai Masala",
+        "Marius Leordeanu"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-07-14",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2607.12231v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.CV"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "world model",
+          "world model + simulation"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该论文关注视频生成的世界模型，未涉及工程仿真或FEA数据，与用户方向无关。",
+        "why_not_core": "This paper does not connect world models to engineering simulation, surrogate modeling, or FEA/FEM data; it focuses on synthetic video generation for computer vision.",
+        "validation_kind": "none",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "world model",
+          "synthetic video",
+          "event graph",
+          "game engine",
+          "no engineering simulation"
+        ],
+        "summary_zh": {
+          "motivation": "从自然语言生成带密集标注的多角色视频。",
+          "method": "基于显式世界模型（GEST图）和游戏引擎的流水线。",
+          "result": "生成RGB、深度、分割、姿态等标注，零边际成本。",
+          "validation": "无实验验证，仅系统描述。"
+        },
+        "summary_en": {
+          "motivation": "To generate fully-annotated multi-actor videos from natural language with guaranteed consistency.",
+          "method": "An explicit world model represented as a Graph of Events in Space and Time (GEST) executed in a game engine via a four-stage pipeline.",
+          "result": "The system produces RGB video, depth, segmentation, pose, and temporal annotations at zero marginal cost.",
+          "validation": "No experimental validation; the paper is a technical report describing the system architecture."
+        },
+        "key_terms": [
+          {
+            "en": "world model",
+            "zh": "世界模型"
+          },
+          {
+            "en": "event graph",
+            "zh": "事件图"
+          },
+          {
+            "en": "synthetic video",
+            "zh": "合成视频"
+          },
+          {
+            "en": "game engine",
+            "zh": "游戏引擎"
+          },
+          {
+            "en": "annotation",
+            "zh": "标注"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-07-15T05:26:53Z"
+    },
+    {
+      "source": "pubmed",
+      "id": "pubmed:42447902",
+      "doi": "10.1088/1758-5090/ae8a84",
+      "pmid": "42447902",
+      "title": "Too big, too small, too O",
+      "abstract": "Tomographic Volumetric Additive Manufacturing (TVAM) enables rapid, layerless biofabrication; however, its application to thermoreversible hydrogels is often compromised by complex chemical kinetics. In this study, we identify and characterize a recurrent printing artifact -termed thePandoro effect-manifesting as a truncated-cone distortion caused by premature polymerization at the vial bottom and inhibition at the top. We demonstrate that this phenomenon originates from a vertical oxygen gradient driven by the thermal hysteresis of resin preparation: heating depletes dissolved oxygen, while subsequent cooling induces diffusion-limited re-oxygenation from the air-resin interface. To mitigate this, we present a multi-tiered strategy. First, we introduce a coupled ray optical and photochemical optimization model that rigorously accounts for spatially heterogeneous inhibitor concentrations. Unlike conventional threshold-based approaches, this differentiable framework explicitly simulates the spatiotemporal reaction-diffusion dynamics of oxygen depletion, allowing the inverse solver to predictively compensate for local inhibition gradients. Complementing this algorithmic correction, we validate two process-based interventions: the elimination of the air-resin interface and the control of headspace atmosphere. We demonstrate that these strategies effectively suppress thePandoro effect, and are compatible with cell-laden resins. This work establishes guidelines for reproducible volumetric bioprinting and expands our open-source Dr.TVAM platform with advanced polymerization modeling capabilities.",
+      "authors": [
+        "Riccardo Rizzo",
+        "Felix Wechsler",
+        "Qianyi Zhang",
+        "Christophe Moser"
+      ],
+      "first_author_affiliation": "School of Engineering, EPFL, STI IEM LAPD Bâtiment BM, BM 4110 Station 17, Lausanne, VD, 1015, Switzerland.",
+      "corresponding_authors": [
+        {
+          "name": "Christophe Moser",
+          "affiliation": "School of Engineering, EPFL, EPFL STI IEM LAPD Bâtiment BM, BM 4111 Station 17, Lausanne, VD, 1015, Switzerland.",
+          "inferred": true
+        }
+      ],
+      "venue": "Biofabrication",
+      "year": 2026,
+      "date": "2026-07-14",
+      "date_precision": "day",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/42447902/",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [],
+      "raw_type": "journal article",
+      "directions": [
+        "ai_bioprinting"
+      ],
+      "direction": "ai_bioprinting",
+      "direction_name": "AI for Bioprinting",
+      "routing_matches": {
+        "ai_bioprinting": [
+          "biofabrication"
+        ]
+      },
+      "llm": {
+        "priority": "Medium",
+        "relevance_level": "Transferable",
+        "read_action": "Save for project",
+        "relevance_to_user": "该论文将AI优化模型应用于体积生物打印中的聚合动力学补偿，虽未直接涉及传统生物打印流程，但其可微优化方法可迁移至生物打印中的工艺参数自主决策。",
+        "why_not_core": "This paper does not embed AI into a standard bioprinting workflow stage (pre/in/post), nor does it demonstrate autonomous decision-making; it focuses on a specific artifact correction in volumetric printing.",
+        "validation_kind": "simulation_case",
+        "flags": {
+          "has_experimental_validation": true,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "volumetric bioprinting",
+          "differentiable optimization",
+          "oxygen gradient",
+          "polymerization modeling",
+          "artifact correction"
+        ],
+        "summary_zh": {
+          "motivation": "解决体积生物打印中热可逆水凝胶的截锥形畸变问题",
+          "method": "提出耦合光线光学与光化学的可微优化模型，补偿氧梯度引起的聚合不均",
+          "result": "消除Pandoro效应，实现可重复的细胞负载水凝胶打印",
+          "validation": "通过消除气液界面和控制顶部气氛验证策略有效性"
+        },
+        "summary_en": {
+          "motivation": "To address the truncated-cone distortion artifact in tomographic volumetric bioprinting of thermoreversible hydrogels caused by oxygen gradients.",
+          "method": "A differentiable ray optical and photochemical optimization model that simulates spatiotemporal reaction-diffusion dynamics of oxygen depletion to predictively compensate for local inhibition gradients.",
+          "result": "The proposed strategies effectively suppress the Pandoro effect and are compatible with cell-laden resins, enabling reproducible volumetric bioprinting.",
+          "validation": "Validation through elimination of the air-resin interface and control of headspace atmosphere, demonstrating artifact suppression."
+        },
+        "key_terms": [
+          {
+            "en": "tomographic volumetric additive manufacturing",
+            "zh": "断层体积增材制造"
+          },
+          {
+            "en": "thermoreversible hydrogel",
+            "zh": "热可逆水凝胶"
+          },
+          {
+            "en": "oxygen gradient",
+            "zh": "氧梯度"
+          },
+          {
+            "en": "differentiable optimization",
+            "zh": "可微优化"
+          },
+          {
+            "en": "polymerization kinetics",
+            "zh": "聚合动力学"
+          },
+          {
+            "en": "Pandoro effect",
+            "zh": "Pandoro效应"
+          },
+          {
+            "en": "reaction-diffusion model",
+            "zh": "反应扩散模型"
+          },
+          {
+            "en": "inverse solver",
+            "zh": "逆求解器"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-07-15T05:26:53Z"
+    },
+    {
+      "source": "pubmed",
+      "id": "pubmed:42447888",
+      "doi": "10.1088/1758-5090/ae8a86",
+      "pmid": "42447888",
+      "title": "SABER bioprinting: a temporal platform for multiday assembly of engineered tissues.",
+      "abstract": "Current bioprinting approaches are constrained to single-session fabrication, limiting the scale, temporal complexity, and biological maturation achievable in engineered constructs. Here, we demonstrate the feasibility of Sequential Additive Biofabrication Extended over Real-time (SABER), a bioprinting strategy that introduces time as an explicit design variable by enabling multi-day additive fabrication of soft-hydrogel constructs supported by continuous perfusion culture. SABER integrates a thermoresponsive methylcellulose-agarose support material, which allows high-fidelity collagen deposition at low temperatures and mechanical stabilization at culture temperatures, with a custom bioreactor that permits direct through-tissue perfusion. We demonstrate feasibility of multi-day fabrication of layered constructs, nested geometries, suspended internal features, a miniaturized acellular human heart model with preserved architectural fidelity, and a 10-layer approximately 1 cm thick construct demonstrating scalability beyond single-session practical limits. SABER supports perfusion culture of thick cell-laden constructs, enabling printed cardiac tissues to remain viable and contractile after one week of perfusion culture and permitting in situ differentiation of bioprinted iPS cells into cardiomyocytes. These findings establish SABER as a proof-of-concept platform for time-resolved, perfused bioprinting of soft hydrogel constructs, introducing time as an explicit design variable in biofabrication and providing a foundation for future work exploring multi-day fabrication workflows at scales and with temporal complexity not supported by existing single-session approaches.",
+      "authors": [
+        "Joshua R Gershlak",
+        "Shoaib A Goraya",
+        "Marie Billaud",
+        "Farhad R Nezami",
+        "Harald C Ott"
+      ],
+      "first_author_affiliation": "Center for Organ Engineering, Massachusetts General Hospital, 165 Cambridge St, Boston, Massachusetts, 02114, United States.",
+      "corresponding_authors": [
+        {
+          "name": "Harald C Ott",
+          "affiliation": "Center for Organ Engineering, Massachusetts General Hospital, 165 Cambridge St., Boston, 02114, United States.",
+          "inferred": true
+        }
+      ],
+      "venue": "Biofabrication",
+      "year": 2026,
+      "date": "2026-07-14",
+      "date_precision": "day",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/42447888/",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [],
+      "raw_type": "journal article",
+      "directions": [
+        "ai_bioprinting"
+      ],
+      "direction": "ai_bioprinting",
+      "direction_name": "AI for Bioprinting",
+      "routing_matches": {
+        "ai_bioprinting": [
+          "biofabrication"
+        ]
+      },
+      "llm": {
+        "priority": "Medium",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该论文提出了一种多天连续生物打印平台，但未涉及AI/ML方法，与AI生物打印方向关联较弱。",
+        "why_not_core": "This paper does not incorporate AI/ML into any bioprinting workflow stage; it focuses on hardware and material innovations for multi-day fabrication.",
+        "validation_kind": "in_vitro",
+        "flags": {
+          "has_experimental_validation": true,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "bioprinting",
+          "multi-day fabrication",
+          "perfusion culture",
+          "tissue engineering",
+          "collagen"
+        ],
+        "summary_zh": {
+          "motivation": "现有生物打印局限于单次制造，无法实现大尺度、时间复杂性的组织构建。",
+          "method": "提出SABER平台，结合温敏支撑材料和连续灌注培养，实现多天逐层生物打印。",
+          "result": "成功打印多层结构、悬浮特征及1厘米厚组织，打印心脏组织在灌注培养一周后保持活力和收缩性。",
+          "validation": "通过打印多种几何结构及细胞活力、分化实验验证可行性。"
+        },
+        "summary_en": {
+          "motivation": "Current bioprinting is limited to single-session fabrication, restricting the scale and temporal complexity of engineered tissues.",
+          "method": "SABER integrates a thermoresponsive support material with a custom perfusion bioreactor to enable multi-day additive fabrication of soft hydrogel constructs.",
+          "result": "Multi-layered constructs, suspended features, and a 1 cm thick tissue were fabricated; printed cardiac tissues remained viable and contractile after one week of perfusion culture.",
+          "validation": "Feasibility was demonstrated through fabrication of various geometries and in vitro cell viability and differentiation assays."
+        },
+        "key_terms": [
+          {
+            "en": "bioprinting",
+            "zh": "生物打印"
+          },
+          {
+            "en": "multi-day fabrication",
+            "zh": "多天制造"
+          },
+          {
+            "en": "perfusion culture",
+            "zh": "灌注培养"
+          },
+          {
+            "en": "thermoresponsive support material",
+            "zh": "温敏支撑材料"
+          },
+          {
+            "en": "collagen",
+            "zh": "胶原蛋白"
+          },
+          {
+            "en": "tissue engineering",
+            "zh": "组织工程"
+          },
+          {
+            "en": "cardiac tissue",
+            "zh": "心脏组织"
+          },
+          {
+            "en": "iPS cells",
+            "zh": "诱导多能干细胞"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-07-15T05:26:53Z"
+    },
+    {
+      "source": "pubmed",
+      "id": "pubmed:42447321",
+      "doi": "10.1097/BPO.0000000000003399",
+      "pmid": "42447321",
+      "title": "Total Hip Arthroplasty in Patients With Open Triradiate Cartilage: 10-Year Follow-Up of an Expanded Cohort.",
+      "abstract": "INTRODUCTION: Total hip arthroplasty (THA) in patients with open triradiate cartilage remains controversial, with an open triradiate cartilage considered a challenge for acetabular component fixation. We previously reported excellent 5-year functional outcomes and implant survivorship in a series of patients undergoing THA with open triradiate cartilage. The current study expands this cohort to 10-year radiographic and functional outcomes. METHODS: Our institutional Total Joint Registry was queried to identify 24 patients who underwent THA with an open triradiate cartilage between the years 2000 and 2024. Skeletal maturity was assessed utilizing the modified Oxford bone age, with only triradiate scores of 1 and 2 included. Demographic, implant, and radiographic data were collected. Functional outcomes were assessed through the Harris Hip score (HHS). RESULTS: The previously analyzed cohort (11 patients, 12 THAs) had a mean age of 13 years, and a mean follow-up of 10 years (range: 5 to 15). The overall expanded cohort (24 THAs) had a mean age of 14 years, with a mean follow-up of 6 years (range: 1 to 15) and a mean modified Oxford bone age was 22. The most common indications for THA were avascular necrosis ( 67%), secondary arthritis (25%), and neoplasia (8%). Preoperatively, 54% of patients utilized gait aids; at final follow-up, all patients reported independent ambulation with a mean HHS of 92. Radiographically, 92% of implants showed stable osseointegration at the latest follow-up. Two patients required acetabular component revisions for aseptic loosening, one of whom required rerevision for instability. CONCLUSION: The present study expands on the largest series in the literature of THA in patients with open triradiate cartilage. Our results demonstrate excellent functional outcomes, 92% implant survivorship, and low complication rates at long-term 10-year follow-up. These findings suggest THA is safe and durable in patients with open triradiate cartilage without the need to delay arthroplasty for closure of the triradiate cartilage. LEVEL OF EVIDENCE: Level III.",
+      "authors": [
+        "Nicolas A Selemon",
+        "Zachary C Reuter",
+        "Emil Varas-Rodríguez",
+        "Rafael J Sierra",
+        "Robert T Trousdale",
+        "Emmanouil Grigoriou"
+      ],
+      "first_author_affiliation": "Department of Orthopedic Surgery, Mayo Clinic, Rochester, MN.",
+      "corresponding_authors": [],
+      "venue": "Journal of pediatric orthopedics",
+      "year": 2026,
+      "date": "2026-07-14",
+      "date_precision": "day",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/42447321/",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [],
+      "raw_type": "journal article",
+      "directions": [
+        "hip_implant",
+        "am_biomedical"
+      ],
+      "direction": "hip_implant",
+      "direction_name": "Hip Implant & Femoral Stem",
+      "routing_matches": {
+        "hip_implant": [
+          "total hip arthroplasty"
+        ],
+        "am_biomedical": [
+          "osseointegration"
+        ]
+      },
+      "llm": {
+        "priority": "Exclude",
+        "relevance_level": "Peripheral",
+        "read_action": "Ignore",
+        "relevance_to_user": "该论文为临床随访研究，未涉及任何生物力学建模或应力遮挡分析。",
+        "why_not_core": "No biomechanics modeling, no FEA, no stress shielding or micromotion quantification, no implant design or contact mechanics.",
+        "validation_kind": "clinical",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "total hip arthroplasty",
+          "open triradiate cartilage",
+          "clinical outcomes"
+        ],
+        "summary_zh": {
+          "motivation": "评估开放三放射软骨患者全髋关节置换术的长期效果。",
+          "method": "回顾性分析24例患者（24髋）的临床与影像学数据。",
+          "result": "10年假体存活率92%，功能评分优良。",
+          "validation": "临床随访与影像学评估。"
+        },
+        "summary_en": {
+          "motivation": "To evaluate long-term outcomes of total hip arthroplasty in patients with open triradiate cartilage.",
+          "method": "Retrospective review of 24 patients (24 hips) with open triradiate cartilage who underwent THA, analyzing clinical and radiographic data.",
+          "result": "At 10-year follow-up, implant survivorship was 92% with excellent functional outcomes (mean HHS 92).",
+          "validation": "Clinical follow-up and radiographic assessment."
+        },
+        "key_terms": [
+          {
+            "en": "total hip arthroplasty",
+            "zh": "全髋关节置换术"
+          },
+          {
+            "en": "open triradiate cartilage",
+            "zh": "开放三放射软骨"
+          },
+          {
+            "en": "implant survivorship",
+            "zh": "假体存活率"
+          },
+          {
+            "en": "Harris Hip Score",
+            "zh": "Harris髋关节评分"
+          },
+          {
+            "en": "aseptic loosening",
+            "zh": "无菌性松动"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-07-15T05:26:53Z"
+    },
+    {
+      "source": "pubmed",
+      "id": "pubmed:42446111",
+      "doi": "10.1002/smll.74473",
+      "pmid": "42446111",
+      "title": "A Platform for the Actuation of Magnetically Labeled Skeletal Muscle Cells Using Dynamic Magnetic Stimulation.",
+      "abstract": "Engineering skeletal muscle tissues with controllable bioactuation is essential for advances in biohybrid robotics, regenerative medicine, and high-fidelity disease models. Mechanical stimulation has been shown to replicate the effects of physical exercise, while magnetic stimulation allows the manipulation of cells in a non-invasive manner. Here, a platform based on Helmholtz coil pair for magnetic stimulation is developed. To focus the stimulation through mechanotransduction, magnetic microspheres (MMS) were conjugated to myoblast integrins at defined MMS-to-cell ratios, functioning as microscale actuators under alternating magnetic fields. Exposure of non-labeled C2C12 cells to ∼2.9 mT, 50 Hz magnetic fields enhanced myogenic differentiation, with significantly increased fusion indices after 10 and 30 min of daily stimulation. Remarkably, MMS-labeled cells (1:1 ratio) required only 2 min of daily stimulation to achieve comparable enhancement, demonstrating the efficacy of targeted microactuation. Mechanistic analysis revealed elevated nuclear localization of Yes-associated protein (YAP) in stimulated MMS-labeled cells, confirming activation of force-dependent signaling pathways. qRT-PCR analysis further supported these findings, showing stimulation-associated upregulation of myogenic genes, particularly in MMS-labeled cells. The integration of cell labeling with dynamic magnetic fields offers new opportunities for remote stimulation strategies in biofabrication, muscle tissue engineering, and therapeutic approaches for muscle tissue.",
+      "authors": [
+        "Tayná C Rodrigues",
+        "Anna-Lena Bauknecht",
+        "Anna Gioran",
+        "Sabine Rosenfeldt",
+        "Daniel Dickes",
+        "Johann Schorzmann",
+        "Frank Döpper",
+        "Elisabetta A Cavalcanti-Adam",
+        "Michael Maier",
+        "Reinhard Richter",
+        "Marissa K Caldow",
+        "Gordon S Lynch",
+        "Daniel E Heath",
+        "Andrea J O'Connor",
+        "Sahar Salehi"
+      ],
+      "first_author_affiliation": "Chair of Biomaterials, Faculty of Engineering Science, University of Bayreuth, Bayreuth, Germany.; Fraunhofer Institute for Manufacturing Engineering and Automation (IPA), Stuttgart, Germany.; Department of Biointelligent System Engineering, Institute of Food Science and Biotechnology, University of Hohenheim, Stuttgart, Germany.",
+      "corresponding_authors": [
+        {
+          "name": "Sahar Salehi",
+          "affiliation": "Chair of Biomaterials, Faculty of Engineering Science, University of Bayreuth, Bayreuth, Germany.; Fraunhofer Institute for Manufacturing Engineering and Automation (IPA), Stuttgart, Germany.; Department of Biointelligent System Engineering, Institute of Food Science and Biotechnology, University of Hohenheim, Stuttgart, Germany.",
+          "inferred": true
+        }
+      ],
+      "venue": "Small (Weinheim an der Bergstrasse, Germany)",
+      "year": 2026,
+      "date": "2026-07-14",
+      "date_precision": "day",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/42446111/",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [],
+      "raw_type": "journal article",
+      "directions": [
+        "ai_bioprinting"
+      ],
+      "direction": "ai_bioprinting",
+      "direction_name": "AI for Bioprinting",
+      "routing_matches": {
+        "ai_bioprinting": [
+          "biofabrication"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该论文涉及磁刺激促进肌细胞分化，但未使用AI或机器学习方法，与AI生物打印方向不直接相关。",
+        "why_not_core": "This paper does not incorporate AI/ML into any bioprinting workflow stage, lacks experimental validation of an AI model, and does not address autonomous decision-making in bioprinting.",
+        "validation_kind": "in_vitro",
+        "flags": {
+          "has_experimental_validation": true,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "magnetic stimulation",
+          "skeletal muscle",
+          "tissue engineering",
+          "mechanotransduction",
+          "C2C12"
+        ],
+        "summary_zh": {
+          "motivation": "开发非侵入性磁刺激平台以工程化骨骼肌组织。",
+          "method": "使用亥姆霍兹线圈和磁微球标记肌细胞进行靶向微驱动。",
+          "result": "磁刺激增强肌原分化，标记细胞仅需2分钟刺激即可达到效果。",
+          "validation": "通过融合指数、YAP定位和qRT-PCR验证。"
+        },
+        "summary_en": {
+          "motivation": "To develop a non-invasive magnetic stimulation platform for engineering skeletal muscle tissues with controllable bioactuation.",
+          "method": "A Helmholtz coil pair generates alternating magnetic fields, and magnetic microspheres conjugated to myoblast integrins act as microscale actuators.",
+          "result": "Magnetic stimulation enhances myogenic differentiation, with MMS-labeled cells achieving comparable effects with only 2 minutes of daily stimulation.",
+          "validation": "Validation includes fusion index quantification, YAP nuclear localization analysis, and qRT-PCR of myogenic genes."
+        },
+        "key_terms": [
+          {
+            "en": "magnetic stimulation",
+            "zh": "磁刺激"
+          },
+          {
+            "en": "Helmholtz coil",
+            "zh": "亥姆霍兹线圈"
+          },
+          {
+            "en": "magnetic microspheres",
+            "zh": "磁微球"
+          },
+          {
+            "en": "myoblast",
+            "zh": "成肌细胞"
+          },
+          {
+            "en": "mechanotransduction",
+            "zh": "机械转导"
+          },
+          {
+            "en": "YAP",
+            "zh": "YAP蛋白"
+          },
+          {
+            "en": "bioactuation",
+            "zh": "生物驱动"
+          },
+          {
+            "en": "tissue engineering",
+            "zh": "组织工程"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-07-15T05:26:53Z"
+    }
+  ],
+  "counts": {
+    "fetched_total": 17,
+    "by_source": {
+      "arxiv": 13,
+      "pubmed": 4
+    },
+    "after_dedup": 17,
+    "after_routing": 17,
+    "by_direction": {
+      "rl_world_model": 9,
+      "fea_surrogate": 4,
+      "ai_bioprinting": 3,
+      "hip_implant": 1
+    },
+    "routed_by_source": {
+      "arxiv": 13,
+      "pubmed": 4
+    },
+    "scored": 17,
+    "priority_counts": {
+      "Low": 11,
+      "Medium": 5,
+      "Exclude": 1
+    }
+  }
+}
