@@ -36,24 +36,29 @@ def _esc(s) -> str:
     return html.escape(str(s) if s is not None else "")
 
 
-def _identity_key(p: dict) -> str:
-    """ADR-0015 §4.4 dedup key: `doi:<doi>` or `arxiv:<arxiv_id>`.
+def _clean_html(document: str) -> str:
+    """Keep generated diffs clean when optional template rows are empty."""
+    return "\n".join(line.rstrip() for line in document.split("\n"))
 
-    Mirrors `pipeline.v2_schema.identity_key` rather than importing it, by
-    the same "duplicated, not imported" convention build_pages already uses
-    for `_load_papers_v2_or_v1` (keeps the render layer stdlib-only and
-    importable without the pipeline package). Papers with neither id get a
-    deterministic `noid:` fallback so per-paper marks (ADR-0016 D4) still
-    work for the rare id-less paper instead of all colliding on "".
-    """
-    doi = (p.get("doi") or "").strip()
-    if doi:
-        return f"doi:{doi}"
-    arxiv = (p.get("arxiv_id") or "").strip()
-    if arxiv:
-        return f"arxiv:{arxiv}"
-    seed = f"{p.get('title','')}|{p.get('date','')}".encode("utf-8")
-    return "noid:" + hashlib.sha1(seed).hexdigest()[:12]
+
+def _public_identity_key(p: dict, bucket_date: str = "",
+                         position: int | None = None) -> str:
+    """Return a stable UI key without deduplicating identity-less records."""
+    strict = corpus_view.identity_key(p)
+    if strict:
+        return strict
+    seed = "|".join((
+        bucket_date or str(p.get("date") or ""),
+        "" if position is None else str(position),
+        str(p.get("source") or ""),
+        str(p.get("title") or ""),
+    )).encode("utf-8")
+    return "noid:" + hashlib.sha1(seed).hexdigest()[:16]
+
+
+def _identity_key(p: dict) -> str:
+    """Return a strict corpus key or deterministic UI-only no-ID fallback."""
+    return _public_identity_key(p)
 
 
 def _anchor_id(identity_key: str) -> str:
@@ -61,13 +66,13 @@ def _anchor_id(identity_key: str) -> str:
     return re.sub(r"[^A-Za-z0-9_-]", "-", identity_key)
 
 
-def _card_tools(p: dict) -> str:
+def _card_tools(p: dict, identity_key: str | None = None) -> str:
     """ADR-0016 D4 (mark + note) and D5 (promote) per-card controls.
 
     Rendered statically; all behaviour is wired client-side by
     render/static/radar-ui.js reading the card's `data-identity-key`.
     """
-    idkey = _identity_key(p)
+    idkey = identity_key or _identity_key(p)
     name = f"rui-mark-{_anchor_id(idkey)}"
     states = [
         ("to-read", "待阅读"), ("read", "已阅读"),
@@ -89,17 +94,18 @@ def _card_tools(p: dict) -> str:
   </div>"""
 
 
-def _paper_card(p: dict, dir_color: str, daily_link_date: str | None = None) -> str:
-    llm = p.get("llm", {})
-    priority = llm.get("priority", "Low")
-    s = llm.get("summary_zh", {})
-    s_en = llm.get("summary_en", {})
-    key_terms = llm.get("key_terms", [])
-    flags = llm.get("flags", {})
-    relevance_level = llm.get("relevance_level", "")
-    read_action = llm.get("read_action", "")
-    why_not_core = llm.get("why_not_core", "")
-    validation_kind = llm.get("validation_kind", "")
+def _paper_card(p: dict, dir_color: str, daily_link_date: str | None = None,
+                identity_key: str | None = None) -> str:
+    llm = p.get("llm") or {}
+    priority = llm.get("priority") or "Low"
+    s = llm.get("summary_zh") or {}
+    s_en = llm.get("summary_en") or {}
+    key_terms = llm.get("key_terms") or []
+    flags = llm.get("flags") or {}
+    relevance_level = llm.get("relevance_level") or ""
+    read_action = llm.get("read_action") or ""
+    why_not_core = llm.get("why_not_core") or ""
+    validation_kind = llm.get("validation_kind") or ""
 
     badge_flags = []
     if flags.get("has_experimental_validation"):
@@ -111,7 +117,10 @@ def _paper_card(p: dict, dir_color: str, daily_link_date: str | None = None) -> 
     if flags.get("is_review"):
         badge_flags.append("Review")
     flag_html = " ".join(f'<span class="flag">{_esc(f)}</span>' for f in badge_flags)
-    tags_html = " ".join(f'<span class="tag">{_esc(t)}</span>' for t in llm.get("tags", []))
+    tags_html = " ".join(
+        f'<span class="tag">{_esc(t)}</span>'
+        for t in (llm.get("tags") or [])
+    )
 
     authors = ", ".join(p.get("authors", [])[:5])
     if len(p.get("authors", [])) > 5:
@@ -126,7 +135,7 @@ def _paper_card(p: dict, dir_color: str, daily_link_date: str | None = None) -> 
     elif p.get("url"):
         doi_link = f'<a href="{_esc(p["url"])}" target="_blank">link</a>'
 
-    idkey = _identity_key(p)
+    idkey = identity_key or _identity_key(p)
     daily_link = ""
     if daily_link_date:
         daily_link = (f'<a class="rui-link-tool" '
@@ -175,14 +184,14 @@ def _paper_card(p: dict, dir_color: str, daily_link_date: str | None = None) -> 
   </details>
   <div class="tags-row">{tags_html}</div>
   {daily_link}
-  {_card_tools(p)}
+  {_card_tools(p, idkey)}
 </article>"""
 
 
 def _stats_row(papers: list[dict], directions_cfg: dict) -> str:
     total = {"High": 0, "Medium": 0, "Low": 0, "Exclude": 0}
     for p in papers:
-        prio = p.get("llm", {}).get("priority", "Low")
+        prio = (p.get("llm") or {}).get("priority") or "Low"
         total[prio] = total.get(prio, 0) + 1
     cards = [f'<div class="stat"><div class="stat-label">论文总数</div><div class="stat-val">{sum(total.values())}</div></div>']
     for prio, color in [("High", "#27500A"), ("Medium", "#633806"), ("Low", "#5F5E5A")]:
@@ -403,16 +412,23 @@ ASSET_HEAD = (
 
 def _render_daily(papers, date, directions_cfg, archive_dates, manifest):
     order = {"High": 0, "Medium": 1, "Low": 2, "Exclude": 3}
+    identity_by_object = {
+        id(paper): _public_identity_key(paper, date, position)
+        for position, paper in enumerate(papers)
+    }
     papers_sorted = sorted(
         papers,
-        key=lambda p: (order.get(p.get("llm", {}).get("priority", "Low"), 9),
+        key=lambda p: (order.get(
+                           (p.get("llm") or {}).get("priority") or "Low", 9),
                        p.get("direction", "zzz")),
     )
     cards = []
     for p in papers_sorted:
         d = p.get("direction")
         color = directions_cfg[d]["color"] if d in directions_cfg else "#888"
-        cards.append(_paper_card(p, color))
+        cards.append(_paper_card(
+            p, color, identity_key=identity_by_object[id(p)]
+        ))
 
     return f"""<!doctype html><html lang="zh"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -714,6 +730,11 @@ def _render_workbench(recent_runs: list[tuple[str, dict]],
                       corpus_stats: corpus_view.CorpusStats) -> str:
     """Root workbench: papers first seen in the seven latest valid runs."""
     run_dates = [date for date, _manifest in recent_runs]
+    identity_by_object = {
+        id(paper): _public_identity_key(paper, bucket_date, position)
+        for bucket_date, papers in buckets.items()
+        for position, paper in enumerate(papers)
+    }
     papers_by_run: dict[str, list[tuple[str, dict]]] = {
         date: [] for date in run_dates
     }
@@ -746,8 +767,10 @@ def _render_workbench(recent_runs: list[tuple[str, dict]],
             for bucket_date, paper in items:
                 direction = paper.get("direction")
                 color = directions_cfg.get(direction, {}).get("color", "#667085")
-                output.append(_paper_card(paper, color,
-                                          daily_link_date=bucket_date))
+                output.append(_paper_card(
+                    paper, color, daily_link_date=bucket_date,
+                    identity_key=identity_by_object[id(paper)]
+                ))
             return "".join(output)
 
         priority_counts = corpus_view.priority_counts(
@@ -809,13 +832,14 @@ def _render_workbench(recent_runs: list[tuple[str, dict]],
 </body></html>"""
 
 
-def _queue_record(bucket_date: str, paper: dict,
+def _queue_record(bucket_date: str, paper: dict, position: int,
                   directions_cfg: dict) -> dict:
     llm = paper.get("llm") or {}
     direction = paper.get("direction") or ""
+    identity = _public_identity_key(paper, bucket_date, position)
     return {
-        "identity_key": corpus_view.identity_key(paper),
-        "anchor": _anchor_id(corpus_view.identity_key(paper)),
+        "identity_key": identity,
+        "anchor": _anchor_id(identity),
         "date": bucket_date,
         "title": paper.get("title") or "",
         "authors": (paper.get("authors") or [])[:5],
@@ -840,23 +864,34 @@ def _queue_record(bucket_date: str, paper: dict,
     }
 
 
+def _corpus_generated_at(buckets: dict[str, list[dict]]) -> str:
+    """Return a reproducible corpus cutoff for generated JSON manifests."""
+    first_seen = [
+        str(paper.get("first_seen_at") or "")
+        for papers in buckets.values() for paper in papers
+        if paper.get("first_seen_at")
+    ]
+    if first_seen:
+        return max(first_seen)
+    dates = [date for date, papers in buckets.items() if papers]
+    return f"{max(dates)}T00:00:00Z" if dates else ""
+
+
 def _build_queue_index(docs_dir: pathlib.Path,
                        buckets: dict[str, list[dict]], directions_cfg: dict,
                        corpus_stats: corpus_view.CorpusStats) -> dict:
     """Write priority/year queue shards for High and Medium papers."""
-    from datetime import datetime, timezone
-
     grouped: dict[str, dict[str, list[dict]]] = {
         "High": {}, "Medium": {},
     }
     for bucket_date, papers in buckets.items():
-        for paper in papers:
+        for position, paper in enumerate(papers):
             priority = (paper.get("llm") or {}).get("priority")
             if priority not in grouped:
                 continue
             year = bucket_date[:4]
             grouped[priority].setdefault(year, []).append(
-                _queue_record(bucket_date, paper, directions_cfg)
+                _queue_record(bucket_date, paper, position, directions_cfg)
             )
 
     priorities = {}
@@ -880,7 +915,7 @@ def _build_queue_index(docs_dir: pathlib.Path,
 
     manifest = {
         "schema_version": 1,
-        "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "generated_at": _corpus_generated_at(buckets),
         **corpus_stats.as_dict(),
         "priorities": priorities,
         "directions": {
@@ -1008,14 +1043,8 @@ def _render_status_page(docs_dir, data_dir):
 
 def _build_search_index(docs_dir, data_dir, canonical_buckets=None,
                         corpus_stats=None):
-    """Scan all daily JSONs and build a per-year search index for client-side search.
-
-    ADR-0022: splits the index into docs/search-index-YYYY.json files plus a
-    docs/search-index-manifest.json, and slims the per-record blob by dropping
-    summary_en (abstract[:500] already supplies English text for matching).
-    """
+    """Build lightweight metadata and opt-in deep-content yearly shards."""
     import json as _json
-    from datetime import datetime, timezone
 
     daily_dir = data_dir / "daily"
     if not daily_dir.exists():
@@ -1030,60 +1059,80 @@ def _build_search_index(docs_dir, data_dir, canonical_buckets=None,
         )
 
     by_year: dict[str, list] = {}
+    deep_by_year: dict[str, list] = {}
     for date, papers in sorted(canonical_buckets.items()):
         if not papers:
             continue
-        for p in papers:
+        for position, p in enumerate(papers):
             llm = p.get("llm", {}) or {}
             s_zh = llm.get("summary_zh", {}) or {}
-            # build searchable text blob (lowercased for fast match);
-            # summary_en intentionally omitted per ADR-0022.
-            blob_parts = [
-                p.get("title", ""),
-                p.get("abstract", "")[:500],  # truncate to keep index small
+            key_terms = llm.get("key_terms", []) or []
+            term_texts = []
+            for term in key_terms:
+                if isinstance(term, dict):
+                    text = " · ".join(
+                        str(term.get(key) or "").strip()
+                        for key in ("en", "zh") if term.get(key)
+                    )
+                else:
+                    text = str(term).strip()
+                if text:
+                    term_texts.append(text)
+            tags = llm.get("tags", []) or []
+            authors = p.get("authors", []) or []
+            deep_parts = [
+                p.get("abstract", "")[:500],
                 llm.get("relevance_to_user", ""),
                 llm.get("why_not_core", ""),
                 " ".join(s_zh.values()) if isinstance(s_zh, dict) else "",
-                " ".join(llm.get("tags", []) or []),
-                " ".join(t.get("en", "") + " " + t.get("zh", "") for t in (llm.get("key_terms", []) or [])),
-                ", ".join(p.get("authors", [])[:5]),
-                p.get("venue", ""),
-                p.get("first_author_affiliation", "") or "",
+                " ".join(term_texts),
             ]
-            blob = " ".join(b for b in blob_parts if b).lower()
+            identity = _public_identity_key(p, date, position)
             record = {
+                "identity_key": identity,
                 "date": date,
                 "title": p.get("title", "")[:200],
-                "authors": ", ".join(p.get("authors", [])[:3]) + (" et al." if len(p.get("authors", [])) > 3 else ""),
+                "authors": ", ".join(authors[:3]) +
+                           (" et al." if len(authors) > 3 else ""),
                 "venue": p.get("venue", "")[:80],
                 "direction": p.get("direction", ""),
                 "direction_name": p.get("direction_name", ""),
                 "priority": llm.get("priority", ""),
                 "relevance_level": llm.get("relevance_level", ""),
-                "read_action": llm.get("read_action", ""),
-                "source": p.get("source", ""),
-                "doi": p.get("doi", ""),
-                "date_precision": p.get("date_precision", "day"),
-                "scorer_version": p.get("scorer_version", ""),
-                "blob": blob,
+                "tags": tags[:2],
+                "term": term_texts[0] if term_texts else "",
             }
             year = ((p.get("date") or date) or "")[:4]
             by_year.setdefault(year, []).append(record)
+            deep_by_year.setdefault(year, []).append({
+                "identity_key": identity,
+                "deep_blob": " ".join(part for part in deep_parts if part).lower(),
+            })
 
-    years = sorted(by_year.keys())
+    years = sorted(by_year.keys(), reverse=True)
     counts = {y: len(by_year[y]) for y in years}
     total = sum(counts.values())
 
     for y in years:
         (docs_dir / f"search-index-{y}.json").write_text(
-            _json.dumps(by_year[y], ensure_ascii=False), encoding="utf-8"
+            _json.dumps(by_year[y], ensure_ascii=False, separators=(",", ":")),
+            encoding="utf-8"
+        )
+        (docs_dir / f"search-deep-{y}.json").write_text(
+            _json.dumps(deep_by_year[y], ensure_ascii=False,
+                        separators=(",", ":")),
+            encoding="utf-8"
         )
 
     manifest = {
+        "schema_version": 2,
         "years": years,
         "counts": counts,
+        "deep_counts": {year: len(deep_by_year[year]) for year in years},
         "total": total,
-        "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "meta_pattern": "search-index-{year}.json",
+        "deep_pattern": "search-deep-{year}.json",
+        "generated_at": _corpus_generated_at(canonical_buckets),
     }
     if corpus_stats is not None:
         manifest.update(corpus_stats.as_dict())
@@ -1095,126 +1144,39 @@ def _build_search_index(docs_dir, data_dir, canonical_buckets=None,
 
 
 def _render_search_page(docs_dir, directions_cfg: dict):
-    """Generate docs/search.html with client-side search UI."""
-    direction_chips = "\n".join(
-        f'  <span class="filter" data-key="direction" data-val="{_esc(dkey)}">{_esc(dcfg["display_name"])}</span>'
-        for dkey, dcfg in directions_cfg.items()
+    """ADR-0027 metadata-first search with opt-in year-scoped deep search."""
+    direction_options = "".join(
+        f'<option value="{_esc(key)}">{_esc(cfg.get("display_name", key))}</option>'
+        for key, cfg in directions_cfg.items()
     )
-    html = """<!doctype html><html lang="zh"><head>
+    html = f"""<!doctype html><html lang="zh"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Research Radar — Search</title>
-<style>
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:1100px;margin:2rem auto;padding:0 1rem;color:#222;line-height:1.5}
-h1{font-size:24px;font-weight:500;margin:0 0 .25rem}
-.subtitle{color:#666;font-size:14px;margin-bottom:1.5rem}
-.navbtn{font-size:13px;background:#f5f4ef;color:#444;padding:6px 12px;border-radius:8px;text-decoration:none;display:inline-block;margin-bottom:1rem;margin-right:8px}
-#q{width:100%;font-size:16px;padding:10px 14px;border:1px solid #ccc;border-radius:8px;box-sizing:border-box}
-.filters{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0;font-size:13px}
-.filter{background:#f5f4ef;padding:6px 12px;border-radius:8px;cursor:pointer;border:1px solid transparent}
-.filter.active{background:#222;color:#fff}
-.count{color:#666;font-size:13px;margin:14px 0}
-.result{padding:10px 0;border-bottom:.5px solid #eee}
-.result a{color:#1F4A6B;text-decoration:none;font-weight:500;font-size:15px}
-.result a:hover{text-decoration:underline}
-.result .meta{font-size:12px;color:#666;margin-top:3px}
-.result .chips{margin-top:5px}
-.chip{display:inline-block;font-size:11px;padding:2px 7px;border-radius:6px;margin-right:4px}
-.c-high{background:#E0DCC2;color:#3A3514}
-.c-medium{background:#F3E1C2;color:#633806}
-.c-low{background:#F1EFE8;color:#5F5E5A}
-.c-direct{background:#D4EBC4;color:#2D5A14}
-.c-transferable{background:#E0DDF4;color:#3F2E7E}
-.c-peripheral{background:#F1EFE8;color:#666}
-.date{color:#888;font-size:12px}
-</style></head><body>
-<h1>Research Radar — Search</h1>
-<div class="subtitle">Client-side search across all dates. Type to filter.</div>
-<a class="navbtn" href="index.html">← Latest daily</a>
-<a class="navbtn" href="status.html">📊 Status</a>
-
-<input id="q" placeholder="Search title, abstract, summary, authors, affiliation, tags..." autofocus>
-
-<div class="filters">
-  <span class="filter active" data-key="direction" data-val="">All directions</span>
-""" + direction_chips + """
+<title>Research Radar — 搜索</title>
+{ASSET_HEAD}<script src="radar-search.js" defer></script></head><body>
+{_site_nav("search")}
+<main id="main-content" class="container">
+<div class="eyebrow">Metadata-first corpus search</div>
+<h1>搜索 10 万篇论文</h1>
+<p class="subtitle">默认搜索标题、作者、期刊、标签与首要术语；完整术语、摘要和中文总结按年份深搜。</p>
+<label class="search-box">
+  <span>关键词</span>
+  <input id="search-query" type="search" autocomplete="off"
+         placeholder="输入标题、作者、标签或术语…" autofocus>
+</label>
+<div class="search-toolbar" aria-label="搜索筛选">
+  <label>方向<select id="search-direction"><option value="">全部方向</option>{direction_options}</select></label>
+  <label>等级<select id="search-priority"><option value="">全部等级</option><option>High</option><option>Medium</option><option>Low</option><option>Exclude</option></select></label>
+  <label>相关性<select id="search-relevance"><option value="">全部</option><option>Direct</option><option>Transferable</option><option>Peripheral</option></select></label>
+  <label>发表年份<select id="search-year"><option value="">全部年份</option></select></label>
 </div>
-<div class="filters">
-  <span class="filter active" data-key="priority" data-val="">Any priority</span>
-  <span class="filter" data-key="priority" data-val="High">High only</span>
-  <span class="filter" data-key="priority" data-val="High,Medium">High+Medium</span>
+<div class="deep-search-control">
+  <label><input id="search-deep-toggle" type="checkbox"> 搜索摘要、中文总结与相关性说明</label>
+  <label>深搜年份<select id="search-deep-year"><option value="">请选择年份</option></select></label>
 </div>
-<div class="filters">
-  <span class="filter active" data-key="relevance_level" data-val="">Any relevance</span>
-  <span class="filter" data-key="relevance_level" data-val="Direct">Direct only ⭐</span>
-  <span class="filter" data-key="relevance_level" data-val="Direct,Transferable">Direct+Transferable</span>
-</div>
-
-<div class="count" id="count">Loading…</div>
-<div id="results"></div>
-
-<script>
-let INDEX = [];
-const filters = { direction: '', priority: '', relevance_level: '' };
-
-fetch('search-index-manifest.json')
-  .then(r => r.json())
-  .then(m => Promise.all(
-    m.years.map(y => fetch('search-index-' + y + '.json').then(r => r.json()))
-  ))
-  .then(chunks => {
-    INDEX = chunks.flat();
-    render();
-  });
-
-function applyFilters(items) {
-  return items.filter(p => {
-    for (const [k, v] of Object.entries(filters)) {
-      if (!v) continue;
-      const allowed = v.split(',');
-      if (!allowed.includes(p[k])) return false;
-    }
-    return true;
-  });
-}
-
-function render() {
-  const q = document.getElementById('q').value.trim().toLowerCase();
-  let items = INDEX;
-  if (q) {
-    items = items.filter(p => p.blob.indexOf(q) >= 0);
-  }
-  items = applyFilters(items);
-  // Sort by date desc, then priority
-  const prioRank = { High: 3, Medium: 2, Low: 1, Exclude: 0, '': 0 };
-  items.sort((a, b) => (b.date.localeCompare(a.date)) || (prioRank[b.priority] - prioRank[a.priority]));
-
-  document.getElementById('count').textContent = `${items.length} results`;
-  const html = items.slice(0, 200).map(p => {
-    const chips = [
-      p.priority ? `<span class=\"chip c-${p.priority.toLowerCase()}\">${p.priority}</span>` : '',
-      p.relevance_level ? `<span class=\"chip c-${p.relevance_level.toLowerCase()}\">${p.relevance_level}</span>` : '',
-    ].join('');
-    return `<div class=\"result\">
-      <a href=\"${p.date}.html\">${p.title}</a>
-      <div class=\"meta\"><span class=\"date\">${p.date}</span> · ${p.direction_name || p.direction} · ${p.source} · ${p.venue}</div>
-      <div class=\"chips\">${chips}</div>
-    </div>`;
-  }).join('');
-  document.getElementById('results').innerHTML = html + (items.length > 200 ? '<p style=\"color:#888;font-size:13px\">(showing first 200; refine search to see more)</p>' : '');
-}
-
-document.getElementById('q').addEventListener('input', render);
-
-document.querySelectorAll('.filter').forEach(el => {
-  el.addEventListener('click', () => {
-    const key = el.dataset.key, val = el.dataset.val;
-    filters[key] = val;
-    document.querySelectorAll(`.filter[data-key="${key}"]`).forEach(s => s.classList.remove('active'));
-    el.classList.add('active');
-    render();
-  });
-});
-</script>
+<div id="search-status" class="search-status" aria-live="polite">正在载入轻量索引…</div>
+<div id="search-results" class="search-results"></div>
+<button type="button" id="search-more" class="rui-btn search-more" hidden>加载更多结果</button>
+</main>
 </body></html>"""
     (docs_dir / "search.html").write_text(html, encoding="utf-8")
 
@@ -1315,7 +1277,8 @@ def _redirect_page(title: str, target: str) -> str:
 def _copy_static_assets(docs_dir: pathlib.Path) -> None:
     """Copy the dependency-free browser bundles into docs/."""
     static_dir = pathlib.Path(__file__).resolve().parent / "static"
-    for name in ("radar-ui.css", "radar-ui.js", "radar-queue.js"):
+    for name in ("radar-ui.css", "radar-ui.js", "radar-queue.js",
+                 "radar-search.js", "radar-search-worker.js"):
         src = static_dir / name
         if src.exists():
             (docs_dir / name).write_text(
@@ -1328,7 +1291,8 @@ def _priority_counts_for(papers: list, meta: dict) -> dict:
     return corpus_view.priority_counts(papers)
 
 
-def build(docs_dir, directions_cfg, manifest=None, touched_dates=None):
+def build(docs_dir, directions_cfg, manifest=None, touched_dates=None,
+          data_dir=None):
     """Render every per-publication-date HTML page from disk, refresh index.
 
     ADR-0015 §4.5: under v2 a single radar run touches many publication-date
@@ -1337,8 +1301,11 @@ def build(docs_dir, directions_cfg, manifest=None, touched_dates=None):
     is the set of bucket dates this run actually modified; pages for those
     dates get the run manifest footer attached.
     """
+    docs_dir = pathlib.Path(docs_dir)
+    data_dir = (pathlib.Path(data_dir) if data_dir is not None
+                else docs_dir.parent / "data")
     docs_dir.mkdir(parents=True, exist_ok=True)
-    data_daily_dir = docs_dir.parent / "data" / "daily"
+    data_daily_dir = data_dir / "daily"
     archive = sorted(p.stem for p in data_daily_dir.glob("20*.json")) if data_daily_dir.exists() else []
     touched = set(touched_dates or ())
 
@@ -1392,7 +1359,10 @@ def build(docs_dir, directions_cfg, manifest=None, touched_dates=None):
             day_counts[hist_date] = _priority_counts_for(hist_papers, _meta)
             page_manifest = manifest if hist_date in touched else None
             hist_html.write_text(
-                _render_daily(hist_papers, hist_date, directions_cfg, archive, page_manifest),
+                _clean_html(_render_daily(
+                    hist_papers, hist_date, directions_cfg, archive,
+                    page_manifest,
+                )),
                 encoding="utf-8",
             )
         except Exception as e:
@@ -1408,15 +1378,15 @@ def build(docs_dir, directions_cfg, manifest=None, touched_dates=None):
     }
     archive_months = sorted(months)
 
-    data_dir = docs_dir.parent / "data"
     recent_runs = _recent_valid_runs(data_dir)
     current_month = recent_runs[0][0][:7] if recent_runs else None
 
     # ADR-0027: root = discovery-time workbench; publication archive moves to
     # a dedicated URL and keeps all existing month/day URLs stable.
     (docs_dir / "index.html").write_text(
-        _render_workbench(recent_runs, day_papers_full, directions_cfg,
-                          corpus_stats),
+        _clean_html(_render_workbench(
+            recent_runs, day_papers_full, directions_cfg, corpus_stats,
+        )),
         encoding="utf-8",
     )
     (docs_dir / "archive.html").write_text(

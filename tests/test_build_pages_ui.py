@@ -60,7 +60,7 @@ def _paper(*, doi: str, priority: str, title: str,
             "summary_en": {"motivation": "Motivation", "method": "Method"},
             "relevance_to_user": "Relevant because synthetic.",
             "tags": ["t1"],
-            "key_terms": [],
+            "key_terms": [{"en": "surrogate model", "zh": "代理模型"}],
             "flags": {},
         },
     }
@@ -133,6 +133,17 @@ def built(tmp_path: pathlib.Path) -> pathlib.Path:
 def _article_priorities(html: str) -> list[str]:
     """All data-priority values on <article> tags, in document order."""
     return re.findall(r'<article class="paper"[^>]*data-priority="([^"]+)"', html)
+
+
+def test_legacy_null_priority_renders_as_low_instead_of_skipping_page():
+    paper = _paper(doi="10.1/null", priority="Low", title="Legacy record",
+                   date="2021-01-01")
+    paper["llm"]["priority"] = None
+    card = build_pages._paper_card(paper, "#D85A30")
+    stats = build_pages._stats_row([paper], DIRECTIONS)
+    assert 'data-priority="Low"' in card
+    assert 'priority--low' in card
+    assert "论文总数" in stats
 
 
 # ---------------------------------------------------------------- D1
@@ -284,20 +295,23 @@ def test_static_bundle_copied_into_docs(built):
     assert (built / "radar-ui.js").exists()
     assert (built / "radar-ui.css").exists()
     assert (built / "radar-queue.js").exists()
+    assert (built / "radar-search.js").exists()
+    assert (built / "radar-search-worker.js").exists()
     js = (built / "radar-ui.js").read_text(encoding="utf-8")
     assert "radar:promote-queue" in js
     assert "radar:mark:" in js
 
 
-# ---------------------------------------------------------------- ADR-0022
-# Search index: per-year split + manifest, blob drops summary_en but
-# keeps why_not_core and summary_zh.
+# ---------------------------------------------------------------- ADR-0027
+# Search index: metadata loads progressively; abstract and Chinese summaries
+# are held in opt-in, year-scoped deep shards.
 
 SEARCH_INDEX_DISPLAY_FIELDS = {
-    "date", "title", "authors", "venue", "direction", "direction_name",
-    "priority", "relevance_level", "read_action", "source", "doi",
-    "date_precision", "scorer_version", "blob",
+    "identity_key", "date", "title", "authors", "venue",
+    "direction", "direction_name", "priority", "relevance_level",
+    "tags", "term",
 }
+SEARCH_DEEP_FIELDS = {"identity_key", "deep_blob"}
 
 # Distinctive tokens we can search for to assert blob composition.
 EN_ONLY_TOKEN = "zogglefritz"   # only in summary_en
@@ -329,7 +343,7 @@ def _search_paper(*, doi: str, date: str, year_unique: str) -> dict:
             "why_not_core": WHY_NOT_TOKEN,
             "relevance_to_user": "Relevant because synthetic.",
             "tags": ["t1"],
-            "key_terms": [],
+            "key_terms": [{"en": "surrogate model", "zh": "代理模型"}],
             "flags": {},
         },
     }
@@ -355,18 +369,20 @@ def search_built(tmp_path: pathlib.Path) -> tuple[pathlib.Path, int]:
     return docs, total
 
 
-def test_adr0022_search_index_writes_per_year_files_and_manifest(search_built):
+def test_adr0027_search_index_writes_meta_deep_files_and_manifest(search_built):
     docs, total = search_built
     assert not (docs / "search-index.json").exists()
     manifest_path = docs / "search-index-manifest.json"
     assert manifest_path.exists()
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    assert manifest["years"] == ["2024", "2025", "2026"]
+    assert manifest["schema_version"] == 2
+    assert manifest["years"] == ["2026", "2025", "2024"]
     assert manifest["counts"] == {"2024": 2, "2025": 1, "2026": 1}
+    assert manifest["deep_counts"] == manifest["counts"]
     assert manifest["total"] == 4
     assert total == 4
     assert sum(manifest["counts"].values()) == manifest["total"]
-    assert "generated_at" in manifest
+    assert manifest["generated_at"] == "2026-05-23T00:00:00Z"
 
     written = sorted(p.name for p in docs.glob("search-index-*.json")
                      if p.name != "search-index-manifest.json")
@@ -374,6 +390,12 @@ def test_adr0022_search_index_writes_per_year_files_and_manifest(search_built):
         "search-index-2024.json",
         "search-index-2025.json",
         "search-index-2026.json",
+    ]
+    deep_written = sorted(p.name for p in docs.glob("search-deep-*.json"))
+    assert deep_written == [
+        "search-deep-2024.json",
+        "search-deep-2025.json",
+        "search-deep-2026.json",
     ]
     for year, expected in manifest["counts"].items():
         records = json.loads(
@@ -384,20 +406,34 @@ def test_adr0022_search_index_writes_per_year_files_and_manifest(search_built):
             assert rec["date"].startswith(year)
 
 
-def test_adr0022_blob_drops_summary_en_keeps_why_not_core_and_summary_zh(search_built):
+def test_adr0027_metadata_shard_excludes_deep_content(search_built):
     docs, _ = search_built
     records = json.loads(
         (docs / "search-index-2024.json").read_text(encoding="utf-8"))
     assert records
+    serialized = json.dumps(records, ensure_ascii=False).lower()
+    assert EN_ONLY_TOKEN.lower() not in serialized
+    assert WHY_NOT_TOKEN.lower() not in serialized
+    assert ZH_ONLY_TOKEN not in serialized
+    assert "abstract text" not in serialized
+    assert "paper 2024" in serialized
+
+
+def test_adr0027_deep_blob_keeps_chinese_summary_and_why_not(search_built):
+    docs, _ = search_built
+    records = json.loads(
+        (docs / "search-deep-2024.json").read_text(encoding="utf-8"))
+    assert records
     for rec in records:
-        blob = rec["blob"]
+        assert set(rec) == SEARCH_DEEP_FIELDS
+        blob = rec["deep_blob"]
         assert EN_ONLY_TOKEN.lower() not in blob
         assert WHY_NOT_TOKEN.lower() in blob
-        assert ZH_ONLY_TOKEN in blob  # zh token isn't ASCII-affected by .lower()
-        assert blob == blob.lower()   # still lowercased
+        assert ZH_ONLY_TOKEN in blob
+        assert "abstract text" in blob
 
 
-def test_adr0022_search_index_display_fields_unchanged(search_built):
+def test_adr0027_search_index_display_fields_are_stable(search_built):
     docs, _ = search_built
     records = json.loads(
         (docs / "search-index-2025.json").read_text(encoding="utf-8"))
@@ -409,25 +445,25 @@ def test_adr0022_search_index_display_fields_unchanged(search_built):
     assert sample["direction_name"] == "FEA & Surrogate"
     assert sample["priority"] == "High"
     assert sample["relevance_level"] == "Direct"
-    assert sample["read_action"] == "Read"
-    assert sample["scorer_version"] == "v3"
-    assert sample["date_precision"] == "day"
+    assert sample["term"] == "surrogate model · 代理模型"
 
 
-def test_adr0022_search_page_loads_manifest_then_per_year_files(built):
-    """The inline search JS should be manifest-driven, not a single fetch."""
+def test_adr0027_search_page_uses_external_progressive_runtime(built):
     search_html = (built / "search.html").read_text(encoding="utf-8")
     assert "fetch('search-index.json')" not in search_html
-    assert "fetch('search-index-manifest.json')" in search_html
-    assert "search-index-' + y + '.json" in search_html
+    assert 'src="radar-search.js"' in search_html
+    assert 'id="search-deep-toggle"' in search_html
+    assert 'id="search-deep-year"' in search_html
+    assert "search-index-manifest.json" not in search_html
 
 
-def test_adr0022_build_emits_per_year_index_through_full_build(built):
+def test_adr0027_build_emits_per_year_indexes_through_full_build(built):
     """The full build pipeline (build_pages.build) writes the new files."""
     assert not (built / "search-index.json").exists()
     assert (built / "search-index-manifest.json").exists()
     # fixture spans 2024 only
     assert (built / "search-index-2024.json").exists()
+    assert (built / "search-deep-2024.json").exists()
 
 
 # ---------------------------------------------------------------- canonical corpus view
@@ -468,6 +504,37 @@ def test_public_pages_and_search_suppress_cross_bucket_duplicate_identity(tmp_pa
     assert manifest["unique_total"] == 1
     assert manifest["duplicates_suppressed"] == 1
     assert manifest["total"] == 1
+
+
+def test_identityless_records_remain_distinct_across_ui_indexes(tmp_path):
+    docs = tmp_path / "docs"
+    daily = tmp_path / "data" / "daily"
+    first = _paper(doi="", priority="High", title="Same title",
+                   date="2024-03-01")
+    second = _paper(doi="", priority="High", title="Same title",
+                    date="2024-03-01")
+    _write_v2(daily, "2024-03-01", [first, second])
+
+    build_pages.build(docs, DIRECTIONS)
+
+    search = json.loads(
+        (docs / "search-index-2024.json").read_text(encoding="utf-8")
+    )
+    deep = json.loads(
+        (docs / "search-deep-2024.json").read_text(encoding="utf-8")
+    )
+    queue = json.loads(
+        (docs / "queue-high-2024.json").read_text(encoding="utf-8")
+    )
+    identities = [record["identity_key"] for record in search]
+    assert len(search) == len(deep) == len(queue) == 2
+    assert len(set(identities)) == 2
+    assert all(identity.startswith("noid:") for identity in identities)
+    assert set(identities) == {record["identity_key"] for record in deep}
+    assert set(identities) == {record["identity_key"] for record in queue}
+    daily_html = (docs / "2024-03-01.html").read_text(encoding="utf-8")
+    for identity in identities:
+        assert f'data-identity-key="{identity}"' in daily_html
 
 
 def test_workbench_uses_latest_seven_valid_runs_and_excludes_failed(tmp_path):
