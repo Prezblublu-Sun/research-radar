@@ -38,7 +38,10 @@
     }
   }
   function esc(s) {
-    return String(s == null ? "" : s).replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;").replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
   }
 
   var PRIORITY_DEFAULT = ["High", "Medium"];
@@ -125,10 +128,29 @@
     });
   });
 
-  // ---- D4 + D5: per-card controls ----
-  document.querySelectorAll(".paper").forEach(function (card) {
+  function cardMeta(card) {
+    return {
+      title: card.dataset.title || "",
+      date: card.dataset.date || "",
+      direction: card.dataset.direction || "",
+      priority: card.dataset.priority || ""
+    };
+  }
+
+  function mergeMeta(record, card) {
+    var meta = cardMeta(card);
+    Object.keys(meta).forEach(function (key) {
+      if (meta[key]) record[key] = meta[key];
+    });
+    return record;
+  }
+
+  // ---- D4 + D5: per-card controls (also hydrates lazy queue cards) ----
+  function hydrateCard(card) {
+    if (card.dataset.ruiReady === "1") return;
     var idk = card.dataset.identityKey;
     if (!idk) return;
+    card.dataset.ruiReady = "1";
     var rec = markRecord(idk);
     if (rec && rec.state) card.dataset.mark = rec.state;
 
@@ -160,7 +182,8 @@
         applyFilters();
       });
       r.addEventListener("change", function () {
-        var cur = markRecord(idk) || { state: "", at: "", note: "" };
+        var cur = mergeMeta(markRecord(idk) ||
+          { state: "", at: "", note: "" }, card);
         cur.state = r.value;
         cur.at = new Date().toISOString();
         if (typeof cur.note !== "string") cur.note = "";
@@ -183,7 +206,8 @@
     }
     if (ta) {
       ta.addEventListener("blur", function () {
-        var cur = markRecord(idk) || { state: "", at: "", note: "" };
+        var cur = mergeMeta(markRecord(idk) ||
+          { state: "", at: "", note: "" }, card);
         cur.note = ta.value;
         if (!cur.at) cur.at = new Date().toISOString();
         lsSet("radar:mark:" + idk, cur);
@@ -197,7 +221,7 @@
         return q && q.identity_key === idk;
       });
       if (queued) {
-        pBtn.textContent = "✓ queued";
+        pBtn.textContent = "✓ 已加入";
         pBtn.classList.add("rui-queued");
       }
       pBtn.addEventListener("click", function () {
@@ -213,13 +237,24 @@
           queued_at: new Date().toISOString()
         });
         lsSet("radar:promote-queue", q);
-        pBtn.textContent = "✓ queued";
+        pBtn.textContent = "✓ 已加入";
         pBtn.classList.add("rui-queued");
       });
     }
-  });
+  }
 
-  applyFilters();
+  function hydrateCards(root) {
+    var scope = root && root.querySelectorAll ? root : document;
+    scope.querySelectorAll(".paper").forEach(hydrateCard);
+    applyFilters();
+  }
+
+  document.addEventListener("radar:content-ready", function (event) {
+    hydrateCards(event.detail && event.detail.root);
+  });
+  window.RadarUI = { hydrate: hydrateCards };
+
+  hydrateCards(document);
 
   // ---- my-marks.html: export-all + listing ----
   var exportBtn = document.getElementById("rui-export-marks");
@@ -255,19 +290,22 @@
       var marks = collectMarks();
       var keys = Object.keys(marks);
       if (!keys.length) {
-        listEl.innerHTML = "<p>No reading marks stored in this browser yet.</p>";
+        listEl.innerHTML = "<p>当前浏览器还没有阅读标记。</p>";
       } else {
         var rows = keys.map(function (k) {
           var r = marks[k] || {};
-          return "<tr><td><code>" + esc(k.replace("radar:mark:", "")) +
-            "</code></td><td>" + esc(r.state || "") + "</td><td>" +
+          var title = esc(r.title || k.replace("radar:mark:", ""));
+          var titleCell = /^\d{4}-\d{2}-\d{2}$/.test(r.date || "") ?
+            '<a href="' + esc(r.date) + '.html">' + title + "</a>" : title;
+          return "<tr><td>" + titleCell + "</td><td>" + esc(r.date || "") +
+            "</td><td>" + esc(r.state || "") + "</td><td>" +
             esc(r.note || "") + "</td><td><code>" + esc(r.at || "") +
             "</code></td></tr>";
         });
         listEl.innerHTML =
-          '<table class="rui-table"><thead><tr><th>identity</th>' +
-          "<th>state</th><th>note</th><th>marked at</th></tr></thead><tbody>" +
-          rows.join("") + "</tbody></table>";
+          '<div class="table-scroll"><table class="rui-table"><thead><tr><th>论文</th>' +
+          "<th>日期</th><th>标记</th><th>笔记</th><th>更新时间</th></tr></thead><tbody>" +
+          rows.join("") + "</tbody></table></div>";
       }
     }
   }
@@ -281,7 +319,7 @@
       if (!Array.isArray(q)) q = [];
       if (!qEl) return;
       if (!q.length) {
-        qEl.innerHTML = "<p>Promote queue is empty.</p>";
+        qEl.innerHTML = "<p>待导入队列为空。</p>";
         return;
       }
       var rows = q.map(function (x) {
@@ -290,18 +328,18 @@
           esc(x.title) + "</td></tr>";
       });
       qEl.innerHTML =
-        '<table class="rui-table"><thead><tr><th>date</th><th>priority</th>' +
-        "<th>identity</th><th>title</th></tr></thead><tbody>" +
-        rows.join("") + "</tbody></table>";
+        '<div class="table-scroll"><table class="rui-table"><thead><tr><th>日期</th><th>等级</th>' +
+        "<th>身份键</th><th>标题</th></tr></thead><tbody>" +
+        rows.join("") + "</tbody></table></div>";
     }
     renderQueue();
     copyBtn.addEventListener("click", function () {
       var q = lsGet("radar:promote-queue", []);
       navigator.clipboard.writeText(JSON.stringify(q, null, 2)).then(
         function () {
-          copyBtn.textContent = "✓ copied";
+          copyBtn.textContent = "✓ 已复制";
           setTimeout(function () {
-            copyBtn.textContent = "Copy all to clipboard as JSON";
+            copyBtn.textContent = "复制全部 JSON";
           }, 1500);
         }
       );
@@ -309,7 +347,7 @@
     var clearBtn = document.getElementById("rui-clear-promotes");
     if (clearBtn) {
       clearBtn.addEventListener("click", function () {
-        if (confirm("Clear the promote queue? This cannot be undone.")) {
+        if (confirm("确定清空待导入队列？此操作无法撤销。")) {
           lsSet("radar:promote-queue", []);
           renderQueue();
         }

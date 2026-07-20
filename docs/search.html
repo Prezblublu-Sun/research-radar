@@ -1,120 +1,29 @@
 <!doctype html><html lang="zh"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Research Radar — Search</title>
-<style>
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:1100px;margin:2rem auto;padding:0 1rem;color:#222;line-height:1.5}
-h1{font-size:24px;font-weight:500;margin:0 0 .25rem}
-.subtitle{color:#666;font-size:14px;margin-bottom:1.5rem}
-.navbtn{font-size:13px;background:#f5f4ef;color:#444;padding:6px 12px;border-radius:8px;text-decoration:none;display:inline-block;margin-bottom:1rem;margin-right:8px}
-#q{width:100%;font-size:16px;padding:10px 14px;border:1px solid #ccc;border-radius:8px;box-sizing:border-box}
-.filters{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0;font-size:13px}
-.filter{background:#f5f4ef;padding:6px 12px;border-radius:8px;cursor:pointer;border:1px solid transparent}
-.filter.active{background:#222;color:#fff}
-.count{color:#666;font-size:13px;margin:14px 0}
-.result{padding:10px 0;border-bottom:.5px solid #eee}
-.result a{color:#1F4A6B;text-decoration:none;font-weight:500;font-size:15px}
-.result a:hover{text-decoration:underline}
-.result .meta{font-size:12px;color:#666;margin-top:3px}
-.result .chips{margin-top:5px}
-.chip{display:inline-block;font-size:11px;padding:2px 7px;border-radius:6px;margin-right:4px}
-.c-high{background:#E0DCC2;color:#3A3514}
-.c-medium{background:#F3E1C2;color:#633806}
-.c-low{background:#F1EFE8;color:#5F5E5A}
-.c-direct{background:#D4EBC4;color:#2D5A14}
-.c-transferable{background:#E0DDF4;color:#3F2E7E}
-.c-peripheral{background:#F1EFE8;color:#666}
-.date{color:#888;font-size:12px}
-</style></head><body>
-<h1>Research Radar — Search</h1>
-<div class="subtitle">Client-side search across all dates. Type to filter.</div>
-<a class="navbtn" href="index.html">← Latest daily</a>
-<a class="navbtn" href="status.html">📊 Status</a>
-
-<input id="q" placeholder="Search title, abstract, summary, authors, affiliation, tags..." autofocus>
-
-<div class="filters">
-  <span class="filter active" data-key="direction" data-val="">All directions</span>
-  <span class="filter" data-key="direction" data-val="ai_bioprinting">AI for Bioprinting</span>
-  <span class="filter" data-key="direction" data-val="hip_implant">Hip Implant &amp; Femoral Stem</span>
-  <span class="filter" data-key="direction" data-val="fea_surrogate">FEA &amp; Surrogate Modelling</span>
-  <span class="filter" data-key="direction" data-val="rl_world_model">RL &amp; World Models</span>
-  <span class="filter" data-key="direction" data-val="am_biomedical">AM Biomedical Materials</span>
+<title>Research Radar — 搜索</title>
+<link rel="stylesheet" href="radar-ui.css"><script src="radar-ui.js" defer></script><script src="radar-search.js" defer></script></head><body>
+<nav class="site-nav" aria-label="主导航"><a class="site-nav__brand" href="index.html">Research Radar</a><div class="site-nav__links"><a href="index.html" class="site-nav__link">今日</a><a href="queue.html" class="site-nav__link">队列</a><a href="search.html" aria-current="page" class="site-nav__link is-active">搜索</a><a href="library.html" class="site-nav__link">资料库</a><a href="archive.html" class="site-nav__link">归档</a><details class="site-nav__admin"><summary>系统</summary><div class="site-nav__menu"><a href="status.html">运行状态</a><a href="weekly/index.html">周报</a></div></details></div></nav>
+<main id="main-content" class="container">
+<div class="eyebrow">Metadata-first corpus search</div>
+<h1>搜索 10 万篇论文</h1>
+<p class="subtitle">默认搜索标题、作者、期刊、标签与首要术语；完整术语、摘要和中文总结按年份深搜。</p>
+<label class="search-box">
+  <span>关键词</span>
+  <input id="search-query" type="search" autocomplete="off"
+         placeholder="输入标题、作者、标签或术语…" autofocus>
+</label>
+<div class="search-toolbar" aria-label="搜索筛选">
+  <label>方向<select id="search-direction"><option value="">全部方向</option><option value="ai_bioprinting">AI for Bioprinting</option><option value="hip_implant">Hip Implant &amp; Femoral Stem</option><option value="fea_surrogate">FEA &amp; Surrogate Modelling</option><option value="rl_world_model">RL &amp; World Models</option><option value="am_biomedical">AM Biomedical Materials</option></select></label>
+  <label>等级<select id="search-priority"><option value="">全部等级</option><option>High</option><option>Medium</option><option>Low</option><option>Exclude</option></select></label>
+  <label>相关性<select id="search-relevance"><option value="">全部</option><option>Direct</option><option>Transferable</option><option>Peripheral</option></select></label>
+  <label>发表年份<select id="search-year"><option value="">全部年份</option></select></label>
 </div>
-<div class="filters">
-  <span class="filter active" data-key="priority" data-val="">Any priority</span>
-  <span class="filter" data-key="priority" data-val="High">High only</span>
-  <span class="filter" data-key="priority" data-val="High,Medium">High+Medium</span>
+<div class="deep-search-control">
+  <label><input id="search-deep-toggle" type="checkbox"> 搜索摘要、中文总结与相关性说明</label>
+  <label>深搜年份<select id="search-deep-year"><option value="">请选择年份</option></select></label>
 </div>
-<div class="filters">
-  <span class="filter active" data-key="relevance_level" data-val="">Any relevance</span>
-  <span class="filter" data-key="relevance_level" data-val="Direct">Direct only ⭐</span>
-  <span class="filter" data-key="relevance_level" data-val="Direct,Transferable">Direct+Transferable</span>
-</div>
-
-<div class="count" id="count">Loading…</div>
-<div id="results"></div>
-
-<script>
-let INDEX = [];
-const filters = { direction: '', priority: '', relevance_level: '' };
-
-fetch('search-index-manifest.json')
-  .then(r => r.json())
-  .then(m => Promise.all(
-    m.years.map(y => fetch('search-index-' + y + '.json').then(r => r.json()))
-  ))
-  .then(chunks => {
-    INDEX = chunks.flat();
-    render();
-  });
-
-function applyFilters(items) {
-  return items.filter(p => {
-    for (const [k, v] of Object.entries(filters)) {
-      if (!v) continue;
-      const allowed = v.split(',');
-      if (!allowed.includes(p[k])) return false;
-    }
-    return true;
-  });
-}
-
-function render() {
-  const q = document.getElementById('q').value.trim().toLowerCase();
-  let items = INDEX;
-  if (q) {
-    items = items.filter(p => p.blob.indexOf(q) >= 0);
-  }
-  items = applyFilters(items);
-  // Sort by date desc, then priority
-  const prioRank = { High: 3, Medium: 2, Low: 1, Exclude: 0, '': 0 };
-  items.sort((a, b) => (b.date.localeCompare(a.date)) || (prioRank[b.priority] - prioRank[a.priority]));
-
-  document.getElementById('count').textContent = `${items.length} results`;
-  const html = items.slice(0, 200).map(p => {
-    const chips = [
-      p.priority ? `<span class="chip c-${p.priority.toLowerCase()}">${p.priority}</span>` : '',
-      p.relevance_level ? `<span class="chip c-${p.relevance_level.toLowerCase()}">${p.relevance_level}</span>` : '',
-    ].join('');
-    return `<div class="result">
-      <a href="${p.date}.html">${p.title}</a>
-      <div class="meta"><span class="date">${p.date}</span> · ${p.direction_name || p.direction} · ${p.source} · ${p.venue}</div>
-      <div class="chips">${chips}</div>
-    </div>`;
-  }).join('');
-  document.getElementById('results').innerHTML = html + (items.length > 200 ? '<p style="color:#888;font-size:13px">(showing first 200; refine search to see more)</p>' : '');
-}
-
-document.getElementById('q').addEventListener('input', render);
-
-document.querySelectorAll('.filter').forEach(el => {
-  el.addEventListener('click', () => {
-    const key = el.dataset.key, val = el.dataset.val;
-    filters[key] = val;
-    document.querySelectorAll(`.filter[data-key="${key}"]`).forEach(s => s.classList.remove('active'));
-    el.classList.add('active');
-    render();
-  });
-});
-</script>
+<div id="search-status" class="search-status" aria-live="polite">正在载入轻量索引…</div>
+<div id="search-results" class="search-results"></div>
+<button type="button" id="search-more" class="rui-btn search-more" hidden>加载更多结果</button>
+</main>
 </body></html>
