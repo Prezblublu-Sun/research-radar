@@ -206,6 +206,7 @@ Track major architectural decisions to avoid forgetting rationale.
 | 2026-05-12 | DOI-only strict dedup | Simple and reliable, fuzzy dedup has too many edge cases |
 | 2026-05-12 | Public GitHub Pages | Research topic public is fine, also enables free unlimited Actions |
 | 2026-05-12 | Scopus/WoS via email alerts only | Avoid ToS risk |
+| 2026-07-20 | Canonical site view + workbench/index v2 (ADR-0027) | Keep raw evidence, fix counts, and shorten the paper-triage loop at 100k scale |
 |   |   |   |
 
 Add a row whenever making a substantive change.

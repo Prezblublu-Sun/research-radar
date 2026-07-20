@@ -7,6 +7,8 @@ import json
 import pathlib
 import re
 
+from render import corpus_view
+
 
 def _load_papers_v2_or_v1(path: pathlib.Path) -> tuple[list[dict], dict]:
     """Return (papers, file_meta) for a daily JSON, v2-dict or stray v1-list.
@@ -760,7 +762,8 @@ code{{font-family:ui-monospace,monospace;font-size:11px;color:#888;background:#f
     out.write_text(html, encoding="utf-8")
 
 
-def _build_search_index(docs_dir, data_dir):
+def _build_search_index(docs_dir, data_dir, canonical_buckets=None,
+                        corpus_stats=None):
     """Scan all daily JSONs and build a per-year search index for client-side search.
 
     ADR-0022: splits the index into docs/search-index-YYYY.json files plus a
@@ -774,10 +777,16 @@ def _build_search_index(docs_dir, data_dir):
     if not daily_dir.exists():
         return 0
 
+    if canonical_buckets is None:
+        raw_buckets = {}
+        for jpath in sorted(daily_dir.glob("20*.json")):
+            raw_buckets[jpath.stem], _meta = _load_papers_v2_or_v1(jpath)
+        canonical_buckets, corpus_stats = corpus_view.canonicalize_buckets(
+            raw_buckets
+        )
+
     by_year: dict[str, list] = {}
-    for jpath in sorted(daily_dir.glob("20*.json")):
-        date = jpath.stem
-        papers, _meta = _load_papers_v2_or_v1(jpath)
+    for date, papers in sorted(canonical_buckets.items()):
         if not papers:
             continue
         for p in papers:
@@ -814,7 +823,7 @@ def _build_search_index(docs_dir, data_dir):
                 "scorer_version": p.get("scorer_version", ""),
                 "blob": blob,
             }
-            year = ((p.get("date") or jpath.stem) or "")[:4]
+            year = ((p.get("date") or date) or "")[:4]
             by_year.setdefault(year, []).append(record)
 
     years = sorted(by_year.keys())
@@ -832,6 +841,8 @@ def _build_search_index(docs_dir, data_dir):
         "total": total,
         "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
     }
+    if corpus_stats is not None:
+        manifest.update(corpus_stats.as_dict())
     (docs_dir / "search-index-manifest.json").write_text(
         _json.dumps(manifest, ensure_ascii=False), encoding="utf-8"
     )
@@ -1034,21 +1045,8 @@ def _copy_static_assets(docs_dir: pathlib.Path) -> None:
 
 
 def _priority_counts_for(papers: list, meta: dict) -> dict:
-    """Prefer the v2 bucket's precomputed counts; recompute only as fallback.
-
-    ADR-0016 D1 says use counts.priority_counts directly. v1 stray files and
-    empty buckets have no such block, so a defensive recompute keeps the
-    badge correct rather than blank.
-    """
-    pc = (meta or {}).get("counts", {}).get("priority_counts")
-    if isinstance(pc, dict) and pc:
-        return pc
-    out: dict = {}
-    for p in papers:
-        prio = p.get("llm", {}).get("priority")
-        if prio:
-            out[prio] = out.get(prio, 0) + 1
-    return out
+    """Return counts derived from the visible papers, never stale metadata."""
+    return corpus_view.priority_counts(papers)
 
 
 def build(docs_dir, directions_cfg, manifest=None, touched_dates=None):
@@ -1065,14 +1063,34 @@ def build(docs_dir, directions_cfg, manifest=None, touched_dates=None):
     archive = sorted(p.stem for p in data_daily_dir.glob("20*.json")) if data_daily_dir.exists() else []
     touched = set(touched_dates or ())
 
-    # Accumulated during the single archive pass (avoids a second full scan):
+    # Load once, then create a strict identity-key canonical site view. Raw
+    # bucket records remain untouched on disk; only public rendering suppresses
+    # duplicate DOI/arXiv identities.
+    raw_papers_by_date: dict[str, list] = {}
+    meta_by_date: dict[str, dict] = {}
+    for hist_date in archive:
+        papers, meta = _load_papers_v2_or_v1(
+            data_daily_dir / f"{hist_date}.json"
+        )
+        raw_papers_by_date[hist_date] = papers
+        meta_by_date[hist_date] = meta
+
+    day_papers_full, corpus_stats = corpus_view.canonicalize_buckets(
+        raw_papers_by_date
+    )
+    if corpus_stats.duplicates_suppressed:
+        print("  canonical corpus: "
+              f"{corpus_stats.unique_total} unique / "
+              f"{corpus_stats.raw_total} raw "
+              f"({corpus_stats.duplicates_suppressed} duplicates suppressed)")
+
+    # Accumulated during the archive render pass:
     #   day_counts  -> ADR-0016 D1 calendar badges
     #   high/medium -> ADR-0016 D2 cross-corpus pages
     day_counts: dict[str, dict] = {}
     # V3: date -> full v2 papers list, consumed by the month-page day-card
     # renderer. ~3554 small JSON files held simultaneously (<200MB RAM,
     # acceptable per the visual-refresh implementation note).
-    day_papers_full: dict[str, list] = {}
     high_papers: list = []
     medium_papers: list = []
 
@@ -1082,9 +1100,20 @@ def build(docs_dir, directions_cfg, manifest=None, touched_dates=None):
         if not hist_json.exists():
             continue
         try:
-            hist_papers, _meta = _load_papers_v2_or_v1(hist_json)
+            hist_papers = day_papers_full.get(hist_date, [])
+            _meta = meta_by_date.get(hist_date, {})
+            raw_counts = corpus_view.priority_counts(
+                raw_papers_by_date.get(hist_date, [])
+            )
+            stored_counts = (_meta.get("counts") or {}).get("priority_counts")
+            stored_normalized = {
+                key: int((stored_counts or {}).get(key, 0))
+                for key in corpus_view.PRIORITIES
+            }
+            if stored_counts is not None and stored_normalized != raw_counts:
+                print(f"  stale priority_counts: {hist_json.name} "
+                      f"stored={stored_counts} computed={raw_counts}")
             day_counts[hist_date] = _priority_counts_for(hist_papers, _meta)
-            day_papers_full[hist_date] = hist_papers
             for p in hist_papers:
                 prio = p.get("llm", {}).get("priority")
                 if prio == "High":
@@ -1141,6 +1170,8 @@ def build(docs_dir, directions_cfg, manifest=None, touched_dates=None):
     data_dir = docs_dir.parent / "data"
     if data_dir.exists():
         _render_status_page(docs_dir, data_dir)
-        n_indexed = _build_search_index(docs_dir, data_dir)
+        n_indexed = _build_search_index(
+            docs_dir, data_dir, day_papers_full, corpus_stats
+        )
         if n_indexed:
             _render_search_page(docs_dir, directions_cfg)

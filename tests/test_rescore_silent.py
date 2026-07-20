@@ -175,12 +175,14 @@ def test_real_rescore_updates_silent_only_and_preserves_metadata(env, monkeypatc
     data10 = json.loads((daily / "2024-05-10.json").read_text(encoding="utf-8"))
     data11 = json.loads((daily / "2024-05-11.json").read_text(encoding="utf-8"))
 
-    # Schema/counts metadata around papers[] preserved exactly.
+    # Schema metadata is preserved and derived counts follow new priorities.
     assert data10["schema_version"] == "v2"
     assert data10["date"] == "2024-05-10"
     assert data10["date_precision"] == "day"
-    assert data10["counts"] == {"fetched_total": 3, "scored": 3}
-    assert data11["counts"] == {"fetched_total": 2, "scored": 2}
+    assert data10["counts"] == rs.v2.build_v2_counts(data10["papers"])
+    assert data11["counts"] == rs.v2.build_v2_counts(data11["papers"])
+    assert data10["counts"]["priority_counts"] == {"Medium": 2, "High": 1}
+    assert data11["counts"]["priority_counts"] == {"Medium": 1, "High": 1}
 
     # Silent papers rescored, healthy ones untouched.
     by_doi = {p["doi"]: p for p in (data10["papers"] + data11["papers"])}
