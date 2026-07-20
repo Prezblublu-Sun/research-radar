@@ -61,6 +61,12 @@ def test_readability_and_mobile_contracts_are_present():
     assert "@media (max-width: 460px)" in CSS
 
 
+def test_paper_cards_use_two_columns_with_mobile_fallback():
+    assert ".paper-grid" in CSS
+    assert "grid-template-columns: repeat(2, minmax(0, 1fr))" in CSS
+    assert ".paper-grid { grid-template-columns: 1fr; }" in CSS
+
+
 def test_lazy_queue_builds_untrusted_records_with_dom_text_nodes():
     assert "textContent" in QUEUE_JS
     assert "document.createTextNode" in QUEUE_JS

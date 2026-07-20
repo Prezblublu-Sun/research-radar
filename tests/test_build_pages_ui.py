@@ -153,6 +153,7 @@ def test_workbench_root_and_archive_month_grid(built):
     assert "最近 7 次运行" in idx
     assert "2024-12-12 新发现" in idx
     assert 'class="run-section"' in idx
+    assert 'class="paper-grid"' in idx
     assert "High Paper One" in idx and "Medium Paper One" in idx
     assert 'aria-current="page" class="site-nav__link is-active">今日' in idx
 
@@ -164,6 +165,14 @@ def test_workbench_root_and_archive_month_grid(built):
     assert '<span class="pill pill--low">2L</span>' in archive
     for href in ("queue.html", "search.html", "library.html", "archive.html"):
         assert href in archive
+
+    daily = (built / "2024-12-10.html").read_text(encoding="utf-8")
+    assert '<div class="paper-grid">' in daily
+    assert daily.index('<div class="paper-grid">') < daily.index(
+        '<article class="paper"'
+    )
+    queue = (built / "queue.html").read_text(encoding="utf-8")
+    assert 'id="queue-results" class="paper-grid"' in queue
 
 
 def _articles(html: str) -> list[str]:

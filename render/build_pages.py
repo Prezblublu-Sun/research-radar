@@ -444,7 +444,7 @@ def _render_daily(papers, date, directions_cfg, archive_dates, manifest):
 {_direction_tabs(directions_cfg)}
 {_priority_filter_bar()}
 {_marks_filter_bar()}
-{''.join(cards) if cards else '<p style="color:#888">No papers today.</p>'}
+{f'<div class="paper-grid">{"".join(cards)}</div>' if cards else '<p style="color:#888">No papers today.</p>'}
 {_version_footer(manifest)}
 </main>
 </body></html>"""
@@ -771,7 +771,9 @@ def _render_workbench(recent_runs: list[tuple[str, dict]],
                     paper, color, daily_link_date=bucket_date,
                     identity_key=identity_by_object[id(paper)]
                 ))
-            return "".join(output)
+            if not output:
+                return ""
+            return '<div class="paper-grid">' + "".join(output) + "</div>"
 
         priority_counts = corpus_view.priority_counts(
             [paper for _bucket, paper in dated]
@@ -951,7 +953,7 @@ def _render_queue_page() -> str:
   <label>相关性<select id="queue-relevance"><option value="">全部</option><option>Direct</option><option>Transferable</option><option>Peripheral</option></select></label>
 </div>
 <div class="queue-status" id="queue-status" aria-live="polite">正在加载队列…</div>
-<div id="queue-results"></div>
+<div id="queue-results" class="paper-grid"></div>
 <button type="button" class="rui-btn queue-more" id="queue-more" hidden>加载更多</button>
 </main>
 </body></html>"""
