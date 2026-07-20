@@ -36,6 +36,8 @@ import time
 
 import yaml
 
+from pipeline import v2_schema as v2
+
 # `pipeline.llm_scorer` constructs the OpenAI client at import time and
 # therefore requires OPENAI_API_KEY in the environment. ``--dry-run``
 # only counts silent papers — it never calls the scorer — so the import
@@ -227,6 +229,10 @@ def rescore_run(daily_dir: pathlib.Path, directions_cfg: dict,
         processed += len(candidates)
         last_bucket = bp.stem
 
+        # ``llm.priority`` feeds the v2 derived counts block. A successful
+        # rescore can move a paper between tiers, so preserving the old counts
+        # makes archive badges disagree with cross-corpus pages.
+        data["counts"] = v2.build_v2_counts(papers)
         atomic_write_json(bp, data)
 
         pct = 100.0 * processed / max(total_candidates, 1)

@@ -416,3 +416,40 @@ def test_adr0022_build_emits_per_year_index_through_full_build(built):
     assert (built / "search-index-manifest.json").exists()
     # fixture spans 2024 only
     assert (built / "search-index-2024.json").exists()
+
+
+# ---------------------------------------------------------------- canonical corpus view
+
+def test_public_pages_and_search_suppress_cross_bucket_duplicate_identity(tmp_path):
+    docs = tmp_path / "docs"
+    daily = tmp_path / "data" / "daily"
+    older_bucket = _paper(
+        doi="10.1/duplicate", priority="High", title="Later observation",
+        date="2024-01-10",
+    )
+    older_bucket["first_seen_at"] = "2026-06-01T00:00:00Z"
+    first_seen = _paper(
+        doi="10.1/duplicate", priority="High", title="Canonical observation",
+        date="2024-02-10",
+    )
+    first_seen["first_seen_at"] = "2026-05-01T00:00:00Z"
+    _write_v2(daily, "2024-01-10", [older_bucket])
+    _write_v2(daily, "2024-02-10", [first_seen])
+
+    build_pages.build(docs, DIRECTIONS)
+
+    high = (docs / "high-priority.html").read_text(encoding="utf-8")
+    assert high.count('data-identity-key="doi:10.1/duplicate"') == 1
+    assert "Canonical observation" in high
+    assert "Later observation" not in high
+
+    stale_day = (docs / "2024-01-10.html").read_text(encoding="utf-8")
+    assert 'data-identity-key="doi:10.1/duplicate"' not in stale_day
+
+    manifest = json.loads(
+        (docs / "search-index-manifest.json").read_text(encoding="utf-8")
+    )
+    assert manifest["raw_total"] == 2
+    assert manifest["unique_total"] == 1
+    assert manifest["duplicates_suppressed"] == 1
+    assert manifest["total"] == 1
