@@ -54,17 +54,16 @@ def test_core_text_and_priority_pairs_meet_wcag_aa_contrast():
 
 def test_readability_and_mobile_contracts_are_present():
     assert "font: 16px/1.62" in CSS
-    assert ".paper-title" in CSS and "font-size: 19px" in CSS
-    assert ".meta" in CSS and "font-size: 14px" in CSS
+    assert ".paper-title" in CSS and "font-size: 17px" in CSS
+    assert ".meta" in CSS and "font-size: 12.5px" in CSS
+    assert ".summary { font-size: 14px; line-height: 1.52; }" in CSS
     assert "min-height: 36px" in CSS
     assert "@media (max-width: 760px)" in CSS
     assert "@media (max-width: 460px)" in CSS
 
 
-def test_paper_cards_use_four_columns_with_responsive_fallbacks():
+def test_paper_cards_use_two_columns_with_mobile_fallback():
     assert ".paper-grid" in CSS
-    assert "grid-template-columns: repeat(4, minmax(0, 1fr))" in CSS
-    assert "@media (max-width: 1000px)" in CSS
     assert "grid-template-columns: repeat(2, minmax(0, 1fr))" in CSS
     assert ".paper-grid { grid-template-columns: 1fr; }" in CSS
 
