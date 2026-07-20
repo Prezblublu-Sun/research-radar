@@ -61,8 +61,10 @@ def test_readability_and_mobile_contracts_are_present():
     assert "@media (max-width: 460px)" in CSS
 
 
-def test_paper_cards_use_two_columns_with_mobile_fallback():
+def test_paper_cards_use_four_columns_with_responsive_fallbacks():
     assert ".paper-grid" in CSS
+    assert "grid-template-columns: repeat(4, minmax(0, 1fr))" in CSS
+    assert "@media (max-width: 1000px)" in CSS
     assert "grid-template-columns: repeat(2, minmax(0, 1fr))" in CSS
     assert ".paper-grid { grid-template-columns: 1fr; }" in CSS
 
