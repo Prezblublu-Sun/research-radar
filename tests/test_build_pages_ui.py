@@ -53,6 +53,7 @@ def _paper(*, doi: str, priority: str, title: str,
         "direction": direction,
         "direction_name": DIRECTIONS[direction]["display_name"],
         "scorer_version": "v3",
+        "first_seen_at": "2024-12-12T08:00:00Z",
         "llm": {
             "priority": priority,
             "summary_zh": {"motivation": "动机", "method": "方法"},
@@ -118,6 +119,13 @@ def built(tmp_path: pathlib.Path) -> pathlib.Path:
                date="2024-12-09"),
     ])
 
+    manifests = tmp_path / "data" / "manifests"
+    manifests.mkdir(parents=True, exist_ok=True)
+    (manifests / "2024-12-12.json").write_text(json.dumps({
+        "run_status": "success", "quality_flags": [],
+        "counts": {"priority_counts": {"High": 2, "Medium": 1}},
+    }), encoding="utf-8")
+
     build_pages.build(docs, DIRECTIONS)
     return docs
 
@@ -129,22 +137,22 @@ def _article_priorities(html: str) -> list[str]:
 
 # ---------------------------------------------------------------- D1
 
-def test_v1_index_is_a_month_card_grid_with_pill_counts(built):
+def test_workbench_root_and_archive_month_grid(built):
     idx = (built / "index.html").read_text(encoding="utf-8")
-    # C1: index links to month pages via clickable month-cards, no flat dates.
-    assert 'class="month-grid"' in idx
-    assert '<a class="month-card" href="month-2024-12.html">' in idx
-    assert "2024-12-10.html" not in idx  # the flat date list is gone
-    # V1: pill components, not the old dc-h/dc-m spans. The fixture's only
-    # month, 2024-12, has 2 High (12-09, 12-10), 1 Medium, 2 Low, 2 Exclude.
-    assert "dc-h" not in idx and 'class="rui-daycount"' not in idx
-    assert '<span class="pill pill--high">2H</span>' in idx
-    assert '<span class="pill pill--medium">1M</span>' in idx
-    assert '<span class="pill pill--low">2L</span>' in idx
-    # Cross-corpus + curation entry points still linked from the header
-    for href in ("high-priority.html", "medium-priority.html",
-                 "my-marks.html", "my-promotes.html"):
-        assert href in idx
+    assert "最近 7 次运行" in idx
+    assert "2024-12-12 新发现" in idx
+    assert 'class="run-section"' in idx
+    assert "High Paper One" in idx and "Medium Paper One" in idx
+    assert 'aria-current="page" class="site-nav__link is-active">今日' in idx
+
+    archive = (built / "archive.html").read_text(encoding="utf-8")
+    assert 'class="month-grid"' in archive
+    assert '<a class="month-card" href="month-2024-12.html">' in archive
+    assert '<span class="pill pill--high">2H</span>' in archive
+    assert '<span class="pill pill--medium">1M</span>' in archive
+    assert '<span class="pill pill--low">2L</span>' in archive
+    for href in ("queue.html", "search.html", "library.html", "archive.html"):
+        assert href in archive
 
 
 def _articles(html: str) -> list[str]:
@@ -162,7 +170,7 @@ def test_v2_v3_month_page_renders_enriched_day_cards(built):
     assert "<ul>" not in html  # the old list markup is gone
     assert html.index("2024-12-11.html") < html.index("2024-12-09.html")
     # V2: month topbar back-to-calendar nav
-    assert 'class="month-topbar__back" href="index.html"' in html
+    assert 'class="month-topbar__back" href="archive.html"' in html
     # V1: pill counts on the cards, no legacy dc-* markup
     assert '<span class="pill pill--high">1H</span>' in html
     assert "dc-h" not in html
@@ -192,28 +200,30 @@ def test_v2_v3_month_page_renders_enriched_day_cards(built):
 
 # ---------------------------------------------------------------- D2
 
-def test_d2_high_priority_page_contains_only_high(built):
-    page = built / "high-priority.html"
-    assert page.exists()
-    html = page.read_text(encoding="utf-8")
-    prios = _article_priorities(html)
-    assert prios, "expected at least one High card"
-    assert set(prios) == {"High"}
-    assert "High Paper One" in html and "High Paper Two" in html
-    assert "Medium Paper One" not in html
-    assert "Low Paper One" not in html
-    # newest-first ordering: 2024-12-10 card before the 2024-12-09 card
-    assert html.index("High Paper One") < html.index("High Paper Two")
+def test_d2_high_queue_shard_and_compatibility_redirect(built):
+    redirect = (built / "high-priority.html").read_text(encoding="utf-8")
+    assert "queue.html?priority=High" in redirect
+    records = json.loads(
+        (built / "queue-high-2024.json").read_text(encoding="utf-8")
+    )
+    assert records and {record["priority"] for record in records} == {"High"}
+    assert {record["title"] for record in records} == {
+        "High Paper One", "High Paper Two",
+    }
 
 
-def test_d2_medium_priority_page_contains_only_medium(built):
-    page = built / "medium-priority.html"
-    assert page.exists()
-    html = page.read_text(encoding="utf-8")
-    prios = _article_priorities(html)
-    assert prios and set(prios) == {"Medium"}
-    assert "Medium Paper One" in html
-    assert "High Paper One" not in html
+def test_d2_medium_queue_shard_and_manifest(built):
+    redirect = (built / "medium-priority.html").read_text(encoding="utf-8")
+    assert "queue.html?priority=Medium" in redirect
+    records = json.loads(
+        (built / "queue-medium-2024.json").read_text(encoding="utf-8")
+    )
+    assert [record["title"] for record in records] == ["Medium Paper One"]
+    manifest = json.loads(
+        (built / "queue-manifest.json").read_text(encoding="utf-8")
+    )
+    assert manifest["priorities"]["High"]["total"] == 2
+    assert manifest["priorities"]["Medium"]["total"] == 1
 
 
 # ---------------------------------------------------------------- D3
@@ -249,8 +259,9 @@ def test_d4_every_card_has_mark_and_note_controls_with_identity_key(built):
     assert 'id="rui-marks-filter"' in html
     assert 'class="rui-mf-cb"' in html
     # D4 export escape-hatch page exists
-    marks_pg = (built / "my-marks.html").read_text(encoding="utf-8")
+    marks_pg = (built / "library.html").read_text(encoding="utf-8")
     assert 'id="rui-export-marks"' in marks_pg
+    assert "library.html#marks" in (built / "my-marks.html").read_text()
 
 
 # ---------------------------------------------------------------- D5
@@ -261,9 +272,9 @@ def test_d5_every_card_has_promote_button_with_identity_key(built):
     assert articles
     for art in articles:
         assert 'class="rui-promote-btn"' in art
-        assert "Send to lit-system" in art
+        assert "发送到 lit-system" in art
         assert re.search(r'data-identity-key="doi:10\.1/\w+"', art)
-    promo_pg = (built / "my-promotes.html").read_text(encoding="utf-8")
+    promo_pg = (built / "library.html").read_text(encoding="utf-8")
     assert 'id="rui-copy-promotes"' in promo_pg
 
 
@@ -272,6 +283,7 @@ def test_d5_every_card_has_promote_button_with_identity_key(built):
 def test_static_bundle_copied_into_docs(built):
     assert (built / "radar-ui.js").exists()
     assert (built / "radar-ui.css").exists()
+    assert (built / "radar-queue.js").exists()
     js = (built / "radar-ui.js").read_text(encoding="utf-8")
     assert "radar:promote-queue" in js
     assert "radar:mark:" in js
@@ -438,10 +450,13 @@ def test_public_pages_and_search_suppress_cross_bucket_duplicate_identity(tmp_pa
 
     build_pages.build(docs, DIRECTIONS)
 
-    high = (docs / "high-priority.html").read_text(encoding="utf-8")
-    assert high.count('data-identity-key="doi:10.1/duplicate"') == 1
-    assert "Canonical observation" in high
-    assert "Later observation" not in high
+    high = json.loads(
+        (docs / "queue-high-2024.json").read_text(encoding="utf-8")
+    )
+    assert [record["identity_key"] for record in high] == [
+        "doi:10.1/duplicate"
+    ]
+    assert high[0]["title"] == "Canonical observation"
 
     stale_day = (docs / "2024-01-10.html").read_text(encoding="utf-8")
     assert 'data-identity-key="doi:10.1/duplicate"' not in stale_day
@@ -453,3 +468,35 @@ def test_public_pages_and_search_suppress_cross_bucket_duplicate_identity(tmp_pa
     assert manifest["unique_total"] == 1
     assert manifest["duplicates_suppressed"] == 1
     assert manifest["total"] == 1
+
+
+def test_workbench_uses_latest_seven_valid_runs_and_excludes_failed(tmp_path):
+    docs = tmp_path / "docs"
+    daily = tmp_path / "data" / "daily"
+    papers = []
+    for day in range(1, 10):
+        run_date = f"2024-07-{day:02d}"
+        paper = _paper(
+            doi=f"10.1/run-{day}", priority="High",
+            title=f"Seen on {run_date}", date="2024-06-01",
+        )
+        paper["first_seen_at"] = run_date + "T06:00:00Z"
+        papers.append(paper)
+    _write_v2(daily, "2024-06-01", papers)
+
+    manifests = tmp_path / "data" / "manifests"
+    manifests.mkdir(parents=True)
+    for day in range(1, 10):
+        status = "failed" if day == 9 else "success"
+        (manifests / f"2024-07-{day:02d}.json").write_text(
+            json.dumps({"run_status": status, "quality_flags": []}),
+            encoding="utf-8",
+        )
+
+    build_pages.build(docs, DIRECTIONS)
+    index = (docs / "index.html").read_text(encoding="utf-8")
+
+    assert "Seen on 2024-07-09" not in index  # failed run
+    assert "Seen on 2024-07-01" not in index  # eighth valid run
+    for day in range(2, 9):
+        assert f"Seen on 2024-07-{day:02d}" in index

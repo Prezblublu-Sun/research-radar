@@ -32,14 +32,6 @@ def _load_papers_v2_or_v1(path: pathlib.Path) -> tuple[list[dict], dict]:
     return [], {}
 
 
-PRIORITY_COLOR = {
-    "High":    ("#EAF3DE", "#27500A"),
-    "Medium":  ("#FAEEDA", "#633806"),
-    "Low":     ("#F1EFE8", "#5F5E5A"),
-    "Exclude": ("#FCEBEB", "#791F1F"),
-}
-
-
 def _esc(s) -> str:
     return html.escape(str(s) if s is not None else "")
 
@@ -78,8 +70,8 @@ def _card_tools(p: dict) -> str:
     idkey = _identity_key(p)
     name = f"rui-mark-{_anchor_id(idkey)}"
     states = [
-        ("to-read", "to-read"), ("read", "read"),
-        ("interesting", "interesting"), ("ignore", "ignore"),
+        ("to-read", "待阅读"), ("read", "已阅读"),
+        ("interesting", "有启发"), ("ignore", "忽略"),
     ]
     radios = "".join(
         f'<label class="m-{val}"><input type="radio" class="rui-mark-radio" '
@@ -88,11 +80,11 @@ def _card_tools(p: dict) -> str:
     )
     return f"""
   <div class="rui-card-tools">
-    <span class="rui-mark-group"><b>Mark:</b> {radios}</span>
-    <button type="button" class="rui-note-btn">Note</button>
-    <button type="button" class="rui-promote-btn">Send to lit-system</button>
+    <span class="rui-mark-group"><b>标记：</b> {radios}</span>
+    <button type="button" class="rui-note-btn">笔记</button>
+    <button type="button" class="rui-promote-btn">发送到 lit-system</button>
     <div class="rui-note-wrap">
-      <textarea class="rui-note-ta" placeholder="Private note (saved on blur, this browser only)"></textarea>
+      <textarea class="rui-note-ta" placeholder="私人笔记（失焦自动保存，仅限当前浏览器）"></textarea>
     </div>
   </div>"""
 
@@ -100,7 +92,6 @@ def _card_tools(p: dict) -> str:
 def _paper_card(p: dict, dir_color: str, daily_link_date: str | None = None) -> str:
     llm = p.get("llm", {})
     priority = llm.get("priority", "Low")
-    bg, fg = PRIORITY_COLOR.get(priority, PRIORITY_COLOR["Low"])
     s = llm.get("summary_zh", {})
     s_en = llm.get("summary_en", {})
     key_terms = llm.get("key_terms", [])
@@ -144,8 +135,9 @@ def _paper_card(p: dict, dir_color: str, daily_link_date: str | None = None) -> 
 
     return f"""
 <article class="paper" id="{_anchor_id(idkey)}" data-direction="{_esc(p.get('direction',''))}" data-priority="{_esc(priority)}" data-identity-key="{_esc(idkey)}" data-title="{_esc(p.get('title',''))}" data-date="{_esc(p.get('date',''))}">
+  <h3 class="paper-title">{_esc(p.get('title',''))}</h3>
   <div class="paper-head">
-    <span class="priority" style="background:{bg};color:{fg}">{_esc(priority)}</span>
+    <span class="priority priority--{_esc(priority.lower())}">{_esc(priority)}</span>
     <span class="direction-pill" style="background:{dir_color}20;color:{dir_color}">{_esc(p.get('direction_name',''))}</span>
     <span class="source">{_esc(p.get('source',''))}</span>
     {f'<span class="relevance-level lvl-{relevance_level.lower()}">{_esc(relevance_level)}</span>' if relevance_level else ''}
@@ -153,7 +145,6 @@ def _paper_card(p: dict, dir_color: str, daily_link_date: str | None = None) -> 
     {f'<span class="validation-kind">{_esc(validation_kind)}</span>' if validation_kind else ''}
     {flag_html}
   </div>
-  <h3 class="paper-title">{_esc(p.get('title',''))}</h3>
   <div class="meta">
     <span class="authors">{_esc(authors)}</span>
     <span class="venue">{_esc(p.get('venue',''))}</span>
@@ -171,7 +162,7 @@ def _paper_card(p: dict, dir_color: str, daily_link_date: str | None = None) -> 
     <div><b>验证·</b> {_esc(s.get('validation',''))}</div>
   </div>
   <details class="summary-en">
-    <summary>English summary &amp; terms</summary>
+    <summary>英文摘要与术语</summary>
     <div class="summary en">
       <div><b>Motivation·</b> {_esc(s_en.get('motivation',''))}</div>
       <div><b>Method·</b> {_esc(s_en.get('method',''))}</div>
@@ -193,17 +184,17 @@ def _stats_row(papers: list[dict], directions_cfg: dict) -> str:
     for p in papers:
         prio = p.get("llm", {}).get("priority", "Low")
         total[prio] = total.get(prio, 0) + 1
-    cards = [f'<div class="stat"><div class="stat-label">Total scored</div><div class="stat-val">{sum(total.values())}</div></div>']
+    cards = [f'<div class="stat"><div class="stat-label">论文总数</div><div class="stat-val">{sum(total.values())}</div></div>']
     for prio, color in [("High", "#27500A"), ("Medium", "#633806"), ("Low", "#5F5E5A")]:
         cards.append(f'<div class="stat"><div class="stat-label">{prio}</div><div class="stat-val" style="color:{color}">{total[prio]}</div></div>')
     return '<div class="stats">' + "".join(cards) + "</div>"
 
 
 def _direction_tabs(directions_cfg: dict) -> str:
-    tabs = ['<button class="tab active" data-filter="all">All</button>']
+    tabs = ['<button class="tab active" data-filter="all">全部方向</button>']
     for dkey, dcfg in directions_cfg.items():
         tabs.append(f'<button class="tab" data-filter="{_esc(dkey)}">{_esc(dcfg["display_name"])}</button>')
-    return '<div class="tabs">' + "".join(tabs) + "</div>"
+    return '<div class="tabs" aria-label="研究方向筛选">' + "".join(tabs) + "</div>"
 
 
 def _priority_filter_bar() -> str:
@@ -221,15 +212,15 @@ def _priority_filter_bar() -> str:
             f'value="{prio}"{checked}>{prio}</label>'
         )
     return ('<div class="rui-filter-bar" id="rui-priority-filter">'
-            '<b>Priority:</b> ' + " ".join(boxes) + "</div>")
+            '<b>等级：</b> ' + " ".join(boxes) + "</div>")
 
 
 def _marks_filter_bar() -> str:
     """ADR-0016 D4: client-side "filter to my marks" checkboxes."""
     opts = [
-        ("to-read", "to-read"), ("read", "read"),
-        ("interesting", "interesting"), ("ignore", "ignore"),
-        ("none", "(no mark)"),
+        ("to-read", "待阅读"), ("read", "已阅读"),
+        ("interesting", "有启发"), ("ignore", "忽略"),
+        ("none", "未标记"),
     ]
     boxes = "".join(
         f'<label><input type="checkbox" class="rui-mf-cb" '
@@ -237,7 +228,7 @@ def _marks_filter_bar() -> str:
         for val, lbl in opts
     )
     return ('<div class="rui-filter-bar" id="rui-marks-filter">'
-            '<b>My marks:</b> ' + boxes + "</div>")
+            '<b>我的标记：</b> ' + boxes + "</div>")
 
 
 def _topbar(date: str, archive_dates: list[str]) -> str:
@@ -253,9 +244,9 @@ def _topbar(date: str, archive_dates: list[str]) -> str:
     next_date = sorted_dates[idx + 1] if idx < len(sorted_dates) - 1 else None
 
     prev_btn = (f'<a class="navbtn" href="{prev_date}.html">← {prev_date}</a>'
-                if prev_date else '<span class="navbtn disabled">← oldest</span>')
+                if prev_date else '<span class="navbtn disabled">← 最早</span>')
     next_btn = (f'<a class="navbtn" href="{next_date}.html">{next_date} →</a>'
-                if next_date else '<span class="navbtn disabled">latest →</span>')
+                if next_date else '<span class="navbtn disabled">最新 →</span>')
 
     options = "".join(
         f'<option value="{d}.html"{" selected" if d == date else ""}>{d}</option>'
@@ -263,18 +254,34 @@ def _topbar(date: str, archive_dates: list[str]) -> str:
     )
     dropdown = f'<select class="archive-select" onchange="if(this.value)window.location.href=this.value">{options}</select>'
 
-    calendar_link = '<a class="navbtn" href="index.html">☀️ Calendar</a>'
-    weekly_link = '<a class="navbtn" href="weekly/index.html">📅 Weekly</a>'
-    status_link = '<a class="navbtn" href="status.html">📊 Status</a>'
-    search_link = '<a class="navbtn" href="search.html">🔍 Search</a>'
-    # ADR-0016 D2/D4/D5 entry points, also reachable while browsing a day
-    hi_link = '<a class="navbtn" href="high-priority.html">⭐ High</a>'
-    marks_link = '<a class="navbtn" href="my-marks.html">🔖 Marks</a>'
-    promo_link = '<a class="navbtn" href="my-promotes.html">➜ Promote</a>'
+    return f'<div class="topbar">{prev_btn}{dropdown}{next_btn}</div>'
 
-    return (f'<div class="topbar">{prev_btn}{dropdown}{next_btn}'
-            f'{calendar_link}{weekly_link}{status_link}{search_link}'
-            f'{hi_link}{marks_link}{promo_link}</div>')
+
+def _site_nav(active: str = "") -> str:
+    """Primary information architecture shared by every public page."""
+    links = [
+        ("today", "index.html", "今日"),
+        ("queue", "queue.html", "队列"),
+        ("search", "search.html", "搜索"),
+        ("library", "library.html", "资料库"),
+        ("archive", "archive.html", "归档"),
+    ]
+    rendered = []
+    for key, href, label in links:
+        current = ' aria-current="page" class="site-nav__link is-active"' \
+            if key == active else ' class="site-nav__link"'
+        rendered.append(f'<a href="{href}"{current}>{label}</a>')
+    admin_open = " open" if active == "admin" else ""
+    return (
+        '<nav class="site-nav" aria-label="主导航">'
+        '<a class="site-nav__brand" href="index.html">Research Radar</a>'
+        '<div class="site-nav__links">' + "".join(rendered) +
+        f'<details class="site-nav__admin"{admin_open}>'
+        '<summary>系统</summary><div class="site-nav__menu">'
+        '<a href="status.html">运行状态</a>'
+        '<a href="weekly/index.html">周报</a>'
+        '</div></details></div></nav>'
+    )
 
 
 def _version_footer(manifest: dict | None) -> str:
@@ -410,9 +417,12 @@ def _render_daily(papers, date, directions_cfg, archive_dates, manifest):
     return f"""<!doctype html><html lang="zh"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Research Radar — {_esc(date)}</title>
-<style>{CSS}</style>{ASSET_HEAD}</head><body>
-<h1>Research Radar</h1>
-<div class="subtitle">{_esc(date)} · AI Bioprinting / Hip Implant / FEA Surrogate / AM Biomedical</div>
+{ASSET_HEAD}</head><body>
+{_site_nav("archive")}
+<main id="main-content">
+<div class="eyebrow">发表日期</div>
+<h1>{_esc(date)}</h1>
+<div class="subtitle">按论文发表日期归档 · 默认显示 High 与 Medium</div>
 {_topbar(date, archive_dates)}
 {_stats_row(papers, directions_cfg)}
 {_direction_tabs(directions_cfg)}
@@ -420,6 +430,7 @@ def _render_daily(papers, date, directions_cfg, archive_dates, manifest):
 {_marks_filter_bar()}
 {''.join(cards) if cards else '<p style="color:#888">No papers today.</p>'}
 {_version_footer(manifest)}
+</main>
 </body></html>"""
 
 
@@ -585,7 +596,7 @@ def _month_topbar(month_key: str, archive_months: list[str], n_days: int) -> str
                 '<span class="month-topbar__nav month-topbar__nav--disabled">latest →</span>')
     return (
         '<div class="month-topbar">'
-        '<a class="month-topbar__back" href="index.html">← Back to calendar</a>'
+        '<a class="month-topbar__back" href="archive.html">← 返回归档</a>'
         f'{prev_btn}'
         f'<span class="month-topbar__title">{_esc(month_key)} · {n_days} day(s)</span>'
         f'{next_btn}</div>'
@@ -608,55 +619,312 @@ def _render_month_page(month_key, day_dates, day_counts, day_papers_full,
     return f"""<!doctype html><html lang="zh"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Research Radar — {_esc(month_key)}</title>
-<style>{CSS}</style>{ASSET_HEAD}</head><body>
-<div class="container">
-<h1>Research Radar</h1>
-<div class="subtitle">{_esc(month_key)} · {len(day_dates)} day(s) · cards show the day's top paper; greyed days have no High or Medium papers</div>
+{ASSET_HEAD}</head><body>
+{_site_nav("archive")}
+<main id="main-content" class="container">
+<div class="eyebrow">月份归档</div>
+<h1>{_esc(month_key)}</h1>
+<div class="subtitle">{len(day_dates)} 个发表日期 · 卡片展示当日最高等级论文</div>
 {_month_topbar(month_key, archive_months, len(day_dates))}
 <div class="day-grid">{grid}</div>
-</div>
+</main>
 </body></html>"""
 
 
-def _render_index(months, month_counts: dict | None = None, directions_cfg: dict | None = None):
-    """C1 + V1: index.html is a flat month grid (newest first), each month
-    a clickable `.month-card` with the new `.pill` count badges. Two-step
-    nav: calendar → month → day. Year-section grouping is deferred.
-    """
+def _render_archive(months, month_counts: dict | None = None,
+                    directions_cfg: dict | None = None,
+                    current_month: str | None = None):
+    """Publication-date archive grouped by year, with future dates separated."""
     month_counts = month_counts or {}
     n_directions = len(directions_cfg) if directions_cfg else 0
-    cards = []
-    for mk in sorted(months, reverse=True):
+
+    def month_card(mk: str) -> str:
         per_day = month_counts.get(mk, [])
         hm = sum(c.get("High", 0) + c.get("Medium", 0) for c in per_day)
         cls = " month-card--low-quality" if hm == 0 else ""
-        cards.append(
+        return (
             f'<a class="month-card{cls}" href="month-{mk}.html">'
             f'<div class="month-card__label">{_esc(mk)}</div>'
             f'<div class="month-card__pills">{_month_count_badge(per_day)}</div>'
             "</a>"
         )
-    grid = "".join(cards)
-    # ADR-0016 D1: index serves as the calendar; the prior auto-redirect to
-    # the latest daily was removed (user choice 2026-05-19).
+
+    ordered = sorted(months, reverse=True)
+    future = [m for m in ordered if current_month and m > current_month]
+    regular = [m for m in ordered if m not in set(future)]
+    by_year: dict[str, list[str]] = {}
+    for month in regular:
+        by_year.setdefault(month[:4], []).append(month)
+    active_year = (current_month or (regular[0] if regular else ""))[:4]
+    year_sections = []
+    for year in sorted(by_year, reverse=True):
+        opened = " open" if year == active_year else ""
+        cards = "".join(month_card(month) for month in by_year[year])
+        year_sections.append(
+            f'<details class="archive-year"{opened}><summary>{year}</summary>'
+            f'<div class="month-grid">{cards}</div></details>'
+        )
+    future_section = ""
+    if future:
+        future_section = (
+            '<details class="archive-year archive-year--future">'
+            '<summary>未来或低精度发表日期</summary>'
+            '<p>这些月份来自出版源元数据，不代表 Radar 的发现时间。</p>'
+            f'<div class="month-grid">{"".join(month_card(m) for m in future)}</div>'
+            '</details>'
+        )
+
     return f"""<!doctype html><html lang="zh"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Research Radar</title>
-<style>{CSS}</style>{ASSET_HEAD}</head><body>
-<div class="container">
-<h1>Research Radar</h1>
-<div class="subtitle">Daily paper digest across {n_directions} research directions · pick a month, then a day · pills show High/Medium/Low(/Exclude) counts</div>
-{_nav_row()}
-<p style="color:var(--c-text-meta);font-size:var(--text-sm)">Click a month to see its days. Pills show that month's total priority counts; greyed months have no High or Medium papers.</p>
-<div class="month-grid">{grid}</div>
+<title>Research Radar — 归档</title>
+{ASSET_HEAD}</head><body>
+{_site_nav("archive")}
+<main id="main-content" class="container">
+<div class="eyebrow">Publication archive</div>
+<h1>发表日期归档</h1>
+<div class="subtitle">覆盖 {n_directions} 个研究方向 · 等级计数基于 canonical 唯一论文</div>
+<p class="page-intro">选择年份和月份查看论文；灰色月份没有 High 或 Medium。</p>
+{"".join(year_sections)}
+{future_section}
+</main>
+</body></html>"""
+
+
+def _recent_valid_runs(data_dir: pathlib.Path, limit: int = 7) -> list[tuple[str, dict]]:
+    """Return newest successful/partial daily manifests."""
+    manifests_dir = data_dir / "manifests"
+    runs: list[tuple[str, dict]] = []
+    if not manifests_dir.exists():
+        return runs
+    for path in sorted(manifests_dir.glob("20*.json"), reverse=True):
+        try:
+            manifest = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        if manifest.get("run_status") not in {"success", "partial_success"}:
+            continue
+        runs.append((path.stem, manifest))
+        if len(runs) == limit:
+            break
+    return runs
+
+
+def _render_workbench(recent_runs: list[tuple[str, dict]],
+                      buckets: dict[str, list[dict]], directions_cfg: dict,
+                      corpus_stats: corpus_view.CorpusStats) -> str:
+    """Root workbench: papers first seen in the seven latest valid runs."""
+    run_dates = [date for date, _manifest in recent_runs]
+    papers_by_run: dict[str, list[tuple[str, dict]]] = {
+        date: [] for date in run_dates
+    }
+    for bucket_date, papers in buckets.items():
+        for paper in papers:
+            first_seen = (paper.get("first_seen_at") or "")[:10]
+            if first_seen in papers_by_run:
+                papers_by_run[first_seen].append((bucket_date, paper))
+
+    priority_order = {"High": 0, "Medium": 1, "Low": 2, "Exclude": 3}
+    all_recent = [
+        paper for dated in papers_by_run.values() for _bucket, paper in dated
+    ]
+    sections = []
+    for run_date, manifest in recent_runs:
+        dated = sorted(
+            papers_by_run.get(run_date, []),
+            key=lambda dp: (
+                priority_order.get((dp[1].get("llm") or {}).get("priority"), 9),
+                dp[0], dp[1].get("title", ""),
+            ),
+        )
+        actionable = [dp for dp in dated
+                      if (dp[1].get("llm") or {}).get("priority")
+                      in {"High", "Medium"}]
+        lower = [dp for dp in dated if dp not in actionable]
+
+        def cards(items):
+            output = []
+            for bucket_date, paper in items:
+                direction = paper.get("direction")
+                color = directions_cfg.get(direction, {}).get("color", "#667085")
+                output.append(_paper_card(paper, color,
+                                          daily_link_date=bucket_date))
+            return "".join(output)
+
+        priority_counts = corpus_view.priority_counts(
+            [paper for _bucket, paper in dated]
+        )
+        counts = _day_count_badge(priority_counts)
+        status = manifest.get("run_status", "success")
+        quality_flags = manifest.get("quality_flags") or []
+        warning = ""
+        if quality_flags:
+            warning = (
+                '<div class="run-warning"><b>运行提示：</b> '
+                + "、".join(_esc(flag) for flag in quality_flags) + "</div>"
+            )
+        lower_html = ""
+        if lower:
+            lower_html = (
+                '<details class="workbench-lower"><summary>查看 Low / Exclude '
+                f'（{len(lower)} 篇）</summary>{cards(lower)}</details>'
+            )
+        empty = '<p class="empty-state">本次运行没有 High 或 Medium 论文。</p>' \
+            if not actionable else ""
+        sections.append(
+            '<section class="run-section">'
+            f'<div class="run-section__head"><div><div class="eyebrow">{_esc(status)}</div>'
+            f'<h2>{_esc(run_date)} 新发现</h2></div>'
+            f'<div class="run-section__counts">{counts}</div></div>'
+            f'{warning}{empty}{cards(actionable)}{lower_html}</section>'
+        )
+
+    latest = recent_runs[0][1] if recent_runs else {}
+    latest_date = recent_runs[0][0] if recent_runs else "暂无运行记录"
+    latest_flags = latest.get("quality_flags") or []
+    health_class = " health-summary--warning" if latest_flags else ""
+    body = "".join(sections) or (
+        '<div class="empty-state"><h2>尚无可展示的最新运行</h2>'
+        '<p>工作台将在下一次成功日跑后自动填充。</p></div>'
+    )
+    stats = _stats_row(all_recent, directions_cfg)
+    return f"""<!doctype html><html lang="zh"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Research Radar — 今日工作台</title>
+{ASSET_HEAD}</head><body>
+{_site_nav("today")}
+<main id="main-content" class="container">
+<div class="workbench-hero">
+  <div><div class="eyebrow">Research triage</div>
+  <h1>最近 7 次运行</h1>
+  <p class="subtitle">按 Radar 首次发现时间汇总；默认展开 High 与 Medium 的完整中文摘要。</p></div>
+  <a class="health-summary{health_class}" href="status.html">
+    <span>最近运行</span><strong>{_esc(latest_date)}</strong>
+    <small>{' · '.join(_esc(x) for x in latest_flags) if latest_flags else '运行正常'}</small>
+  </a>
 </div>
+{stats}
+<div class="corpus-note">全库 {_esc(corpus_stats.unique_total)} 篇唯一论文 · 抑制 {_esc(corpus_stats.duplicates_suppressed)} 条重复来源记录</div>
+{body}
+</main>
+</body></html>"""
+
+
+def _queue_record(bucket_date: str, paper: dict,
+                  directions_cfg: dict) -> dict:
+    llm = paper.get("llm") or {}
+    direction = paper.get("direction") or ""
+    return {
+        "identity_key": corpus_view.identity_key(paper),
+        "anchor": _anchor_id(corpus_view.identity_key(paper)),
+        "date": bucket_date,
+        "title": paper.get("title") or "",
+        "authors": (paper.get("authors") or [])[:5],
+        "venue": paper.get("venue") or "",
+        "source": paper.get("source") or "",
+        "doi": paper.get("doi") or "",
+        "url": paper.get("url") or "",
+        "direction": direction,
+        "direction_name": paper.get("direction_name") or
+                          directions_cfg.get(direction, {}).get("display_name", direction),
+        "direction_color": directions_cfg.get(direction, {}).get("color", "#667085"),
+        "priority": llm.get("priority") or "",
+        "relevance_level": llm.get("relevance_level") or "",
+        "read_action": llm.get("read_action") or "",
+        "validation_kind": llm.get("validation_kind") or "",
+        "flags": llm.get("flags") or {},
+        "relevance_to_user": llm.get("relevance_to_user") or "",
+        "why_not_core": llm.get("why_not_core") or "",
+        "summary_zh": llm.get("summary_zh") or {},
+        "tags": llm.get("tags") or [],
+        "first_seen_at": paper.get("first_seen_at") or "",
+    }
+
+
+def _build_queue_index(docs_dir: pathlib.Path,
+                       buckets: dict[str, list[dict]], directions_cfg: dict,
+                       corpus_stats: corpus_view.CorpusStats) -> dict:
+    """Write priority/year queue shards for High and Medium papers."""
+    from datetime import datetime, timezone
+
+    grouped: dict[str, dict[str, list[dict]]] = {
+        "High": {}, "Medium": {},
+    }
+    for bucket_date, papers in buckets.items():
+        for paper in papers:
+            priority = (paper.get("llm") or {}).get("priority")
+            if priority not in grouped:
+                continue
+            year = bucket_date[:4]
+            grouped[priority].setdefault(year, []).append(
+                _queue_record(bucket_date, paper, directions_cfg)
+            )
+
+    priorities = {}
+    for priority, years_data in grouped.items():
+        year_counts = {}
+        for year, records in years_data.items():
+            records.sort(key=lambda record: (
+                record["date"], record["title"]
+            ), reverse=True)
+            filename = f"queue-{priority.lower()}-{year}.json"
+            (docs_dir / filename).write_text(
+                json.dumps(records, ensure_ascii=False, separators=(",", ":")),
+                encoding="utf-8",
+            )
+            year_counts[year] = len(records)
+        priorities[priority] = {
+            "total": sum(year_counts.values()),
+            "years": {year: year_counts[year]
+                      for year in sorted(year_counts, reverse=True)},
+        }
+
+    manifest = {
+        "schema_version": 1,
+        "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        **corpus_stats.as_dict(),
+        "priorities": priorities,
+        "directions": {
+            key: {"name": value.get("display_name", key),
+                  "color": value.get("color", "#667085")}
+            for key, value in directions_cfg.items()
+        },
+    }
+    (docs_dir / "queue-manifest.json").write_text(
+        json.dumps(manifest, ensure_ascii=False, separators=(",", ":")),
+        encoding="utf-8",
+    )
+    return manifest
+
+
+def _render_queue_page() -> str:
+    return f"""<!doctype html><html lang="zh"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Research Radar — 论文队列</title>
+{ASSET_HEAD}<script src="radar-queue.js" defer></script></head><body>
+{_site_nav("queue")}
+<main id="main-content" class="container">
+<div class="eyebrow">Canonical corpus queue</div>
+<h1>论文队列</h1>
+<p class="subtitle">High 与 Medium 共用一个队列；完整中文摘要按年份加载。</p>
+<div class="queue-toolbar" aria-label="队列筛选">
+  <div class="segmented" id="queue-priority">
+    <button type="button" data-priority="High" class="is-active">High</button>
+    <button type="button" data-priority="Medium">Medium</button>
+  </div>
+  <label>方向<select id="queue-direction"><option value="">全部方向</option></select></label>
+  <label>年份<select id="queue-year"><option value="">全部年份</option></select></label>
+  <label>相关性<select id="queue-relevance"><option value="">全部</option><option>Direct</option><option>Transferable</option><option>Peripheral</option></select></label>
+</div>
+<div class="queue-status" id="queue-status" aria-live="polite">正在加载队列…</div>
+<div id="queue-results"></div>
+<button type="button" class="rui-btn queue-more" id="queue-more" hidden>加载更多</button>
+</main>
 </body></html>"""
 
 
 def _render_status_page(docs_dir, data_dir):
     """Generate docs/status.html showing recent run history from manifests."""
     import json
-    import datetime as _dt
 
     manifests_dir = data_dir / "manifests"
     if not manifests_dir.exists():
@@ -678,14 +946,6 @@ def _render_status_page(docs_dir, data_dir):
         quality_flags = m.get("quality_flags", [])
         commit = (m.get("git_commit") or "")[:7]
 
-        status_color = {
-            "success": "#27500A",
-            "partial_success": "#A07000",
-            "suspicious_empty": "#A03A1A",
-            "failed": "#791F1F",
-            "—": "#888",
-        }.get(run_status, "#888")
-
         flags_html = "".join(
             f'<span class="qflag">{_esc(q)}</span>' for q in quality_flags
         ) or '<span class="ok">—</span>'
@@ -693,7 +953,7 @@ def _render_status_page(docs_dir, data_dir):
         rows.append(f"""
         <tr>
           <td><a href="{_esc(date)}.html">{_esc(date)}</a></td>
-          <td><span style="color:{status_color};font-weight:500">{_esc(run_status)}</span></td>
+          <td><span class="run-status run-status--{_esc(run_status)}">{_esc(run_status)}</span></td>
           <td>{counts.get("fetched", "—")}</td>
           <td>{counts.get("after_dedup", "—")}</td>
           <td>{counts.get("after_routing", "—")}</td>
@@ -705,57 +965,41 @@ def _render_status_page(docs_dir, data_dir):
 
     html = f"""<!doctype html><html lang="zh"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Research Radar — Run status</title>
-<style>
-body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:1100px;margin:2rem auto;padding:0 1rem;color:#222;line-height:1.5}}
-h1{{font-size:24px;font-weight:500;margin:0 0 .25rem}}
-.subtitle{{color:#666;font-size:14px;margin-bottom:1.5rem}}
-.navbtn{{font-size:13px;background:#f5f4ef;color:#444;padding:6px 12px;border-radius:8px;text-decoration:none;display:inline-block;margin-bottom:1rem}}
-table{{width:100%;border-collapse:collapse;font-size:13px}}
-th{{text-align:left;padding:8px 10px;background:#f5f4ef;border-bottom:1px solid #ccc;font-weight:500;color:#555;font-size:12px}}
-td{{padding:8px 10px;border-bottom:.5px solid #eee}}
-td a{{color:#1F4A6B;text-decoration:none}}
-td a:hover{{text-decoration:underline}}
-.ok{{color:#999;font-size:11px}}
-.qflag{{display:inline-block;background:#FCEBEB;color:#791F1F;font-size:10px;padding:2px 6px;border-radius:5px;margin-right:3px}}
-code{{font-family:ui-monospace,monospace;font-size:11px;color:#888;background:#fafaf6;padding:1px 4px;border-radius:3px}}
-.legend{{margin-top:2rem;padding:1rem;background:#fafaf6;border-radius:8px;font-size:12px;color:#555}}
-.legend h3{{margin:0 0 8px;font-size:13px;color:#222}}
-</style></head><body>
-<h1>Research Radar — Run status</h1>
-<div class="subtitle">Daily run health, last 14 days. Auto-generated from manifests.</div>
-<a class="navbtn" href="index.html">← Back to daily</a>
-
-<table>
+<title>Research Radar — 运行状态</title>
+{ASSET_HEAD}</head><body>
+{_site_nav("admin")}
+<main id="main-content" class="container">
+<div class="eyebrow">System health</div>
+<h1>运行状态</h1>
+<div class="subtitle">最近 14 次日跑 · 根据 manifest 自动生成</div>
+<div class="table-scroll"><table class="status-table">
 <thead>
 <tr>
-  <th>Date</th>
-  <th>Status</th>
-  <th>Fetched</th>
-  <th>After dedup</th>
-  <th>Routed</th>
+  <th>日期</th>
+  <th>状态</th>
+  <th>抓取</th>
+  <th>去重后</th>
+  <th>路由后</th>
   <th>High/Med</th>
   <th>Zotero ✓/eligible</th>
-  <th>Quality flags</th>
-  <th>Commit</th>
+  <th>质量提示</th>
+  <th>提交</th>
 </tr>
 </thead>
 <tbody>
-{''.join(rows) if rows else '<tr><td colspan="9" style="color:#888">No manifests yet.</td></tr>'}
+{''.join(rows) if rows else '<tr><td colspan="9">暂无 manifest。</td></tr>'}
 </tbody>
-</table>
+</table></div>
 
 <div class="legend">
-<h3>Status meanings</h3>
-<ul style="margin:0;padding-left:20px">
-<li><b>success</b>: normal run, data written</li>
-<li><b>suspicious_empty</b>: would have overwritten existing data with empty result, run aborted (W1.1 guard)</li>
-<li><b>failed</b>: fetcher or downstream error</li>
-<li>Quality flags signal anomalies even when status=success:
-  fetched_zero / zero_routed / low_fetch_count / zero_high_medium</li>
+<h2>状态说明</h2>
+<ul>
+<li><b>success</b>：正常运行并写入数据。</li>
+<li><b>partial_success</b>：部分数据源或下游操作异常，但保留了有效结果。</li>
+<li><b>suspicious_empty / failed</b>：质量闸门中止写入或运行失败。</li>
 </ul>
 </div>
-
+</main>
 </body></html>"""
 
     out = docs_dir / "status.html"
@@ -975,16 +1219,19 @@ document.querySelectorAll('.filter').forEach(el => {
     (docs_dir / "search.html").write_text(html, encoding="utf-8")
 
 
-def _page_shell(title: str, subtitle: str, body: str) -> str:
-    """Minimal standalone page reusing the base CSS + the radar-ui bundle."""
+def _page_shell(title: str, subtitle: str, body: str,
+                active: str = "") -> str:
+    """Shared static page shell."""
     return f"""<!doctype html><html lang="zh"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Research Radar — {_esc(title)}</title>
-<style>{CSS}</style>{ASSET_HEAD}</head><body>
-<h1>Research Radar — {_esc(title)}</h1>
+{ASSET_HEAD}</head><body>
+{_site_nav(active)}
+<main id="main-content" class="container">
+<h1>{_esc(title)}</h1>
 <div class="subtitle">{_esc(subtitle)}</div>
-<a class="rui-page-back" href="index.html">← Back to calendar</a>
 {body}
+</main>
 </body></html>"""
 
 
@@ -1033,10 +1280,42 @@ on the lit-system side. No automatic git write-back (D5.B is out of scope).</p>
     return _page_shell("Promote queue", "Pending lit-system hand-off", body)
 
 
+def _render_library_page() -> str:
+    body = """
+<div class="library-grid">
+  <section id="marks" class="library-panel">
+    <div class="eyebrow">Local reading trail</div>
+    <h2>我的标记与笔记</h2>
+    <p>仅保存在当前浏览器。新标记会同时保存标题、日期和方向；旧记录保持兼容。</p>
+    <button type="button" class="rui-btn" id="rui-export-marks">导出标记 JSON</button>
+    <div id="rui-marks-list"></div>
+  </section>
+  <section id="promote" class="library-panel">
+    <div class="eyebrow">lit-system hand-off</div>
+    <h2>待导入队列</h2>
+    <p>复制 JSON 后在 lit-system 侧手动导入；不会从浏览器直接写回 Git。</p>
+    <button type="button" class="rui-btn" id="rui-copy-promotes">复制全部 JSON</button>
+    <button type="button" class="rui-btn rui-secondary" id="rui-clear-promotes">清空队列</button>
+    <div id="rui-promote-list"></div>
+  </section>
+</div>"""
+    return _page_shell("资料库", "浏览器本地的阅读标记、笔记与交接队列",
+                       body, active="library")
+
+
+def _redirect_page(title: str, target: str) -> str:
+    return f"""<!doctype html><html lang="zh"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="refresh" content="0; url={_esc(target)}">
+<title>{_esc(title)}</title>{ASSET_HEAD}</head><body>
+<main class="redirect-page"><p>页面已迁移：<a href="{_esc(target)}">继续前往</a></p></main>
+</body></html>"""
+
+
 def _copy_static_assets(docs_dir: pathlib.Path) -> None:
-    """Copy render/static/radar-ui.{css,js} into docs/ at render time."""
+    """Copy the dependency-free browser bundles into docs/."""
     static_dir = pathlib.Path(__file__).resolve().parent / "static"
-    for name in ("radar-ui.css", "radar-ui.js"):
+    for name in ("radar-ui.css", "radar-ui.js", "radar-queue.js"):
         src = static_dir / name
         if src.exists():
             (docs_dir / name).write_text(
@@ -1091,9 +1370,6 @@ def build(docs_dir, directions_cfg, manifest=None, touched_dates=None):
     # V3: date -> full v2 papers list, consumed by the month-page day-card
     # renderer. ~3554 small JSON files held simultaneously (<200MB RAM,
     # acceptable per the visual-refresh implementation note).
-    high_papers: list = []
-    medium_papers: list = []
-
     for hist_date in archive:
         hist_json = data_daily_dir / f"{hist_date}.json"
         hist_html = docs_dir / f"{hist_date}.html"
@@ -1114,12 +1390,6 @@ def build(docs_dir, directions_cfg, manifest=None, touched_dates=None):
                 print(f"  stale priority_counts: {hist_json.name} "
                       f"stored={stored_counts} computed={raw_counts}")
             day_counts[hist_date] = _priority_counts_for(hist_papers, _meta)
-            for p in hist_papers:
-                prio = p.get("llm", {}).get("priority")
-                if prio == "High":
-                    high_papers.append((hist_date, p))
-                elif prio == "Medium":
-                    medium_papers.append((hist_date, p))
             page_manifest = manifest if hist_date in touched else None
             hist_html.write_text(
                 _render_daily(hist_papers, hist_date, directions_cfg, archive, page_manifest),
@@ -1138,8 +1408,20 @@ def build(docs_dir, directions_cfg, manifest=None, touched_dates=None):
     }
     archive_months = sorted(months)
 
+    data_dir = docs_dir.parent / "data"
+    recent_runs = _recent_valid_runs(data_dir)
+    current_month = recent_runs[0][0][:7] if recent_runs else None
+
+    # ADR-0027: root = discovery-time workbench; publication archive moves to
+    # a dedicated URL and keeps all existing month/day URLs stable.
     (docs_dir / "index.html").write_text(
-        _render_index(archive_months, month_counts, directions_cfg),
+        _render_workbench(recent_runs, day_papers_full, directions_cfg,
+                          corpus_stats),
+        encoding="utf-8",
+    )
+    (docs_dir / "archive.html").write_text(
+        _render_archive(archive_months, month_counts, directions_cfg,
+                        current_month=current_month),
         encoding="utf-8",
     )
     for mk, days in months.items():
@@ -1149,25 +1431,32 @@ def build(docs_dir, directions_cfg, manifest=None, touched_dates=None):
             encoding="utf-8",
         )
 
-    # ADR-0016 D2: cross-corpus high/medium pages
+    # ADR-0027: one lazy High/Medium queue replaces multi-megabyte flat HTML.
+    _build_queue_index(docs_dir, day_papers_full, directions_cfg, corpus_stats)
+    (docs_dir / "queue.html").write_text(
+        _render_queue_page(), encoding="utf-8"
+    )
     (docs_dir / "high-priority.html").write_text(
-        _render_cross_corpus_page("High", high_papers, directions_cfg),
+        _redirect_page("High-priority", "queue.html?priority=High"),
         encoding="utf-8",
     )
     (docs_dir / "medium-priority.html").write_text(
-        _render_cross_corpus_page("Medium", medium_papers, directions_cfg),
+        _redirect_page("Medium-priority", "queue.html?priority=Medium"),
         encoding="utf-8",
     )
 
-    # ADR-0016 D4/D5: client-side curation pages + the JS/CSS bundle
+    # ADR-0016 D4/D5: one library page; old URLs stay as redirects.
+    (docs_dir / "library.html").write_text(
+        _render_library_page(), encoding="utf-8"
+    )
     (docs_dir / "my-marks.html").write_text(
-        _render_my_marks_page(), encoding="utf-8")
+        _redirect_page("My marks", "library.html#marks"), encoding="utf-8")
     (docs_dir / "my-promotes.html").write_text(
-        _render_my_promotes_page(), encoding="utf-8")
+        _redirect_page("Promote queue", "library.html#promote"),
+        encoding="utf-8")
     _copy_static_assets(docs_dir)
 
     # W1.x: also render run status page from manifests
-    data_dir = docs_dir.parent / "data"
     if data_dir.exists():
         _render_status_page(docs_dir, data_dir)
         n_indexed = _build_search_index(
