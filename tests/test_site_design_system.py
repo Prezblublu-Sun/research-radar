@@ -11,6 +11,12 @@ CSS = (ROOT / "render" / "static" / "radar-ui.css").read_text(
 QUEUE_JS = (ROOT / "render" / "static" / "radar-queue.js").read_text(
     encoding="utf-8"
 )
+SEARCH_JS = (ROOT / "render" / "static" / "radar-search.js").read_text(
+    encoding="utf-8"
+)
+SEARCH_WORKER_JS = (
+    ROOT / "render" / "static" / "radar-search-worker.js"
+).read_text(encoding="utf-8")
 
 
 def _luminance(hex_color: str) -> float:
@@ -60,3 +66,15 @@ def test_lazy_queue_builds_untrusted_records_with_dom_text_nodes():
     assert "document.createTextNode" in QUEUE_JS
     assert "innerHTML" not in QUEUE_JS
     assert "PAGE_SIZE = 25" in QUEUE_JS
+
+
+def test_search_is_progressive_worker_backed_and_dom_safe():
+    assert 'new Worker("radar-search-worker.js")' in SEARCH_JS
+    assert 'fetch("search-index-manifest.json")' in SEARCH_JS
+    assert 'fetch("search-index-" + selectedYear + ".json")' in SEARCH_JS
+    assert 'fetch("search-deep-" + selectedYear + ".json")' in SEARCH_JS
+    assert "setTimeout(sendSearch, 180)" in SEARCH_JS
+    assert "textContent" in SEARCH_JS
+    assert "innerHTML" not in SEARCH_JS
+    assert "_search_blob" in SEARCH_WORKER_JS
+    assert "deep_blob" in SEARCH_WORKER_JS
