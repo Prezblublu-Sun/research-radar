@@ -18,10 +18,16 @@ class Response:
         return {"results": [], "meta": {"next_cursor": None}}
 
 
-def test_missing_api_key_is_a_configuration_error(monkeypatch):
+def test_missing_api_key_uses_anonymous_request(monkeypatch):
+    calls = []
     monkeypatch.delenv("OPENALEX_API_KEY", raising=False)
-    with pytest.raises(oa.OpenAlexConfigError, match="OPENALEX_API_KEY"):
-        oa.fetch([], ["x"], max_pages=1)
+    monkeypatch.setattr(
+        oa.requests, "get",
+        lambda url, params, timeout: calls.append(params) or Response(),
+    )
+    assert oa.fetch([], ["x"], max_pages=1) == []
+    assert "api_key" not in calls[0]
+    assert calls[0]["per-page"] == 100
 
 
 def test_api_key_is_injected_and_default_page_size_is_100(monkeypatch):

@@ -21,14 +21,19 @@ Quick reference:
 
 - `OPENAI_API_KEY` — DeepSeek API key
 - `OPENAI_BASE_URL` — `https://api.deepseek.com`
-- `OPENALEX_API_KEY` — Free OpenAlex API key (required for all OpenAlex calls)
 - `ZOTERO_USER_ID` — Numeric user ID from zotero.org/settings/keys
 - `ZOTERO_API_KEY` — Zotero API key with write access
+
+## Optional GitHub Secrets
+
+- `OPENALEX_API_KEY` — Free OpenAlex account key. Anonymous queries remain
+  supported; configuring a key gives the scheduled runner a larger,
+  account-bound allowance and reduces shared-IP rate limiting.
 
 ## Required GitHub Variables
 
 - `MODEL_NAME` — `deepseek-v4-flash`
-- `OPENALEX_EMAIL` — Your email (polite pool)
+- `OPENALEX_EMAIL` — Contact email retained for backward compatibility
 - `PUBMED_EMAIL` — Your email (NCBI required)
 - `ZOT_COL_BIOPRINTING`, `ZOT_COL_HIP`, `ZOT_COL_FEA`, `ZOT_COL_AM` — Zotero collection keys
 

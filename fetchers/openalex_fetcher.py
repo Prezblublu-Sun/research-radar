@@ -1,4 +1,4 @@
-"""OpenAlex fetcher with authenticated, retry-aware cursor pagination."""
+"""OpenAlex fetcher with optional authentication and bounded retries."""
 
 from __future__ import annotations
 import os
@@ -16,32 +16,27 @@ class OpenAlexError(RuntimeError):
     code = "openalex_error"
 
 
-class OpenAlexConfigError(OpenAlexError):
-    code = "missing_api_key"
-
-
 class OpenAlexRateLimitError(OpenAlexError):
     code = "rate_limited"
 
 
-def _api_key() -> str:
-    key = os.environ.get("OPENALEX_API_KEY", "").strip()
-    if not key:
-        raise OpenAlexConfigError(
-            "OPENALEX_API_KEY is required; create a free key in OpenAlex."
-        )
-    return key
+def _api_key() -> str | None:
+    """Return the optional free-account key, if one is configured."""
+    return os.environ.get("OPENALEX_API_KEY", "").strip() or None
 
 
 def _request_json(params: dict) -> dict:
     """GET one page, retrying only transient failures.
 
-    The API key is kept in request params and is never copied into exception
-    messages or logs. Long rate-limit windows fail fast so a daily run does
-    not sit idle for minutes.
+    Anonymous basic/search requests remain supported. When a free-account
+    key is configured it is added to the request for a larger, account-bound
+    allowance. The key is never copied into exception messages or logs.
+    Long rate-limit windows fail fast so a daily run does not sit idle.
     """
     safe_params = dict(params)
-    safe_params["api_key"] = _api_key()
+    key = _api_key()
+    if key:
+        safe_params["api_key"] = key
     for attempt in range(MAX_ATTEMPTS):
         try:
             response = requests.get(
