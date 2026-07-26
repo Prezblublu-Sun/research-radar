@@ -33,7 +33,11 @@ def priority_counts(papers: list[dict]) -> dict[str, int]:
     """Recompute visible priority counts from paper records."""
     counts = {priority: 0 for priority in PRIORITIES}
     for paper in papers:
-        priority = (paper.get("llm") or {}).get("priority")
+        llm = paper.get("llm") or {}
+        if llm.get("scorer_failed") is True:
+            counts["Unscored"] = counts.get("Unscored", 0) + 1
+            continue
+        priority = llm.get("priority")
         if priority:
             counts[priority] = counts.get(priority, 0) + 1
     return counts

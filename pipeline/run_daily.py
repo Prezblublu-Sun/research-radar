@@ -70,18 +70,38 @@ def run(days_back: int = 2, skip_zotero: bool = False, force: bool = False) -> d
     openalex_lookback = max(days_back, 14)
     pubmed_lookback = days_back
 
-    # Per-source counts: only populated when a fetcher was attempted AND succeeded.
-    # A source that was not attempted (empty config) stays absent; a source whose
-    # try block raised stays absent too (the except branch already logged it).
+    # Machine-readable source health is persisted in the manifest. This keeps
+    # a single-source outage visible even when the other sources are healthy.
     source_counts: dict[str, int] = {}
+    source_status: dict[str, dict] = {}
+
+    def record_source(name: str, count: int | None = None,
+                      error: Exception | None = None) -> None:
+        if error is not None:
+            source_status[name] = {
+                "status": "error",
+                "count": 0,
+                "error_code": getattr(error, "code", type(error).__name__),
+                "message": str(error),
+            }
+            return
+        value = int(count or 0)
+        source_counts[name] = value
+        source_status[name] = {
+            "status": "ok" if value else "empty",
+            "count": value,
+            "error_code": None,
+            "message": "",
+        }
 
     if arxiv_cats:
         _print(f"Fetching arxiv (lookback={arxiv_lookback}d): {sorted(arxiv_cats)}")
         try:
             all_lists.append(arxiv_fetcher.fetch(sorted(arxiv_cats), days_back=arxiv_lookback))
-            source_counts["arxiv"] = len(all_lists[-1])
+            record_source("arxiv", len(all_lists[-1]))
             _print(f"  -> {len(all_lists[-1])} papers")
         except Exception as e:
+            record_source("arxiv", error=e)
             _print(f"  ! arxiv failed: {e}")
 
     if openalex_kws or openalex_concepts:
@@ -92,18 +112,20 @@ def run(days_back: int = 2, skip_zotero: bool = False, force: bool = False) -> d
                 keywords=sorted(openalex_kws),
                 days_back=openalex_lookback,
             ))
-            source_counts["openalex"] = len(all_lists[-1])
+            record_source("openalex", len(all_lists[-1]))
             _print(f"  -> {len(all_lists[-1])} papers")
         except Exception as e:
+            record_source("openalex", error=e)
             _print(f"  ! OpenAlex failed: {e}")
 
     if pubmed_terms:
         _print(f"Fetching PubMed (lookback={pubmed_lookback}d): {sorted(pubmed_terms)}")
         try:
             all_lists.append(pubmed_fetcher.fetch(sorted(pubmed_terms), days_back=pubmed_lookback))
-            source_counts["pubmed"] = len(all_lists[-1])
+            record_source("pubmed", len(all_lists[-1]))
             _print(f"  -> {len(all_lists[-1])} papers")
         except Exception as e:
+            record_source("pubmed", error=e)
             _print(f"  ! PubMed failed: {e}")
 
     fetched_total = sum(len(l) for l in all_lists)
@@ -128,8 +150,18 @@ def run(days_back: int = 2, skip_zotero: bool = False, force: bool = False) -> d
     n_boosted = direction_router.apply_crossover_boost(scored)
     _print(f"  -> crossover boost applied to {n_boosted} paper(s)")
     priority_counts = {"High": 0, "Medium": 0, "Low": 0, "Exclude": 0}
+    scorer_failed = 0
     for p in scored:
-        priority_counts[p.get("llm", {}).get("priority", "Low")] += 1
+        llm = p.get("llm") or {}
+        priority = llm.get("priority")
+        if llm.get("scorer_failed") is True:
+            scorer_failed += 1
+            continue
+        # Legacy records without an explicit scorer failure retain the
+        # historical null->Low compatibility contract.
+        if priority not in priority_counts:
+            priority = "Low"
+        priority_counts[priority] += 1
     _print(f"  -> {priority_counts}")
 
     counts = {
@@ -138,6 +170,7 @@ def run(days_back: int = 2, skip_zotero: bool = False, force: bool = False) -> d
         "after_routing": len(routed),
         "by_direction": bucket,
         "priority_counts": priority_counts,
+        "scorer_failed": scorer_failed,
         # v2 multi-file bucketing diagnostics (ADR-0015 §4.5 / §7(iv)):
         "touched_dates": None,  # filled in after bucketing below
         "papers_with_missing_date": None,
@@ -157,7 +190,11 @@ def run(days_back: int = 2, skip_zotero: bool = False, force: bool = False) -> d
     run_ts = v2.utc_now_iso()
     scorer_version = v2.scorer_version_from_active_prompt()
 
-    run_status = "success"
+    source_errors = [
+        name for name, state in source_status.items()
+        if state["status"] == "error"
+    ]
+    run_status = "partial_success" if source_errors else "success"
     quality_flags = []
     touched_dates: dict[str, int] = {}
     missing_date = 0
@@ -250,12 +287,16 @@ def run(days_back: int = 2, skip_zotero: bool = False, force: bool = False) -> d
         quality_flags.append("zero_routed")
     if priority_counts.get("High", 0) + priority_counts.get("Medium", 0) == 0 and len(routed) > 0:
         quality_flags.append("zero_high_medium")
+    if scorer_failed:
+        quality_flags.append("scorer_failed")
     # Per-source silent-zero detection: an attempted fetcher that returned 0
     # papers gets its own flag, so single-source outages don't get masked by
     # the other sources keeping fetched_total healthy.
     for src, count in source_counts.items():
         if count == 0:
             quality_flags.append(f"{src}_returned_zero")
+    for src in source_errors:
+        quality_flags.append(f"{src}_failed")
     # =================================
 
 
@@ -263,6 +304,7 @@ def run(days_back: int = 2, skip_zotero: bool = False, force: bool = False) -> d
         config_path=CONFIG,
         prompt_path=prompt_path,
         sources_used=sources_used,
+        source_status=source_status,
         counts=counts,
         llm_responses=raw_responses,
         run_status=run_status,
@@ -325,6 +367,7 @@ def run(days_back: int = 2, skip_zotero: bool = False, force: bool = False) -> d
         "git_commit": manifest["git_commit"],
         "run_status": run_status,
         "quality_flags": quality_flags,
+        "source_status": source_status,
         "counts": counts,
         "zotero": zot_report,
         "changelog_updated": drift,

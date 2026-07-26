@@ -80,6 +80,7 @@ CONFIG_PATH = ROOT / "config" / "directions.yaml"
 # from the per-paper `schema_version` field (which is "v2" per ADR-0015). The
 # progress file's shape didn't change in Session 4.6.
 SCHEMA_VERSION = "v1"
+VALID_SOURCES = {"arxiv", "openalex", "pubmed"}
 
 
 def _now_iso() -> str:
@@ -140,6 +141,7 @@ def _write_progress(progress_path: pathlib.Path, data: dict) -> None:
 
 
 def _init_progress(from_date: str, to_date: str, dry_run: bool,
+                   sources: set[str],
                    months: list[tuple[str, dt.date, dt.date]]) -> dict:
     now = _now_iso()
     return {
@@ -147,6 +149,7 @@ def _init_progress(from_date: str, to_date: str, dry_run: bool,
         "tool": "run_historical",
         "date_range": {"from": from_date, "to": to_date},
         "dry_run": dry_run,
+        "sources": sorted(sources),
         "started_at": now,
         "last_updated_at": now,
         "months": {
@@ -200,13 +203,23 @@ def _dedup_key(paper: dict) -> str:
     return f"id:{pid}" if pid else ""
 
 
+def _corpus_identity_keys(data_root: pathlib.Path) -> set[str]:
+    """Load canonical DOI/arXiv identities from every persisted bucket."""
+    keys: set[str] = set()
+    for path in (data_root / "daily").glob("*.json"):
+        papers, _meta = v2.load_existing_v2(path)
+        keys.update(k for k in (v2.identity_key(p) for p in papers) if k)
+    return keys
+
+
 # ============================================================================
 # Per-month run
 # ============================================================================
 
 def _run_month(month_key: str, window_from: str, window_to: str,
                directions: dict, exclusions: dict, terms: dict,
-               dois_seen: set, dry_run: bool,
+               sources: set[str], dois_seen: set,
+               corpus_keys: set[str], dry_run: bool,
                data_root: pathlib.Path, run_start_date: str,
                log) -> dict:
     log(f"Month {month_key}: window {window_from} -> {window_to}")
@@ -214,7 +227,7 @@ def _run_month(month_key: str, window_from: str, window_to: str,
     by_source = {"arxiv": 0, "openalex": 0, "pubmed": 0}
     fetched_lists: list[list[dict]] = []
 
-    if terms["arxiv_categories"]:
+    if "arxiv" in sources and terms["arxiv_categories"]:
         try:
             r = arxiv_fetcher.fetch(
                 categories=terms["arxiv_categories"],
@@ -225,8 +238,11 @@ def _run_month(month_key: str, window_from: str, window_to: str,
             log(f"  arxiv    -> {len(r)} papers")
         except Exception as e:
             log(f"  ! arxiv fetch failed: {e}")
+            raise RuntimeError(f"arxiv fetch failed: {e}") from e
 
-    if terms["openalex_keywords"] or terms["openalex_concepts"]:
+    if "openalex" in sources and (
+        terms["openalex_keywords"] or terms["openalex_concepts"]
+    ):
         try:
             r = openalex_fetcher.fetch(
                 concepts=terms["openalex_concepts"],
@@ -238,8 +254,9 @@ def _run_month(month_key: str, window_from: str, window_to: str,
             log(f"  openalex -> {len(r)} papers")
         except Exception as e:
             log(f"  ! openalex fetch failed: {e}")
+            raise RuntimeError(f"openalex fetch failed: {e}") from e
 
-    if terms["pubmed_terms"]:
+    if "pubmed" in sources and terms["pubmed_terms"]:
         try:
             r = pubmed_fetcher.fetch(
                 terms=terms["pubmed_terms"],
@@ -250,6 +267,7 @@ def _run_month(month_key: str, window_from: str, window_to: str,
             log(f"  pubmed   -> {len(r)} papers")
         except Exception as e:
             log(f"  ! pubmed fetch failed: {e}")
+            raise RuntimeError(f"pubmed fetch failed: {e}") from e
 
     fetched_total = sum(by_source.values())
 
@@ -276,37 +294,23 @@ def _run_month(month_key: str, window_from: str, window_to: str,
     by_direction = Counter(p.get("direction") for p in routed)
     routed_by_source = Counter(p.get("source") for p in routed)
 
-    # ADR-0020: pre-dedup against the corpus BEFORE scoring. Drop any routed
-    # paper whose v2.identity_key already exists in the target bucket on disk,
-    # so score_batch only sees genuinely-new papers. Keys MUST be identity_key
-    # (not _dedup_key) to match the first-seen-wins comparison at write time.
-    # Papers with empty identity_key cannot be deduped and fall through.
-    # Dry-run skips this: it writes nothing, so there is no corpus to compare
-    # against in tests/light runs, and after_routing is reported unchanged.
+    # Pre-dedup against the complete corpus BEFORE both dry-run reporting and
+    # scoring. Publication dates vary across sources, so bucket-only matching
+    # is insufficient for a canonical DOI/arXiv identity.
     skipped_existing = 0
-    if not dry_run and routed:
-        daily_dir = data_root / "daily"
-        bucket_existing_keys: dict[str, set[str]] = {}
+    if routed:
         novel: list[dict] = []
         for p in routed:
             k = v2.identity_key(p)
             if not k:
                 novel.append(p)
                 continue
-            bucket_date = (p.get("date") or "").strip()
-            if bucket_date not in bucket_existing_keys:
-                existing_papers, _meta = v2.load_existing_v2(
-                    daily_dir / f"{bucket_date}.json"
-                )
-                bucket_existing_keys[bucket_date] = {
-                    ek for ek in (v2.identity_key(x) for x in existing_papers)
-                    if ek
-                }
-            if k in bucket_existing_keys[bucket_date]:
+            if k in corpus_keys:
                 skipped_existing += 1
             else:
                 novel.append(p)
         routed = novel
+    would_score = len(routed)
 
     # Score (skipped in dry-run).
     scored_count = 0
@@ -317,8 +321,13 @@ def _run_month(month_key: str, window_from: str, window_to: str,
         scored_count = len(scored)
         priority_counts = {"High": 0, "Medium": 0, "Low": 0, "Exclude": 0}
         for p in scored:
-            prio = (p.get("llm") or {}).get("priority", "Low")
-            priority_counts[prio] = priority_counts.get(prio, 0) + 1
+            llm = p.get("llm") or {}
+            if llm.get("scorer_failed") is True:
+                continue
+            prio = llm.get("priority")
+            if prio not in priority_counts:
+                prio = "Low"
+            priority_counts[prio] += 1
         scored_papers = scored
 
     # Update dois_seen so adjacent months don't re-process the same paper.
@@ -366,6 +375,7 @@ def _run_month(month_key: str, window_from: str, window_to: str,
                 existing_papers.append(p_out)
                 if k:
                     existing_keys.add(k)
+                    corpus_keys.add(k)
                 added += 1
             if added > 0:
                 v2.atomic_write_json(
@@ -407,6 +417,7 @@ def _run_month(month_key: str, window_from: str, window_to: str,
         "by_direction": dict(by_direction),
         "routed_by_source": dict(routed_by_source),
         "skipped_existing": skipped_existing,
+        "would_score": would_score,
         "scored": scored_count,
         "priority_counts": priority_counts,
         # v2 diagnostics
@@ -414,7 +425,8 @@ def _run_month(month_key: str, window_from: str, window_to: str,
         "papers_with_missing_date": missing_date,
     }
     if dry_run:
-        log(f"  -> dry-run: routed {after_routing}, scored 0; "
+        log(f"  -> dry-run: routed {after_routing}, {skipped_existing} "
+            f"already in corpus, would score {would_score}; "
             f"no bucket files written")
     else:
         total_added = sum(touched_buckets.values())
@@ -435,7 +447,7 @@ def run(from_date: str, to_date: str, dry_run: bool,
         output_dir: pathlib.Path, no_resume: bool,
         data_root: pathlib.Path | None = None,
         config_path: pathlib.Path = CONFIG_PATH,
-        log_fn=None) -> dict:
+        log_fn=None, sources: set[str] | None = None) -> dict:
     log = log_fn or (lambda m: print(m, flush=True))
 
     # Default: data_root is the parent of output_dir, which under production
@@ -444,6 +456,12 @@ def run(from_date: str, to_date: str, dry_run: bool,
     # explicitly.
     if data_root is None:
         data_root = output_dir.parent
+    selected_sources = set(sources or VALID_SOURCES)
+    unknown_sources = selected_sources - VALID_SOURCES
+    if unknown_sources or not selected_sources:
+        raise ValueError(
+            f"invalid sources: {sorted(unknown_sources) or 'none selected'}"
+        )
 
     fd = dt.date.fromisoformat(from_date)
     td = dt.date.fromisoformat(to_date)
@@ -467,15 +485,24 @@ def run(from_date: str, to_date: str, dry_run: bool,
                 f"A dry-run and a real run are separate logical sessions; "
                 f"delete the progress file to start a new session."
             )
+        if set(existing.get("sources", VALID_SOURCES)) != selected_sources:
+            raise SystemExit(
+                f"_progress.json sources mismatch: file has "
+                f"{existing.get('sources')}, CLI has "
+                f"{sorted(selected_sources)}."
+            )
         progress = existing
         log(f"Resuming from {progress_path}")
     else:
-        progress = _init_progress(from_date, to_date, dry_run, months)
+        progress = _init_progress(
+            from_date, to_date, dry_run, selected_sources, months
+        )
         log(f"Fresh historical run: {len(months)} month(s) to process")
 
     directions, exclusions = _load_config(config_path)
     terms = _collect_source_terms(directions)
     dois_seen: set[str] = set(progress.get("dois_seen", []))
+    corpus_keys = _corpus_identity_keys(data_root)
     # Run-start calendar date drives the discovery_log filename. Use the
     # progress file's started_at so a resumed session keeps appending to the
     # original day's log.
@@ -512,7 +539,9 @@ def run(from_date: str, to_date: str, dry_run: bool,
                 directions=directions,
                 exclusions=exclusions,
                 terms=terms,
+                sources=selected_sources,
                 dois_seen=dois_seen,
+                corpus_keys=corpus_keys,
                 dry_run=dry_run,
                 data_root=data_root,
                 run_start_date=run_start_date,
@@ -544,6 +573,7 @@ def run(from_date: str, to_date: str, dry_run: bool,
         "months_completed": completed,
         "progress_file": str(progress_path),
         "dry_run": dry_run,
+        "sources": sorted(selected_sources),
     }
 
 
@@ -565,6 +595,10 @@ def main(argv: list[str] | None = None) -> int:
                         help="End of range, YYYY-MM-DD (inclusive).")
     parser.add_argument("--dry-run", action="store_true",
                         help="Skip LLM scoring; emit fetch/route counts only.")
+    parser.add_argument(
+        "--sources", default="arxiv,openalex,pubmed",
+        help="Comma-separated subset: arxiv,openalex,pubmed.",
+    )
     parser.add_argument("--output-dir", type=pathlib.Path,
                         default=DEFAULT_OUTPUT_DIR,
                         help="Progress-file directory "
@@ -585,6 +619,7 @@ def main(argv: list[str] | None = None) -> int:
         dry_run=args.dry_run, output_dir=args.output_dir.resolve(),
         data_root=args.data_root.resolve(),
         no_resume=args.no_resume,
+        sources={s.strip() for s in args.sources.split(",") if s.strip()},
     )
     print(json.dumps(report, indent=2, ensure_ascii=False))
     return 0

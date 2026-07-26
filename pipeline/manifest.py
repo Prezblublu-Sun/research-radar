@@ -44,6 +44,7 @@ def build_manifest(
     prompt_path: pathlib.Path,
     sources_used: dict,
     counts: dict,
+    source_status: dict | None = None,
     llm_responses: list[dict] | None = None,
     run_status: str = "success",
     quality_flags: list[str] | None = None,
@@ -79,6 +80,7 @@ def build_manifest(
             "PyYAML":  _pkg_version("PyYAML"),
         },
         "sources_used": sources_used,
+        "source_status": source_status or {},
         "counts": counts,
     }
 

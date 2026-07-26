@@ -21,10 +21,19 @@ on:
         required: false
         type: boolean
         default: false
+      sources:
+        description: "Comma-separated sources: arxiv,openalex,pubmed"
+        required: true
+        type: string
+        default: "arxiv,openalex,pubmed"
 
 permissions:
   contents: write
   pages: write
+
+concurrency:
+  group: research-radar-writer
+  cancel-in-progress: false
 
 jobs:
   backfill:
@@ -43,6 +52,7 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENAI_BASE_URL: ${{ secrets.OPENAI_BASE_URL }}
           MODEL_NAME: ${{ vars.MODEL_NAME }}
+          OPENALEX_API_KEY: ${{ secrets.OPENALEX_API_KEY }}
           OPENALEX_EMAIL: ${{ vars.OPENALEX_EMAIL }}
           PUBMED_EMAIL: ${{ vars.PUBMED_EMAIL }}
           ZOTERO_USER_ID: ${{ secrets.ZOTERO_USER_ID }}
@@ -56,7 +66,15 @@ jobs:
           python -m pipeline.run_historical \
             --from-date "${{ inputs.from_date }}" \
             --to-date   "${{ inputs.to_date }}" \
+            --sources   "${{ inputs.sources }}" \
+            --output-dir "data/historical/runs/${{ github.run_id }}-${{ github.run_attempt }}" \
             ${{ inputs.dry_run && '--dry-run' || '' }}
+
+      - name: Rebuild site and candidate export
+        if: ${{ !inputs.dry_run }}
+        run: |
+          python -m scripts.rebuild_site
+          python -m pipeline.export_candidates
 
       - name: SCOPE.md boundary audit
         id: scope_audit
@@ -69,7 +87,7 @@ jobs:
         run: |
           git config user.name "research-radar-bot"
           git config user.email "actions@github.com"
-          git add data/ 2>/dev/null || true
+          git add data/ docs/ 2>/dev/null || true
           if git diff --staged --quiet; then
             echo "No changes from backfill (already in corpus or dry-run)."
           else
@@ -82,3 +100,11 @@ jobs:
         run: |
           echo "::error::scope_audit detected SCOPE.md boundary violations."
           exit 1
+
+      - name: Upload backfill progress
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backfill-progress-${{ github.run_id }}
+          path: data/historical/runs/${{ github.run_id }}-${{ github.run_attempt }}/
+          retention-days: 14
