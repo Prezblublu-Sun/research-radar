@@ -14,3 +14,4 @@ import os
 os.environ.setdefault("OPENAI_API_KEY", "test-key-not-real")
 os.environ.setdefault("OPENAI_BASE_URL", "https://example.invalid")
 os.environ.setdefault("MODEL_NAME", "deepseek-v4-flash")
+os.environ.setdefault("OPENALEX_API_KEY", "test-openalex-key-not-real")

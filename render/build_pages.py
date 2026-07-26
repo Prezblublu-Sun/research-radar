@@ -41,6 +41,22 @@ def _clean_html(document: str) -> str:
     return "\n".join(line.rstrip() for line in document.split("\n"))
 
 
+def _preserve_run_info(document: str, existing_path: pathlib.Path) -> str:
+    """Keep a prior traceability footer during a manifest-less rebuild."""
+    if not existing_path.exists() or '<footer class="run-info">' in document:
+        return document
+    try:
+        existing = existing_path.read_text(encoding="utf-8")
+    except OSError:
+        return document
+    match = re.search(
+        r'(<footer class="run-info">.*?</footer>)', existing, re.DOTALL
+    )
+    if not match:
+        return document
+    return document.replace("</main>", match.group(1) + "\n</main>", 1)
+
+
 def _public_identity_key(p: dict, bucket_date: str = "",
                          position: int | None = None) -> str:
     """Return a stable UI key without deduplicating identity-less records."""
@@ -94,10 +110,20 @@ def _card_tools(p: dict, identity_key: str | None = None) -> str:
   </div>"""
 
 
+def _display_priority(p: dict) -> str:
+    """Separate explicit scorer failures from the four review priorities."""
+    llm = p.get("llm") or {}
+    if llm.get("scorer_failed") is True:
+        return "Unscored"
+    priority = llm.get("priority")
+    return priority if priority in {"High", "Medium", "Low", "Exclude"} else "Low"
+
+
 def _paper_card(p: dict, dir_color: str, daily_link_date: str | None = None,
                 identity_key: str | None = None) -> str:
     llm = p.get("llm") or {}
-    priority = llm.get("priority") or "Low"
+    priority = _display_priority(p)
+    priority_label = "待评分" if priority == "Unscored" else priority
     s = llm.get("summary_zh") or {}
     s_en = llm.get("summary_en") or {}
     key_terms = llm.get("key_terms") or []
@@ -146,7 +172,7 @@ def _paper_card(p: dict, dir_color: str, daily_link_date: str | None = None,
 <article class="paper" id="{_anchor_id(idkey)}" data-direction="{_esc(p.get('direction',''))}" data-priority="{_esc(priority)}" data-identity-key="{_esc(idkey)}" data-title="{_esc(p.get('title',''))}" data-date="{_esc(p.get('date',''))}">
   <h3 class="paper-title">{_esc(p.get('title',''))}</h3>
   <div class="paper-head">
-    <span class="priority priority--{_esc(priority.lower())}">{_esc(priority)}</span>
+    <span class="priority priority--{_esc(priority.lower())}">{_esc(priority_label)}</span>
     <span class="direction-pill" style="background:{dir_color}20;color:{dir_color}">{_esc(p.get('direction_name',''))}</span>
     <span class="source">{_esc(p.get('source',''))}</span>
     {f'<span class="relevance-level lvl-{relevance_level.lower()}">{_esc(relevance_level)}</span>' if relevance_level else ''}
@@ -191,11 +217,13 @@ def _paper_card(p: dict, dir_color: str, daily_link_date: str | None = None,
 def _stats_row(papers: list[dict], directions_cfg: dict) -> str:
     total = {"High": 0, "Medium": 0, "Low": 0, "Exclude": 0}
     for p in papers:
-        prio = (p.get("llm") or {}).get("priority") or "Low"
+        prio = _display_priority(p)
         total[prio] = total.get(prio, 0) + 1
     cards = [f'<div class="stat"><div class="stat-label">论文总数</div><div class="stat-val">{sum(total.values())}</div></div>']
     for prio, color in [("High", "#27500A"), ("Medium", "#633806"), ("Low", "#5F5E5A")]:
         cards.append(f'<div class="stat"><div class="stat-label">{prio}</div><div class="stat-val" style="color:{color}">{total[prio]}</div></div>')
+    if total.get("Unscored"):
+        cards.append(f'<div class="stat"><div class="stat-label">待评分</div><div class="stat-val">{total["Unscored"]}</div></div>')
     return '<div class="stats">' + "".join(cards) + "</div>"
 
 
@@ -411,7 +439,7 @@ ASSET_HEAD = (
 
 
 def _render_daily(papers, date, directions_cfg, archive_dates, manifest):
-    order = {"High": 0, "Medium": 1, "Low": 2, "Exclude": 3}
+    order = {"High": 0, "Medium": 1, "Unscored": 2, "Low": 3, "Exclude": 4}
     identity_by_object = {
         id(paper): _public_identity_key(paper, date, position)
         for position, paper in enumerate(papers)
@@ -419,7 +447,7 @@ def _render_daily(papers, date, directions_cfg, archive_dates, manifest):
     papers_sorted = sorted(
         papers,
         key=lambda p: (order.get(
-                           (p.get("llm") or {}).get("priority") or "Low", 9),
+                           _display_priority(p), 9),
                        p.get("direction", "zzz")),
     )
     cards = []
@@ -744,7 +772,8 @@ def _render_workbench(recent_runs: list[tuple[str, dict]],
             if first_seen in papers_by_run:
                 papers_by_run[first_seen].append((bucket_date, paper))
 
-    priority_order = {"High": 0, "Medium": 1, "Low": 2, "Exclude": 3}
+    priority_order = {"High": 0, "Medium": 1, "Unscored": 2,
+                      "Low": 3, "Exclude": 4}
     all_recent = [
         paper for dated in papers_by_run.values() for _bucket, paper in dated
     ]
@@ -753,14 +782,16 @@ def _render_workbench(recent_runs: list[tuple[str, dict]],
         dated = sorted(
             papers_by_run.get(run_date, []),
             key=lambda dp: (
-                priority_order.get((dp[1].get("llm") or {}).get("priority"), 9),
+                priority_order.get(_display_priority(dp[1]), 9),
                 dp[0], dp[1].get("title", ""),
             ),
         )
         actionable = [dp for dp in dated
                       if (dp[1].get("llm") or {}).get("priority")
                       in {"High", "Medium"}]
-        lower = [dp for dp in dated if dp not in actionable]
+        unscored = [dp for dp in dated if _display_priority(dp[1]) == "Unscored"]
+        lower = [dp for dp in dated
+                 if dp not in actionable and dp not in unscored]
 
         def cards(items):
             output = []
@@ -788,6 +819,12 @@ def _render_workbench(recent_runs: list[tuple[str, dict]],
                 + "、".join(_esc(flag) for flag in quality_flags) + "</div>"
             )
         lower_html = ""
+        unscored_html = ""
+        if unscored:
+            unscored_html = (
+                '<details class="workbench-lower" open><summary>待评分 '
+                f'（{len(unscored)} 篇）</summary>{cards(unscored)}</details>'
+            )
         if lower:
             lower_html = (
                 '<details class="workbench-lower"><summary>查看 Low / Exclude '
@@ -800,7 +837,7 @@ def _render_workbench(recent_runs: list[tuple[str, dict]],
             f'<div class="run-section__head"><div><div class="eyebrow">{_esc(status)}</div>'
             f'<h2>{_esc(run_date)} 新发现</h2></div>'
             f'<div class="run-section__counts">{counts}</div></div>'
-            f'{warning}{empty}{cards(actionable)}{lower_html}</section>'
+            f'{warning}{empty}{cards(actionable)}{unscored_html}{lower_html}</section>'
         )
 
     latest = recent_runs[0][1] if recent_runs else {}
@@ -1360,13 +1397,13 @@ def build(docs_dir, directions_cfg, manifest=None, touched_dates=None,
                       f"stored={stored_counts} computed={raw_counts}")
             day_counts[hist_date] = _priority_counts_for(hist_papers, _meta)
             page_manifest = manifest if hist_date in touched else None
-            hist_html.write_text(
-                _clean_html(_render_daily(
-                    hist_papers, hist_date, directions_cfg, archive,
-                    page_manifest,
-                )),
-                encoding="utf-8",
-            )
+            rendered = _clean_html(_render_daily(
+                hist_papers, hist_date, directions_cfg, archive,
+                page_manifest,
+            ))
+            if page_manifest is None:
+                rendered = _preserve_run_info(rendered, hist_html)
+            hist_html.write_text(rendered, encoding="utf-8")
         except Exception as e:
             print(f"  (skip re-render {hist_date}: {e})")
 

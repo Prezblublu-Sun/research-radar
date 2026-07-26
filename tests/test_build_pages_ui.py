@@ -146,6 +146,25 @@ def test_legacy_null_priority_renders_as_low_instead_of_skipping_page():
     assert "论文总数" in stats
 
 
+def test_explicit_scorer_failure_renders_as_unscored():
+    paper = _paper(doi="10.1/failed", priority="Low",
+                   title="Needs retry", direction="ai_bioprinting",
+                   date="2026-07-25")
+    paper["llm"].update({"priority": None, "scorer_failed": True})
+    card = build_pages._paper_card(paper, "#123456")
+    assert 'data-priority="Unscored"' in card
+    assert 'priority--unscored' in card
+    assert "待评分" in card
+
+
+def test_manifestless_rebuild_preserves_existing_run_footer(tmp_path):
+    page = tmp_path / "day.html"
+    footer = '<footer class="run-info"><b>trace</b></footer>'
+    page.write_text(f"<main>old{footer}</main>", encoding="utf-8")
+    rebuilt = build_pages._preserve_run_info("<main>new</main>", page)
+    assert footer in rebuilt
+
+
 # ---------------------------------------------------------------- D1
 
 def test_workbench_root_and_archive_month_grid(built):

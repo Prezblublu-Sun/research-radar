@@ -158,7 +158,7 @@ def test_paper_with_empty_identity_key_is_always_scored(monkeypatch, tmp_path):
 # 4. dry_run path does not pre-dedup and does not call score_batch
 # ---------------------------------------------------------------------------
 
-def test_dry_run_does_not_predupe_or_score(monkeypatch, tmp_path):
+def test_dry_run_reports_corpus_predupe_without_scoring(monkeypatch, tmp_path):
     bucket_date = "2024-03-10"
     existing = _paper(doi="10.1/existing", date=bucket_date)
     _seed_bucket(tmp_path / "daily", bucket_date, [existing])
@@ -181,12 +181,13 @@ def test_dry_run_does_not_predupe_or_score(monkeypatch, tmp_path):
     # Dry-run never reaches the scorer.
     assert called["score_batch"] == 0
 
-    # And dry-run does not record any skipped_existing (it skipped the whole
-    # pre-dedup block); after_routing reports the FULL routed count.
+    # Dry-run keeps the routing count but reports the actual post-corpus
+    # scoring workload.
     p = json.loads((output_dir / "_progress.json").read_text())
     counts = p["months"]["2024-03"]["counts"]
     assert counts["after_routing"] == 2
-    assert counts["skipped_existing"] == 0
+    assert counts["skipped_existing"] == 1
+    assert counts["would_score"] == 1
 
 
 # ---------------------------------------------------------------------------

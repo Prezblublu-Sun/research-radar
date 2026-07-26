@@ -250,6 +250,46 @@ def test_dry_run_does_not_call_llm_scorer(monkeypatch, tmp_path):
     assert called["score_batch"] is False
 
 
+def test_source_selection_only_calls_requested_fetcher(monkeypatch, tmp_path):
+    calls = {"arxiv": 0, "openalex": 0, "pubmed": 0}
+    for source, fetcher in (
+        ("arxiv", rh.arxiv_fetcher),
+        ("openalex", rh.openalex_fetcher),
+        ("pubmed", rh.pubmed_fetcher),
+    ):
+        monkeypatch.setattr(
+            fetcher, "fetch",
+            lambda _source=source, **kw: (
+                calls.__setitem__(_source, calls[_source] + 1) or []
+            ),
+        )
+    rh.run(
+        from_date="2024-01-01", to_date="2024-01-02",
+        dry_run=True, output_dir=tmp_path, no_resume=True,
+        sources={"openalex"},
+    )
+    assert calls == {"arxiv": 0, "openalex": 1, "pubmed": 0}
+
+
+def test_selected_source_failure_marks_month_failed_without_bucket_writes(
+    monkeypatch, tmp_path
+):
+    monkeypatch.setattr(
+        rh.openalex_fetcher, "fetch",
+        lambda **kw: (_ for _ in ()).throw(RuntimeError("upstream down")),
+    )
+    output_dir = tmp_path / "historical"
+    with pytest.raises(RuntimeError, match="openalex fetch failed"):
+        rh.run(
+            from_date="2024-01-01", to_date="2024-01-02",
+            dry_run=False, output_dir=output_dir, data_root=tmp_path,
+            no_resume=True, sources={"openalex"},
+        )
+    progress = json.loads((output_dir / "_progress.json").read_text())
+    assert progress["months"]["2024-01"]["status"] == "failed"
+    assert not (tmp_path / "daily").exists()
+
+
 def test_dry_run_writes_no_bucket_files_but_records_counts_in_progress(
     monkeypatch, tmp_path
 ):

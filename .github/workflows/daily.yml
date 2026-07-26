@@ -9,6 +9,10 @@ permissions:
   contents: write
   pages: write
 
+concurrency:
+  group: research-radar-writer
+  cancel-in-progress: false
+
 jobs:
   run:
     runs-on: ubuntu-latest
@@ -28,6 +32,7 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENAI_BASE_URL: ${{ secrets.OPENAI_BASE_URL }}
           MODEL_NAME: ${{ vars.MODEL_NAME }}
+          OPENALEX_API_KEY: ${{ secrets.OPENALEX_API_KEY }}
           OPENALEX_EMAIL: ${{ vars.OPENALEX_EMAIL }}
           PUBMED_EMAIL: ${{ vars.PUBMED_EMAIL }}
           ZOTERO_USER_ID: ${{ secrets.ZOTERO_USER_ID }}
@@ -57,8 +62,21 @@ jobs:
           git diff --staged --quiet || git commit -m "daily: $(date -u +%Y-%m-%d)"
           git push
 
+      - name: Daily run health gate
+        run: python -m pipeline.health_gate
+
       - name: Fail if scope_audit reported errors
         if: steps.scope_audit.outcome == 'failure'
         run: |
           echo "::error::scope_audit detected SCOPE.md boundary violations. See data/audit/scope_audit_$(date -u +%Y-%m-%d).json in the latest commit."
           exit 1
+
+      - name: Upload diagnostic artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: daily-diagnostics-${{ github.run_id }}
+          path: |
+            data/manifests/
+            data/audit/
+          retention-days: 14

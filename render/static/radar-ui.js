@@ -44,7 +44,7 @@
       .replace(/'/g, "&#39;");
   }
 
-  var PRIORITY_DEFAULT = ["High", "Medium"];
+  var PRIORITY_DEFAULT = ["High", "Medium", "Unscored"];
   var MARKS_DEFAULT = ["to-read", "read", "interesting", "ignore", "none"];
 
   function priorityFilter() {

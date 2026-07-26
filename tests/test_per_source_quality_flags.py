@@ -180,3 +180,56 @@ def test_per_source_flag_format_is_self_describing(monkeypatch, isolated_run):
     flags = report["quality_flags"]
     matching = [f for f in flags if f.endswith("_returned_zero")]
     assert matching == ["arxiv_returned_zero"]
+
+
+def test_source_exception_is_structured_partial_success(
+    monkeypatch, isolated_run
+):
+    monkeypatch.setattr(
+        rd.arxiv_fetcher, "fetch",
+        lambda *a, **kw: [_paper("10.1/ax", source="arxiv")],
+    )
+    monkeypatch.setattr(
+        rd.openalex_fetcher, "fetch",
+        lambda *a, **kw: (_ for _ in ()).throw(
+            rd.openalex_fetcher.OpenAlexRateLimitError("rate limited")
+        ),
+    )
+    monkeypatch.setattr(rd.pubmed_fetcher, "fetch", lambda *a, **kw: [])
+
+    report = rd.run(days_back=1, skip_zotero=True)
+
+    assert report["run_status"] == "partial_success"
+    assert "openalex_failed" in report["quality_flags"]
+    state = report["source_status"]["openalex"]
+    assert state == {
+        "status": "error",
+        "count": 0,
+        "error_code": "rate_limited",
+        "message": "rate limited",
+    }
+
+
+def test_scorer_failure_is_saved_and_counted_separately(
+    monkeypatch, isolated_run
+):
+    paper = _paper("10.1/unscored")
+    _install_fetchers(monkeypatch, [paper], [], [])
+
+    def fail_score(routed, dirs):
+        for item in routed:
+            item["llm"] = {
+                "priority": None,
+                "scorer_failed": True,
+                "scorer_failed_reason": "invalid response",
+            }
+        return routed, []
+
+    monkeypatch.setattr(rd.llm_scorer, "score_batch", fail_score)
+    report = rd.run(days_back=1, skip_zotero=True)
+
+    assert report["counts"]["scorer_failed"] == 1
+    assert sum(report["counts"]["priority_counts"].values()) == 0
+    assert "scorer_failed" in report["quality_flags"]
+    bucket = isolated_run / "data" / "daily" / "2026-05-15.json"
+    assert bucket.exists()

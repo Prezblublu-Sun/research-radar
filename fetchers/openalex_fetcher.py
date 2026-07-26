@@ -1,13 +1,95 @@
-"""OpenAlex fetcher: pulls papers published in the last N days matching
-concept IDs or keywords. Free API, no key required (polite pool via email)."""
+"""OpenAlex fetcher with authenticated, retry-aware cursor pagination."""
 
 from __future__ import annotations
 import os
 import datetime as dt
+import time
 import requests
 
 OPENALEX_BASE = "https://api.openalex.org/works"
-POLITE_EMAIL = os.environ.get("OPENALEX_EMAIL", "your-email@ucl.ac.uk")
+MAX_ATTEMPTS = 5
+
+
+class OpenAlexError(RuntimeError):
+    """Base class for errors that callers may surface in run manifests."""
+
+    code = "openalex_error"
+
+
+class OpenAlexConfigError(OpenAlexError):
+    code = "missing_api_key"
+
+
+class OpenAlexRateLimitError(OpenAlexError):
+    code = "rate_limited"
+
+
+def _api_key() -> str:
+    key = os.environ.get("OPENALEX_API_KEY", "").strip()
+    if not key:
+        raise OpenAlexConfigError(
+            "OPENALEX_API_KEY is required; create a free key in OpenAlex."
+        )
+    return key
+
+
+def _request_json(params: dict) -> dict:
+    """GET one page, retrying only transient failures.
+
+    The API key is kept in request params and is never copied into exception
+    messages or logs. Long rate-limit windows fail fast so a daily run does
+    not sit idle for minutes.
+    """
+    safe_params = dict(params)
+    safe_params["api_key"] = _api_key()
+    for attempt in range(MAX_ATTEMPTS):
+        try:
+            response = requests.get(
+                OPENALEX_BASE, params=safe_params, timeout=30
+            )
+        except (requests.Timeout, requests.ConnectionError) as exc:
+            if attempt == MAX_ATTEMPTS - 1:
+                raise OpenAlexError(
+                    f"request failed after {MAX_ATTEMPTS} attempts: "
+                    f"{type(exc).__name__}"
+                ) from exc
+            time.sleep(2 ** (attempt + 1))
+            continue
+
+        status_code = getattr(response, "status_code", 200)
+        headers = getattr(response, "headers", {})
+        if status_code == 429:
+            retry_after_raw = headers.get("Retry-After", "0")
+            try:
+                retry_after = max(0, int(float(retry_after_raw)))
+            except (TypeError, ValueError):
+                retry_after = 0
+            if retry_after > 60 or attempt == MAX_ATTEMPTS - 1:
+                raise OpenAlexRateLimitError(
+                    f"OpenAlex rate limited the request (retry_after="
+                    f"{retry_after}s)"
+                )
+            time.sleep(retry_after or 2 ** (attempt + 1))
+            continue
+
+        if 500 <= status_code < 600:
+            if attempt == MAX_ATTEMPTS - 1:
+                raise OpenAlexError(
+                    f"OpenAlex HTTP {status_code} after "
+                    f"{MAX_ATTEMPTS} attempts"
+                )
+            time.sleep(2 ** (attempt + 1))
+            continue
+
+        try:
+            response.raise_for_status()
+        except requests.HTTPError as exc:
+            raise OpenAlexError(
+                f"OpenAlex HTTP {status_code}"
+            ) from exc
+        return response.json()
+
+    raise OpenAlexError("OpenAlex request exhausted retries")
 
 
 def _abstract_from_inverted_index(inv: dict | None) -> str:
@@ -47,14 +129,14 @@ def _fetch_one(flt: str, search_query: str | None, per_page: int,
             "filter": flt,
             "per-page": per_page,
             "cursor": cursor,
-            "mailto": POLITE_EMAIL,
         }
+        email = os.environ.get("OPENALEX_EMAIL", "").strip()
+        if email:
+            params["mailto"] = email
         if search_query:
             params["search"] = search_query
 
-        r = requests.get(OPENALEX_BASE, params=params, timeout=30)
-        r.raise_for_status()
-        data = r.json()
+        data = _request_json(params)
 
         for work in data.get("results", []):
             results.append(_normalize(work))
@@ -70,7 +152,7 @@ def fetch(
     concepts: list[str],
     keywords: list[str],
     days_back: int = 1,
-    per_page: int = 50,
+    per_page: int = 100,
     max_pages: int | None = None,
     from_date: str | None = None,
     to_date: str | None = None,
@@ -82,7 +164,7 @@ def fetch(
         bound. Default `max_pages` is 4 (~200 papers/day).
       - Historical (when both from_date and to_date are set as 'YYYY-MM-DD'):
         both bounds passed to the OpenAlex filter. Default `max_pages` is
-        bumped to 40 internally (~2000 papers/month).
+        bumped to 40 internally (up to ~4000 papers/month per query).
 
     Dispatch — changed from AND to OR semantics on 2026-05-19 after the
     DOI verifier surfaced 4 must_read papers that were concept-relevant

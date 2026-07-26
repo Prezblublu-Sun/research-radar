@@ -21,6 +21,7 @@ Quick reference:
 
 - `OPENAI_API_KEY` — DeepSeek API key
 - `OPENAI_BASE_URL` — `https://api.deepseek.com`
+- `OPENALEX_API_KEY` — Free OpenAlex API key (required for all OpenAlex calls)
 - `ZOTERO_USER_ID` — Numeric user ID from zotero.org/settings/keys
 - `ZOTERO_API_KEY` — Zotero API key with write access
 
