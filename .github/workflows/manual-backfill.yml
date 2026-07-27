@@ -41,6 +41,11 @@ jobs:
     timeout-minutes: 350  # 5h 50m, near the 6h GitHub Actions cap
     steps:
       - uses: actions/checkout@v4
+        with:
+          # workflow_dispatch pins github.sha when the event is created.
+          # A queued writer must instead start from the latest production
+          # state after the previous writer has finished.
+          ref: main
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
@@ -84,12 +89,13 @@ jobs:
             --output "data/audit/scope_audit_backfill_$(date -u +%Y-%m-%dT%H-%M-%S).json"
 
       - name: Commit backfill results
+        if: ${{ !inputs.dry_run }}
         run: |
           git config user.name "research-radar-bot"
           git config user.email "actions@github.com"
           git add data/ docs/ 2>/dev/null || true
           if git diff --staged --quiet; then
-            echo "No changes from backfill (already in corpus or dry-run)."
+            echo "No changes from backfill (already in corpus)."
           else
             git commit -m "backfill: ${{ inputs.from_date }}..${{ inputs.to_date }}"
             git push

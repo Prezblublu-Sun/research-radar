@@ -15,16 +15,42 @@ import pathlib
 from datetime import datetime, timezone
 from openai import OpenAI
 
-client = OpenAI(
-    api_key=os.environ["OPENAI_API_KEY"],
-    base_url=os.environ.get("OPENAI_BASE_URL", "https://api.deepseek.com"),
-    # ADR-0017 follow-up: hard timeout + SDK-level retries so a hung
-    # DeepSeek connection cannot stall the whole backfill. Observed a
-    # 38-minute hang on api.deepseek.com (3.173.21.63:443) with no
-    # timeout set — the SDK default left the socket blocking indefinitely.
-    timeout=float(os.environ.get("LLM_TIMEOUT", "60")),
-    max_retries=int(os.environ.get("LLM_MAX_RETRIES", "3")),
-)
+
+def _build_client() -> OpenAI | None:
+    """Build the scorer client only when credentials are available.
+
+    Fetch-only paths such as ``run_historical --dry-run`` import this module
+    but never call the scorer, so they must not require an LLM credential.
+    """
+    api_key = os.environ.get("OPENAI_API_KEY", "").strip()
+    if not api_key:
+        return None
+    return OpenAI(
+        api_key=api_key,
+        base_url=os.environ.get("OPENAI_BASE_URL", "https://api.deepseek.com"),
+        # ADR-0017 follow-up: hard timeout + SDK-level retries so a hung
+        # DeepSeek connection cannot stall the whole backfill. Observed a
+        # 38-minute hang on api.deepseek.com (3.173.21.63:443) with no
+        # timeout set — the SDK default left the socket blocking indefinitely.
+        timeout=float(os.environ.get("LLM_TIMEOUT", "60")),
+        max_retries=int(os.environ.get("LLM_MAX_RETRIES", "3")),
+    )
+
+
+client: OpenAI | None = _build_client()
+
+
+def _require_client() -> OpenAI:
+    """Return an initialized client or fail only when scoring is requested."""
+    global client
+    if client is None:
+        client = _build_client()
+    if client is None:
+        raise RuntimeError(
+            "OPENAI_API_KEY is required for scoring; fetch-only dry-runs do "
+            "not require it"
+        )
+    return client
 MODEL = os.environ.get("MODEL_NAME", "deepseek-v4-flash")
 TEMPERATURE = float(os.environ.get("LLM_TEMPERATURE", "0.2"))
 
@@ -130,7 +156,7 @@ Abstract: {paper['abstract'][:3000]}
 
 Output JSON only."""
 
-    resp = client.chat.completions.create(
+    resp = _require_client().chat.completions.create(
         model=MODEL,
         messages=[
             {"role": "system", "content": system_prompt},

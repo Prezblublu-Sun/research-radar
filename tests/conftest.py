@@ -1,10 +1,8 @@
 """pytest collection-time setup shared by all research-radar tests.
 
-`pipeline.llm_scorer` reads OPENAI_API_KEY / OPENAI_BASE_URL / MODEL_NAME at
-module-load time (because the OpenAI client is constructed at import). Any
-test that imports a `pipeline.*` module which in turn imports llm_scorer
-(directly or transitively) needs these env vars present, even though tests
-monkeypatch `llm_scorer.score_batch` so the values are never actually used.
+Scorer tests monkeypatch the constructed client's network method. Supplying a
+non-secret placeholder keeps that client available while production imports
+without an OPENAI_API_KEY remain valid for fetch-only dry-runs.
 
 We use `os.environ.setdefault` so a real environment (e.g. a developer's
 shell with real credentials) is never overridden.

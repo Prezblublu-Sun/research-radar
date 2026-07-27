@@ -8,7 +8,9 @@ from __future__ import annotations
 
 import datetime as dt
 import json
+import os
 import pathlib
+import subprocess
 import sys
 from types import SimpleNamespace
 
@@ -19,6 +21,21 @@ sys.path.insert(0, str(REPO_ROOT))
 
 from pipeline import run_historical as rh  # noqa: E402
 from fetchers import arxiv_fetcher, openalex_fetcher, pubmed_fetcher  # noqa: E402
+
+
+def test_import_does_not_require_openai_key():
+    """Fetch-only historical dry-runs must import without scorer credentials."""
+    env = os.environ.copy()
+    env.pop("OPENAI_API_KEY", None)
+    result = subprocess.run(
+        [sys.executable, "-c", "import pipeline.run_historical"],
+        cwd=REPO_ROOT,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
 
 
 # ============================================================================
