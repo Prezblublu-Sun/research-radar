@@ -56,6 +56,7 @@ def _paper(*, doi: str, priority: str, title: str,
         "first_seen_at": "2024-12-12T08:00:00Z",
         "llm": {
             "priority": priority,
+            "relevance_level": "Direct",
             "summary_zh": {"motivation": "动机", "method": "方法"},
             "summary_en": {"motivation": "Motivation", "method": "Method"},
             "relevance_to_user": "Relevant because synthetic.",
@@ -192,6 +193,12 @@ def test_workbench_root_and_archive_month_grid(built):
     )
     queue = (built / "queue.html").read_text(encoding="utf-8")
     assert 'id="queue-results" class="paper-grid"' in queue
+    assert 'id="queue-pagination"' in queue
+    assert 'id="queue-prev"' in queue
+    assert 'id="queue-page"' in queue
+    assert 'id="queue-page-total"' in queue
+    assert 'id="queue-next"' in queue
+    assert 'id="queue-more"' not in queue
 
 
 def _articles(html: str) -> list[str]:
@@ -261,8 +268,17 @@ def test_d2_medium_queue_shard_and_manifest(built):
     manifest = json.loads(
         (built / "queue-manifest.json").read_text(encoding="utf-8")
     )
+    assert manifest["schema_version"] == 2
     assert manifest["priorities"]["High"]["total"] == 2
     assert manifest["priorities"]["Medium"]["total"] == 1
+    high_2024 = manifest["priorities"]["High"]["year_facets"]["2024"]
+    medium_2024 = manifest["priorities"]["Medium"]["year_facets"]["2024"]
+    assert high_2024["directions"] == {"fea_surrogate": 2}
+    assert medium_2024["directions"] == {"ai_bioprinting": 1}
+    assert high_2024["relevance"] == {"Direct": 2}
+    assert high_2024["direction_relevance"] == {
+        "fea_surrogate": {"Direct": 2},
+    }
 
 
 # ---------------------------------------------------------------- D3

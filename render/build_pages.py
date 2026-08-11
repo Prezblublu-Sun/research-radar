@@ -936,6 +936,7 @@ def _build_queue_index(docs_dir: pathlib.Path,
     priorities = {}
     for priority, years_data in grouped.items():
         year_counts = {}
+        year_facets = {}
         for year, records in years_data.items():
             records.sort(key=lambda record: (
                 record["date"], record["title"]
@@ -946,14 +947,42 @@ def _build_queue_index(docs_dir: pathlib.Path,
                 encoding="utf-8",
             )
             year_counts[year] = len(records)
+            direction_counts: dict[str, int] = {}
+            relevance_counts: dict[str, int] = {}
+            direction_relevance: dict[str, dict[str, int]] = {}
+            for record in records:
+                direction = record.get("direction") or ""
+                relevance = record.get("relevance_level") or ""
+                if direction:
+                    direction_counts[direction] = (
+                        direction_counts.get(direction, 0) + 1
+                    )
+                if relevance:
+                    relevance_counts[relevance] = (
+                        relevance_counts.get(relevance, 0) + 1
+                    )
+                if direction and relevance:
+                    pair_counts = direction_relevance.setdefault(direction, {})
+                    pair_counts[relevance] = pair_counts.get(relevance, 0) + 1
+            year_facets[year] = {
+                "total": len(records),
+                "directions": dict(sorted(direction_counts.items())),
+                "relevance": dict(sorted(relevance_counts.items())),
+                "direction_relevance": {
+                    direction: dict(sorted(counts.items()))
+                    for direction, counts in sorted(direction_relevance.items())
+                },
+            }
         priorities[priority] = {
             "total": sum(year_counts.values()),
             "years": {year: year_counts[year]
                       for year in sorted(year_counts, reverse=True)},
+            "year_facets": {year: year_facets[year]
+                            for year in sorted(year_facets, reverse=True)},
         }
 
     manifest = {
-        "schema_version": 1,
+        "schema_version": 2,
         "generated_at": _corpus_generated_at(buckets),
         **corpus_stats.as_dict(),
         "priorities": priorities,
@@ -991,7 +1020,14 @@ def _render_queue_page() -> str:
 </div>
 <div class="queue-status" id="queue-status" aria-live="polite">正在加载队列…</div>
 <div id="queue-results" class="paper-grid"></div>
-<button type="button" class="rui-btn queue-more" id="queue-more" hidden>加载更多</button>
+<nav class="queue-pagination" id="queue-pagination" aria-label="论文队列分页" hidden>
+  <button type="button" class="queue-page-button" id="queue-prev">← 上一页</button>
+  <label class="queue-page-picker" for="queue-page">页码
+    <select id="queue-page" aria-label="选择页码"></select>
+  </label>
+  <span class="queue-page-total" id="queue-page-total">共 0 页</span>
+  <button type="button" class="queue-page-button" id="queue-next">下一页 →</button>
+</nav>
 </main>
 </body></html>"""
 

@@ -72,7 +72,13 @@ def test_lazy_queue_builds_untrusted_records_with_dom_text_nodes():
     assert "textContent" in QUEUE_JS
     assert "document.createTextNode" in QUEUE_JS
     assert "innerHTML" not in QUEUE_JS
-    assert "PAGE_SIZE = 25" in QUEUE_JS
+    assert "PAGE_SIZE = 20" in QUEUE_JS
+    assert 'document.getElementById("queue-prev")' in QUEUE_JS
+    assert 'document.getElementById("queue-page")' in QUEUE_JS
+    assert 'document.getElementById("queue-next")' in QUEUE_JS
+    assert 'params.set("page", String(state.page))' in QUEUE_JS
+    assert "filtered.slice(start, start + PAGE_SIZE)" in QUEUE_JS
+    assert ".queue-pagination" in CSS
 
 
 def test_search_is_progressive_worker_backed_and_dom_safe():
