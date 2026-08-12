@@ -1,0 +1,57 @@
+name: enrich-research-radar-visuals
+
+on:
+  workflow_run:
+    workflows:
+      - daily-research-radar
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: Maximum High/Medium papers to check
+        required: false
+        default: "40"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: research-radar-writer
+  cancel-in-progress: false
+
+jobs:
+  enrich:
+    if: >-
+      github.event_name != 'workflow_run' ||
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out latest production data
+        uses: actions/checkout@v4
+        with:
+          # This workflow can wait behind another writer. Always enrich the
+          # latest main branch rather than the event's queued commit.
+          ref: main
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - run: pip install -e .
+
+      - name: Discover open-license card visuals
+        env:
+          PUBMED_EMAIL: ${{ vars.PUBMED_EMAIL }}
+          VISUAL_LIMIT: ${{ inputs.limit || '40' }}
+        run: python -m scripts.enrich_visuals --limit "$VISUAL_LIMIT"
+
+      - name: Commit visual sidecar only
+        run: |
+          git config user.name "research-radar-bot"
+          git config user.email "actions@github.com"
+          git add data/visuals/index.json
+          git diff --staged --quiet || git commit -m "visuals: enrich open-license paper figures"
+          git push

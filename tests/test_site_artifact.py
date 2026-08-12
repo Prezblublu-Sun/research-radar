@@ -14,6 +14,7 @@ DIRECTIONS = {
         "color": "#345678",
     }
 }
+REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 
 def _write_manifest(data_dir: pathlib.Path, run_date: str) -> None:
@@ -147,3 +148,61 @@ def test_rebuild_site_adds_weekly_analytics_and_nojekyll(tmp_path, monkeypatch):
     assert calls["weekly"]["output_dir"] == site_dir / "weekly"
     assert (site_dir / "analytics" / "index.html").read_text() == "analytics"
     assert (site_dir / ".nojekyll").exists()
+
+
+def test_legacy_rebuild_does_not_gain_weekly_archive_coupling(
+        tmp_path, monkeypatch):
+    project_root = tmp_path / "project"
+    data_dir = project_root / "data"
+    data_dir.mkdir(parents=True)
+    config_path = project_root / "directions.yaml"
+    config_path.write_text(
+        "directions:\n  fea_surrogate:\n"
+        "    display_name: FEA\n    color: '#345678'\n",
+        encoding="utf-8",
+    )
+    output_dir = project_root / "legacy-output"
+    calls = {"weekly": 0}
+
+    def fake_build(target, directions, *, data_dir, sharded_daily):
+        assert sharded_daily is False
+        target.mkdir(parents=True, exist_ok=True)
+        (target / "index.html").write_text("site", encoding="utf-8")
+
+    def forbidden_weekly(**kwargs):
+        calls["weekly"] += 1
+        raise AssertionError("legacy rebuild must not rebuild weekly reports")
+
+    monkeypatch.setattr(rebuild_site, "ROOT", project_root)
+    monkeypatch.setattr(rebuild_site.build_pages, "build", fake_build)
+    monkeypatch.setattr(
+        rebuild_site.weekly_report, "rebuild_all_weekly", forbidden_weekly,
+    )
+
+    assert rebuild_site.main([
+        "--docs-dir", str(output_dir),
+        "--data-dir", str(data_dir),
+        "--directions-yaml", str(config_path),
+    ]) == 0
+    assert calls["weekly"] == 0
+    assert (output_dir / ".nojekyll").exists()
+
+
+def test_visual_enrichment_is_a_post_daily_sidecar_writer():
+    workflow = (REPO_ROOT / ".github" / "workflows" / "visuals.yml").read_text(
+        encoding="utf-8"
+    )
+    pages = (REPO_ROOT / ".github" / "workflows" / "pages.yml").read_text(
+        encoding="utf-8"
+    )
+
+    assert "name: enrich-research-radar-visuals" in workflow
+    assert "- daily-research-radar" in workflow
+    assert "github.event.workflow_run.conclusion == 'success'" in workflow
+    assert "group: research-radar-writer" in workflow
+    assert "ref: main" in workflow
+    assert "python -m scripts.enrich_visuals" in workflow
+    assert "git add data/visuals/index.json" in workflow
+    assert "pipeline.run_daily" not in workflow
+    assert "git add data/ docs/" not in workflow
+    assert "- enrich-research-radar-visuals" in pages

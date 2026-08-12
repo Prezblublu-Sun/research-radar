@@ -1,0 +1,465 @@
+import datetime as dt
+import json
+import pathlib
+import sys
+import urllib.error
+
+ROOT = pathlib.Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+
+from scripts import enrich_visuals as ev
+
+
+UTC = dt.timezone.utc
+NOW = dt.datetime(2026, 8, 12, 12, 0, tzinfo=UTC)
+
+
+class FakeHttpResponse:
+    def __init__(self, payload=b"{}", *, url="https://example.test/data",
+                 content_length=None):
+        self.payload = payload
+        self.url = url
+        self.headers = {}
+        if content_length is not None:
+            self.headers["Content-Length"] = str(content_length)
+        self.closed = False
+
+    def geturl(self):
+        return self.url
+
+    def read(self, limit):
+        return self.payload[:limit]
+
+    def close(self):
+        self.closed = True
+
+
+class FakeOpener:
+    def __init__(self, *outcomes):
+        self.outcomes = list(outcomes)
+        self.calls = []
+
+    def open(self, request, timeout):
+        self.calls.append((request, timeout))
+        outcome = self.outcomes.pop(0)
+        if isinstance(outcome, Exception):
+            raise outcome
+        return outcome
+
+
+def test_http_client_encodes_params_and_bounds_provider_response():
+    response = FakeHttpResponse(
+        b'{"records": []}',
+        url="https://pmc.ncbi.nlm.nih.gov/result",
+    )
+    opener = FakeOpener(response)
+    client = ev.HttpClient(opener=opener, min_delay=0)
+    payload = client.get_json(
+        ev.ID_CONVERTER_URL,
+        params={"ids": "10.1/a b", "format": "json"},
+        allowed_hosts={"pmc.ncbi.nlm.nih.gov"},
+    )
+    assert payload == {"records": []}
+    requested_url = opener.calls[0][0].full_url
+    assert "ids=10.1%2Fa+b" in requested_url
+    assert response.closed
+
+    oversized = FakeHttpResponse(
+        b"x", url="https://pmc.ncbi.nlm.nih.gov/result",
+        content_length=100,
+    )
+    client = ev.HttpClient(opener=FakeOpener(oversized), min_delay=0)
+    try:
+        client.get_bytes(
+            ev.ID_CONVERTER_URL,
+            allowed_hosts={"pmc.ncbi.nlm.nih.gov"}, max_bytes=10,
+        )
+    except ev.FetchError as exc:
+        assert "size limit" in str(exc)
+    else:
+        raise AssertionError("oversized provider response was accepted")
+    assert oversized.closed
+
+
+def test_http_client_retries_transient_status_and_rejects_cross_host_redirect(
+        monkeypatch):
+    monkeypatch.setattr(ev.time, "sleep", lambda _seconds: None)
+    transient = urllib.error.HTTPError(
+        ev.ID_CONVERTER_URL, 429, "rate limited", {}, None,
+    )
+    success = FakeHttpResponse(
+        b"ok", url="https://pmc.ncbi.nlm.nih.gov/result",
+    )
+    opener = FakeOpener(transient, success)
+    client = ev.HttpClient(opener=opener, min_delay=0, max_attempts=2)
+    assert client.get_bytes(
+        ev.ID_CONVERTER_URL,
+        allowed_hosts={"pmc.ncbi.nlm.nih.gov"},
+    ) == b"ok"
+    assert len(opener.calls) == 2
+
+    redirected = FakeHttpResponse(url="https://publisher.example/figure")
+    client = ev.HttpClient(opener=FakeOpener(redirected), min_delay=0)
+    try:
+        client.get_bytes(
+            ev.ID_CONVERTER_URL,
+            allowed_hosts={"pmc.ncbi.nlm.nih.gov"},
+        )
+    except ev.FetchError as exc:
+        assert "redirected outside" in str(exc)
+    else:
+        raise AssertionError("cross-host redirect was accepted")
+    assert redirected.closed
+
+
+def test_normalize_license_is_fail_closed():
+    assert ev.normalize_license("CC BY 4.0") == "CC BY"
+    assert ev.normalize_license("https://creativecommons.org/licenses/by-sa/4.0/") == "CC BY-SA"
+    assert ev.normalize_license("https://creativecommons.org/publicdomain/zero/1.0/") == "CC0"
+    assert ev.normalize_license("CC-BY-NC-SA-4.0") == "CC BY-NC-SA"
+    assert ev.normalize_license("arXiv perpetual non-exclusive license").startswith("arXiv")
+    assert ev.ALLOWED_LICENSES == {"CC0", "CC BY", "CC BY-SA"}
+
+
+def test_pmc_media_url_allows_only_public_raster_bucket_objects():
+    assert ev.pmc_media_url(
+        "s3://pmc-oa-opendata/PMC123.1/gr1.jpg?md5=abc"
+    ) == "https://pmc-oa-opendata.s3.amazonaws.com/PMC123.1/gr1.jpg"
+    assert ev.pmc_media_url(
+        "https://pmc-oa-opendata.s3.amazonaws.com/PMC123.1/gr2.webp?md5=abc"
+    ).endswith("gr2.webp?md5=abc")
+    assert ev.pmc_media_url(
+        "s3://pmc-oa-opendata/deprecated/oa_package/gr1.jpg"
+    ) == ""
+    assert ev.pmc_media_url("https://publisher.example/gr1.jpg") == ""
+    assert ev.pmc_media_url(
+        "s3://pmc-oa-opendata/PMC123.1/unsafe.svg"
+    ) == ""
+
+
+def test_select_pmc_figure_skips_third_party_caption_and_prefers_safe_one():
+    xml = """
+    <article xmlns:xlink="http://www.w3.org/1999/xlink">
+      <body>
+        <fig>
+          <label>Figure 1</label>
+          <caption><p>Adapted with permission from Example Publisher.</p></caption>
+          <graphic xlink:href="gr1.jpg" />
+        </fig>
+        <fig>
+          <label>Figure 2</label>
+          <caption><p>Finite-element workflow and validation setup.</p></caption>
+          <graphic xlink:href="gr2.jpg" />
+        </fig>
+      </body>
+    </article>
+    """
+    selected = ev.select_pmc_figure(xml, [
+        "s3://pmc-oa-opendata/PMC123.1/gr1.jpg",
+        "s3://pmc-oa-opendata/PMC123.1/gr2.jpg",
+    ])
+    assert selected is not None
+    assert selected["label"] == "Figure 2"
+    assert selected["image_url"].endswith("/PMC123.1/gr2.jpg")
+
+
+def test_select_pmc_figure_rejects_all_required_exclusion_phrases():
+    phrases = [
+        "Reproduced with permission from A",
+        "Adapted with permission from B",
+        "Copyright 2024 Example",
+        "© 2024 Example",
+        "All rights reserved",
+        "Not included in the Creative Commons licence",
+    ]
+    for index, phrase in enumerate(phrases):
+        xml = f"""
+        <article xmlns:xlink="http://www.w3.org/1999/xlink">
+          <fig><caption><p>{phrase}</p></caption>
+          <graphic xlink:href="gr{index}.jpg" /></fig>
+        </article>
+        """
+        assert ev.select_pmc_figure(
+            xml, [f"s3://pmc-oa-opendata/PMC123.1/gr{index}.jpg"]
+        ) is None
+
+    outside_caption = """
+    <article xmlns:xlink="http://www.w3.org/1999/xlink">
+      <fig><caption><p>Otherwise neutral caption.</p></caption>
+        <attrib>Reproduced with permission from Example Publisher.</attrib>
+        <graphic xlink:href="gr9.jpg" /></fig>
+    </article>
+    """
+    assert ev.select_pmc_figure(
+        outside_caption, ["s3://pmc-oa-opendata/PMC123.1/gr9.jpg"]
+    ) is None
+
+
+class FakePmcClient:
+    def __init__(self):
+        self.calls = []
+
+    def get_json(self, url, *, params=None, allowed_hosts):
+        self.calls.append(("json", url, params, allowed_hosts))
+        if url == ev.ID_CONVERTER_URL:
+            return {"records": [{"pmcid": "PMC123", "pmid": 123}]}
+        assert url == f"{ev.PMC_BUCKET_URL}metadata/PMC123.2.json"
+        return {
+            "license_code": "CC BY 4.0",
+            "xml_url": "s3://pmc-oa-opendata/PMC123.2/PMC123.2.xml?md5=x",
+            "media_urls": [
+                "s3://pmc-oa-opendata/PMC123.2/gr1.jpg?md5=y",
+                "s3://pmc-oa-opendata/PMC123.2/gr2.jpg?md5=z",
+            ],
+        }
+
+    def get_text(self, url, *, params=None, allowed_hosts):
+        self.calls.append(("text", url, params, allowed_hosts))
+        if url == ev.PMC_BUCKET_URL:
+            return """
+            <ListBucketResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
+              <CommonPrefixes><Prefix>PMC123.1/</Prefix></CommonPrefixes>
+              <CommonPrefixes><Prefix>PMC123.2/</Prefix></CommonPrefixes>
+            </ListBucketResult>
+            """
+        assert url.endswith("/PMC123.2/PMC123.2.xml")
+        return """
+        <article xmlns:xlink="http://www.w3.org/1999/xlink"><body>
+          <fig><label>Fig. 1</label>
+            <caption><p>© Elsevier; used with permission.</p></caption>
+            <graphic xlink:href="gr1.jpg" /></fig>
+          <fig><label>Fig. 2</label>
+            <caption><p>Patient-specific geometry and stress field.</p></caption>
+            <graphic xlink:href="gr2.jpg" /></fig>
+        </body></article>
+        """
+
+
+def test_pmc_resolver_uses_new_s3_metadata_and_latest_version():
+    client = FakePmcClient()
+    resolver = ev.VisualResolver(client, email="maintainer@example.org")
+    visual = resolver.resolve_pmc(
+        {"pmid": "123", "title": "Paper"}, ev.iso_z(NOW)
+    )
+    assert visual["status"] == "available"
+    assert visual["license"] == "CC BY"
+    assert visual["image_url"].endswith("/PMC123.2/gr2.jpg")
+    assert visual["source_url"] == "https://pmc.ncbi.nlm.nih.gov/articles/PMC123/"
+    assert visual["source_label"] == "PubMed Central · Fig. 2"
+    assert "permission" not in visual["caption"].lower()
+    converter = client.calls[0]
+    assert converter[2]["tool"] == "research-radar-visuals"
+    assert converter[2]["email"] == "maintainer@example.org"
+    assert all("deprecated" not in call[1] for call in client.calls)
+
+
+class BlockedPmcClient(FakePmcClient):
+    def get_json(self, url, *, params=None, allowed_hosts):
+        if url == ev.ID_CONVERTER_URL:
+            return {"records": [{"pmcid": "PMC123"}]}
+        return {
+            "license_code": "CC BY-NC-ND 4.0",
+            "xml_url": "s3://pmc-oa-opendata/PMC123.2/article.xml",
+            "media_urls": ["s3://pmc-oa-opendata/PMC123.2/gr1.jpg"],
+        }
+
+
+def test_pmc_resolver_blocks_non_allowlisted_article_license():
+    visual = ev.VisualResolver(BlockedPmcClient()).resolve_pmc(
+        {"doi": "10.1/example"}, ev.iso_z(NOW)
+    )
+    assert visual["status"] == "blocked"
+    assert visual["reason"] == "pmc_license_not_reusable"
+    assert visual["image_url"] == ""
+    assert visual["license"] == "CC BY-NC-ND"
+
+
+class FakeArxivClient:
+    def __init__(self, license_url="https://creativecommons.org/licenses/by/4.0/"):
+        self.license_url = license_url
+        self.calls = []
+
+    def get_text(self, url, *, params=None, allowed_hosts):
+        self.calls.append((url, params))
+        if url == ev.ARXIV_OAI_URL:
+            return (
+                '<OAI-PMH><record><metadata><arXivRaw>'
+                f'<license>{self.license_url}</license>'
+                '</arXivRaw></metadata></record></OAI-PMH>'
+            )
+        return """
+        <html><body>
+          <figure><img src="x1.png" />
+            <figcaption>Reproduced with permission from Publisher.</figcaption>
+          </figure>
+          <figure class="ltx_figure"><img src="figures/x2.png" alt="Workflow" />
+            <figcaption>Overview of the proposed workflow.</figcaption>
+          </figure>
+        </body></html>
+        """
+
+
+def test_arxiv_resolver_requires_oai_license_and_skips_excluded_figure():
+    client = FakeArxivClient()
+    visual = ev.VisualResolver(client).resolve_arxiv(
+        {"arxiv_id": "2605.12345v2", "title": "Paper"}, ev.iso_z(NOW)
+    )
+    assert visual["status"] == "available"
+    assert visual["license"] == "CC BY"
+    assert visual["image_url"] == (
+        "https://arxiv.org/html/2605.12345/figures/x2.png"
+    )
+    assert visual["source_url"] == "https://arxiv.org/abs/2605.12345"
+    assert client.calls[0][1]["metadataPrefix"] == "arXivRaw"
+
+
+def test_arxiv_resolver_does_not_fetch_html_for_default_license():
+    client = FakeArxivClient("http://arxiv.org/licenses/nonexclusive-distrib/1.0/")
+    visual = ev.VisualResolver(client).resolve_arxiv(
+        {"arxiv_id": "2605.12345v1"}, ev.iso_z(NOW)
+    )
+    assert visual["status"] == "blocked"
+    assert visual["image_url"] == ""
+    assert len(client.calls) == 1
+
+
+class IsolatedResolver(ev.VisualResolver):
+    def __init__(self, pmc_result, arxiv_result):
+        self.pmc_result = pmc_result
+        self.arxiv_result = arxiv_result
+
+    def resolve_pmc(self, paper, checked_at):
+        if isinstance(self.pmc_result, Exception):
+            raise self.pmc_result
+        return self.pmc_result
+
+    def resolve_arxiv(self, paper, checked_at):
+        if isinstance(self.arxiv_result, Exception):
+            raise self.arxiv_result
+        return self.arxiv_result
+
+
+def test_provider_failure_does_not_block_available_fallback():
+    arxiv = ev._available_visual(
+        checked_at=ev.iso_z(NOW), image_url="https://arxiv.org/html/1/fig.png",
+        caption="Safe", source_label="arXiv",
+        source_url="https://arxiv.org/abs/1", license_name="CC BY",
+        alt="Safe", provider="arxiv",
+    )
+    result = IsolatedResolver(ev.FetchError("PMC timeout"), arxiv).resolve(
+        {"doi": "10.1/a", "arxiv_id": "1"}, now=NOW
+    )
+    assert result["status"] == "available"
+    assert result["provider"] == "arxiv"
+
+
+def test_secondary_provider_failure_does_not_override_pmc_negative_result():
+    pmc = ev._blank_visual(
+        "not_found", checked_at=ev.iso_z(NOW),
+        reason="pmc_no_reusable_figure", provider="pmc",
+    )
+    result = IsolatedResolver(pmc, ev.FetchError("arXiv timeout")).resolve(
+        {"doi": "10.1/a", "arxiv_id": "1"}, now=NOW
+    )
+    assert result["status"] == "not_found"
+    assert result["provider"] == "pmc"
+
+
+def test_registry_cache_ttls():
+    recent = ev.iso_z(NOW - dt.timedelta(days=10))
+    old = ev.iso_z(NOW - dt.timedelta(days=31))
+    assert not ev.should_refresh(
+        {"status": "not_found", "checked_at": recent}, now=NOW
+    )
+    assert ev.should_refresh(
+        {"status": "not_found", "checked_at": old}, now=NOW
+    )
+    assert not ev.should_refresh(
+        {"status": "error", "checked_at": ev.iso_z(NOW - dt.timedelta(hours=4))},
+        now=NOW,
+    )
+    assert ev.should_refresh(
+        {"status": "available", "checked_at": recent}, now=NOW, force=True
+    )
+
+
+def test_candidates_are_recent_first_then_priority(tmp_path):
+    daily = tmp_path / "daily"
+    daily.mkdir()
+    (daily / "2025-01-01.json").write_text(json.dumps({
+        "papers": [{
+            "doi": "10.1/old-high",
+            "first_seen_at": "2025-01-01T01:00:00Z",
+            "llm": {"priority": "High"},
+        }]
+    }), encoding="utf-8")
+    (daily / "2026-08-12.json").write_text(json.dumps({
+        "papers": [
+            {"doi": "10.1/new-medium",
+             "first_seen_at": "2026-08-12T01:00:00Z",
+             "llm": {"priority": "Medium"}},
+            {"doi": "10.1/new-high",
+             "first_seen_at": "2026-08-12T01:00:00Z",
+             "llm": {"priority": "High"}},
+        ]
+    }), encoding="utf-8")
+    keys = [row[0] for row in ev.iter_candidates(daily, {"High", "Medium"})]
+    assert keys == [
+        "doi:10.1/new-high", "doi:10.1/new-medium", "doi:10.1/old-high"
+    ]
+
+
+def test_candidate_identity_filter_is_exact_and_repeatable(tmp_path):
+    daily = tmp_path / "daily"
+    daily.mkdir()
+    (daily / "2026-08-12.json").write_text(json.dumps({
+        "papers": [
+            {"doi": "10.1/keep", "llm": {"priority": "High"}},
+            {"doi": "10.1/skip", "llm": {"priority": "High"}},
+        ]
+    }), encoding="utf-8")
+    rows = ev.iter_candidates(
+        daily, {"High", "Medium"}, {"doi:10.1/keep"},
+    )
+    assert [row[0] for row in rows] == ["doi:10.1/keep"]
+
+
+class SometimesFailingResolver:
+    def resolve(self, paper, *, now=None):
+        if paper["doi"].endswith("first"):
+            raise RuntimeError("provider unavailable")
+        return ev._available_visual(
+            checked_at=ev.iso_z(now),
+            image_url="https://arxiv.org/html/1/fig.png",
+            caption="Safe figure", source_label="arXiv",
+            source_url="https://arxiv.org/abs/1", license_name="CC BY",
+            alt="Safe", provider="arxiv",
+        )
+
+
+def test_enrich_is_failure_isolated_and_writes_flat_identity_registry(tmp_path):
+    daily = tmp_path / "daily"
+    daily.mkdir()
+    (daily / "2026-08-12.json").write_text(json.dumps({
+        "papers": [
+            {"doi": "10.1/first", "llm": {"priority": "High"}},
+            {"doi": "10.1/second", "llm": {"priority": "Medium"}},
+            {"doi": "10.1/low", "llm": {"priority": "Low"}},
+        ]
+    }), encoding="utf-8")
+    index = tmp_path / "visuals" / "index.json"
+    result = ev.enrich(
+        daily_dir=daily, index_path=index,
+        resolver=SometimesFailingResolver(), limit=10,
+        priorities={"High", "Medium"}, now=NOW,
+    )
+    assert result["attempted"] == 2
+    assert result["counts"] == {"error": 1, "available": 1}
+    saved = json.loads(index.read_text(encoding="utf-8"))
+    assert saved["schema_version"] == "v1"
+    assert set(saved["records"]) == {"doi:10.1/first", "doi:10.1/second"}
+    assert saved["records"]["doi:10.1/first"]["status"] == "error"
+    available = saved["records"]["doi:10.1/second"]
+    assert available["status"] == "available"
+    assert available["license"] == "CC BY"
+    assert not (index.parent / "index.json.tmp").exists()

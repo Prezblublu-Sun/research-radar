@@ -46,6 +46,25 @@ Every daily run is reproducible:
 - `prompts/scorer_vN.txt` — versioned scorer prompts (never overwritten)
 - Monthly GitHub Release `archive-YYYY-MM` — long-term data archive
 
+## Open-license card visuals
+
+`enrich-research-radar-visuals` runs after a successful daily workflow and
+checks a bounded, newest-first High/Medium batch. It reads official PMC/arXiv
+metadata, exposes a figure only under the configured reusable Creative Commons
+licenses, and writes metadata to `data/visuals/index.json`. It never changes
+paper scores or search ranking and does not store image/PDF binaries in Git.
+
+Manual examples:
+
+```bash
+python -m scripts.enrich_visuals --limit 20
+python -m scripts.enrich_visuals \
+  --identity doi:10.1016/j.isci.2026.116487 --limit 1 --force
+```
+
+Set `PUBMED_EMAIL` for the PMC ID Converter. Missing, restricted, and failed
+lookups render the explicit card state `暂时没有获取到图片`.
+
 ## License
 
 MIT. Original UI inspiration from dw-dengwei/daily-arXiv-ai-enhanced.

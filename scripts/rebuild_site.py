@@ -49,11 +49,17 @@ def main(argv: list[str] | None = None) -> int:
         args.docs_dir, directions, data_dir=args.data_dir,
         sharded_daily=args.sharded_daily,
     )
-    weekly_reports = weekly_report.rebuild_all_weekly(
-        data_dir=args.data_dir,
-        output_dir=args.docs_dir / "weekly",
-        directions_cfg=directions,
-    )
+    weekly_reports = []
+    if args.sharded_daily:
+        # A disposable Pages artifact must be complete when built from an
+        # empty directory.  The legacy writer target already owns its weekly
+        # archive, so a manual site rebuild must not gain an unrelated weekly
+        # failure mode or rewrite those reports.
+        weekly_reports = weekly_report.rebuild_all_weekly(
+            data_dir=args.data_dir,
+            output_dir=args.docs_dir / "weekly",
+            directions_cfg=directions,
+        )
 
     source_docs = ROOT / "docs"
     source_analytics = source_docs / "analytics"
@@ -70,7 +76,8 @@ def main(argv: list[str] | None = None) -> int:
 
     args.docs_dir.mkdir(parents=True, exist_ok=True)
     (args.docs_dir / ".nojekyll").write_text("", encoding="utf-8")
-    print(f"rebuilt weekly reports: {len(weekly_reports)}")
+    if args.sharded_daily:
+        print(f"rebuilt weekly reports: {len(weekly_reports)}")
     print(f"rebuilt site: {args.docs_dir}")
     return 0
 

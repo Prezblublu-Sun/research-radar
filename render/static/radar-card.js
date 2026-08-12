@@ -62,6 +62,147 @@
     parent.appendChild(wrapper);
   }
 
+  var visualImageHosts = {
+    "arxiv.org": true,
+    "export.arxiv.org": true,
+    "pmc-oa-opendata.s3.amazonaws.com": true
+  };
+
+  function safeVisualUrl(value, imageAsset) {
+    var raw = text(value).trim();
+    if (!raw || raw.charAt(0) === "#" || /^\/\//.test(raw)) return "";
+    var hasScheme = /^[a-z][a-z0-9+.-]*:/i.test(raw);
+    try {
+      var parsed = new URL(raw, document.baseURI);
+      if (parsed.origin === window.location.origin &&
+          (!hasScheme || parsed.protocol === "https:")) {
+        return parsed.href;
+      }
+      if (parsed.protocol === "https:" &&
+          (!imageAsset || visualImageHosts[parsed.hostname.toLowerCase()])) {
+        return parsed.href;
+      }
+    } catch (error) {
+      /* Invalid or unsafe visual URL: use the explicit empty state. */
+    }
+    return "";
+  }
+
+  function positiveDimension(value) {
+    var number = Number(value);
+    return Number.isFinite(number) && number > 0 && number <= 10000 ?
+      Math.round(number) : 0;
+  }
+
+  function visualRecord(record) {
+    var visual = record.visual;
+    if (!visual || typeof visual !== "object" || Array.isArray(visual)) {
+      visual = record.figure;
+    }
+    return visual && typeof visual === "object" && !Array.isArray(visual) ?
+      visual : {};
+  }
+
+  function renderVisualFallback(figure) {
+    figure.className = "paper-visual paper-visual--empty";
+    figure.dataset.visualStatus = "unavailable";
+    var frame = element("div", "paper-visual__frame paper-visual__fallback");
+    var symbol = element("span", "paper-visual__symbol", "\u25a7");
+    symbol.setAttribute("aria-hidden", "true");
+    frame.appendChild(symbol);
+    frame.appendChild(element(
+      "span", "paper-visual__empty-label", "暂时没有获取到图片"
+    ));
+    figure.replaceChildren(frame);
+  }
+
+  function bindImageFallback(image, figure) {
+    if (image.dataset.visualReady === "1") return;
+    image.dataset.visualReady = "1";
+    image.addEventListener("error", function () {
+      renderVisualFallback(figure);
+    }, { once: true });
+    if (image.complete && image.naturalWidth === 0) {
+      renderVisualFallback(figure);
+    }
+  }
+
+  function appendVisualMeta(figure, visual) {
+    var sourceUrl = safeVisualUrl(visual.source_url, false);
+    var sourceLabel = text(visual.source_label).trim();
+    var license = text(visual.license).trim();
+    if (!sourceUrl && !sourceLabel && !license) return;
+
+    var meta = element("div", "paper-visual__meta");
+    if (sourceUrl) {
+      var source = element("a", "paper-visual__source", sourceLabel || "图片来源");
+      source.href = sourceUrl;
+      source.target = "_blank";
+      source.rel = "noopener noreferrer";
+      meta.appendChild(source);
+    } else if (sourceLabel) {
+      meta.appendChild(element("span", "paper-visual__source", sourceLabel));
+    }
+    if (license) {
+      meta.appendChild(element("span", "paper-visual__license", license));
+    }
+    figure.appendChild(meta);
+  }
+
+  function buildVisual(record) {
+    var visual = visualRecord(record);
+    var status = text(visual.status).toLowerCase();
+    var imageUrl = safeVisualUrl(visual.image_url, true);
+    var figure = element("figure", "paper-visual");
+    if ((status !== "available" && status !== "found") || !imageUrl) {
+      renderVisualFallback(figure);
+      return figure;
+    }
+
+    figure.dataset.visualStatus = "available";
+    var frame = element("div", "paper-visual__frame");
+    var image = element("img", "paper-visual__image");
+    image.src = imageUrl;
+    image.alt = text(visual.alt).trim() || text(visual.caption).trim() ||
+      "论文“" + text(record.title || "未命名") + "”的视觉展示";
+    image.loading = "lazy";
+    image.decoding = "async";
+    image.referrerPolicy = "no-referrer";
+    var width = positiveDimension(visual.width);
+    var height = positiveDimension(visual.height);
+    if (width) image.width = width;
+    if (height) image.height = height;
+
+    var sourceUrl = safeVisualUrl(visual.source_url, false);
+    if (sourceUrl) {
+      var imageLink = element("a", "paper-visual__image-link");
+      imageLink.href = sourceUrl;
+      imageLink.target = "_blank";
+      imageLink.rel = "noopener noreferrer";
+      imageLink.appendChild(image);
+      frame.appendChild(imageLink);
+    } else {
+      frame.appendChild(image);
+    }
+    figure.appendChild(frame);
+    if (visual.caption) {
+      figure.appendChild(element(
+        "figcaption", "paper-visual__caption", visual.caption
+      ));
+    }
+    appendVisualMeta(figure, visual);
+    bindImageFallback(image, figure);
+    return figure;
+  }
+
+  function enhanceVisuals(root) {
+    var scope = root && root.querySelectorAll ? root : document;
+    scope.querySelectorAll(".paper-visual img").forEach(function (image) {
+      var figure = image.closest(".paper-visual");
+      if (figure) bindImageFallback(image, figure);
+    });
+  }
+
   function authorText(record) {
     if (record.authors_display) return text(record.authors_display);
     if (typeof record.authors === "string") return record.authors;
@@ -228,49 +369,58 @@
     addExternalLink(meta, record);
     card.appendChild(meta);
 
+    var body = element("div", "paper-body");
+    var copy = element("div", "paper-copy");
     if (record.first_author_affiliation) {
       var affiliation = element("div", "affiliations");
       affiliation.appendChild(element("b", "", "单位:"));
       affiliation.appendChild(document.createTextNode(
         " " + text(record.first_author_affiliation).slice(0, 200)
       ));
-      card.appendChild(affiliation);
+      copy.appendChild(affiliation);
     }
-    appendCorresponding(card, record.corresponding_authors);
+    appendCorresponding(copy, record.corresponding_authors);
 
     var relevance = element("div", "relevance");
     relevance.appendChild(element("b", "", "相关性:"));
     relevance.appendChild(document.createTextNode(
       " " + text(record.relevance_to_user)
     ));
-    card.appendChild(relevance);
+    copy.appendChild(relevance);
     if (record.why_not_core) {
       var boundary = element("div", "why-not-core");
       boundary.appendChild(element("b", "", "边界:"));
       boundary.appendChild(document.createTextNode(" " + text(record.why_not_core)));
-      card.appendChild(boundary);
+      copy.appendChild(boundary);
     }
 
-    appendSummary(card, "summary", record.summary_zh, [
+    appendSummary(copy, "summary", record.summary_zh, [
       ["motivation", "动机"], ["method", "方法"],
       ["result", "结果"], ["validation", "验证"]
     ]);
-    appendEnglishSummary(card, record);
+    appendEnglishSummary(copy, record);
 
     var tags = element("div", "tags-row");
     (Array.isArray(record.tags) ? record.tags : []).forEach(function (tag) {
       tags.appendChild(element("span", "tag", tag));
     });
-    card.appendChild(tags);
+    copy.appendChild(tags);
 
     if (options.dailyLink && /^\d{4}-\d{2}-\d{2}$/.test(text(record.date))) {
       var sourceLink = element("a", "rui-link-tool", "打开发表日期页 →");
       sourceLink.href = record.date + ".html#" + encodeURIComponent(anchor);
-      card.appendChild(sourceLink);
+      copy.appendChild(sourceLink);
     }
+    body.appendChild(copy);
+    body.appendChild(buildVisual(record));
+    card.appendChild(body);
     card.appendChild(buildTools(anchor));
     return card;
   }
 
-  window.RadarCard = { buildCard: buildCard };
+  window.RadarCard = {
+    buildCard: buildCard,
+    enhanceVisuals: enhanceVisuals
+  };
+  enhanceVisuals(document);
 })();
