@@ -112,6 +112,55 @@ def test_http_client_retries_transient_status_and_rejects_cross_host_redirect(
     assert redirected.closed
 
 
+def test_http_client_accepts_only_official_arxiv_oai_redirect_hosts():
+    migrated = FakeHttpResponse(
+        b"<OAI-PMH />", url="https://oaipmh.arxiv.org/oai?verb=Identify",
+    )
+    client = ev.HttpClient(opener=FakeOpener(migrated), min_delay=0)
+    assert client.get_bytes(
+        "https://export.arxiv.org/oai2",
+        allowed_hosts=ev.ARXIV_OAI_HOSTS,
+    ) == b"<OAI-PMH />"
+    assert migrated.closed
+
+    outside = FakeHttpResponse(
+        b"<OAI-PMH />", url="https://metadata.example/oai",
+    )
+    client = ev.HttpClient(opener=FakeOpener(outside), min_delay=0)
+    try:
+        client.get_bytes(
+            "https://export.arxiv.org/oai2",
+            allowed_hosts=ev.ARXIV_OAI_HOSTS,
+        )
+    except ev.FetchError as exc:
+        assert "redirected outside" in str(exc)
+    else:
+        raise AssertionError("non-arXiv OAI redirect was accepted")
+    assert outside.closed
+
+
+def test_http_client_verifies_image_magic_bytes():
+    png = FakeHttpResponse(
+        b"\x89PNG\r\n\x1a\ncontent", url="https://arxiv.org/html/figure.png",
+    )
+    ev.HttpClient(opener=FakeOpener(png), min_delay=0).verify_image(
+        "https://arxiv.org/html/figure.png", allowed_hosts={"arxiv.org"},
+    )
+
+    html = FakeHttpResponse(
+        b"<!doctype html><title>404</title>",
+        url="https://arxiv.org/html/missing.png",
+    )
+    try:
+        ev.HttpClient(opener=FakeOpener(html), min_delay=0).verify_image(
+            "https://arxiv.org/html/missing.png", allowed_hosts={"arxiv.org"},
+        )
+    except ev.FetchError as exc:
+        assert "invalid signature" in str(exc)
+    else:
+        raise AssertionError("an HTML error page was accepted as an image")
+
+
 def test_normalize_license_is_fail_closed():
     assert ev.normalize_license("CC BY 4.0") == "CC BY"
     assert ev.normalize_license("https://creativecommons.org/licenses/by-sa/4.0/") == "CC BY-SA"
@@ -161,6 +210,36 @@ def test_select_pmc_figure_skips_third_party_caption_and_prefers_safe_one():
     assert selected is not None
     assert selected["label"] == "Figure 2"
     assert selected["image_url"].endswith("/PMC123.1/gr2.jpg")
+
+
+def test_figure_selectors_skip_logos_covers_and_author_photos():
+    xml = """
+    <article xmlns:xlink="http://www.w3.org/1999/xlink"><body>
+      <fig><label>Journal logo</label><graphic xlink:href="brand-logo.png" /></fig>
+      <fig><label>Figure 1</label><caption><p>Validated workflow.</p></caption>
+        <graphic xlink:href="workflow.png" /></fig>
+    </body></article>
+    """
+    selected_pmc = ev.select_pmc_figure(xml, [
+        "s3://pmc-oa-opendata/PMC123.1/brand-logo.png",
+        "s3://pmc-oa-opendata/PMC123.1/workflow.png",
+    ])
+    assert selected_pmc is not None
+    assert selected_pmc["image_url"].endswith("/workflow.png")
+
+    html = """
+    <html><body>
+      <figure><img src="openmdao_main_logo.png" alt="Project logo" /></figure>
+      <figure><img src="author-photo.jpg" alt="Author photo" /></figure>
+      <figure><img src="figures/results.png" alt="Stress field" />
+        <figcaption>Finite-element validation results.</figcaption></figure>
+    </body></html>
+    """
+    selected_arxiv = ev.select_arxiv_figure(
+        html, "https://arxiv.org/html/2606.13245",
+    )
+    assert selected_arxiv is not None
+    assert selected_arxiv["image_url"].endswith("/figures/results.png")
 
 
 def test_select_pmc_figure_rejects_all_required_exclusion_phrases():
@@ -234,6 +313,11 @@ class FakePmcClient:
         </body></article>
         """
 
+    def verify_image(self, url, *, allowed_hosts):
+        self.calls.append(("image", url, None, allowed_hosts))
+        assert url.endswith("/PMC123.2/gr2.jpg")
+        assert allowed_hosts == {ev.PMC_BUCKET_HOST}
+
 
 def test_pmc_resolver_uses_new_s3_metadata_and_latest_version():
     client = FakePmcClient()
@@ -280,7 +364,7 @@ class FakeArxivClient:
         self.calls = []
 
     def get_text(self, url, *, params=None, allowed_hosts):
-        self.calls.append((url, params))
+        self.calls.append((url, params, allowed_hosts))
         if url == ev.ARXIV_OAI_URL:
             return (
                 '<OAI-PMH><record><metadata><arXivRaw>'
@@ -298,6 +382,10 @@ class FakeArxivClient:
         </body></html>
         """
 
+    def verify_image(self, url, *, allowed_hosts):
+        self.calls.append(("image", url, allowed_hosts))
+        assert allowed_hosts == {"arxiv.org"}
+
 
 def test_arxiv_resolver_requires_oai_license_and_skips_excluded_figure():
     client = FakeArxivClient()
@@ -307,10 +395,14 @@ def test_arxiv_resolver_requires_oai_license_and_skips_excluded_figure():
     assert visual["status"] == "available"
     assert visual["license"] == "CC BY"
     assert visual["image_url"] == (
-        "https://arxiv.org/html/2605.12345/figures/x2.png"
+        "https://arxiv.org/html/figures/x2.png"
     )
     assert visual["source_url"] == "https://arxiv.org/abs/2605.12345"
+    assert client.calls[0][0] == "https://oaipmh.arxiv.org/oai"
     assert client.calls[0][1]["metadataPrefix"] == "arXivRaw"
+    assert client.calls[0][2] == {
+        "oaipmh.arxiv.org", "export.arxiv.org",
+    }
 
 
 def test_arxiv_resolver_does_not_fetch_html_for_default_license():
@@ -409,6 +501,32 @@ def test_candidates_are_recent_first_then_priority(tmp_path):
     ]
 
 
+def test_candidates_use_canonical_winner_priority_not_stale_duplicate(tmp_path):
+    daily = tmp_path / "daily"
+    daily.mkdir()
+    (daily / "2026-01-01.json").write_text(json.dumps({
+        "papers": [
+            {"doi": "10.1/demoted", "first_seen_at": "2026-01-01T00:00:00Z",
+             "llm": {"priority": "Low"}},
+            {"doi": "10.1/kept", "first_seen_at": "2026-01-01T00:00:00Z",
+             "llm": {"priority": "High"}},
+        ],
+    }), encoding="utf-8")
+    (daily / "2026-08-12.json").write_text(json.dumps({
+        "papers": [
+            {"doi": "10.1/demoted", "first_seen_at": "2026-08-12T00:00:00Z",
+             "llm": {"priority": "High"}},
+            {"doi": "10.1/kept", "first_seen_at": "2026-08-12T00:00:00Z",
+             "llm": {"priority": "Exclude"}},
+        ],
+    }), encoding="utf-8")
+
+    rows = ev.iter_candidates(daily, {"High", "Medium"})
+
+    assert [row[0] for row in rows] == ["doi:10.1/kept"]
+    assert rows[0][2] == "2026-01-01"
+
+
 def test_candidate_identity_filter_is_exact_and_repeatable(tmp_path):
     daily = tmp_path / "daily"
     daily.mkdir()
@@ -463,3 +581,93 @@ def test_enrich_is_failure_isolated_and_writes_flat_identity_registry(tmp_path):
     assert available["status"] == "available"
     assert available["license"] == "CC BY"
     assert not (index.parent / "index.json.tmp").exists()
+
+
+class CountingResolver:
+    def __init__(self):
+        self.calls = []
+
+    def resolve(self, paper, *, now=None):
+        self.calls.append(ev.identity_key(paper))
+        return ev._available_visual(
+            checked_at=ev.iso_z(now),
+            image_url="https://arxiv.org/html/2608.12345/figure.png",
+            caption="Safe figure", source_label="arXiv",
+            source_url="https://arxiv.org/abs/2608.12345",
+            license_name="CC BY", alt="Safe", provider="arxiv",
+        )
+
+
+def test_lookup_aliases_deduplicate_requests_without_changing_public_keys(
+        tmp_path):
+    daily = tmp_path / "daily"
+    daily.mkdir()
+    papers = [
+        {"doi": "10.1234/CaseSensitive", "llm": {"priority": "High"}},
+        # Non-target priorities are not requested independently, but a result
+        # discovered for the same provider identity is still copied to their
+        # exact renderer keys.
+        {"doi": "10.1234/casesensitive", "llm": {"priority": "Low"}},
+        {"arxiv_id": "2608.12345v1", "llm": {"priority": "Medium"}},
+        {"arxiv_id": "2608.12345v3", "llm": {"priority": "Exclude"}},
+    ]
+    (daily / "2026-08-12.json").write_text(json.dumps({
+        "papers": papers,
+    }), encoding="utf-8")
+    index = tmp_path / "visuals" / "index.json"
+    resolver = CountingResolver()
+
+    result = ev.enrich(
+        daily_dir=daily, index_path=index, resolver=resolver, limit=10,
+        priorities={"High", "Medium"}, now=NOW,
+    )
+
+    exact_keys = {ev.identity_key(paper) for paper in papers}
+    assert exact_keys == {
+        "doi:10.1234/CaseSensitive", "doi:10.1234/casesensitive",
+        "arxiv:2608.12345v1", "arxiv:2608.12345v3",
+    }
+    assert ev.visual_lookup_key(papers[0]) == ev.visual_lookup_key(papers[1])
+    assert ev.visual_lookup_key(papers[2]) == ev.visual_lookup_key(papers[3])
+    assert result["attempted"] == 2
+    assert len(resolver.calls) == 2
+    assert result["counts"] == {"available": 2}
+    saved = json.loads(index.read_text(encoding="utf-8"))["records"]
+    assert set(saved) == exact_keys
+    assert all(saved[key]["status"] == "available" for key in exact_keys)
+
+
+def test_fresh_registry_alias_is_reused_and_copied_to_current_exact_key(tmp_path):
+    daily = tmp_path / "daily"
+    daily.mkdir()
+    (daily / "2026-08-12.json").write_text(json.dumps({
+        "papers": [{
+            "doi": "10.1234/lowercase",
+            "llm": {"priority": "High"},
+        }],
+    }), encoding="utf-8")
+    index = tmp_path / "visuals" / "index.json"
+    cached = ev._available_visual(
+        checked_at=ev.iso_z(NOW - dt.timedelta(days=1)),
+        image_url="https://arxiv.org/html/2608.12345/figure.png",
+        caption="Cached figure", source_label="arXiv",
+        source_url="https://arxiv.org/abs/2608.12345",
+        license_name="CC BY", alt="Cached", provider="arxiv",
+    )
+    index.parent.mkdir()
+    index.write_text(json.dumps({
+        "schema_version": "v1",
+        "records": {"doi:10.1234/LOWERCASE": cached},
+    }), encoding="utf-8")
+    resolver = CountingResolver()
+
+    result = ev.enrich(
+        daily_dir=daily, index_path=index, resolver=resolver, limit=10,
+        priorities={"High", "Medium"}, now=NOW,
+    )
+
+    assert result["attempted"] == 0
+    assert resolver.calls == []
+    saved = json.loads(index.read_text(encoding="utf-8"))["records"]
+    assert saved["doi:10.1234/lowercase"] == cached
+    assert saved["doi:10.1234/LOWERCASE"] == cached

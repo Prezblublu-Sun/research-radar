@@ -54,6 +54,20 @@ metadata, exposes a figure only under the configured reusable Creative Commons
 licenses, and writes metadata to `data/visuals/index.json`. It never changes
 paper scores or search ranking and does not store image/PDF binaries in Git.
 
+For historical coverage, run the workflow manually in checkpointed batches.
+Choose `High` first, use 100 papers for the initial quality sample, and then
+raise the batch to at most 500. Each successful run commits the sidecar before
+the next writer starts, so a later provider failure does not discard earlier
+batches. After High is reviewed, repeat with `Medium`. `High+Medium` remains the
+40-paper automatic post-daily mode. Records already checked within their TTL
+are skipped, so repeated runs continue from the next eligible papers.
+
+```bash
+gh workflow run visuals.yml -f scope=High -F limit=100
+gh workflow run visuals.yml -f scope=High -F limit=500
+gh workflow run visuals.yml -f scope=Medium -F limit=500
+```
+
 Manual examples:
 
 ```bash
@@ -63,7 +77,8 @@ python -m scripts.enrich_visuals \
 ```
 
 Set `PUBMED_EMAIL` for the PMC ID Converter. Missing, restricted, and failed
-lookups render the explicit card state `暂时没有获取到图片`.
+lookups render the explicit card state `暂时没有获取到图片`. Only explicitly
+reusable figures are published; a technically downloadable image is not enough.
 
 ## License
 

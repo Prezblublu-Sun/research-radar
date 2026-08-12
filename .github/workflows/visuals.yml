@@ -8,10 +8,20 @@ on:
     branches: [main]
   workflow_dispatch:
     inputs:
+      scope:
+        description: Priority queue to backfill
+        required: true
+        type: choice
+        options:
+          - High
+          - Medium
+          - High+Medium
+        default: High
       limit:
-        description: Maximum High/Medium papers to check
-        required: false
-        default: "40"
+        description: Papers to check in this checkpointed batch (1-500)
+        required: true
+        type: number
+        default: 100
 
 permissions:
   contents: write
@@ -26,7 +36,7 @@ jobs:
       github.event_name != 'workflow_run' ||
       github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 90
     steps:
       - name: Check out latest production data
         uses: actions/checkout@v4
@@ -45,8 +55,30 @@ jobs:
       - name: Discover open-license card visuals
         env:
           PUBMED_EMAIL: ${{ vars.PUBMED_EMAIL }}
-          VISUAL_LIMIT: ${{ inputs.limit || '40' }}
-        run: python -m scripts.enrich_visuals --limit "$VISUAL_LIMIT"
+          VISUAL_LIMIT: ${{ github.event_name == 'workflow_dispatch' && inputs.limit || 40 }}
+          VISUAL_SCOPE: ${{ github.event_name == 'workflow_dispatch' && inputs.scope || 'High+Medium' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! [[ "$VISUAL_LIMIT" =~ ^[0-9]+$ ]] ||
+             [ "$VISUAL_LIMIT" -lt 1 ] || [ "$VISUAL_LIMIT" -gt 500 ]; then
+            echo "::error::limit must be an integer from 1 to 500"
+            exit 2
+          fi
+
+          case "$VISUAL_SCOPE" in
+            High) priorities=(High) ;;
+            Medium) priorities=(Medium) ;;
+            High+Medium) priorities=(High Medium) ;;
+            *)
+              echo "::error::unsupported visual scope: $VISUAL_SCOPE"
+              exit 2
+              ;;
+          esac
+
+          python -m scripts.enrich_visuals \
+            --limit "$VISUAL_LIMIT" \
+            --priorities "${priorities[@]}"
 
       - name: Commit visual sidecar only
         run: |

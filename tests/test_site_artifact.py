@@ -202,6 +202,11 @@ def test_visual_enrichment_is_a_post_daily_sidecar_writer():
     assert "group: research-radar-writer" in workflow
     assert "ref: main" in workflow
     assert "python -m scripts.enrich_visuals" in workflow
+    assert "Priority queue to backfill" in workflow
+    assert "- High+Medium" in workflow
+    assert 'VISUAL_LIMIT" -gt 500' in workflow
+    assert 'case "$VISUAL_SCOPE"' in workflow
+    assert '--priorities "${priorities[@]}"' in workflow
     assert "git add data/visuals/index.json" in workflow
     assert "pipeline.run_daily" not in workflow
     assert "git add data/ docs/" not in workflow
