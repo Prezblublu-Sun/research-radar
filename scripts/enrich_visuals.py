@@ -597,9 +597,13 @@ class ArxivFigureParser(HTMLParser):
                 f"{item['class']} {item['id']}"
                 for item in self.figure_contexts
             ).lower()
-            graphic_order = len(self.current["graphics"])
+            src = attributes.get("src") or ""
+            is_raster = bool(src) and _suffix(src) in IMAGE_SUFFIXES
+            graphic_order = (
+                len(self.current["graphics"]) if is_raster else None
+            )
             image = {
-                "src": attributes.get("src") or "",
+                "src": src,
                 "alt": attributes.get("alt") or "",
                 "class": attributes.get("class") or "",
                 "id": attributes.get("id") or "",
@@ -613,10 +617,11 @@ class ArxivFigureParser(HTMLParser):
                 )),
             }
             self.current["images"].append(image)
-            self.current["graphics"].append({
-                "kind": "img", "src": image["src"],
-                "width": image["width"], "height": image["height"],
-            })
+            if is_raster:
+                self.current["graphics"].append({
+                    "kind": "img", "src": image["src"],
+                    "width": image["width"], "height": image["height"],
+                })
         if self.depth and tag == "object" and self.current is not None:
             data = attributes.get("data") or ""
             media_type = (attributes.get("type") or "").lower()

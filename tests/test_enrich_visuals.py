@@ -451,6 +451,64 @@ def test_geometric_filter_keeps_only_narrow_scientific_image():
         assert selected["image_url"].endswith(f"/figures/{filename}")
 
 
+def test_geometric_filter_ignores_invalid_img_companions():
+    invalid_companions = (
+        '<img src="" width="900" height="600" />',
+        '<img src="figures/vector.svg" width="900" height="600" />',
+    )
+    for companion in invalid_companions:
+        html = (
+            '<figure class="ltx_figure">'
+            '<img src="figures/vertical-field.png" width="49" '
+            'height="199" alt="Scientific field" />'
+            f'{companion}'
+            '<figcaption>Validated scientific result.</figcaption></figure>'
+        )
+        selected = ev.select_arxiv_figure(
+            html, "https://arxiv.org/html/2608.12345",
+        )
+        assert selected is not None
+        assert selected["image_url"].endswith(
+            "/figures/vertical-field.png"
+        )
+
+
+def test_arxiv_parser_tracks_graphic_order_around_objects_and_invalid_images():
+    parser = ev.ArxivFigureParser()
+    parser.feed("""
+    <figure class="ltx_figure">
+      <object type="image/svg+xml" data="figures/before.svg"
+              width="400" height="300"></object>
+      <img src="" width="900" height="600" />
+      <img src="figures/first.png" width="49" height="199" />
+      <object type="image/svg+xml" data="figures/between.svg"
+              width="500" height="350"></object>
+      <img src="figures/not-raster.svg" width="800" height="600" />
+      <img src="figures/second.webp" width="640" height="480" />
+    </figure>
+    """)
+
+    figure = parser.figures[0]
+    assert [
+        (graphic["kind"], graphic["src"])
+        for graphic in figure["graphics"]
+    ] == [
+        ("object", "figures/before.svg"),
+        ("img", "figures/first.png"),
+        ("object", "figures/between.svg"),
+        ("img", "figures/second.webp"),
+    ]
+    assert [
+        (image["src"], image["graphic_order"])
+        for image in figure["images"]
+    ] == [
+        ("", None),
+        ("figures/first.png", 1),
+        ("figures/not-raster.svg", None),
+        ("figures/second.webp", 3),
+    ]
+
+
 def test_geometric_filter_keeps_large_narrow_scientific_panel_with_companion():
     # A narrow layout can be scientific even beside another panel.  The
     # absolute small-size gates ensure it is not removed on ratio alone.
