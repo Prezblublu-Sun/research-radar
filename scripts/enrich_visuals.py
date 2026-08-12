@@ -41,12 +41,15 @@ DEFAULT_DAILY_DIR = ROOT / "data" / "daily"
 DEFAULT_INDEX_PATH = ROOT / "data" / "visuals" / "index.json"
 
 SCHEMA_VERSION = "v1"
-SELECTOR_VERSION = 5
+SELECTOR_VERSION = 6
 DEFAULT_LIMIT = 20
 DEFAULT_TIMEOUT_SECONDS = 12.0
 DEFAULT_MIN_DELAY_SECONDS = 0.5
 MAX_METADATA_BYTES = 8 * 1024 * 1024
 MAX_IMAGE_BYTES = 8 * 1024 * 1024
+MAX_IMAGE_CANDIDATES = 6
+MIN_CARD_IMAGE_PIXELS = 4096
+MAX_IMAGE_DIMENSION = 100_000
 IMAGE_SUFFIXES = {".gif", ".jpeg", ".jpg", ".png", ".webp"}
 ALLOWED_LICENSES = {"CC0", "CC BY", "CC BY-SA"}
 
@@ -319,7 +322,9 @@ def _blank_visual(status: str, *, checked_at: str, reason: str = "",
 
 def _available_visual(*, checked_at: str, image_url: str, caption: str,
                       source_label: str, source_url: str,
-                      license_name: str, alt: str, provider: str) -> dict:
+                      license_name: str, alt: str, provider: str,
+                      width: int | None = None,
+                      height: int | None = None) -> dict:
     return {
         "status": "available",
         "image_url": image_url,
@@ -328,8 +333,8 @@ def _available_visual(*, checked_at: str, image_url: str, caption: str,
         "source_url": source_url,
         "license": license_name,
         "alt": _truncate_text(alt or caption or "论文插图", 500),
-        "width": None,
-        "height": None,
+        "width": width,
+        "height": height,
         "checked_at": checked_at,
         "provider": provider,
         "selector_version": SELECTOR_VERSION,
@@ -423,20 +428,127 @@ class HttpClient:
             url, params=params, allowed_hosts=allowed_hosts,
         ).decode("utf-8", errors="replace")
 
-    def verify_image(self, url: str, *, allowed_hosts: set[str]) -> None:
-        """Fetch one bounded image and reject HTML/error bodies by magic bytes."""
+    def verify_image(self, url: str, *,
+                     allowed_hosts: set[str]) -> tuple[int, int]:
+        """Fetch one bounded raster and return its intrinsic pixel dimensions."""
         payload = self.get_bytes(
             url, allowed_hosts=allowed_hosts, max_bytes=MAX_IMAGE_BYTES,
         )
-        signatures = (
-            payload.startswith(b"\xff\xd8\xff"),
-            payload.startswith(b"\x89PNG\r\n\x1a\n"),
-            payload.startswith((b"GIF87a", b"GIF89a")),
-            len(payload) >= 12 and payload.startswith(b"RIFF") and
-            payload[8:12] == b"WEBP",
+        return _raster_dimensions(payload)
+
+
+def _valid_image_dimensions(width: int, height: int) -> tuple[int, int]:
+    if (width <= 0 or height <= 0 or width > MAX_IMAGE_DIMENSION or
+            height > MAX_IMAGE_DIMENSION):
+        raise FetchError("provider image response has invalid dimensions")
+    return width, height
+
+
+def _jpeg_dimensions(payload: bytes) -> tuple[int, int]:
+    if not payload.startswith(b"\xff\xd8\xff"):
+        raise FetchError("provider image response has an invalid signature")
+    # Start-of-frame markers which carry dimensions.  DHT/JPG/DAC and the
+    # restart markers deliberately are not included.
+    sof_markers = {
+        0xC0, 0xC1, 0xC2, 0xC3, 0xC5, 0xC6, 0xC7,
+        0xC9, 0xCA, 0xCB, 0xCD, 0xCE, 0xCF,
+    }
+    offset = 2
+    while offset < len(payload):
+        if payload[offset] != 0xFF:
+            raise FetchError("provider image response has invalid JPEG data")
+        while offset < len(payload) and payload[offset] == 0xFF:
+            offset += 1
+        if offset >= len(payload):
+            break
+        marker = payload[offset]
+        offset += 1
+        if marker in {0x01, 0xD8} or 0xD0 <= marker <= 0xD7:
+            continue
+        if marker in {0xD9, 0xDA}:
+            break
+        if offset + 2 > len(payload):
+            raise FetchError("provider image response has truncated JPEG data")
+        segment_length = int.from_bytes(payload[offset:offset + 2], "big")
+        if segment_length < 2 or offset + segment_length > len(payload):
+            raise FetchError("provider image response has truncated JPEG data")
+        if marker in sof_markers:
+            if segment_length < 8:
+                raise FetchError("provider image response has invalid JPEG data")
+            component_count = payload[offset + 7]
+            if (component_count <= 0 or
+                    segment_length != 8 + 3 * component_count):
+                raise FetchError("provider image response has invalid JPEG data")
+            height = int.from_bytes(payload[offset + 3:offset + 5], "big")
+            width = int.from_bytes(payload[offset + 5:offset + 7], "big")
+            return _valid_image_dimensions(width, height)
+        offset += segment_length
+    raise FetchError("provider image response has no JPEG dimensions")
+
+
+def _webp_dimensions(payload: bytes) -> tuple[int, int]:
+    if (len(payload) < 12 or not payload.startswith(b"RIFF") or
+            payload[8:12] != b"WEBP"):
+        raise FetchError("provider image response has an invalid signature")
+    declared_end = 8 + int.from_bytes(payload[4:8], "little")
+    if declared_end < 12 or declared_end > len(payload):
+        raise FetchError("provider image response has truncated WebP data")
+    offset = 12
+    while offset + 8 <= declared_end:
+        kind = payload[offset:offset + 4]
+        size = int.from_bytes(payload[offset + 4:offset + 8], "little")
+        start = offset + 8
+        end = start + size
+        if end > declared_end:
+            raise FetchError("provider image response has truncated WebP data")
+        data = payload[start:end]
+        if kind == b"VP8X":
+            if len(data) < 10:
+                raise FetchError("provider image response has invalid WebP data")
+            width = int.from_bytes(data[4:7], "little") + 1
+            height = int.from_bytes(data[7:10], "little") + 1
+            return _valid_image_dimensions(width, height)
+        if kind == b"VP8L":
+            if len(data) < 5 or data[0] != 0x2F:
+                raise FetchError("provider image response has invalid WebP data")
+            bits = int.from_bytes(data[1:5], "little")
+            width = (bits & 0x3FFF) + 1
+            height = ((bits >> 14) & 0x3FFF) + 1
+            return _valid_image_dimensions(width, height)
+        if kind == b"VP8 ":
+            if len(data) < 10 or data[3:6] != b"\x9d\x01\x2a":
+                raise FetchError("provider image response has invalid WebP data")
+            width = int.from_bytes(data[6:8], "little") & 0x3FFF
+            height = int.from_bytes(data[8:10], "little") & 0x3FFF
+            return _valid_image_dimensions(width, height)
+        offset = end + (size & 1)
+    raise FetchError("provider image response has no WebP dimensions")
+
+
+def _raster_dimensions(payload: bytes) -> tuple[int, int]:
+    """Read intrinsic dimensions from the four allowlisted raster formats."""
+    if payload.startswith(b"\x89PNG\r\n\x1a\n"):
+        if (len(payload) < 33 or
+                int.from_bytes(payload[8:12], "big") != 13 or
+                payload[12:16] != b"IHDR"):
+            raise FetchError("provider image response has invalid PNG data")
+        return _valid_image_dimensions(
+            int.from_bytes(payload[16:20], "big"),
+            int.from_bytes(payload[20:24], "big"),
         )
-        if not any(signatures):
-            raise FetchError("provider image response has an invalid signature")
+    if payload.startswith((b"GIF87a", b"GIF89a")):
+        if len(payload) < 13:
+            raise FetchError("provider image response has truncated GIF data")
+        return _valid_image_dimensions(
+            int.from_bytes(payload[6:8], "little"),
+            int.from_bytes(payload[8:10], "little"),
+        )
+    if payload.startswith(b"\xff\xd8\xff"):
+        return _jpeg_dimensions(payload)
+    if (len(payload) >= 12 and payload.startswith(b"RIFF") and
+            payload[8:12] == b"WEBP"):
+        return _webp_dimensions(payload)
+    raise FetchError("provider image response has an invalid signature")
 
 
 def _local_name(tag: str) -> str:
@@ -481,15 +593,16 @@ def _match_media(href: str, media_urls: list[str]) -> str:
     return ""
 
 
-def select_pmc_figure(xml_text: str, media_urls: Iterable[object]) -> dict | None:
-    """Choose a safe graphical abstract or first ordinary JATS figure."""
+def select_pmc_figures(xml_text: str,
+                       media_urls: Iterable[object]) -> list[dict]:
+    """Return one safe raster candidate per JATS figure, in preference order."""
     safe_media = [url for value in media_urls if (url := pmc_media_url(value))]
     if not safe_media:
-        return None
+        return []
     try:
         root = ET.fromstring(xml_text)
     except ET.ParseError:
-        return None
+        return []
     candidates = []
     for order, fig in enumerate(node for node in root.iter()
                                 if _local_name(node.tag) == "fig"):
@@ -533,7 +646,12 @@ def select_pmc_figure(xml_text: str, media_urls: Iterable[object]) -> dict | Non
             "caption": caption,
             "label": display_label,
         }))
-    return min(candidates, default=(0, 0, None))[2]
+    return [candidate for _rank, _order, candidate in sorted(candidates)]
+
+
+def select_pmc_figure(xml_text: str, media_urls: Iterable[object]) -> dict | None:
+    """Compatibility wrapper returning the preferred safe JATS figure."""
+    return next(iter(select_pmc_figures(xml_text, media_urls)), None)
 
 
 def _pmc_versions(list_xml: str, pmcid: str) -> list[str]:
@@ -696,7 +814,8 @@ def _looks_like_geometric_auxiliary(
     return False
 
 
-def select_arxiv_figure(html_text: str, page_url: str) -> dict | None:
+def select_arxiv_figures(html_text: str, page_url: str) -> list[dict]:
+    """Return one safe raster candidate per outer figure, preference first."""
     parser = ArxivFigureParser()
     parser.feed(html_text)
     safe = []
@@ -752,13 +871,42 @@ def select_arxiv_figure(html_text: str, page_url: str) -> dict | None:
             "caption": caption,
             "alt": selected["alt"],
         }))
-    return min(safe, default=(0, 0, None))[2]
+    return [candidate for _rank, _order, candidate in sorted(safe)]
+
+
+def select_arxiv_figure(html_text: str, page_url: str) -> dict | None:
+    """Compatibility wrapper returning the preferred safe arXiv figure."""
+    return next(iter(select_arxiv_figures(html_text, page_url)), None)
 
 
 class VisualResolver:
     def __init__(self, client: HttpClient, *, email: str = ""):
         self.client = client
         self.email = email.strip()
+
+    def _verified_card_candidate(
+            self, candidates: Iterable[dict], *,
+            allowed_hosts: set[str]) -> tuple[dict, int, int] | None:
+        """Return the first card-sized candidate after at most six fetches."""
+        seen_urls = set()
+        checked = 0
+        for candidate in candidates:
+            image_url = str(candidate.get("image_url") or "")
+            if not image_url or image_url in seen_urls:
+                continue
+            seen_urls.add(image_url)
+            if checked >= MAX_IMAGE_CANDIDATES:
+                break
+            checked += 1
+            # Do not catch FetchError here: transport or malformed-response
+            # failures remain transient errors and preserve last-known-good.
+            width, height = self.client.verify_image(
+                image_url, allowed_hosts=allowed_hosts,
+            )
+            if width * height < MIN_CARD_IMAGE_PIXELS:
+                continue
+            return candidate, width, height
+        return None
 
     def _pmcid(self, paper: dict) -> str:
         requested = str(paper.get("pmid") or "").strip()
@@ -823,16 +971,25 @@ class VisualResolver:
         xml_text = self.client.get_text(
             xml_url, allowed_hosts={PMC_BUCKET_HOST},
         )
-        selected = select_pmc_figure(xml_text, metadata.get("media_urls") or [])
-        if not selected:
+        candidates = select_pmc_figures(
+            xml_text, metadata.get("media_urls") or [],
+        )
+        if not candidates:
             return _blank_visual(
                 "not_found", checked_at=checked_at,
                 reason="pmc_no_reusable_figure", license_name=license_name,
                 provider="pmc",
             )
-        self.client.verify_image(
-            selected["image_url"], allowed_hosts={PMC_BUCKET_HOST},
+        verified = self._verified_card_candidate(
+            candidates, allowed_hosts={PMC_BUCKET_HOST},
         )
+        if not verified:
+            return _blank_visual(
+                "not_found", checked_at=checked_at,
+                reason="pmc_no_card_sized_figure", license_name=license_name,
+                provider="pmc",
+            )
+        selected, width, height = verified
         source_url = f"https://pmc.ncbi.nlm.nih.gov/articles/{pmcid}/"
         return _available_visual(
             checked_at=checked_at,
@@ -840,7 +997,7 @@ class VisualResolver:
             source_label=f"PubMed Central · {selected['label']}",
             source_url=source_url, license_name=license_name,
             alt=selected["caption"] or paper.get("title") or "PMC 论文插图",
-            provider="pmc",
+            provider="pmc", width=width, height=height,
         )
 
     def resolve_arxiv(self, paper: dict, checked_at: str) -> dict | None:
@@ -877,16 +1034,23 @@ class VisualResolver:
         html_text = self.client.get_text(
             page_url, allowed_hosts={"arxiv.org"},
         )
-        selected = select_arxiv_figure(html_text, page_url)
-        if not selected:
+        candidates = select_arxiv_figures(html_text, page_url)
+        if not candidates:
             return _blank_visual(
                 "not_found", checked_at=checked_at,
                 reason="arxiv_html_no_reusable_figure",
                 license_name=license_name, provider="arxiv",
             )
-        self.client.verify_image(
-            selected["image_url"], allowed_hosts={"arxiv.org"},
+        verified = self._verified_card_candidate(
+            candidates, allowed_hosts={"arxiv.org"},
         )
+        if not verified:
+            return _blank_visual(
+                "not_found", checked_at=checked_at,
+                reason="arxiv_no_card_sized_figure",
+                license_name=license_name, provider="arxiv",
+            )
+        selected, width, height = verified
         return _available_visual(
             checked_at=checked_at, image_url=selected["image_url"],
             caption=selected["caption"], source_label="arXiv · 论文插图",
@@ -894,7 +1058,7 @@ class VisualResolver:
             license_name=license_name,
             alt=selected.get("alt") or selected["caption"] or
                 paper.get("title") or "arXiv 论文插图",
-            provider="arxiv",
+            provider="arxiv", width=width, height=height,
         )
 
     def resolve(self, paper: dict, *, now: dt.datetime | None = None) -> dict:

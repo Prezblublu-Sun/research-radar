@@ -27,6 +27,11 @@ on:
         required: true
         type: number
         default: 1
+      identity:
+        description: Optional exact doi: or arxiv: identity to refresh
+        required: false
+        type: string
+        default: ""
 
 permissions:
   contents: write
@@ -63,6 +68,7 @@ jobs:
           VISUAL_LIMIT: ${{ github.event_name == 'workflow_dispatch' && inputs.limit || 40 }}
           VISUAL_SCOPE: ${{ github.event_name == 'workflow_dispatch' && inputs.scope || 'High+Medium' }}
           VISUAL_BATCHES: ${{ github.event_name == 'workflow_dispatch' && inputs.batches || 1 }}
+          VISUAL_IDENTITY: ${{ github.event_name == 'workflow_dispatch' && inputs.identity || '' }}
         shell: bash
         run: |
           set -euo pipefail
@@ -87,6 +93,15 @@ jobs:
               ;;
           esac
 
+          identity_args=()
+          if [ -n "$VISUAL_IDENTITY" ]; then
+            if ! [[ "$VISUAL_IDENTITY" =~ ^(doi|arxiv):[^[:space:]]+$ ]]; then
+              echo "::error::identity must be an exact doi: or arxiv: key without whitespace"
+              exit 2
+            fi
+            identity_args=(--identity "$VISUAL_IDENTITY")
+          fi
+
           git config user.name "research-radar-bot"
           git config user.email "actions@github.com"
 
@@ -94,7 +109,8 @@ jobs:
             echo "::group::Visual checkpoint $batch/$VISUAL_BATCHES"
             python -m scripts.enrich_visuals \
               --limit "$VISUAL_LIMIT" \
-              --priorities "${priorities[@]}"
+              --priorities "${priorities[@]}" \
+              "${identity_args[@]}"
 
             git add data/visuals/index.json
             if git diff --staged --quiet; then

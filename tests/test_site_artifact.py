@@ -208,6 +208,11 @@ def test_visual_enrichment_is_a_post_daily_sidecar_writer():
     assert 'VISUAL_BATCHES" -gt 3' in workflow
     assert 'case "$VISUAL_SCOPE"' in workflow
     assert '--priorities "${priorities[@]}"' in workflow
+    assert "Optional exact doi: or arxiv: identity to refresh" in workflow
+    assert "github.event_name == 'workflow_dispatch' && inputs.identity || ''" in workflow
+    assert '[[ "$VISUAL_IDENTITY" =~ ^(doi|arxiv):[^[:space:]]+$ ]]' in workflow
+    assert 'identity_args=(--identity "$VISUAL_IDENTITY")' in workflow
+    assert '"${identity_args[@]}"' in workflow
     assert "batch <= VISUAL_BATCHES" in workflow
     assert "No further eligible records; stopping early." in workflow
     assert "git add data/visuals/index.json" in workflow
