@@ -1,4 +1,5 @@
 import datetime as dt
+import html as html_mod
 import json
 import pathlib
 import sys
@@ -12,6 +13,39 @@ from scripts import enrich_visuals as ev
 
 UTC = dt.timezone.utc
 NOW = dt.datetime(2026, 8, 12, 12, 0, tzinfo=UTC)
+
+THIRD_PARTY_PRODUCTION_CAPTIONS = (
+    "Figure 1: Examples of laboratory devices for granular materials in "
+    "(a) triaxial compression and (b) continuous ring-shear conditions. "
+    "Copyright: Dietmar Schulze .",
+    "Schematic diagram of the experimental design. Created with "
+    "BioRender.com (License number: AV27FQ9RWZ).",
+    "A new paradigm in patient-matched scaffold-guided bone regeneration. "
+    "Created in BioRender. Crook, J. "
+    "(https://BioRender.com/e8aq7lf).",
+    "Figure 1: Principle of Surrogate-Based Optimization (SBO), "
+    "reproduced from [ 12 ] .",
+    "Figure 3: From Keil et al. 2021 : On the floor with domain Ω.",
+    "Figure 2: Reference measurements from Choi et al. of wake "
+    "characteristics behind a single sphere.",
+    "Biomaterial ink synthesis workflow (made using Illustrae [29]).",
+    "Topographic map of water catchment and gauging stations "
+    "( 45 , source:) .",
+    "BEAR for studying the mechanics of additively manufactured components. "
+    "(Photo credit: Aldair E. Gongora and Bowen Xu, Boston University).",
+)
+
+ORDINARY_SCIENTIFIC_CAPTIONS = (
+    "Figure 8: Intermediate representations for the sign-example from "
+    "van Amersfoort et al. 2020.",
+    "Measurements use data from the validation set.",
+    "From left to right, we show the source function and target function.",
+    "Comparison against the reference solution.",
+    "The data source: simulation output.",
+    "The modified field preserves the original boundary values.",
+    "Measurements taken from the dataset are shown in blue.",
+    "Samples taken from a test set validate the modified scalar field.",
+)
 
 
 class FakeHttpResponse:
@@ -210,6 +244,178 @@ def test_select_pmc_figure_skips_third_party_caption_and_prefers_safe_one():
     assert selected is not None
     assert selected["label"] == "Figure 2"
     assert selected["image_url"].endswith("/PMC123.1/gr2.jpg")
+
+
+def test_arxiv_and_pmc_reject_all_production_third_party_captions():
+    media_url = "s3://pmc-oa-opendata/PMC123.1/gr1.jpg"
+    for caption in THIRD_PARTY_PRODUCTION_CAPTIONS:
+        escaped = html_mod.escape(caption)
+        arxiv_html = (
+            '<figure><img src="figures/result.png" alt="Result field" />'
+            f'<figcaption>{escaped}</figcaption></figure>'
+        )
+        assert ev.select_arxiv_figure(
+            arxiv_html, "https://arxiv.org/html/2608.12345",
+        ) is None, caption
+
+        pmc_xml = (
+            '<article xmlns:xlink="http://www.w3.org/1999/xlink"><body>'
+            f'<fig><caption><p>{escaped}</p></caption>'
+            '<graphic xlink:href="gr1.jpg" /></fig></body></article>'
+        )
+        assert ev.select_pmc_figure(pmc_xml, [media_url]) is None, caption
+
+
+def test_rights_policy_covers_attribution_variants_and_alt_text():
+    risky_variants = (
+        "Adapted from Example Publisher.",
+        "Reprinted, with permission, from Example Publisher.",
+        "Photograph courtesy of Example Laboratory.",
+        "Figure credit: Example Agency.",
+        "Photo—credit: Example Agency.",
+        "Photograph, credit—Example Agency.",
+        "Photo by Example Photographer.",
+        "Copyright.",
+        "Copyright, Example Author.",
+        "Copyrighted Example Publisher.",
+        "Modified from [12].",
+        "Redrawn from Smith et al.",
+        "Taken from Jones et al. (2020).",
+        "Diagram designed via Mind the Graph.",
+        "Diagram created by BioRender.",
+        "Diagram created on BioRender.com.",
+        "Made with Bio Render.",
+        "Stock photo of the experimental apparatus.",
+        "Copyright© Example Author.",
+    )
+    assert all(ev.caption_has_third_party_rights(value)
+               for value in risky_variants)
+
+    selected = ev.select_arxiv_figure(
+        '<figure><img src="result.png" '
+        'alt="Created using BioRender.com" />'
+        '<figcaption>Otherwise neutral result.</figcaption></figure>',
+        "https://arxiv.org/html/2608.12345",
+    )
+    assert selected is None
+
+    selected_pmc = ev.select_pmc_figure(
+        '<article xmlns:xlink="http://www.w3.org/1999/xlink"><body><fig>'
+        '<caption><p>Otherwise neutral result.</p></caption>'
+        '<alt-text>Made using Illustrae [29].</alt-text>'
+        '<graphic xlink:href="gr1.jpg" /></fig></body></article>',
+        ["s3://pmc-oa-opendata/PMC123.1/gr1.jpg"],
+    )
+    assert selected_pmc is None
+
+
+def test_rights_policy_does_not_reject_ordinary_scientific_from_or_source():
+    media_url = "s3://pmc-oa-opendata/PMC123.1/gr1.jpg"
+    for caption in ORDINARY_SCIENTIFIC_CAPTIONS:
+        assert not ev.caption_has_third_party_rights(caption), caption
+        escaped = html_mod.escape(caption)
+        arxiv = ev.select_arxiv_figure(
+            '<figure><img src="result.png" />'
+            f'<figcaption>{escaped}</figcaption></figure>',
+            "https://arxiv.org/html/2608.12345",
+        )
+        assert arxiv is not None, caption
+        pmc = ev.select_pmc_figure(
+            '<article xmlns:xlink="http://www.w3.org/1999/xlink"><body>'
+            f'<fig><caption><p>{escaped}</p></caption>'
+            '<graphic xlink:href="gr1.jpg" /></fig></body></article>',
+            [media_url],
+        )
+        assert pmc is not None, caption
+
+
+def test_arxiv_selector_skips_uncaptioned_image_for_next_reviewable_figure():
+    html = """
+    <figure><img src="figures/uncaptioned.png"
+                 alt="[Uncaptioned image]" /></figure>
+    <figure><img src="figures/placeholder.png" alt="Scientific image" />
+      <figcaption>[Uncaptioned figure]</figcaption></figure>
+    <figure><img src="figures/reviewable.png"
+                 alt="[Uncaptioned image]" />
+      <figcaption>Figure 2: Validated stress field.</figcaption></figure>
+    """
+
+    selected = ev.select_arxiv_figure(
+        html, "https://arxiv.org/html/2608.12345",
+    )
+
+    assert selected is not None
+    assert selected["image_url"].endswith("/figures/reviewable.png")
+    assert selected["caption"] == "Figure 2: Validated stress field."
+
+
+def test_arxiv_selector_returns_none_when_all_captions_are_unreviewable():
+    html = """
+    <figure><img src="figures/no-caption.png" /></figure>
+    <figure><img src="figures/placeholder.png" />
+      <figcaption>See caption.</figcaption></figure>
+    """
+    assert ev.select_arxiv_figure(
+        html, "https://arxiv.org/html/2608.12345",
+    ) is None
+
+    media_url = "s3://pmc-oa-opendata/PMC123.1/gr1.jpg"
+    placeholders = (
+        "", "Graphical abstract", "Graphical abstract:", "Fig. 1",
+        "Figure 1:", "[No caption available]", "Uncaptioned photograph",
+    )
+    for caption in placeholders:
+        escaped = html_mod.escape(caption)
+        arxiv_html = (
+            '<figure><img src="figure.png" />'
+            f'<figcaption>{escaped}</figcaption></figure>'
+        )
+        assert ev.select_arxiv_figure(
+            arxiv_html, "https://arxiv.org/html/2608.12345",
+        ) is None
+        xml = (
+            '<article xmlns:xlink="http://www.w3.org/1999/xlink"><body>'
+            f'<fig><caption><p>{escaped}</p></caption>'
+            '<graphic xlink:href="gr1.jpg" /></fig></body></article>'
+        )
+        assert ev.select_pmc_figure(xml, [media_url]) is None
+
+
+def test_arxiv_selector_checks_rights_text_outside_figcaption():
+    html = """
+    <figure>
+      <img src="figures/risky.png" />
+      <figcaption>Figure 1: Otherwise reviewable scientific result.</figcaption>
+      <div class="ltx_role_note">Photograph by Example Photographer.</div>
+    </figure>
+    <figure>
+      <img src="figures/safe.png" />
+      <figcaption>Figure 2: Independent validation result.</figcaption>
+    </figure>
+    """
+
+    selected = ev.select_arxiv_figure(
+        html, "https://arxiv.org/html/2608.12345",
+    )
+
+    assert selected is not None
+    assert selected["image_url"].endswith("/figures/safe.png")
+    assert selected["caption"].startswith("Figure 2:")
+
+
+def test_arxiv_parser_keeps_display_caption_separate_from_outer_figure_text():
+    parser = ev.ArxivFigureParser()
+    parser.feed("""
+    <figure><span>Redrawn from Example Publisher.</span>
+      <img src="figure.png" />
+      <figcaption>Figure 1: Scientific result.</figcaption>
+    </figure>
+    """)
+    figure = parser.figures[0]
+    assert figure["caption"] == "Figure 1: Scientific result."
+    assert figure["figure_text"] == (
+        "Redrawn from Example Publisher. Figure 1: Scientific result."
+    )
 
 
 def test_pmc_selector_prefers_main_graphic_over_caption_inline_asset():
@@ -949,6 +1155,62 @@ def test_transient_refresh_error_preserves_last_known_good_visual(tmp_path):
     assert "provider unavailable" in saved["selector_error_reason"]
     assert not ev.should_refresh(saved, now=NOW + dt.timedelta(hours=1))
     assert ev.should_refresh(saved, now=NOW + dt.timedelta(days=1, seconds=1))
+
+
+class PolicyResultResolver:
+    def __init__(self, status):
+        self.status = status
+
+    def resolve(self, _paper, *, now=None):
+        return ev._blank_visual(
+            self.status, checked_at=ev.iso_z(now),
+            reason="figure_rights_policy", provider="arxiv",
+        )
+
+
+def test_policy_results_replace_stale_available_last_known_good(tmp_path):
+    # Last-known-good is a transient network-error fallback, not an override
+    # for a newer selector finding that the visual is unsafe or unavailable.
+    for status in ("blocked", "not_found"):
+        root = tmp_path / status
+        daily = root / "daily"
+        daily.mkdir(parents=True)
+        (daily / "2026-08-12.json").write_text(json.dumps({
+            "papers": [{
+                "doi": "10.1/policy",
+                "llm": {"priority": "High"},
+            }],
+        }), encoding="utf-8")
+        index = root / "visuals" / "index.json"
+        index.parent.mkdir()
+        cached = ev._available_visual(
+            checked_at=ev.iso_z(NOW - dt.timedelta(days=2)),
+            image_url="https://arxiv.org/html/1/old-risky.png",
+            caption="Old visual", source_label="arXiv",
+            source_url="https://arxiv.org/abs/1", license_name="CC BY",
+            alt="Old visual", provider="arxiv",
+        )
+        cached["selector_version"] = ev.SELECTOR_VERSION - 1
+        index.write_text(json.dumps({
+            "schema_version": "v1",
+            "records": {"doi:10.1/policy": cached},
+        }), encoding="utf-8")
+
+        result = ev.enrich(
+            daily_dir=daily, index_path=index,
+            resolver=PolicyResultResolver(status), limit=1,
+            priorities={"High"}, now=NOW,
+        )
+
+        saved = json.loads(index.read_text(encoding="utf-8"))["records"][
+            "doi:10.1/policy"
+        ]
+        assert result["counts"] == {status: 1}
+        assert saved["status"] == status
+        assert saved["reason"] == "figure_rights_policy"
+        assert saved["checked_at"] == ev.iso_z(NOW)
+        assert saved["image_url"] == ""
+        assert "selector_error_at" not in saved
 
 
 class CountingResolver:

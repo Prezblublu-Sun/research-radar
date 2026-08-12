@@ -17,6 +17,19 @@ DIRECTIONS = {
     }
 }
 
+THIRD_PARTY_PRODUCTION_CAPTIONS = (
+    "Copyright: Dietmar Schulze.",
+    "Created with BioRender.com (License number: AV27FQ9RWZ).",
+    "Created in BioRender. Crook, J. (https://BioRender.com/e8aq7lf).",
+    "Principle of SBO, reproduced from [12].",
+    "Figure 3: From Keil et al. 2021: On the floor with domain Ω.",
+    "Reference measurements from Choi et al. of wake characteristics.",
+    "Biomaterial ink synthesis workflow (made using Illustrae [29]).",
+    "Topographic map of water catchment (45, source:).",
+    "BEAR for studying the mechanics of additively manufactured components. "
+    "(Photo credit: Aldair E. Gongora and Bowen Xu, Boston University).",
+)
+
 
 def _available_visual(*, image_url: str, source_url: str,
                       license_name: str = "CC BY 4.0") -> dict:
@@ -133,6 +146,118 @@ def test_visual_registry_is_fail_closed_compact_and_path_compatible(tmp_path):
         "width": 1200,
         "height": 800,
     }
+
+
+def test_public_visual_boundary_rejects_rights_in_caption_or_alt():
+    base = _available_visual(
+        image_url="https://arxiv.org/html/2608.12345/figure.png",
+        source_url="https://arxiv.org/abs/2608.12345",
+    )
+    for text in THIRD_PARTY_PRODUCTION_CAPTIONS:
+        assert build_pages._safe_visual_record({
+            **base, "caption": text, "alt": "Scientific result",
+        }) is None
+        assert build_pages._safe_visual_record({
+            **base, "caption": "Scientific result", "alt": text,
+        }) is None
+
+    assert build_pages._safe_visual_record({
+        **base,
+        "caption": "Figure 1: Scientific result.",
+        "alt": "Stress field",
+        "source_label": "Photograph by Example Photographer",
+    }) is None
+
+
+def test_public_visual_boundary_requires_caption_but_not_useful_alt():
+    base = _available_visual(
+        image_url="https://arxiv.org/html/2608.12345/figure.png",
+        source_url="https://arxiv.org/abs/2608.12345",
+    )
+    for caption in (
+        "", "   ", "[Uncaptioned image]", "See caption.",
+        "Figure 1:", "Graphical abstract:", "[No caption available]",
+        "Uncaptioned photograph",
+    ):
+        assert build_pages._safe_visual_record({
+            **base, "caption": caption,
+        }) is None
+
+    safe = build_pages._safe_visual_record({
+        **base,
+        "caption": "Figure 1: Validated scientific result.",
+        "alt": "[Uncaptioned image]",
+    })
+    assert safe is not None
+    assert "alt" not in safe
+
+
+def test_risky_existing_registry_never_reaches_public_card_surfaces(
+        tmp_path, monkeypatch):
+    data_dir = tmp_path / "data"
+    docs_dir = tmp_path / "site"
+    papers = []
+    records = {}
+    image_urls = []
+    for index, caption in enumerate(THIRD_PARTY_PRODUCTION_CAPTIONS):
+        paper = dict(_paper())
+        paper["doi"] = f"10.1234/risky-{index}"
+        paper["title"] = f"Risky visual {index}"
+        papers.append(paper)
+        image_url = f"https://arxiv.org/html/2608.12345/risky-{index}.png"
+        image_urls.append(image_url)
+        records[f"doi:10.1234/risky-{index}"] = {
+            **_available_visual(
+                image_url=image_url,
+                source_url="https://arxiv.org/abs/2608.12345",
+            ),
+            "caption": caption,
+        }
+
+    daily = data_dir / "daily"
+    daily.mkdir(parents=True)
+    (daily / "2026-08-12.json").write_text(json.dumps({
+        "schema_version": "v2", "date": "2026-08-12",
+        "date_precision": "day", "papers": papers,
+    }), encoding="utf-8")
+    manifests = data_dir / "manifests"
+    manifests.mkdir(parents=True)
+    (manifests / "2026-08-12.json").write_text(json.dumps({
+        "run_status": "success", "quality_flags": [],
+    }), encoding="utf-8")
+    _write_registry(data_dir, "visuals", records)
+
+    captured: list[dict | None] = []
+    original_card = build_pages._paper_card
+
+    def capture_card(*args, **kwargs):
+        captured.append(kwargs.get("visual"))
+        return original_card(*args, **kwargs)
+
+    monkeypatch.setattr(build_pages, "_paper_card", capture_card)
+    build_pages.build(
+        docs_dir, DIRECTIONS, data_dir=data_dir, sharded_daily=True,
+    )
+
+    day = json.loads(
+        (docs_dir / "data" / "day" / "2026-08-12" / "page-1.json")
+        .read_text(encoding="utf-8")
+    )["papers"]
+    queue = json.loads(
+        (docs_dir / "queue-high-2026.json").read_text(encoding="utf-8")
+    )
+    search = json.loads(
+        (docs_dir / "search-index-2026.json").read_text(encoding="utf-8")
+    )
+    workbench = (docs_dir / "index.html").read_text(encoding="utf-8")
+
+    assert len(day) == len(queue) == len(search) == len(papers)
+    assert all("visual" not in record for record in day)
+    assert all("visual" not in record for record in queue)
+    assert all("visual" not in record for record in search)
+    assert captured and all(visual is None for visual in captured)
+    assert all(image_url not in workbench for image_url in image_urls)
+    assert "暂时没有获取到图片" in workbench
 
 
 def test_visual_join_is_consistent_for_day_queue_and_workbench_not_search(

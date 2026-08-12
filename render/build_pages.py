@@ -8,7 +8,7 @@ import pathlib
 import re
 import urllib.parse
 
-from render import corpus_view
+from render import corpus_view, visual_policy
 
 
 DAY_PAGE_SIZE = 20
@@ -51,6 +51,8 @@ def _useful_visual_alt(value: object) -> str:
     if not isinstance(value, str):
         return ""
     rendered = " ".join(value.split()).strip()
+    if not visual_policy.has_reviewable_figure_caption(rendered):
+        return ""
     placeholder = re.fullmatch(
         r"(?:refer|see)\s+(?:to\s+)?(?:the\s+)?caption[.!]?|"
         r"(?:figure|image|graphic)[.!]?",
@@ -216,6 +218,12 @@ def _safe_visual_license(value: object) -> str:
 def _safe_visual_record(value: object) -> dict | None:
     """Fail closed and return the compact visual shape exposed to browsers."""
     if not isinstance(value, dict) or value.get("status") != "available":
+        return None
+    if not visual_policy.has_reviewable_figure_caption(value.get("caption")):
+        return None
+    if visual_policy.has_third_party_figure_rights(
+            value.get("caption"), value.get("alt"),
+            value.get("source_label")):
         return None
     image_url = _safe_https_url(value.get("image_url"), image=True)
     source_url = _safe_https_url(value.get("source_url"))

@@ -33,7 +33,7 @@ from urllib.parse import unquote, urlencode, urljoin, urlparse
 import urllib.request
 import xml.etree.ElementTree as ET
 
-from render import corpus_view
+from render import corpus_view, visual_policy
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -41,7 +41,7 @@ DEFAULT_DAILY_DIR = ROOT / "data" / "daily"
 DEFAULT_INDEX_PATH = ROOT / "data" / "visuals" / "index.json"
 
 SCHEMA_VERSION = "v1"
-SELECTOR_VERSION = 4
+SELECTOR_VERSION = 5
 DEFAULT_LIMIT = 20
 DEFAULT_TIMEOUT_SECONDS = 12.0
 DEFAULT_MIN_DELAY_SECONDS = 0.5
@@ -61,22 +61,6 @@ ARXIV_OAI_URL = "https://oaipmh.arxiv.org/oai"
 # redirect boundary so old callers remain compatible, while redirects to any
 # other host still fail closed in ``HttpClient``.
 ARXIV_OAI_HOSTS = {"oaipmh.arxiv.org", "export.arxiv.org"}
-
-THIRD_PARTY_MARKERS = (
-    "reproduced with permission",
-    "reprinted with permission",
-    "adapted with permission",
-    "used with permission",
-    "all rights reserved",
-    "not included in the creative commons",
-    "not covered by the creative commons",
-    "excluded from the creative commons",
-    "third-party material",
-    "third party material",
-    "copyright holder",
-    "copyright ",
-    "©",
-)
 
 DECORATIVE_IMAGE_TOKENS = {
     "avatar", "avatars", "banner", "banners", "cover", "covers",
@@ -149,8 +133,8 @@ def normalize_license(value: object) -> str:
 
 
 def caption_has_third_party_rights(caption: str) -> bool:
-    compact = " ".join((caption or "").lower().split())
-    return any(marker in compact for marker in THIRD_PARTY_MARKERS)
+    """Compatibility wrapper around the shared public-renderer policy."""
+    return visual_policy.has_third_party_figure_rights(caption)
 
 
 def looks_like_decorative_image(*hints: object) -> bool:
@@ -515,9 +499,11 @@ def select_pmc_figure(xml_text: str, media_urls: Iterable[object]) -> dict | Non
                            if _local_name(node.tag) == "label"), None)
         caption = _node_text(caption_node)
         label = _node_text(label_node)
+        if not visual_policy.has_reviewable_figure_caption(caption):
+            continue
         # Rights/credit statements may sit in ``attrib`` or another child of
         # ``fig`` rather than inside the caption itself.
-        if caption_has_third_party_rights(_node_text(fig)):
+        if visual_policy.has_third_party_figure_rights(_node_text(fig)):
             continue
         image_url = _match_media(_graphic_href(fig), safe_media)
         if not image_url:
@@ -584,7 +570,7 @@ class ArxivFigureParser(HTMLParser):
         if tag == "figure":
             if self.depth == 0:
                 self.current = {"images": [], "graphics": [],
-                                "caption_parts": [],
+                                "caption_parts": [], "text_parts": [],
                                 "class": attributes.get("class") or ""}
             self.figure_contexts.append({
                 "class": attributes.get("class") or "",
@@ -651,12 +637,17 @@ class ArxivFigureParser(HTMLParser):
                 self.current["caption"] = " ".join(
                     " ".join(self.current.pop("caption_parts")).split()
                 )
+                self.current["figure_text"] = " ".join(
+                    " ".join(self.current.pop("text_parts")).split()
+                )
                 self.figures.append(self.current)
                 self.current = None
 
     def handle_data(self, data: str) -> None:
-        if self.depth and self.caption_depth and self.current is not None:
-            self.current["caption_parts"].append(data)
+        if self.depth and self.current is not None:
+            self.current["text_parts"].append(data)
+            if self.caption_depth:
+                self.current["caption_parts"].append(data)
 
 
 def _html_image_dimension(value: object) -> float:
@@ -711,7 +702,11 @@ def select_arxiv_figure(html_text: str, page_url: str) -> dict | None:
     safe = []
     for order, figure in enumerate(parser.figures):
         caption = figure.get("caption") or ""
-        if caption_has_third_party_rights(caption):
+        if not visual_policy.has_reviewable_figure_caption(caption):
+            continue
+        if visual_policy.has_third_party_figure_rights(
+                figure.get("figure_text"), *(image.get("alt") for image in
+                           figure.get("images") or [])):
             continue
         images = []
         for image_order, image in enumerate(figure.get("images") or []):
