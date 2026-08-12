@@ -81,7 +81,7 @@
   function renderResult(paper) {
     var card = element("article", "search-result");
     var title = element("a", "search-result__title", paper.title || "Untitled");
-    var anchor = String(paper.identity_key || "").replace(
+    var anchor = paper.anchor || String(paper.identity_key || "").replace(
       /[^A-Za-z0-9_-]/g, "-"
     );
     title.href = paper.date + ".html#" + anchor;

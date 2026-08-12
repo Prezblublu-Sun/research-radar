@@ -6,8 +6,35 @@ import html
 import json
 import pathlib
 import re
+import urllib.parse
 
 from render import corpus_view
+
+
+DAY_PAGE_SIZE = 20
+_DAILY_BUCKET_FILENAME = re.compile(r"^\d{4}-\d{2}-\d{2}\.json$")
+_VISUAL_IMAGE_HOSTS = {
+    "arxiv.org",
+    "export.arxiv.org",
+    "pmc-oa-opendata.s3.amazonaws.com",
+}
+_VISUAL_TEXT_LIMITS = {
+    "caption": 600,
+    "source_label": 80,
+    "license": 80,
+    "alt": 300,
+    "checked_at": 48,
+}
+
+
+def _daily_json_paths(daily_dir: pathlib.Path) -> list[pathlib.Path]:
+    """Return publication buckets, excluding `*.SKIPPED.json` sentinels."""
+    if not daily_dir.exists():
+        return []
+    return sorted(
+        path for path in daily_dir.glob("*.json")
+        if _DAILY_BUCKET_FILENAME.fullmatch(path.name)
+    )
 
 
 def _load_papers_v2_or_v1(path: pathlib.Path) -> tuple[list[dict], dict]:
@@ -82,6 +109,148 @@ def _anchor_id(identity_key: str) -> str:
     return re.sub(r"[^A-Za-z0-9_-]", "-", identity_key)
 
 
+def _public_keys_for_day(papers: list[dict], bucket_date: str) -> dict[int, tuple[str, str]]:
+    """Return stable identity/anchor pairs before any display sorting.
+
+    The first record for a legacy anchor keeps that anchor so existing deep
+    links remain valid.  Later collisions get a deterministic suffix.  Object
+    ids are safe here because this mapping only lives for one build process.
+    """
+    result: dict[int, tuple[str, str]] = {}
+    used: set[str] = set()
+    for position, paper in enumerate(papers):
+        identity = _public_identity_key(paper, bucket_date, position)
+        base = _anchor_id(identity)
+        anchor = base
+        if anchor in used:
+            suffix = hashlib.sha1(identity.encode("utf-8")).hexdigest()[:8]
+            anchor = f"{base}--{suffix}"
+            counter = 2
+            while anchor in used:
+                anchor = f"{base}--{suffix}-{counter}"
+                counter += 1
+        used.add(anchor)
+        result[id(paper)] = (identity, anchor)
+    return result
+
+
+def _public_keys_for_buckets(
+        buckets: dict[str, list[dict]]) -> dict[int, tuple[str, str]]:
+    """Return the same public keys for every consumer of canonical buckets."""
+    result: dict[int, tuple[str, str]] = {}
+    for bucket_date, papers in buckets.items():
+        result.update(_public_keys_for_day(papers, bucket_date))
+    return result
+
+
+def _safe_https_url(value: object, *, image: bool = False) -> str:
+    """Return a normalized HTTPS URL accepted at the public-data boundary.
+
+    Figure registries are enrichment input, not trusted presentation data.
+    Images are restricted to the two upstream families currently supported by
+    the enrichment adapters; source links may point to any HTTPS article page.
+    """
+    if not isinstance(value, str) or not value.strip():
+        return ""
+    raw = value.strip()
+    try:
+        parsed = urllib.parse.urlsplit(raw)
+        port = parsed.port
+    except (TypeError, ValueError):
+        return ""
+    if (parsed.scheme.lower() != "https" or not parsed.hostname or
+            parsed.username is not None or parsed.password is not None or
+            port not in (None, 443)):
+        return ""
+    if image and parsed.hostname.lower() not in _VISUAL_IMAGE_HOSTS:
+        return ""
+    return urllib.parse.urlunsplit(parsed)
+
+
+def _safe_visual_license(value: object) -> str:
+    """Accept only the open licences supported by the visual-enrichment ADR."""
+    if not isinstance(value, str):
+        return ""
+    rendered = value.strip()[:_VISUAL_TEXT_LIMITS["license"]]
+    normalized = re.sub(r"[^a-z0-9]+", "-", rendered.lower()).strip("-")
+    if re.fullmatch(r"cc0(?:-\d+(?:-\d+)?)?", normalized):
+        return rendered
+    if re.fullmatch(r"cc-by(?:-sa)?(?:-\d+(?:-\d+)?)?", normalized):
+        return rendered
+    return ""
+
+
+def _safe_visual_record(value: object) -> dict | None:
+    """Fail closed and return the compact visual shape exposed to browsers."""
+    if not isinstance(value, dict) or value.get("status") != "available":
+        return None
+    image_url = _safe_https_url(value.get("image_url"), image=True)
+    source_url = _safe_https_url(value.get("source_url"))
+    license_name = _safe_visual_license(value.get("license"))
+    if not image_url or not source_url or not license_name:
+        return None
+
+    visual = {
+        "status": "available",
+        "image_url": image_url,
+        "source_url": source_url,
+        "license": license_name,
+    }
+    for field in ("caption", "source_label", "alt", "checked_at"):
+        raw = value.get(field)
+        if isinstance(raw, str) and raw.strip():
+            visual[field] = raw.strip()[:_VISUAL_TEXT_LIMITS[field]]
+    for field in ("width", "height"):
+        raw = value.get(field)
+        if isinstance(raw, int) and not isinstance(raw, bool) and 0 < raw <= 100_000:
+            visual[field] = raw
+    return visual
+
+
+def _visual_registry_records(payload: object) -> dict[str, object]:
+    """Tolerate both the v1 keyed registry and an early list-form prototype."""
+    if not isinstance(payload, dict):
+        return {}
+    records = payload.get("records", payload)
+    if isinstance(records, dict):
+        return {str(key): value for key, value in records.items() if key}
+    if isinstance(records, list):
+        return {
+            str(record["identity_key"]): record
+            for record in records
+            if isinstance(record, dict) and record.get("identity_key")
+        }
+    return {}
+
+
+def _load_visual_registry(data_dir: pathlib.Path) -> dict[str, dict]:
+    """Load safe visual records keyed by the canonical paper identity.
+
+    ``figures/index.json`` is the primary compatibility path.  The enrichment
+    pipeline writes ``visuals/index.json``; records absent from the primary
+    registry may fall back to that path.  A key present in the primary file is
+    authoritative even when its record is unavailable or unsafe.
+    """
+    registry: dict[str, dict] = {}
+    seen: set[str] = set()
+    for relative in (("figures", "index.json"), ("visuals", "index.json")):
+        path = pathlib.Path(data_dir).joinpath(*relative)
+        if not path.is_file():
+            continue
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        for identity, record in _visual_registry_records(payload).items():
+            if identity in seen:
+                continue
+            seen.add(identity)
+            safe = _safe_visual_record(record)
+            if safe is not None:
+                registry[identity] = safe
+    return registry
+
+
 def _card_tools(p: dict, identity_key: str | None = None) -> str:
     """ADR-0016 D4 (mark + note) and D5 (promote) per-card controls.
 
@@ -119,8 +288,68 @@ def _display_priority(p: dict) -> str:
     return priority if priority in {"High", "Medium", "Low", "Exclude"} else "Low"
 
 
+def _paper_visual(paper: dict, visual: dict | None = None) -> str:
+    """Render the compact figure panel shared with ``radar-card.js``.
+
+    Registry records have already crossed the public-data safety boundary,
+    but this helper validates again because tests and legacy callers can pass
+    a record directly.  The historical ``figure`` key remains readable while
+    new callers use ``visual``.
+    """
+    candidate: object = visual
+    if not isinstance(candidate, dict):
+        paper_visual = paper.get("visual")
+        candidate = (paper_visual if isinstance(paper_visual, dict)
+                     else paper.get("figure"))
+    if isinstance(candidate, dict) and candidate.get("status") == "found":
+        candidate = {**candidate, "status": "available"}
+    safe = _safe_visual_record(candidate)
+    if safe is None:
+        return (
+            '<figure class="paper-visual paper-visual--empty" '
+            'data-visual-status="unavailable">'
+            '<div class="paper-visual__frame paper-visual__fallback">'
+            '<span class="paper-visual__symbol" aria-hidden="true">▧</span>'
+            '<span class="paper-visual__empty-label">暂时没有获取到图片</span>'
+            '</div></figure>'
+        )
+
+    caption = safe.get("caption") or ""
+    alt = safe.get("alt") or caption or (
+        f'论文“{paper.get("title") or "未命名"}”的视觉展示'
+    )
+    dimensions = ""
+    if safe.get("width"):
+        dimensions += f' width="{safe["width"]}"'
+    if safe.get("height"):
+        dimensions += f' height="{safe["height"]}"'
+    source_label = safe.get("source_label") or "图片来源"
+    caption_html = (
+        f'<figcaption class="paper-visual__caption">{_esc(caption)}</figcaption>'
+        if caption else ""
+    )
+    return (
+        '<figure class="paper-visual" data-visual-status="available">'
+        '<div class="paper-visual__frame">'
+        f'<a class="paper-visual__image-link" href="{_esc(safe["source_url"])}" '
+        'target="_blank" rel="noopener noreferrer">'
+        f'<img class="paper-visual__image" src="{_esc(safe["image_url"])}" '
+        f'alt="{_esc(alt)}" loading="lazy" decoding="async" '
+        f'referrerpolicy="no-referrer"{dimensions}></a></div>'
+        f'{caption_html}'
+        '<div class="paper-visual__meta">'
+        f'<a class="paper-visual__source" href="{_esc(safe["source_url"])}" '
+        'target="_blank" rel="noopener noreferrer">'
+        f'{_esc(source_label)}</a>'
+        f'<span class="paper-visual__license">{_esc(safe["license"])}</span>'
+        '</div></figure>'
+    )
+
+
 def _paper_card(p: dict, dir_color: str, daily_link_date: str | None = None,
-                identity_key: str | None = None) -> str:
+                identity_key: str | None = None,
+                anchor: str | None = None,
+                visual: dict | None = None) -> str:
     llm = p.get("llm") or {}
     priority = _display_priority(p)
     priority_label = "待评分" if priority == "Unscored" else priority
@@ -162,14 +391,15 @@ def _paper_card(p: dict, dir_color: str, daily_link_date: str | None = None,
         doi_link = f'<a href="{_esc(p["url"])}" target="_blank">link</a>'
 
     idkey = identity_key or _identity_key(p)
+    card_anchor = anchor or _anchor_id(idkey)
     daily_link = ""
     if daily_link_date:
         daily_link = (f'<a class="rui-link-tool" '
-                      f'href="{_esc(daily_link_date)}.html#{_anchor_id(idkey)}">'
+                      f'href="{_esc(daily_link_date)}.html#{_esc(card_anchor)}">'
                       f'→ {_esc(daily_link_date)} page</a>')
 
     return f"""
-<article class="paper" id="{_anchor_id(idkey)}" data-direction="{_esc(p.get('direction',''))}" data-priority="{_esc(priority)}" data-identity-key="{_esc(idkey)}" data-title="{_esc(p.get('title',''))}" data-date="{_esc(p.get('date',''))}">
+<article class="paper" id="{_esc(card_anchor)}" data-direction="{_esc(p.get('direction',''))}" data-priority="{_esc(priority)}" data-identity-key="{_esc(idkey)}" data-title="{_esc(p.get('title',''))}" data-date="{_esc(p.get('date',''))}">
   <h3 class="paper-title">{_esc(p.get('title',''))}</h3>
   <div class="paper-head">
     <span class="priority priority--{_esc(priority.lower())}">{_esc(priority_label)}</span>
@@ -186,30 +416,35 @@ def _paper_card(p: dict, dir_color: str, daily_link_date: str | None = None,
     <span class="date">{_esc(p.get('date',''))}</span>
     <span class="doi">{doi_link}</span>
   </div>
-  {f'<div class="affiliations"><b>单位:</b> {_esc(first_aff[:200])}</div>' if first_aff else ''}
-  {('<div class="corresponding"><b>通讯:</b> ' + ' &nbsp;|&nbsp; '.join(f'{_esc(c["name"])} <span class="corresp-aff">@ {_esc(c["affiliation"][:120])}</span>' + (' <i>[推断]</i>' if c.get('inferred') else '') for c in corresp_list) + '</div>') if corresp_list else ''}
-  <div class="relevance"><b>相关性:</b> {_esc(llm.get('relevance_to_user',''))}</div>
-  {f'<div class="why-not-core"><b>边界:</b> {_esc(why_not_core)}</div>' if why_not_core else ''}
-  <div class="summary">
-    <div><b>动机·</b> {_esc(s.get('motivation',''))}</div>
-    <div><b>方法·</b> {_esc(s.get('method',''))}</div>
-    <div><b>结果·</b> {_esc(s.get('result',''))}</div>
-    <div><b>验证·</b> {_esc(s.get('validation',''))}</div>
+  <div class="paper-body">
+    <div class="paper-copy">
+      {f'<div class="affiliations"><b>单位:</b> {_esc(first_aff[:200])}</div>' if first_aff else ''}
+      {('<div class="corresponding"><b>通讯:</b> ' + ' &nbsp;|&nbsp; '.join(f'{_esc(c["name"])} <span class="corresp-aff">@ {_esc(c["affiliation"][:120])}</span>' + (' <i>[推断]</i>' if c.get('inferred') else '') for c in corresp_list) + '</div>') if corresp_list else ''}
+      <div class="relevance"><b>相关性:</b> {_esc(llm.get('relevance_to_user',''))}</div>
+      {f'<div class="why-not-core"><b>边界:</b> {_esc(why_not_core)}</div>' if why_not_core else ''}
+      <div class="summary">
+        <div><b>动机·</b> {_esc(s.get('motivation',''))}</div>
+        <div><b>方法·</b> {_esc(s.get('method',''))}</div>
+        <div><b>结果·</b> {_esc(s.get('result',''))}</div>
+        <div><b>验证·</b> {_esc(s.get('validation',''))}</div>
+      </div>
+      <details class="summary-en">
+        <summary>英文摘要与术语</summary>
+        <div class="summary en">
+          <div><b>Motivation·</b> {_esc(s_en.get('motivation',''))}</div>
+          <div><b>Method·</b> {_esc(s_en.get('method',''))}</div>
+          <div><b>Result·</b> {_esc(s_en.get('result',''))}</div>
+          <div><b>Validation·</b> {_esc(s_en.get('validation',''))}</div>
+        </div>
+        <div class="key-terms">
+          {''.join(f'<span class="term"><b>{_esc(t.get("en",""))}</b> · {_esc(t.get("zh",""))}</span>' for t in key_terms)}
+        </div>
+      </details>
+      <div class="tags-row">{tags_html}</div>
+      {daily_link}
+    </div>
+    {_paper_visual(p, visual)}
   </div>
-  <details class="summary-en">
-    <summary>英文摘要与术语</summary>
-    <div class="summary en">
-      <div><b>Motivation·</b> {_esc(s_en.get('motivation',''))}</div>
-      <div><b>Method·</b> {_esc(s_en.get('method',''))}</div>
-      <div><b>Result·</b> {_esc(s_en.get('result',''))}</div>
-      <div><b>Validation·</b> {_esc(s_en.get('validation',''))}</div>
-    </div>
-    <div class="key-terms">
-      {''.join(f'<span class="term"><b>{_esc(t.get("en",""))}</b> · {_esc(t.get("zh",""))}</span>' for t in key_terms)}
-    </div>
-  </details>
-  <div class="tags-row">{tags_html}</div>
-  {daily_link}
   {_card_tools(p, idkey)}
 </article>"""
 
@@ -269,7 +504,7 @@ def _marks_filter_bar() -> str:
 
 
 def _topbar(date: str, archive_dates: list[str]) -> str:
-    """Top navigation: prev/next day buttons + Archive dropdown."""
+    """Top navigation without copying the whole archive into every day."""
     if not archive_dates:
         archive_dates = [date]
     sorted_dates = sorted(archive_dates)
@@ -285,13 +520,41 @@ def _topbar(date: str, archive_dates: list[str]) -> str:
     next_btn = (f'<a class="navbtn" href="{next_date}.html">{next_date} →</a>'
                 if next_date else '<span class="navbtn disabled">最新 →</span>')
 
-    options = "".join(
-        f'<option value="{d}.html"{" selected" if d == date else ""}>{d}</option>'
-        for d in reversed(sorted_dates)
-    )
-    dropdown = f'<select class="archive-select" onchange="if(this.value)window.location.href=this.value">{options}</select>'
+    archive_link = '<a class="navbtn" href="archive.html">查看完整归档</a>'
+    return f'<div class="topbar">{prev_btn}{archive_link}{next_btn}</div>'
 
-    return f'<div class="topbar">{prev_btn}{dropdown}{next_btn}</div>'
+
+def _embedded_topbar(date: str, archive_dates: list[str]) -> str:
+    """Legacy dropdown retained only while branch-published pages are live."""
+    if not archive_dates:
+        archive_dates = [date]
+    sorted_dates = sorted(archive_dates)
+    try:
+        index = sorted_dates.index(date)
+    except ValueError:
+        index = len(sorted_dates) - 1
+    previous_date = sorted_dates[index - 1] if index > 0 else None
+    next_date = (sorted_dates[index + 1]
+                 if index + 1 < len(sorted_dates) else None)
+    previous = (
+        f'<a class="navbtn" href="{previous_date}.html">← {previous_date}</a>'
+        if previous_date else '<span class="navbtn disabled">← 最早</span>'
+    )
+    following = (
+        f'<a class="navbtn" href="{next_date}.html">{next_date} →</a>'
+        if next_date else '<span class="navbtn disabled">最新 →</span>'
+    )
+    options = "".join(
+        f'<option value="{item}.html"'
+        f'{" selected" if item == date else ""}>{item}</option>'
+        for item in reversed(sorted_dates)
+    )
+    return (
+        f'<div class="topbar">{previous}'
+        '<select class="archive-select" '
+        'onchange="if(this.value)window.location.href=this.value">'
+        f'{options}</select>{following}</div>'
+    )
 
 
 def _site_nav(active: str = "") -> str:
@@ -432,32 +695,40 @@ details.summary-en[open] summary{margin-bottom:var(--space-sm)}
 # NOTE: the former inline daily-page JS (direction tabs + priority buttons)
 # now lives in render/static/radar-ui.js, which also adds ADR-0016 D3/D4/D5.
 # Per ADR-0016 the script is an external, cacheable file — never inlined.
-ASSET_HEAD = (
+LEGACY_ASSET_HEAD = (
     '<link rel="stylesheet" href="radar-ui.css">'
     '<script src="radar-ui.js" defer></script>'
 )
+ASSET_HEAD = (
+    LEGACY_ASSET_HEAD + '<script src="radar-card.js" defer></script>'
+)
 
 
-def _render_daily(papers, date, directions_cfg, archive_dates, manifest):
-    order = {"High": 0, "Medium": 1, "Unscored": 2, "Low": 3, "Exclude": 4}
-    identity_by_object = {
-        id(paper): _public_identity_key(paper, date, position)
-        for position, paper in enumerate(papers)
-    }
+def _render_daily_embedded(
+        papers, date, directions_cfg, archive_dates, manifest,
+        visual_registry: dict[str, dict] | None = None) -> str:
+    """Legacy branch-published day page kept until Pages source is switched."""
+    order = {"High": 0, "Medium": 1, "Unscored": 2,
+             "Low": 3, "Exclude": 4}
+    public_keys = _public_keys_for_day(papers, date)
     papers_sorted = sorted(
         papers,
-        key=lambda p: (order.get(
-                           _display_priority(p), 9),
-                       p.get("direction", "zzz")),
+        key=lambda paper: (
+            order.get(_display_priority(paper), 9),
+            paper.get("direction", "zzz"),
+        ),
     )
     cards = []
-    for p in papers_sorted:
-        d = p.get("direction")
-        color = directions_cfg[d]["color"] if d in directions_cfg else "#888"
+    for paper in papers_sorted:
+        direction = paper.get("direction")
+        color = directions_cfg.get(direction, {}).get("color", "#888")
+        identity, anchor = public_keys[id(paper)]
         cards.append(_paper_card(
-            p, color, identity_key=identity_by_object[id(p)]
+            paper, color, identity_key=identity, anchor=anchor,
+            visual=(visual_registry or {}).get(identity),
         ))
-
+    content = ('<div class="paper-grid">' + "".join(cards) + "</div>"
+               if cards else '<p style="color:#888">No papers today.</p>')
     return f"""<!doctype html><html lang="zh"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Research Radar — {_esc(date)}</title>
@@ -467,12 +738,41 @@ def _render_daily(papers, date, directions_cfg, archive_dates, manifest):
 <div class="eyebrow">发表日期</div>
 <h1>{_esc(date)}</h1>
 <div class="subtitle">按论文发表日期归档 · 默认显示 High 与 Medium</div>
-{_topbar(date, archive_dates)}
+{_embedded_topbar(date, archive_dates)}
 {_stats_row(papers, directions_cfg)}
 {_direction_tabs(directions_cfg)}
 {_priority_filter_bar()}
 {_marks_filter_bar()}
-{f'<div class="paper-grid">{"".join(cards)}</div>' if cards else '<p style="color:#888">No papers today.</p>'}
+{content}
+{_version_footer(manifest)}
+</main>
+</body></html>"""
+
+
+def _render_daily(papers, date, directions_cfg, archive_dates, manifest):
+    """Render a lightweight day shell; paper content lives in JSON shards."""
+    return f"""<!doctype html><html lang="zh"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Research Radar — {_esc(date)}</title>
+{ASSET_HEAD}<script src="radar-day.js" defer></script></head><body>
+{_site_nav("archive")}
+<main id="main-content" data-date="{_esc(date)}">
+<div class="eyebrow">发表日期</div>
+<h1>{_esc(date)}</h1>
+<div class="subtitle">按论文发表日期归档 · 每页 {DAY_PAGE_SIZE} 篇 · 默认显示 High 与 Medium</div>
+{_topbar(date, archive_dates)}
+<div id="day-stats" class="stats" aria-live="polite"></div>
+{_direction_tabs(directions_cfg)}
+{_priority_filter_bar()}
+{_marks_filter_bar()}
+<div id="day-status" class="queue-status" aria-live="polite">正在载入论文数据…</div>
+<div id="day-results" class="paper-grid"></div>
+<nav id="day-pagination" class="queue-pagination" aria-label="每日论文分页" hidden>
+  <button type="button" id="day-prev" class="rui-btn rui-secondary">← 前一页</button>
+  <label>页面 <select id="day-page"></select></label>
+  <span id="day-page-total"></span>
+  <button type="button" id="day-next" class="rui-btn rui-secondary">后一页 →</button>
+</nav>
 {_version_footer(manifest)}
 </main>
 </body></html>"""
@@ -550,7 +850,7 @@ def _day_top_paper_data(papers: list[dict]) -> dict | None:
         v = zh.get(name) or en.get(name) or ""
         return v.strip() if isinstance(v, str) else ""
 
-    return {
+    record = {
         "title": _trunc(top.get("title") or "", 90),
         "is_high": llm.get("priority") == "High",
         "authors": [a for a in (top.get("authors") or []) if str(a).strip()],
@@ -566,6 +866,7 @@ def _day_top_paper_data(papers: list[dict]) -> dict | None:
         "validation": field("validation"),
         "relevance_to_user": (llm.get("relevance_to_user") or "").strip(),
     }
+    return record
 
 
 def _render_day_card(date, counts, top_data, directions_cfg) -> str:
@@ -755,14 +1056,11 @@ def _recent_valid_runs(data_dir: pathlib.Path, limit: int = 7) -> list[tuple[str
 
 def _render_workbench(recent_runs: list[tuple[str, dict]],
                       buckets: dict[str, list[dict]], directions_cfg: dict,
-                      corpus_stats: corpus_view.CorpusStats) -> str:
+                      corpus_stats: corpus_view.CorpusStats,
+                      visual_registry: dict[str, dict] | None = None) -> str:
     """Root workbench: papers first seen in the seven latest valid runs."""
     run_dates = [date for date, _manifest in recent_runs]
-    identity_by_object = {
-        id(paper): _public_identity_key(paper, bucket_date, position)
-        for bucket_date, papers in buckets.items()
-        for position, paper in enumerate(papers)
-    }
+    public_keys = _public_keys_for_buckets(buckets)
     papers_by_run: dict[str, list[tuple[str, dict]]] = {
         date: [] for date in run_dates
     }
@@ -798,9 +1096,11 @@ def _render_workbench(recent_runs: list[tuple[str, dict]],
             for bucket_date, paper in items:
                 direction = paper.get("direction")
                 color = directions_cfg.get(direction, {}).get("color", "#667085")
+                identity, anchor = public_keys[id(paper)]
                 output.append(_paper_card(
                     paper, color, daily_link_date=bucket_date,
-                    identity_key=identity_by_object[id(paper)]
+                    identity_key=identity, anchor=anchor,
+                    visual=(visual_registry or {}).get(identity),
                 ))
             if not output:
                 return ""
@@ -871,17 +1171,35 @@ def _render_workbench(recent_runs: list[tuple[str, dict]],
 </body></html>"""
 
 
-def _queue_record(bucket_date: str, paper: dict, position: int,
-                  directions_cfg: dict) -> dict:
+def _public_card_record(bucket_date: str, paper: dict, position: int,
+                        directions_cfg: dict,
+                        identity_key: str | None = None,
+                        anchor: str | None = None,
+                        visual: dict | None = None) -> dict:
+    """Return the complete, browser-safe public representation of a card."""
     llm = paper.get("llm") or {}
     direction = paper.get("direction") or ""
-    identity = _public_identity_key(paper, bucket_date, position)
-    return {
+    display_priority = _display_priority(paper)
+    identity = identity_key or _public_identity_key(
+        paper, bucket_date, position
+    )
+    authors = paper.get("authors") or []
+    corresponding = []
+    for item in paper.get("corresponding_authors") or []:
+        if not isinstance(item, dict) or not item.get("affiliation"):
+            continue
+        corresponding.append({
+            "name": item.get("name") or "",
+            "affiliation": item.get("affiliation") or "",
+            "inferred": bool(item.get("inferred")),
+        })
+    record = {
         "identity_key": identity,
-        "anchor": _anchor_id(identity),
+        "anchor": anchor or _anchor_id(identity),
         "date": bucket_date,
         "title": paper.get("title") or "",
-        "authors": (paper.get("authors") or [])[:5],
+        "authors": authors[:5],
+        "authors_truncated": len(authors) > 5,
         "venue": paper.get("venue") or "",
         "source": paper.get("source") or "",
         "doi": paper.get("doi") or "",
@@ -890,17 +1208,139 @@ def _queue_record(bucket_date: str, paper: dict, position: int,
         "direction_name": paper.get("direction_name") or
                           directions_cfg.get(direction, {}).get("display_name", direction),
         "direction_color": directions_cfg.get(direction, {}).get("color", "#667085"),
-        "priority": llm.get("priority") or "",
+        "priority": display_priority,
+        "priority_label": ("待评分" if display_priority == "Unscored"
+                           else display_priority),
         "relevance_level": llm.get("relevance_level") or "",
         "read_action": llm.get("read_action") or "",
         "validation_kind": llm.get("validation_kind") or "",
-        "flags": llm.get("flags") or {},
+        "flags": {
+            key: bool((llm.get("flags") or {}).get(key))
+            for key in (
+                "has_experimental_validation",
+                "has_uncertainty_quantification",
+                "is_patient_specific",
+                "is_review",
+            )
+        },
+        "first_author_affiliation": paper.get("first_author_affiliation") or "",
+        "corresponding_authors": corresponding,
         "relevance_to_user": llm.get("relevance_to_user") or "",
         "why_not_core": llm.get("why_not_core") or "",
         "summary_zh": llm.get("summary_zh") or {},
+        "summary_en": llm.get("summary_en") or {},
+        "key_terms": llm.get("key_terms") or [],
         "tags": llm.get("tags") or [],
         "first_seen_at": paper.get("first_seen_at") or "",
     }
+    if visual is not None:
+        record["visual"] = visual
+    return record
+
+
+def _queue_record(bucket_date: str, paper: dict, position: int,
+                  directions_cfg: dict, identity_key: str | None = None,
+                  anchor: str | None = None,
+                  visual: dict | None = None) -> dict:
+    """Compatibility wrapper for the shared public card representation."""
+    return _public_card_record(
+        bucket_date, paper, position, directions_cfg,
+        identity_key=identity_key, anchor=anchor, visual=visual,
+    )
+
+
+def _write_json_atomic(path: pathlib.Path, payload: object) -> None:
+    """Publish one JSON document atomically inside its final directory."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temp = path.with_name(path.name + ".tmp")
+    temp.write_text(
+        json.dumps(payload, ensure_ascii=False, separators=(",", ":")),
+        encoding="utf-8",
+    )
+    temp.replace(path)
+
+
+def _build_day_shards(
+        docs_dir: pathlib.Path, bucket_date: str, papers: list[dict],
+        directions_cfg: dict, *, date_precision: str = "day",
+        previous_date: str | None = None,
+        next_date: str | None = None,
+        visual_registry: dict[str, dict] | None = None) -> dict:
+    """Write a compact manifest and 20-card JSON pages for one day shell."""
+    priority_order = {
+        "High": 0, "Medium": 1, "Unscored": 2, "Low": 3, "Exclude": 4,
+    }
+    public_keys = _public_keys_for_day(papers, bucket_date)
+    positioned = list(enumerate(papers))
+    positioned.sort(key=lambda item: (
+        priority_order.get(_display_priority(item[1]), 9),
+        item[1].get("direction", "zzz"),
+        item[0],
+    ))
+    records = []
+    for position, paper in positioned:
+        identity, anchor = public_keys[id(paper)]
+        records.append(_public_card_record(
+            bucket_date, paper, position, directions_cfg,
+            identity_key=identity, anchor=anchor,
+            visual=(visual_registry or {}).get(identity),
+        ))
+
+    priority_counts = {
+        priority: sum(1 for paper in papers
+                      if _display_priority(paper) == priority)
+        for priority in ("High", "Medium", "Unscored", "Low", "Exclude")
+    }
+    page_count = (len(records) + DAY_PAGE_SIZE - 1) // DAY_PAGE_SIZE
+    revision_payload = json.dumps(
+        {"date": bucket_date, "records": records}, ensure_ascii=False,
+        sort_keys=True, separators=(",", ":"),
+    ).encode("utf-8")
+    revision = hashlib.sha256(revision_payload).hexdigest()[:16]
+    anchor_pages = {
+        record["anchor"]: index // DAY_PAGE_SIZE + 1
+        for index, record in enumerate(records)
+    }
+
+    day_dir = docs_dir / "data" / "day" / bucket_date
+    day_dir.mkdir(parents=True, exist_ok=True)
+    expected_pages: set[pathlib.Path] = set()
+    for index in range(page_count):
+        page_number = index + 1
+        page_path = day_dir / f"page-{page_number}.json"
+        expected_pages.add(page_path)
+        _write_json_atomic(page_path, {
+            "schema_version": 1,
+            "date": bucket_date,
+            "page": page_number,
+            "page_count": page_count,
+            "revision": revision,
+            "papers": records[
+                index * DAY_PAGE_SIZE:(index + 1) * DAY_PAGE_SIZE
+            ],
+        })
+    for stale in day_dir.glob("page-*.json"):
+        if stale not in expected_pages:
+            stale.unlink()
+
+    manifest = {
+        "schema_version": 1,
+        "date": bucket_date,
+        "date_precision": date_precision or "day",
+        "total": len(records),
+        "page_size": DAY_PAGE_SIZE,
+        "page_count": page_count,
+        "priority_counts": priority_counts,
+        "previous_date": previous_date,
+        "next_date": next_date,
+        "revision": revision,
+        "page_pattern": "page-{page}.json",
+        "anchor_pages": anchor_pages,
+    }
+    # The manifest is the commit point: browser clients never observe a new
+    # revision until every shard for that revision is already present.
+    _write_json_atomic(day_dir / "manifest.json", manifest)
+    return manifest
 
 
 def _corpus_generated_at(buckets: dict[str, list[dict]]) -> str:
@@ -918,24 +1358,32 @@ def _corpus_generated_at(buckets: dict[str, list[dict]]) -> str:
 
 def _build_queue_index(docs_dir: pathlib.Path,
                        buckets: dict[str, list[dict]], directions_cfg: dict,
-                       corpus_stats: corpus_view.CorpusStats) -> dict:
+                       corpus_stats: corpus_view.CorpusStats,
+                       visual_registry: dict[str, dict] | None = None) -> dict:
     """Write priority/year queue shards for High and Medium papers."""
     grouped: dict[str, dict[str, list[dict]]] = {
         "High": {}, "Medium": {},
     }
     for bucket_date, papers in buckets.items():
+        public_keys = _public_keys_for_day(papers, bucket_date)
         for position, paper in enumerate(papers):
             priority = (paper.get("llm") or {}).get("priority")
             if priority not in grouped:
                 continue
             year = bucket_date[:4]
+            identity, anchor = public_keys[id(paper)]
             grouped[priority].setdefault(year, []).append(
-                _queue_record(bucket_date, paper, position, directions_cfg)
+                _queue_record(
+                    bucket_date, paper, position, directions_cfg,
+                    identity_key=identity, anchor=anchor,
+                    visual=(visual_registry or {}).get(identity),
+                )
             )
 
     priorities = {}
     for priority, years_data in grouped.items():
         year_counts = {}
+        year_facets = {}
         for year, records in years_data.items():
             records.sort(key=lambda record: (
                 record["date"], record["title"]
@@ -946,14 +1394,42 @@ def _build_queue_index(docs_dir: pathlib.Path,
                 encoding="utf-8",
             )
             year_counts[year] = len(records)
+            direction_counts: dict[str, int] = {}
+            relevance_counts: dict[str, int] = {}
+            direction_relevance: dict[str, dict[str, int]] = {}
+            for record in records:
+                direction = record.get("direction") or ""
+                relevance = record.get("relevance_level") or ""
+                if direction:
+                    direction_counts[direction] = (
+                        direction_counts.get(direction, 0) + 1
+                    )
+                if relevance:
+                    relevance_counts[relevance] = (
+                        relevance_counts.get(relevance, 0) + 1
+                    )
+                if direction and relevance:
+                    pair_counts = direction_relevance.setdefault(direction, {})
+                    pair_counts[relevance] = pair_counts.get(relevance, 0) + 1
+            year_facets[year] = {
+                "total": len(records),
+                "directions": dict(sorted(direction_counts.items())),
+                "relevance": dict(sorted(relevance_counts.items())),
+                "direction_relevance": {
+                    direction: dict(sorted(counts.items()))
+                    for direction, counts in sorted(direction_relevance.items())
+                },
+            }
         priorities[priority] = {
             "total": sum(year_counts.values()),
             "years": {year: year_counts[year]
                       for year in sorted(year_counts, reverse=True)},
+            "year_facets": {year: year_facets[year]
+                            for year in sorted(year_facets, reverse=True)},
         }
 
     manifest = {
-        "schema_version": 1,
+        "schema_version": 2,
         "generated_at": _corpus_generated_at(buckets),
         **corpus_stats.as_dict(),
         "priorities": priorities,
@@ -991,7 +1467,14 @@ def _render_queue_page() -> str:
 </div>
 <div class="queue-status" id="queue-status" aria-live="polite">正在加载队列…</div>
 <div id="queue-results" class="paper-grid"></div>
-<button type="button" class="rui-btn queue-more" id="queue-more" hidden>加载更多</button>
+<nav class="queue-pagination" id="queue-pagination" aria-label="论文队列分页" hidden>
+  <button type="button" class="queue-page-button" id="queue-prev">← 上一页</button>
+  <label class="queue-page-picker" for="queue-page">页码
+    <select id="queue-page" aria-label="选择页码"></select>
+  </label>
+  <span class="queue-page-total" id="queue-page-total">共 0 页</span>
+  <button type="button" class="queue-page-button" id="queue-next">下一页 →</button>
+</nav>
 </main>
 </body></html>"""
 
@@ -1026,7 +1509,7 @@ def _render_status_page(docs_dir, data_dir):
 
         rows.append(f"""
         <tr>
-          <td><a href="{_esc(date)}.html">{_esc(date)}</a></td>
+          <td><a href="index.html">{_esc(date)}</a></td>
           <td><span class="run-status run-status--{_esc(run_status)}">{_esc(run_status)}</span></td>
           <td>{counts.get("fetched", "—")}</td>
           <td>{counts.get("after_dedup", "—")}</td>
@@ -1091,7 +1574,7 @@ def _build_search_index(docs_dir, data_dir, canonical_buckets=None,
 
     if canonical_buckets is None:
         raw_buckets = {}
-        for jpath in sorted(daily_dir.glob("20*.json")):
+        for jpath in _daily_json_paths(daily_dir):
             raw_buckets[jpath.stem], _meta = _load_papers_v2_or_v1(jpath)
         canonical_buckets, corpus_stats = corpus_view.canonicalize_buckets(
             raw_buckets
@@ -1102,6 +1585,7 @@ def _build_search_index(docs_dir, data_dir, canonical_buckets=None,
     for date, papers in sorted(canonical_buckets.items()):
         if not papers:
             continue
+        public_keys = _public_keys_for_day(papers, date)
         for position, p in enumerate(papers):
             llm = p.get("llm", {}) or {}
             s_zh = llm.get("summary_zh", {}) or {}
@@ -1126,9 +1610,10 @@ def _build_search_index(docs_dir, data_dir, canonical_buckets=None,
                 " ".join(s_zh.values()) if isinstance(s_zh, dict) else "",
                 " ".join(term_texts),
             ]
-            identity = _public_identity_key(p, date, position)
+            identity, anchor = public_keys[id(p)]
             record = {
                 "identity_key": identity,
+                "anchor": anchor,
                 "date": date,
                 "title": p.get("title", "")[:200],
                 "authors": ", ".join(authors[:3]) +
@@ -1316,8 +1801,9 @@ def _redirect_page(title: str, target: str) -> str:
 def _copy_static_assets(docs_dir: pathlib.Path) -> None:
     """Copy the dependency-free browser bundles into docs/."""
     static_dir = pathlib.Path(__file__).resolve().parent / "static"
-    for name in ("radar-ui.css", "radar-ui.js", "radar-queue.js",
-                 "radar-search.js", "radar-search-worker.js"):
+    for name in ("radar-ui.css", "radar-ui.js", "radar-card.js",
+                 "radar-day.js", "radar-queue.js", "radar-search.js",
+                 "radar-search-worker.js"):
         src = static_dir / name
         if src.exists():
             (docs_dir / name).write_text(
@@ -1331,7 +1817,7 @@ def _priority_counts_for(papers: list, meta: dict) -> dict:
 
 
 def build(docs_dir, directions_cfg, manifest=None, touched_dates=None,
-          data_dir=None):
+          data_dir=None, *, sharded_daily: bool = False):
     """Render every per-publication-date HTML page from disk, refresh index.
 
     ADR-0015 §4.5: under v2 a single radar run touches many publication-date
@@ -1345,7 +1831,7 @@ def build(docs_dir, directions_cfg, manifest=None, touched_dates=None,
                 else docs_dir.parent / "data")
     docs_dir.mkdir(parents=True, exist_ok=True)
     data_daily_dir = data_dir / "daily"
-    archive = sorted(p.stem for p in data_daily_dir.glob("20*.json")) if data_daily_dir.exists() else []
+    archive = [path.stem for path in _daily_json_paths(data_daily_dir)]
     touched = set(touched_dates or ())
 
     # Load once, then create a strict identity-key canonical site view. Raw
@@ -1353,6 +1839,7 @@ def build(docs_dir, directions_cfg, manifest=None, touched_dates=None,
     # duplicate DOI/arXiv identities.
     raw_papers_by_date: dict[str, list] = {}
     meta_by_date: dict[str, dict] = {}
+    archive_positions = {date: index for index, date in enumerate(archive)}
     for hist_date in archive:
         papers, meta = _load_papers_v2_or_v1(
             data_daily_dir / f"{hist_date}.json"
@@ -1363,6 +1850,9 @@ def build(docs_dir, directions_cfg, manifest=None, touched_dates=None,
     day_papers_full, corpus_stats = corpus_view.canonicalize_buckets(
         raw_papers_by_date
     )
+    visual_registry = _load_visual_registry(data_dir)
+    if visual_registry:
+        print(f"  visual registry: {len(visual_registry)} safe figure(s)")
     if corpus_stats.duplicates_suppressed:
         print("  canonical corpus: "
               f"{corpus_stats.unique_total} unique / "
@@ -1397,10 +1887,27 @@ def build(docs_dir, directions_cfg, manifest=None, touched_dates=None,
                       f"stored={stored_counts} computed={raw_counts}")
             day_counts[hist_date] = _priority_counts_for(hist_papers, _meta)
             page_manifest = manifest if hist_date in touched else None
-            rendered = _clean_html(_render_daily(
-                hist_papers, hist_date, directions_cfg, archive,
-                page_manifest,
-            ))
+            if sharded_daily:
+                archive_index = archive_positions[hist_date]
+                _build_day_shards(
+                    docs_dir, hist_date, hist_papers, directions_cfg,
+                    date_precision=_meta.get("date_precision") or "day",
+                    previous_date=(archive[archive_index - 1]
+                                   if archive_index > 0 else None),
+                    next_date=(archive[archive_index + 1]
+                               if archive_index + 1 < len(archive) else None),
+                    visual_registry=visual_registry,
+                )
+                rendered = _render_daily(
+                    hist_papers, hist_date, directions_cfg, archive,
+                    page_manifest,
+                )
+            else:
+                rendered = _render_daily_embedded(
+                    hist_papers, hist_date, directions_cfg, archive,
+                    page_manifest, visual_registry,
+                )
+            rendered = _clean_html(rendered)
             if page_manifest is None:
                 rendered = _preserve_run_info(rendered, hist_html)
             hist_html.write_text(rendered, encoding="utf-8")
@@ -1425,6 +1932,7 @@ def build(docs_dir, directions_cfg, manifest=None, touched_dates=None,
     (docs_dir / "index.html").write_text(
         _clean_html(_render_workbench(
             recent_runs, day_papers_full, directions_cfg, corpus_stats,
+            visual_registry,
         )),
         encoding="utf-8",
     )
@@ -1441,7 +1949,10 @@ def build(docs_dir, directions_cfg, manifest=None, touched_dates=None,
         )
 
     # ADR-0027: one lazy High/Medium queue replaces multi-megabyte flat HTML.
-    _build_queue_index(docs_dir, day_papers_full, directions_cfg, corpus_stats)
+    _build_queue_index(
+        docs_dir, day_papers_full, directions_cfg, corpus_stats,
+        visual_registry,
+    )
     (docs_dir / "queue.html").write_text(
         _render_queue_page(), encoding="utf-8"
     )

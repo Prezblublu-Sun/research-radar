@@ -1,0 +1,96 @@
+name: deploy-research-radar-pages
+
+on:
+  push:
+    branches: [main]
+  workflow_run:
+    workflows:
+      - daily-research-radar
+      - weekly-research-radar
+      - manual-backfill
+      - manual-rescore
+      - enrich-research-radar-visuals
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    if: >-
+      github.event_name != 'workflow_run' ||
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out latest production data
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - run: pip install -e .
+
+      - name: Build disposable Pages artifact
+        run: python -m scripts.rebuild_site --docs-dir _site --sharded-daily
+
+      - name: Validate Pages artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f _site/index.html
+
+          site_bytes="$(du -sb _site | cut -f1)"
+          max_bytes=1000000000
+          if [ "$site_bytes" -ge "$max_bytes" ]; then
+            echo "::error::Pages artifact is ${site_bytes} bytes; raw site must be under 1 GB."
+            exit 1
+          fi
+
+          symlink="$(find _site -type l -print -quit)"
+          if [ -n "$symlink" ]; then
+            echo "::error::Pages artifact contains a symlink: $symlink"
+            exit 1
+          fi
+
+          hardlink="$(find _site -type f -links +1 -print -quit)"
+          if [ -n "$hardlink" ]; then
+            echo "::error::Pages artifact contains a hard-linked file: $hardlink"
+            exit 1
+          fi
+
+          echo "Validated ${site_bytes}-byte Pages artifact."
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+
+  deploy:
+    if: >-
+      github.event_name != 'workflow_run' ||
+      github.event.workflow_run.conclusion == 'success'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

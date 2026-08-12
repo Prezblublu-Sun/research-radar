@@ -1,7 +1,9 @@
 """Weekly report generator. Aggregates the last 7 days of daily JSONs into
 a Top-N picks page. Trend analysis and LLM meta-summary are TODO (Phase 2).
 
-Output: docs/weekly/YYYY-WW.html and docs/weekly/index.html
+Output: docs/weekly/YYYY-WW.html and docs/weekly/index.html by default.
+Callers may supply another data tree and output directory so the complete
+weekly archive can also be rebuilt into a disposable Pages artifact.
 ISO week number is used (Monday=start of week).
 """
 
@@ -75,17 +77,21 @@ def _week_dates(end_date: dt.date) -> tuple[dt.date, dt.date]:
     return monday, sunday
 
 
-def collect_week_papers(end_date: dt.date) -> tuple[list[dict], dict]:
+def collect_week_papers(
+    end_date: dt.date,
+    data_dir: pathlib.Path | None = None,
+) -> tuple[list[dict], dict]:
     """Load all daily JSONs in the ISO week containing end_date.
     Returns (papers, stats_dict)."""
     monday, sunday = _week_dates(end_date)
+    corpus_dir = pathlib.Path(data_dir) if data_dir is not None else DATA_DIR
     all_papers = []
     days_with_data = 0
     daily_counts = {}
 
     cur = monday
     while cur <= sunday:
-        path = DATA_DIR / "daily" / f"{cur.isoformat()}.json"
+        path = corpus_dir / "daily" / f"{cur.isoformat()}.json"
         if path.exists():
             try:
                 raw_ps, _meta = _load_papers_v2_or_v1(path)
@@ -305,7 +311,43 @@ def _render_index(all_week_ids):
 </body></html>"""
 
 
-def build_weekly(end_date: dt.date | None = None) -> dict:
+def _load_directions(config_path: pathlib.Path | None = None) -> dict:
+    path = pathlib.Path(config_path) if config_path is not None else CONFIG
+    config = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    directions = config.get("directions")
+    if not isinstance(directions, dict) or not directions:
+        raise ValueError(f"no directions mapping found in {path}")
+    return directions
+
+
+def _manifest_week_starts(data_dir: pathlib.Path) -> list[dt.date]:
+    """Return sorted ISO-week Mondays represented by run manifests.
+
+    Manifest filenames, rather than wall-clock time or pre-existing HTML,
+    define the weekly archive.  That makes a clean rebuild reproducible from
+    the committed data tree and prevents an old output directory from
+    silently influencing navigation.
+    """
+    week_starts: set[dt.date] = set()
+    for path in (pathlib.Path(data_dir) / "manifests").glob("*.json"):
+        try:
+            run_date = dt.date.fromisoformat(path.stem)
+        except ValueError:
+            continue
+        monday, _ = _week_dates(run_date)
+        week_starts.add(monday)
+    return sorted(week_starts)
+
+
+def build_weekly(
+    end_date: dt.date | None = None,
+    *,
+    data_dir: pathlib.Path | None = None,
+    output_dir: pathlib.Path | None = None,
+    directions_cfg: dict | None = None,
+    config_path: pathlib.Path | None = None,
+    all_week_ids: list[str] | None = None,
+) -> dict:
     if end_date is None:
         # Report on the most recently completed ISO week (last Mon-Sun).
         # If today is Monday, we still want LAST week, not this week.
@@ -314,23 +356,28 @@ def build_weekly(end_date: dt.date | None = None) -> dict:
         # weekday(): Mon=0..Sun=6
         days_to_last_sunday = today.weekday() + 1  # Mon=1, Tue=2, ..., Sun=7
         end_date = today - dt.timedelta(days=days_to_last_sunday)
-    cfg = yaml.safe_load(CONFIG.read_text())
-    directions_cfg = cfg["directions"]
+    corpus_dir = pathlib.Path(data_dir) if data_dir is not None else DATA_DIR
+    weekly_dir = pathlib.Path(output_dir) if output_dir is not None else WEEKLY_DIR
+    if directions_cfg is None:
+        directions_cfg = _load_directions(config_path)
 
-    papers, stats = collect_week_papers(end_date)
+    papers, stats = collect_week_papers(end_date, data_dir=corpus_dir)
     by_dir = filter_top_picks(papers)
 
-    WEEKLY_DIR.mkdir(parents=True, exist_ok=True)
-    all_week_ids = sorted(p.stem for p in WEEKLY_DIR.glob("20*.html"))
+    weekly_dir.mkdir(parents=True, exist_ok=True)
+    if all_week_ids is None:
+        all_week_ids = sorted(p.stem for p in weekly_dir.glob("20*.html"))
+    else:
+        all_week_ids = sorted(set(all_week_ids))
     if stats["week_id"] not in all_week_ids:
         all_week_ids.append(stats["week_id"])
         all_week_ids.sort()
 
-    (WEEKLY_DIR / f"{stats['week_id']}.html").write_text(
+    (weekly_dir / f"{stats['week_id']}.html").write_text(
         _render_weekly(stats, by_dir, directions_cfg, all_week_ids),
         encoding="utf-8",
     )
-    (WEEKLY_DIR / "index.html").write_text(
+    (weekly_dir / "index.html").write_text(
         _render_index(all_week_ids),
         encoding="utf-8",
     )
@@ -346,11 +393,54 @@ def build_weekly(end_date: dt.date | None = None) -> dict:
     }
 
 
+def rebuild_all_weekly(
+    *,
+    data_dir: pathlib.Path | None = None,
+    output_dir: pathlib.Path | None = None,
+    directions_cfg: dict | None = None,
+    config_path: pathlib.Path | None = None,
+) -> list[dict]:
+    """Deterministically rebuild every manifest-backed ISO week.
+
+    Only ``YYYY-Www.html`` files owned by this generator are pruned.  Other
+    files in the output directory are preserved.
+    """
+    corpus_dir = pathlib.Path(data_dir) if data_dir is not None else DATA_DIR
+    weekly_dir = pathlib.Path(output_dir) if output_dir is not None else WEEKLY_DIR
+    if directions_cfg is None:
+        directions_cfg = _load_directions(config_path)
+
+    week_starts = _manifest_week_starts(corpus_dir)
+    week_ids = [_iso_week_id(monday) for monday in week_starts]
+    weekly_dir.mkdir(parents=True, exist_ok=True)
+
+    expected = {f"{week_id}.html" for week_id in week_ids}
+    for path in weekly_dir.glob("????-W??.html"):
+        if path.name not in expected:
+            path.unlink()
+
+    reports = [
+        build_weekly(
+            monday,
+            data_dir=corpus_dir,
+            output_dir=weekly_dir,
+            directions_cfg=directions_cfg,
+            all_week_ids=week_ids,
+        )
+        for monday in week_starts
+    ]
+    (weekly_dir / "index.html").write_text(
+        _render_index(week_ids),
+        encoding="utf-8",
+    )
+    return reports
+
+
 if __name__ == "__main__":
     import sys
     if len(sys.argv) > 1:
         end = dt.date.fromisoformat(sys.argv[1])
+        report = build_weekly(end_date=end)
     else:
-        end = dt.date.today()
-    report = build_weekly(end_date=end)
+        report = build_weekly()
     print(json.dumps(report, indent=2, ensure_ascii=False))

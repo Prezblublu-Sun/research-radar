@@ -22,6 +22,8 @@ Concretely, it:
 - Routes papers to research directions using keyword rules
 - Scores each paper with an LLM (priority + bilingual summary + key terms)
 - Renders a daily/weekly HTML digest at GitHub Pages
+- Adds an optional, open-license visual preview to browse cards from official
+  article metadata/media services
 - Syncs Medium+ papers to Zotero collections, one per direction
 - Records every run with manifest + CHANGELOG (version governance)
 
@@ -52,6 +54,15 @@ These are explicitly out of scope and belong to other systems (primarily lit-sys
 > and does not feed corpus routing/scoring/rendering. Its forbidden
 > import is suppressed narrowly via `# noqa: SCOPE-FI001` on that one
 > line; the blanket prohibition on full-text parsing elsewhere stands.
+
+> **Documented exception — visual preview sidecar (ADR-0029).** Radar may
+> resolve one browser preview image from an official open-article media feed
+> when the record has a machine-readable reuse license. This enrichment is a
+> separate, best-effort workflow: it does not download or parse PDFs, does not
+> run OCR or interpret figures, and never feeds routing, scoring, search
+> ranking, or Zotero sync. The repository stores only compact source metadata;
+> unavailable, restricted, or failed lookups remain an explicit no-image
+> state. Deep figure/table extraction remains lit-system's responsibility.
 
 ### Knowledge construction
 - Chunking
@@ -85,6 +96,8 @@ These are explicitly out of scope and belong to other systems (primarily lit-sys
   (to-read / read / interesting / ignore, plus free-text notes per paper).
   Persisted in localStorage only; no server-side state; no sync.
 - Cross-corpus priority navigation pages (high-priority.html etc).
+- Open-license visual previews on browse cards, joined from a sidecar registry
+  and isolated from scored corpus records (ADR-0029).
 - These are human-curation aids on Radar. Distinct from lit-system,
   which performs automatic machine annotation on deep-parsed PDFs.
   The user does not hand-edit lit-system annotations; the two layers
@@ -200,5 +213,5 @@ This narrow scope is the design.
 
 ---
 
-Last updated: 2026-05-13.
-Next review: when daily run quality is measured at the 1-month mark.
+Last updated: 2026-08-12.
+Next review: after the open-license visual pilot has one month of coverage data.
