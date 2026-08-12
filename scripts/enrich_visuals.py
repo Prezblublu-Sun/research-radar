@@ -41,6 +41,7 @@ DEFAULT_DAILY_DIR = ROOT / "data" / "daily"
 DEFAULT_INDEX_PATH = ROOT / "data" / "visuals" / "index.json"
 
 SCHEMA_VERSION = "v1"
+SELECTOR_VERSION = 2
 DEFAULT_LIMIT = 20
 DEFAULT_TIMEOUT_SECONDS = 12.0
 DEFAULT_MIN_DELAY_SECONDS = 0.5
@@ -81,6 +82,10 @@ DECORATIVE_IMAGE_TOKENS = {
     "avatar", "avatars", "banner", "banners", "cover", "covers",
     "favicon", "headshot", "headshots", "icon", "icons", "logo", "logos",
     "portrait", "portraits",
+}
+AUXILIARY_IMAGE_TOKENS = {
+    "colorbar", "colorbars", "colourbar", "colourbars",
+    "key", "keys", "legend", "legends",
 }
 
 
@@ -158,6 +163,43 @@ def looks_like_decorative_image(*hints: object) -> bool:
     )
 
 
+def looks_like_auxiliary_image(asset: object, *hints: object) -> bool:
+    """Reject legend/key assets that are not meaningful standalone figures."""
+    path = unquote(urlparse(str(asset or "")).path).lower()
+    path_tokens = set(re.findall(r"[a-z0-9]+", path))
+    if path_tokens & (AUXILIARY_IMAGE_TOKENS - {"key", "keys"}):
+        return True
+    if re.search(
+            r"(?:^|[^a-z0-9])(?:only[_-]?)?"
+            r"(?:cbar|colou?r[\s_-]*bars?)(?:$|[^a-z0-9])",
+            path,
+    ):
+        return True
+    stem = Path(path).stem
+    if re.fullmatch(
+            r"(?:(?:plot|chart|figure|color|colour)[_-]?)?"
+            r"keys?(?:[_-]?\d+)?",
+            stem,
+    ):
+        return True
+
+    # Descriptive attributes occasionally identify an auxiliary asset even
+    # when its generated filename is opaque.  Require the whole description
+    # to look auxiliary so phrases such as "key experimental result" remain
+    # eligible.
+    pattern = re.compile(
+        r"(?:(?:plot|chart|figure|color|colour) )?"
+        r"(?:legend|key|colou?r bars?)s?"
+    )
+    for value in hints:
+        description = " ".join(re.findall(
+            r"[a-z0-9]+", str(value or "").lower(),
+        ))
+        if pattern.fullmatch(description):
+            return True
+    return False
+
+
 def _suffix(url: str) -> str:
     return Path(unquote(urlparse(url).path)).suffix.lower()
 
@@ -212,6 +254,62 @@ def visual_lookup_key(paper: dict) -> str:
     return _visual_lookup_identity(identity_key(paper))
 
 
+def _truncate_text(value: str, limit: int) -> str:
+    """Bound display text at a word boundary outside obvious LaTeX spans."""
+    if len(value) <= limit:
+        return value
+
+    math_delimiter = ""
+    brace_depth = 0
+    last_boundary = 0
+    index = 0
+    while index < limit:
+        char = value[index]
+        escaped = index > 0 and value[index - 1] == "\\"
+        pair = value[index:index + 2]
+
+        if not escaped and pair in {"\\(", "\\["} and not math_delimiter:
+            math_delimiter = pair
+            index += 2
+            continue
+        if pair in {"\\)", "\\]"} and math_delimiter:
+            expected = "\\)" if math_delimiter == "\\(" else "\\]"
+            if pair == expected:
+                math_delimiter = ""
+            index += 2
+            continue
+        if char == "$" and not escaped and not math_delimiter:
+            math_delimiter = "$$" if value[index:index + 2] == "$$" else "$"
+            index += len(math_delimiter)
+            continue
+        if char == "$" and not escaped and math_delimiter in {"$", "$$"}:
+            closing = math_delimiter
+            if value[index:index + len(closing)] == closing:
+                math_delimiter = ""
+                index += len(closing)
+                continue
+
+        if not escaped and not math_delimiter:
+            if char == "{":
+                brace_depth += 1
+            elif char == "}" and brace_depth:
+                brace_depth -= 1
+            elif char.isspace() and brace_depth == 0:
+                last_boundary = index
+        index += 1
+
+    # The hard boundary itself may already fall between complete words.
+    if (not math_delimiter and brace_depth == 0 and limit < len(value) and
+            (value[limit].isspace() or not value[limit - 1].isalnum() or
+             not value[limit].isalnum())):
+        last_boundary = limit
+    if last_boundary:
+        return value[:last_boundary].rstrip()
+    # A single pathological token can exceed the whole limit.  Retaining the
+    # established hard cap is safer than allowing unbounded registry content.
+    return value[:limit].rstrip()
+
+
 def _blank_visual(status: str, *, checked_at: str, reason: str = "",
                   license_name: str = "", provider: str = "") -> dict:
     result = {
@@ -239,15 +337,16 @@ def _available_visual(*, checked_at: str, image_url: str, caption: str,
     return {
         "status": "available",
         "image_url": image_url,
-        "caption": caption[:1200],
+        "caption": _truncate_text(caption, 1200),
         "source_label": source_label[:160],
         "source_url": source_url,
         "license": license_name,
-        "alt": (alt or caption or "论文插图")[:500],
+        "alt": _truncate_text(alt or caption or "论文插图", 500),
         "width": None,
         "height": None,
         "checked_at": checked_at,
         "provider": provider,
+        "selector_version": SELECTOR_VERSION,
     }
 
 
@@ -365,12 +464,16 @@ def _node_text(node: ET.Element | None) -> str:
 
 
 def _graphic_href(fig: ET.Element) -> str:
-    for node in fig.iter():
-        if _local_name(node.tag) not in {"graphic", "inline-graphic"}:
-            continue
-        for key, value in node.attrib.items():
-            if key == "href" or key.endswith("}href"):
-                return value
+    # A caption may contain a small inline symbol before the figure's actual
+    # graphic.  Prefer JATS ``graphic`` regardless of document order; retain
+    # ``inline-graphic`` only as a compatibility fallback.
+    for wanted_tag in ("graphic", "inline-graphic"):
+        for node in fig.iter():
+            if _local_name(node.tag) != wanted_tag:
+                continue
+            for key, value in node.attrib.items():
+                if key == "href" or key.endswith("}href"):
+                    return value
     return ""
 
 
@@ -420,6 +523,8 @@ def select_pmc_figure(xml_text: str, media_urls: Iterable[object]) -> dict | Non
         kind = (fig.attrib.get("fig-type") or "").lower()
         figure_id = (fig.attrib.get("id") or "").lower()
         media_name = _basename(image_url)
+        if looks_like_auxiliary_image(media_name, label):
+            continue
         if looks_like_decorative_image(
                 kind, figure_id, media_name, label, caption):
             continue
@@ -469,19 +574,39 @@ class ArxivFigureParser(HTMLParser):
         self.caption_depth = 0
         self.current: dict | None = None
         self.figures: list[dict] = []
+        self.figure_contexts: list[dict[str, str]] = []
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         tag = tag.lower()
         attributes = dict(attrs)
         if tag == "figure":
             if self.depth == 0:
-                self.current = {"src": "", "caption_parts": [],
+                self.current = {"images": [], "caption_parts": [],
                                 "class": attributes.get("class") or ""}
+            self.figure_contexts.append({
+                "class": attributes.get("class") or "",
+                "id": attributes.get("id") or "",
+            })
             self.depth += 1
             return
         if self.depth and tag == "img" and self.current is not None:
-            self.current["src"] = self.current["src"] or attributes.get("src") or ""
-            self.current["alt"] = attributes.get("alt") or ""
+            context = " ".join(
+                f"{item['class']} {item['id']}"
+                for item in self.figure_contexts
+            ).lower()
+            self.current["images"].append({
+                "src": attributes.get("src") or "",
+                "alt": attributes.get("alt") or "",
+                "class": attributes.get("class") or "",
+                "id": attributes.get("id") or "",
+                "width": attributes.get("width") or "",
+                "height": attributes.get("height") or "",
+                "is_subfigure": bool(re.search(
+                    r"(?:^|[\s_.-])(?:subfig(?:ure)?|figure_panel|panel)"
+                    r"(?:$|[\s_.-])",
+                    context,
+                )),
+            })
         if self.depth and tag == "figcaption":
             self.caption_depth += 1
 
@@ -491,6 +616,8 @@ class ArxivFigureParser(HTMLParser):
             self.caption_depth -= 1
         if tag == "figure" and self.depth:
             self.depth -= 1
+            if self.figure_contexts:
+                self.figure_contexts.pop()
             if self.depth == 0 and self.current is not None:
                 self.current["caption"] = " ".join(
                     " ".join(self.current.pop("caption_parts")).split()
@@ -511,25 +638,55 @@ def select_arxiv_figure(html_text: str, page_url: str) -> dict | None:
         caption = figure.get("caption") or ""
         if caption_has_third_party_rights(caption):
             continue
-        image_url = _https_url(
-            # arXiv serves the document at ``/html/<id>`` (a file-like URL).
-            # A relative source such as ``<id>v1/fig.png`` therefore resolves
-            # against ``/html/``, not a synthetic ``/html/<id>/`` directory.
-            urljoin(page_url, figure.get("src") or ""),
-            hosts={"arxiv.org"},
-        )
-        if not image_url or _suffix(image_url) not in IMAGE_SUFFIXES:
+        images = []
+        for image_order, image in enumerate(figure.get("images") or []):
+            image_url = _https_url(
+                # arXiv serves ``/html/<id>`` as a file-like URL.  Relative
+                # image paths therefore resolve against ``/html/``.
+                urljoin(page_url, image.get("src") or ""),
+                hosts={"arxiv.org"},
+            )
+            if not image_url or _suffix(image_url) not in IMAGE_SUFFIXES:
+                continue
+            if looks_like_auxiliary_image(
+                    image_url, image.get("alt"), image.get("class")):
+                continue
+            if looks_like_decorative_image(
+                    _basename(image_url), image.get("alt"),
+                    image.get("class"), caption):
+                continue
+            try:
+                area = float(image.get("width") or 0) * float(
+                    image.get("height") or 0
+                )
+            except (TypeError, ValueError):
+                area = 0.0
+            images.append({
+                "image_url": image_url,
+                "alt": image.get("alt") or "",
+                "is_subfigure": bool(image.get("is_subfigure")),
+                "area": area,
+                "order": image_order,
+            })
+        if not images:
             continue
-        if looks_like_decorative_image(
-                _basename(image_url), figure.get("alt"),
-                figure.get("class"), caption):
-            continue
+
+        # A standalone non-panel image represents the complete figure and is
+        # preferred over nested panels.  If an author supplies only panels,
+        # retain the largest (or first when dimensions are absent) rather than
+        # rejecting an otherwise ordinary scientific figure.  Single images
+        # always remain eligible regardless of their generated class names.
+        full_images = [image for image in images if not image["is_subfigure"]]
+        pool = full_images or images
+        selected = max(pool, key=lambda image: (
+            image["area"] > 0, image["area"], -image["order"],
+        ))
         haystack = f"{figure.get('class', '')} {caption}".lower()
         preferred = int("graphical abstract" in haystack)
         safe.append((-preferred, order, {
-            "image_url": image_url,
+            "image_url": selected["image_url"],
             "caption": caption,
-            "alt": figure.get("alt") or "",
+            "alt": selected["alt"],
         }))
     return min(safe, default=(0, 0, None))[2]
 
@@ -746,6 +903,9 @@ def save_registry(path: Path, registry: dict, *, now: dt.datetime | None = None)
 def should_refresh(record: object, *, now: dt.datetime | None = None,
                    force: bool = False) -> bool:
     if force or not isinstance(record, dict):
+        return True
+    if (record.get("status") == "available" and
+            record.get("selector_version") != SELECTOR_VERSION):
         return True
     checked = parse_timestamp(record.get("checked_at"))
     if checked is None:

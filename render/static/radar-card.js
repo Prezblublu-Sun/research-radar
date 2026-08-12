@@ -94,6 +94,14 @@
       Math.round(number) : 0;
   }
 
+  function usefulVisualAlt(value) {
+    var rendered = text(value).trim();
+    if (/^(?:(?:refer|see)\s+(?:to\s+)?(?:the\s+)?caption|(?:figure|image|graphic))[.!]?$/i.test(rendered)) {
+      return "";
+    }
+    return rendered;
+  }
+
   function visualRecord(record) {
     var visual = record.visual;
     if (!visual || typeof visual !== "object" || Array.isArray(visual)) {
@@ -125,6 +133,91 @@
     if (image.complete && image.naturalWidth === 0) {
       renderVisualFallback(figure);
     }
+  }
+
+  var visualViewerState = null;
+
+  function ensureVisualViewer() {
+    if (visualViewerState) return visualViewerState;
+    var dialog = element("dialog", "paper-visual-viewer");
+    if (typeof dialog.showModal !== "function") return null;
+    dialog.setAttribute("aria-labelledby", "paper-visual-viewer-title");
+
+    var toolbar = element("div", "paper-visual-viewer__toolbar");
+    var heading = element(
+      "strong", "paper-visual-viewer__title", "论文插图"
+    );
+    heading.id = "paper-visual-viewer-title";
+    toolbar.appendChild(heading);
+    var links = element("div", "paper-visual-viewer__links");
+    var original = element("a", "paper-visual-viewer__link", "新窗口打开原图 ↗");
+    original.target = "_blank";
+    original.rel = "noopener noreferrer";
+    links.appendChild(original);
+    var source = element("a", "paper-visual-viewer__link", "查看论文来源 ↗");
+    source.target = "_blank";
+    source.rel = "noopener noreferrer";
+    links.appendChild(source);
+    var close = element("button", "paper-visual-viewer__close", "关闭");
+    close.type = "button";
+    links.appendChild(close);
+    toolbar.appendChild(links);
+    dialog.appendChild(toolbar);
+
+    var viewport = element("div", "paper-visual-viewer__viewport");
+    var image = element("img", "paper-visual-viewer__image");
+    image.referrerPolicy = "no-referrer";
+    viewport.appendChild(image);
+    dialog.appendChild(viewport);
+    var caption = element("p", "paper-visual-viewer__caption");
+    dialog.appendChild(caption);
+
+    visualViewerState = {
+      dialog: dialog, image: image, caption: caption,
+      original: original, source: source, trigger: null
+    };
+    close.addEventListener("click", function () { dialog.close(); });
+    dialog.addEventListener("click", function (event) {
+      if (event.target === dialog) dialog.close();
+    });
+    dialog.addEventListener("close", function () {
+      image.removeAttribute("src");
+      if (visualViewerState.trigger &&
+          document.documentElement.contains(visualViewerState.trigger)) {
+        visualViewerState.trigger.focus();
+      }
+      visualViewerState.trigger = null;
+    });
+    document.body.appendChild(dialog);
+    return visualViewerState;
+  }
+
+  function bindVisualViewer(image, figure) {
+    var link = image.closest("a.paper-visual__image-link");
+    if (!link || link.dataset.visualViewerReady === "1") return;
+    link.dataset.visualViewerReady = "1";
+    link.addEventListener("click", function (event) {
+      if (event.button !== 0 || event.metaKey || event.ctrlKey ||
+          event.shiftKey || event.altKey) return;
+      var viewer = ensureVisualViewer();
+      if (!viewer) return;
+      var imageUrl = safeVisualUrl(link.href, true);
+      if (!imageUrl) return;
+      event.preventDefault();
+      viewer.trigger = link;
+      viewer.image.src = imageUrl;
+      viewer.image.alt = image.alt;
+      viewer.original.href = imageUrl;
+      var sourceLink = figure.querySelector("a.paper-visual__source[href]");
+      var sourceUrl = sourceLink ? safeVisualUrl(sourceLink.href, false) : "";
+      viewer.source.hidden = !sourceUrl;
+      if (sourceUrl) viewer.source.href = sourceUrl;
+      viewer.caption.textContent = text(
+        (figure.querySelector(".paper-visual__caption") || {}).textContent
+      ).trim();
+      viewer.caption.hidden = !viewer.caption.textContent;
+      viewer.dialog.showModal();
+    });
   }
 
   function appendVisualMeta(figure, visual) {
@@ -163,8 +256,9 @@
     var frame = element("div", "paper-visual__frame");
     var image = element("img", "paper-visual__image");
     image.src = imageUrl;
-    image.alt = text(visual.alt).trim() || text(visual.caption).trim() ||
-      "论文“" + text(record.title || "未命名") + "”的视觉展示";
+    image.alt = usefulVisualAlt(visual.alt) ||
+      (record.title ? "论文插图：" + text(record.title).slice(0, 220) :
+        text(visual.caption).trim() || "论文插图");
     image.loading = "lazy";
     image.decoding = "async";
     image.referrerPolicy = "no-referrer";
@@ -173,17 +267,14 @@
     if (width) image.width = width;
     if (height) image.height = height;
 
-    var sourceUrl = safeVisualUrl(visual.source_url, false);
-    if (sourceUrl) {
-      var imageLink = element("a", "paper-visual__image-link");
-      imageLink.href = sourceUrl;
-      imageLink.target = "_blank";
-      imageLink.rel = "noopener noreferrer";
-      imageLink.appendChild(image);
-      frame.appendChild(imageLink);
-    } else {
-      frame.appendChild(image);
-    }
+    var imageLink = element("a", "paper-visual__image-link");
+    imageLink.href = imageUrl;
+    imageLink.target = "_blank";
+    imageLink.rel = "noopener noreferrer";
+    imageLink.setAttribute("aria-label", "查看原图");
+    imageLink.title = "查看原图";
+    imageLink.appendChild(image);
+    frame.appendChild(imageLink);
     figure.appendChild(frame);
     if (visual.caption) {
       figure.appendChild(element(
@@ -192,6 +283,7 @@
     }
     appendVisualMeta(figure, visual);
     bindImageFallback(image, figure);
+    bindVisualViewer(image, figure);
     return figure;
   }
 
@@ -199,7 +291,10 @@
     var scope = root && root.querySelectorAll ? root : document;
     scope.querySelectorAll(".paper-visual img").forEach(function (image) {
       var figure = image.closest(".paper-visual");
-      if (figure) bindImageFallback(image, figure);
+      if (figure) {
+        bindImageFallback(image, figure);
+        bindVisualViewer(image, figure);
+      }
     });
   }
 

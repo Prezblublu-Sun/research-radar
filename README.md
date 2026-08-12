@@ -56,16 +56,17 @@ paper scores or search ranking and does not store image/PDF binaries in Git.
 
 For historical coverage, run the workflow manually in checkpointed batches.
 Choose `High` first, use 100 papers for the initial quality sample, and then
-raise the batch to at most 500. Each successful run commits the sidecar before
-the next writer starts, so a later provider failure does not discard earlier
-batches. After High is reviewed, repeat with `Medium`. `High+Medium` remains the
-40-paper automatic post-daily mode. Records already checked within their TTL
+raise the batch to at most 500. A manual run may execute up to three sequential
+checkpoint batches; every batch commits and pushes the sidecar before the next
+one starts, so a later provider failure does not discard earlier work. After
+High is reviewed, repeat with `Medium`. `High+Medium` remains the 40-paper,
+one-batch automatic post-daily mode. Records already checked within their TTL
 are skipped, so repeated runs continue from the next eligible papers.
 
 ```bash
 gh workflow run visuals.yml -f scope=High -F limit=100
-gh workflow run visuals.yml -f scope=High -F limit=500
-gh workflow run visuals.yml -f scope=Medium -F limit=500
+gh workflow run visuals.yml -f scope=High -F limit=500 -F batches=3
+gh workflow run visuals.yml -f scope=Medium -F limit=500 -F batches=3
 ```
 
 Manual examples:

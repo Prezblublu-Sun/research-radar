@@ -212,6 +212,22 @@ def test_select_pmc_figure_skips_third_party_caption_and_prefers_safe_one():
     assert selected["image_url"].endswith("/PMC123.1/gr2.jpg")
 
 
+def test_pmc_selector_prefers_main_graphic_over_caption_inline_asset():
+    xml = """
+    <article xmlns:xlink="http://www.w3.org/1999/xlink"><body><fig>
+      <label>Figure 1</label>
+      <caption><p>Response <inline-graphic xlink:href="symbol.png" /> field.</p></caption>
+      <graphic xlink:href="full-figure.png" />
+    </fig></body></article>
+    """
+    selected = ev.select_pmc_figure(xml, [
+        "s3://pmc-oa-opendata/PMC123.1/symbol.png",
+        "s3://pmc-oa-opendata/PMC123.1/full-figure.png",
+    ])
+    assert selected is not None
+    assert selected["image_url"].endswith("/full-figure.png")
+
+
 def test_figure_selectors_skip_logos_covers_and_author_photos():
     xml = """
     <article xmlns:xlink="http://www.w3.org/1999/xlink"><body>
@@ -240,6 +256,125 @@ def test_figure_selectors_skip_logos_covers_and_author_photos():
     )
     assert selected_arxiv is not None
     assert selected_arxiv["image_url"].endswith("/figures/results.png")
+
+
+def test_arxiv_selector_rejects_online_legend_asset_and_keeps_main_panel():
+    # Mirrors arXiv:2606.13245, where a short legend panel follows the actual
+    # convergence plot within the same outer figure.
+    html = """
+    <figure id="S4.F5" class="ltx_figure">
+      <figure class="ltx_figure ltx_figure_panel">
+        <img src="2606.13245v1/figures/convergence.png"
+             width="476" height="263" alt="Refer to caption" />
+      </figure>
+      <figure class="ltx_figure ltx_figure_panel">
+        <img src="2606.13245v1/figures/legend.png"
+             width="476" height="31" alt="Refer to caption" />
+      </figure>
+      <figcaption>Figure 5: Convergence history.</figcaption>
+    </figure>
+    """
+
+    selected = ev.select_arxiv_figure(
+        html, "https://arxiv.org/html/2606.13245",
+    )
+
+    assert selected is not None
+    assert selected["image_url"].endswith("/figures/convergence.png")
+    assert not selected["image_url"].endswith("/figures/legend.png")
+
+
+def test_arxiv_selector_never_promotes_legend_when_main_asset_is_not_raster():
+    # The exact failure shape from arXiv:2606.13245 Figure 5: its main plot is
+    # an SVG object, while the only raster <img> is the separate legend strip.
+    html = """
+    <figure id="S4.F5" class="ltx_figure">
+      <figure class="ltx_figure ltx_figure_panel">
+        <object type="image/svg+xml" data="2606.13245v1/main.svg"></object>
+      </figure>
+      <figure class="ltx_figure ltx_figure_panel">
+        <img src="2606.13245v1/figures/legend.png"
+             width="476" height="31" alt="Refer to caption" />
+      </figure>
+      <figcaption>Figure 5: Convergence history.</figcaption>
+    </figure>
+    <figure class="ltx_figure">
+      <img src="2606.13245v1/figures/next-complete.png"
+           width="600" height="400" alt="Complete result" />
+      <figcaption>Figure 6: Complete validation result.</figcaption>
+    </figure>
+    """
+
+    selected = ev.select_arxiv_figure(
+        html, "https://arxiv.org/html/2606.13245",
+    )
+
+    assert selected is not None
+    assert selected["image_url"].endswith("/figures/next-complete.png")
+
+
+def test_auxiliary_asset_filter_covers_colorbars_and_keys_without_overreach():
+    assert ev.looks_like_auxiliary_image("figures/color_bar.png")
+    assert ev.looks_like_auxiliary_image("figures/colourbar-vertical.webp")
+    assert ev.looks_like_auxiliary_image("figures/key.png")
+    assert ev.looks_like_auxiliary_image("figures/plot_onlycbar.png")
+    assert ev.looks_like_auxiliary_image("figures/asset-17.png", "Plot legend")
+    assert not ev.looks_like_auxiliary_image(
+        "figures/key-experimental-result.png", "Key experimental result",
+    )
+
+
+def test_arxiv_selector_prefers_complete_image_over_nested_subfigures():
+    html = """
+    <figure class="ltx_figure">
+      <figure class="ltx_figure ltx_figure_panel">
+        <img src="figures/panel-a.png" width="500" height="400" />
+      </figure>
+      <figure class="ltx_figure ltx_figure_panel">
+        <img src="figures/panel-b.png" width="500" height="400" />
+      </figure>
+      <img src="figures/complete-figure.png" width="900" height="600"
+           alt="Complete comparison" />
+      <figcaption>Comparison across both experimental conditions.</figcaption>
+    </figure>
+    """
+    selected = ev.select_arxiv_figure(
+        html, "https://arxiv.org/html/2608.12345",
+    )
+    assert selected is not None
+    assert selected["image_url"].endswith("/figures/complete-figure.png")
+
+    ordinary = ev.select_arxiv_figure(
+        '<figure class="ltx_figure_panel"><img src="single.png" />'
+        '<figcaption>Ordinary single image.</figcaption></figure>',
+        "https://arxiv.org/html/2608.12345",
+    )
+    assert ordinary is not None
+    assert ordinary["image_url"].endswith("/html/single.png")
+
+
+def test_available_visual_truncates_caption_and_alt_at_safe_boundaries():
+    latex = r"$\frac{\sigma_{equivalent}}{\varepsilon_{reference}}$"
+    caption_prefix = "Validated finite-element field. " * 37
+    caption = caption_prefix + latex + " after the mathematical expression"
+    alt = "Patient-specific stress reconstruction " * 20
+
+    visual = ev._available_visual(
+        checked_at=ev.iso_z(NOW),
+        image_url="https://arxiv.org/html/2608.12345/figure.png",
+        caption=caption, source_label="arXiv",
+        source_url="https://arxiv.org/abs/2608.12345",
+        license_name="CC BY", alt=alt, provider="arxiv",
+    )
+
+    assert len(visual["caption"]) <= 1200
+    assert len(visual["alt"]) <= 500
+    assert caption.startswith(visual["caption"])
+    assert alt.startswith(visual["alt"])
+    assert caption[len(visual["caption"])].isspace()
+    assert alt[len(visual["alt"])].isspace()
+    assert visual["caption"].count("$") % 2 == 0
+    assert visual["caption"].count("{") == visual["caption"].count("}")
 
 
 def test_select_pmc_figure_rejects_all_required_exclusion_phrases():
@@ -473,6 +608,13 @@ def test_registry_cache_ttls():
     assert ev.should_refresh(
         {"status": "available", "checked_at": recent}, now=NOW, force=True
     )
+    assert ev.should_refresh(
+        {"status": "available", "checked_at": recent}, now=NOW,
+    )
+    assert not ev.should_refresh({
+        "status": "available", "checked_at": recent,
+        "selector_version": ev.SELECTOR_VERSION,
+    }, now=NOW)
 
 
 def test_candidates_are_recent_first_then_priority(tmp_path):
