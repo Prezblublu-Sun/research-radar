@@ -5,6 +5,8 @@ import pathlib
 import sys
 import urllib.error
 
+import pytest
+
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
@@ -79,6 +81,22 @@ class FakeOpener:
         if isinstance(outcome, Exception):
             raise outcome
         return outcome
+
+
+def png_header(width, height):
+    return (
+        b"\x89PNG\r\n\x1a\n" + b"\x00\x00\x00\x0dIHDR" +
+        width.to_bytes(4, "big") + height.to_bytes(4, "big") +
+        b"\x08\x02\x00\x00\x00" + b"\x00\x00\x00\x00"
+    )
+
+
+def webp_image(kind, data):
+    chunk = kind + len(data).to_bytes(4, "little") + data
+    if len(data) % 2:
+        chunk += b"\x00"
+    body = b"WEBP" + chunk
+    return b"RIFF" + len(body).to_bytes(4, "little") + body
 
 
 def test_http_client_encodes_params_and_bounds_provider_response():
@@ -173,13 +191,14 @@ def test_http_client_accepts_only_official_arxiv_oai_redirect_hosts():
     assert outside.closed
 
 
-def test_http_client_verifies_image_magic_bytes():
+def test_http_client_returns_png_dimensions_and_rejects_html():
     png = FakeHttpResponse(
-        b"\x89PNG\r\n\x1a\ncontent", url="https://arxiv.org/html/figure.png",
+        png_header(640, 480), url="https://arxiv.org/html/figure.png",
     )
-    ev.HttpClient(opener=FakeOpener(png), min_delay=0).verify_image(
+    dimensions = ev.HttpClient(opener=FakeOpener(png), min_delay=0).verify_image(
         "https://arxiv.org/html/figure.png", allowed_hosts={"arxiv.org"},
     )
+    assert dimensions == (640, 480)
 
     html = FakeHttpResponse(
         b"<!doctype html><title>404</title>",
@@ -193,6 +212,52 @@ def test_http_client_verifies_image_magic_bytes():
         assert "invalid signature" in str(exc)
     else:
         raise AssertionError("an HTML error page was accepted as an image")
+
+
+def test_raster_dimensions_cover_jpeg_gif_and_all_webp_headers():
+    jpeg = (
+        b"\xff\xd8\xff\xe0\x00\x04ab" +
+        b"\xff\xc2\x00\x0b\x08" +
+        (720).to_bytes(2, "big") + (1280).to_bytes(2, "big") +
+        b"\x01\x01\x11\x00"
+    )
+    gif = (
+        b"GIF89a" + (320).to_bytes(2, "little") +
+        (240).to_bytes(2, "little") + b"\x00\x00\x00"
+    )
+    vp8x = webp_image(
+        b"VP8X", b"\x00\x00\x00\x00" +
+        (799).to_bytes(3, "little") + (599).to_bytes(3, "little"),
+    )
+    lossless_bits = (511 - 1) | ((257 - 1) << 14)
+    vp8l = webp_image(
+        b"VP8L", b"\x2f" + lossless_bits.to_bytes(4, "little"),
+    )
+    vp8 = webp_image(
+        b"VP8 ", b"\x00\x00\x00\x9d\x01\x2a" +
+        (640).to_bytes(2, "little") + (360).to_bytes(2, "little"),
+    )
+
+    assert ev._raster_dimensions(jpeg) == (1280, 720)
+    assert ev._raster_dimensions(gif) == (320, 240)
+    assert ev._raster_dimensions(vp8x) == (800, 600)
+    assert ev._raster_dimensions(vp8l) == (511, 257)
+    assert ev._raster_dimensions(vp8) == (640, 360)
+
+
+@pytest.mark.parametrize("payload", [
+    b"\x89PNG\r\n\x1a\ntruncated",
+    b"\x89PNG\r\n\x1a\n\x00\x00\x00\x0cIHDR" + b"\x00" * 17,
+    png_header(0, 480),
+    png_header(ev.MAX_IMAGE_DIMENSION + 1, 1),
+    b"GIF89a\x01",
+    b"\xff\xd8\xff\xda\x00\x02",
+    b"RIFF\x10\x00\x00\x00WEBPVP8X\x0a\x00\x00\x00short",
+    b"RIFF\xff\xff\xff\x7fWEBP",
+])
+def test_raster_dimensions_fail_closed_on_malformed_headers(payload):
+    with pytest.raises(ev.FetchError):
+        ev._raster_dimensions(payload)
 
 
 def test_normalize_license_is_fail_closed():
@@ -793,6 +858,57 @@ def test_select_pmc_figure_rejects_all_required_exclusion_phrases():
     ) is None
 
 
+class SizedImageClient:
+    def __init__(self, outcomes):
+        self.outcomes = outcomes
+        self.calls = []
+
+    def verify_image(self, url, *, allowed_hosts):
+        self.calls.append((url, allowed_hosts))
+        outcome = self.outcomes[url]
+        if isinstance(outcome, Exception):
+            raise outcome
+        return outcome
+
+
+@pytest.mark.parametrize("dimensions", [(64, 64), (16, 256), (49, 199)])
+def test_verified_candidate_keeps_conservative_boundary_and_narrow_images(
+        dimensions):
+    url = "https://arxiv.org/html/figure.png"
+    client = SizedImageClient({url: dimensions})
+    verified = ev.VisualResolver(client)._verified_card_candidate(
+        [{"image_url": url}], allowed_hosts={"arxiv.org"},
+    )
+    assert verified == ({"image_url": url}, *dimensions)
+
+
+def test_verified_candidate_deduplicates_and_checks_at_most_six_images():
+    urls = [f"https://arxiv.org/html/figure-{index}.png" for index in range(8)]
+    candidates = [{"image_url": urls[0]}, {"image_url": urls[0]}]
+    candidates.extend({"image_url": url} for url in urls[1:])
+    client = SizedImageClient({url: (28, 28) for url in urls})
+
+    assert ev.VisualResolver(client)._verified_card_candidate(
+        candidates, allowed_hosts={"arxiv.org"},
+    ) is None
+    assert [call[0] for call in client.calls] == urls[:6]
+
+
+def test_verified_candidate_does_not_hide_transient_fetch_error():
+    first = "https://arxiv.org/html/first.png"
+    second = "https://arxiv.org/html/second.png"
+    client = SizedImageClient({
+        first: ev.FetchError("temporary timeout"), second: (800, 600),
+    })
+
+    with pytest.raises(ev.FetchError, match="temporary timeout"):
+        ev.VisualResolver(client)._verified_card_candidate(
+            [{"image_url": first}, {"image_url": second}],
+            allowed_hosts={"arxiv.org"},
+        )
+    assert [call[0] for call in client.calls] == [first]
+
+
 class FakePmcClient:
     def __init__(self):
         self.calls = []
@@ -836,6 +952,7 @@ class FakePmcClient:
         self.calls.append(("image", url, None, allowed_hosts))
         assert url.endswith("/PMC123.2/gr2.jpg")
         assert allowed_hosts == {ev.PMC_BUCKET_HOST}
+        return 900, 600
 
 
 def test_pmc_resolver_uses_new_s3_metadata_and_latest_version():
@@ -849,11 +966,51 @@ def test_pmc_resolver_uses_new_s3_metadata_and_latest_version():
     assert visual["image_url"].endswith("/PMC123.2/gr2.jpg")
     assert visual["source_url"] == "https://pmc.ncbi.nlm.nih.gov/articles/PMC123/"
     assert visual["source_label"] == "PubMed Central · Fig. 2"
+    assert (visual["width"], visual["height"]) == (900, 600)
     assert "permission" not in visual["caption"].lower()
     converter = client.calls[0]
     assert converter[2]["tool"] == "research-radar-visuals"
     assert converter[2]["email"] == "maintainer@example.org"
     assert all("deprecated" not in call[1] for call in client.calls)
+
+
+class TinyThenValidPmcClient(FakePmcClient):
+    def get_text(self, url, *, params=None, allowed_hosts):
+        if url == ev.PMC_BUCKET_URL:
+            return super().get_text(
+                url, params=params, allowed_hosts=allowed_hosts,
+            )
+        self.calls.append(("text", url, params, allowed_hosts))
+        return """
+        <article xmlns:xlink="http://www.w3.org/1999/xlink"><body>
+          <fig><label>Fig. 1</label><caption><p>Small sample tile.</p></caption>
+            <graphic xlink:href="gr1.jpg" /></fig>
+          <fig><label>Fig. 2</label><caption><p>Complete result field.</p></caption>
+            <graphic xlink:href="gr2.jpg" /></fig>
+        </body></article>
+        """
+
+    def verify_image(self, url, *, allowed_hosts):
+        self.calls.append(("image", url, None, allowed_hosts))
+        if url.endswith("/gr1.jpg"):
+            return 28, 28
+        assert url.endswith("/gr2.jpg")
+        return 640, 480
+
+
+def test_pmc_resolver_tries_next_figure_after_tiny_asset():
+    client = TinyThenValidPmcClient()
+    visual = ev.VisualResolver(client).resolve_pmc(
+        {"pmid": "123", "title": "Paper"}, ev.iso_z(NOW),
+    )
+
+    assert visual["status"] == "available"
+    assert visual["image_url"].endswith("/gr2.jpg")
+    assert (visual["width"], visual["height"]) == (640, 480)
+    assert [call[1] for call in client.calls if call[0] == "image"] == [
+        "https://pmc-oa-opendata.s3.amazonaws.com/PMC123.2/gr1.jpg",
+        "https://pmc-oa-opendata.s3.amazonaws.com/PMC123.2/gr2.jpg",
+    ]
 
 
 class BlockedPmcClient(FakePmcClient):
@@ -904,6 +1061,7 @@ class FakeArxivClient:
     def verify_image(self, url, *, allowed_hosts):
         self.calls.append(("image", url, allowed_hosts))
         assert allowed_hosts == {"arxiv.org"}
+        return 1024, 768
 
 
 def test_arxiv_resolver_requires_oai_license_and_skips_excluded_figure():
@@ -917,11 +1075,125 @@ def test_arxiv_resolver_requires_oai_license_and_skips_excluded_figure():
         "https://arxiv.org/html/figures/x2.png"
     )
     assert visual["source_url"] == "https://arxiv.org/abs/2605.12345"
+    assert (visual["width"], visual["height"]) == (1024, 768)
     assert client.calls[0][0] == "https://oaipmh.arxiv.org/oai"
     assert client.calls[0][1]["metadataPrefix"] == "arXivRaw"
     assert client.calls[0][2] == {
         "oaipmh.arxiv.org", "export.arxiv.org",
     }
+
+
+class CandidateArxivClient(FakeArxivClient):
+    def __init__(self, html, dimensions):
+        super().__init__()
+        self.html = html
+        self.dimensions = dimensions
+        self.image_calls = []
+
+    def get_text(self, url, *, params=None, allowed_hosts):
+        if url == ev.ARXIV_OAI_URL:
+            return super().get_text(
+                url, params=params, allowed_hosts=allowed_hosts,
+            )
+        self.calls.append((url, params, allowed_hosts))
+        return self.html
+
+    def verify_image(self, url, *, allowed_hosts):
+        self.image_calls.append(url)
+        outcome = self.dimensions[pathlib.PurePosixPath(url).name]
+        if isinstance(outcome, Exception):
+            raise outcome
+        return outcome
+
+
+TARGET_TINY_ARXIV_HTML = """
+<html><body>
+  <figure class="ltx_figure">
+    <figure class="ltx_figure_panel">
+      <img src="figures/mnist_salt_and_peppered-000.png" />
+      <img src="figures/mnist_salt_and_peppered-001.png" />
+    </figure>
+    <figcaption>Samples of original and corrupted MNIST images.</figcaption>
+  </figure>
+  <figure><img src="ensemble_cifar_dense_ras1.png" />
+    <figcaption>Ensemble uncertainty experiments.</figcaption></figure>
+  <figure><img src="al_cifar_balanced_aquisition_ras1.png" />
+    <figcaption>Balanced acquisition experiments.</figcaption></figure>
+  <figure><img src="ensemble_cifar_dense_alpha_0.09_ras1.png" />
+    <figcaption>Dense ensemble experiments.</figcaption></figure>
+</body></html>
+"""
+
+
+def test_arxiv_target_all_tiny_outer_figures_becomes_not_found():
+    dimensions = {
+        "mnist_salt_and_peppered-000.png": (28, 28),
+        "ensemble_cifar_dense_ras1.png": (1, 300),
+        "al_cifar_balanced_aquisition_ras1.png": (1, 300),
+        "ensemble_cifar_dense_alpha_0.09_ras1.png": (1, 300),
+    }
+    client = CandidateArxivClient(TARGET_TINY_ARXIV_HTML, dimensions)
+
+    candidates = ev.select_arxiv_figures(
+        TARGET_TINY_ARXIV_HTML, "https://arxiv.org/html/2211.14605",
+    )
+    assert len(candidates) == 4
+    assert candidates[0]["image_url"].endswith(
+        "/figures/mnist_salt_and_peppered-000.png"
+    )
+    visual = ev.VisualResolver(client).resolve_arxiv(
+        {"arxiv_id": "2211.14605v2"}, ev.iso_z(NOW),
+    )
+
+    assert visual["status"] == "not_found"
+    assert visual["reason"] == "arxiv_no_card_sized_figure"
+    assert [pathlib.PurePosixPath(url).name for url in client.image_calls] == [
+        "mnist_salt_and_peppered-000.png",
+        "ensemble_cifar_dense_ras1.png",
+        "al_cifar_balanced_aquisition_ras1.png",
+        "ensemble_cifar_dense_alpha_0.09_ras1.png",
+    ]
+    assert not any("-001.png" in url for url in client.image_calls)
+
+
+def test_arxiv_resolver_skips_tiny_then_persists_next_image_dimensions():
+    html = """
+    <figure><img src="tiny.png" />
+      <figcaption>A small example tile.</figcaption></figure>
+    <figure><img src="complete.png" />
+      <figcaption>The complete computed field.</figcaption></figure>
+    """
+    client = CandidateArxivClient(
+        html, {"tiny.png": (28, 28), "complete.png": (800, 600)},
+    )
+    visual = ev.VisualResolver(client).resolve_arxiv(
+        {"arxiv_id": "2608.12345v1"}, ev.iso_z(NOW),
+    )
+
+    assert visual["status"] == "available"
+    assert visual["image_url"].endswith("/complete.png")
+    assert (visual["width"], visual["height"]) == (800, 600)
+    assert len(client.image_calls) == 2
+
+
+def test_arxiv_image_fetch_error_remains_error_not_not_found():
+    html = """
+    <figure><img src="first.png" />
+      <figcaption>The complete computed field.</figcaption></figure>
+    <figure><img src="second.png" />
+      <figcaption>An alternative field.</figcaption></figure>
+    """
+    client = CandidateArxivClient(html, {
+        "first.png": ev.FetchError("image timeout"),
+        "second.png": (800, 600),
+    })
+
+    visual = ev.VisualResolver(client).resolve(
+        {"arxiv_id": "2608.12345"}, now=NOW,
+    )
+    assert visual["status"] == "error"
+    assert "image timeout" in visual["reason"]
+    assert len(client.image_calls) == 1
 
 
 def test_arxiv_resolver_does_not_fetch_html_for_default_license():
