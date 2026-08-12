@@ -318,6 +318,9 @@ def test_auxiliary_asset_filter_covers_colorbars_and_keys_without_overreach():
     assert ev.looks_like_auxiliary_image("figures/colourbar-vertical.webp")
     assert ev.looks_like_auxiliary_image("figures/key.png")
     assert ev.looks_like_auxiliary_image("figures/plot_onlycbar.png")
+    assert ev.looks_like_auxiliary_image(
+        "legal-mentions/EU_POS.jpg",
+    )
     assert ev.looks_like_auxiliary_image("figures/asset-17.png", "Plot legend")
     assert not ev.looks_like_auxiliary_image(
         "figures/key-experimental-result.png", "Key experimental result",
@@ -351,6 +354,36 @@ def test_arxiv_selector_prefers_complete_image_over_nested_subfigures():
     )
     assert ordinary is not None
     assert ordinary["image_url"].endswith("/html/single.png")
+
+
+def test_arxiv_selector_keeps_first_panel_when_no_complete_image_exists():
+    html = """
+    <figure class="ltx_figure">
+      <figure class="ltx_figure_panel">
+        <img src="panel-a.png" width="200" height="100" />
+      </figure>
+      <figure class="ltx_figure_panel">
+        <img src="panel-b.png" width="1200" height="900" />
+      </figure>
+      <figcaption>Two views of the same result.</figcaption>
+    </figure>
+    """
+    selected = ev.select_arxiv_figure(
+        html, "https://arxiv.org/html/2608.12345",
+    )
+    assert selected is not None
+    assert selected["image_url"].endswith("/html/panel-a.png")
+
+
+def test_arxiv_portrait_layout_class_does_not_mean_author_portrait():
+    selected = ev.select_arxiv_figure(
+        '<figure class="ltx_figure"><img src="architecture.png" '
+        'class="ltx_graphics ltx_img_portrait" alt="Model architecture" />'
+        '<figcaption>Figure 1: Surrogate architecture.</figcaption></figure>',
+        "https://arxiv.org/html/2608.12345",
+    )
+    assert selected is not None
+    assert selected["image_url"].endswith("/html/architecture.png")
 
 
 def test_available_visual_truncates_caption_and_alt_at_safe_boundaries():

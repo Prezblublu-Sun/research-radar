@@ -41,7 +41,7 @@ DEFAULT_DAILY_DIR = ROOT / "data" / "daily"
 DEFAULT_INDEX_PATH = ROOT / "data" / "visuals" / "index.json"
 
 SCHEMA_VERSION = "v1"
-SELECTOR_VERSION = 2
+SELECTOR_VERSION = 3
 DEFAULT_LIMIT = 20
 DEFAULT_TIMEOUT_SECONDS = 12.0
 DEFAULT_MIN_DELAY_SECONDS = 0.5
@@ -166,6 +166,8 @@ def looks_like_decorative_image(*hints: object) -> bool:
 def looks_like_auxiliary_image(asset: object, *hints: object) -> bool:
     """Reject legend/key assets that are not meaningful standalone figures."""
     path = unquote(urlparse(str(asset or "")).path).lower()
+    if re.search(r"(?:^|/)legal-mentions/", path):
+        return True
     path_tokens = set(re.findall(r"[a-z0-9]+", path))
     if path_tokens & (AUXILIARY_IMAGE_TOKENS - {"key", "keys"}):
         return True
@@ -653,19 +655,12 @@ def select_arxiv_figure(html_text: str, page_url: str) -> dict | None:
                 continue
             if looks_like_decorative_image(
                     _basename(image_url), image.get("alt"),
-                    image.get("class"), caption):
+                    caption):
                 continue
-            try:
-                area = float(image.get("width") or 0) * float(
-                    image.get("height") or 0
-                )
-            except (TypeError, ValueError):
-                area = 0.0
             images.append({
                 "image_url": image_url,
                 "alt": image.get("alt") or "",
                 "is_subfigure": bool(image.get("is_subfigure")),
-                "area": area,
                 "order": image_order,
             })
         if not images:
@@ -673,14 +668,12 @@ def select_arxiv_figure(html_text: str, page_url: str) -> dict | None:
 
         # A standalone non-panel image represents the complete figure and is
         # preferred over nested panels.  If an author supplies only panels,
-        # retain the largest (or first when dimensions are absent) rather than
-        # rejecting an otherwise ordinary scientific figure.  Single images
-        # always remain eligible regardless of their generated class names.
+        # retain the first eligible panel in document order rather than making
+        # a size-based semantic guess.  Single images always remain eligible
+        # regardless of their generated class names.
         full_images = [image for image in images if not image["is_subfigure"]]
         pool = full_images or images
-        selected = max(pool, key=lambda image: (
-            image["area"] > 0, image["area"], -image["order"],
-        ))
+        selected = min(pool, key=lambda image: image["order"])
         haystack = f"{figure.get('class', '')} {caption}".lower()
         preferred = int("graphical abstract" in haystack)
         safe.append((-preferred, order, {
