@@ -4,6 +4,8 @@ import datetime as dt
 import json
 import pathlib
 
+import yaml
+
 from pipeline import weekly_report
 from scripts import rebuild_site
 
@@ -195,6 +197,9 @@ def test_visual_enrichment_is_a_post_daily_sidecar_writer():
     pages = (REPO_ROOT / ".github" / "workflows" / "pages.yml").read_text(
         encoding="utf-8"
     )
+
+    parsed = yaml.load(workflow, Loader=yaml.BaseLoader)
+    assert "workflow_dispatch" in parsed["on"]
 
     assert "name: enrich-research-radar-visuals" in workflow
     assert "- daily-research-radar" in workflow
