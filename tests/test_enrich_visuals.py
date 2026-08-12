@@ -648,6 +648,15 @@ def test_registry_cache_ttls():
         "status": "available", "checked_at": recent,
         "selector_version": ev.SELECTOR_VERSION,
     }, now=NOW)
+    stale_with_recent_error = {
+        "status": "available", "checked_at": recent,
+        "selector_version": ev.SELECTOR_VERSION - 1,
+        "selector_error_at": ev.iso_z(NOW - dt.timedelta(hours=4)),
+    }
+    assert not ev.should_refresh(stale_with_recent_error, now=NOW)
+    assert ev.should_refresh(
+        stale_with_recent_error, now=NOW + dt.timedelta(days=1, seconds=1),
+    )
 
 
 def test_candidates_are_recent_first_then_priority(tmp_path):
@@ -756,6 +765,45 @@ def test_enrich_is_failure_isolated_and_writes_flat_identity_registry(tmp_path):
     assert available["status"] == "available"
     assert available["license"] == "CC BY"
     assert not (index.parent / "index.json.tmp").exists()
+
+
+def test_transient_refresh_error_preserves_last_known_good_visual(tmp_path):
+    daily = tmp_path / "daily"
+    daily.mkdir()
+    (daily / "2026-08-12.json").write_text(json.dumps({
+        "papers": [{"doi": "10.1/first", "llm": {"priority": "High"}}],
+    }), encoding="utf-8")
+    index = tmp_path / "visuals" / "index.json"
+    index.parent.mkdir()
+    cached = ev._available_visual(
+        checked_at=ev.iso_z(NOW - dt.timedelta(days=2)),
+        image_url="https://arxiv.org/html/1/good.png",
+        caption="Last known good", source_label="arXiv",
+        source_url="https://arxiv.org/abs/1", license_name="CC BY",
+        alt="Good", provider="arxiv",
+    )
+    cached["selector_version"] = ev.SELECTOR_VERSION - 1
+    index.write_text(json.dumps({
+        "schema_version": "v1", "records": {"doi:10.1/first": cached},
+    }), encoding="utf-8")
+
+    result = ev.enrich(
+        daily_dir=daily, index_path=index,
+        resolver=SometimesFailingResolver(), limit=1,
+        priorities={"High"}, now=NOW,
+    )
+
+    saved = json.loads(index.read_text(encoding="utf-8"))["records"][
+        "doi:10.1/first"
+    ]
+    assert result["counts"] == {"preserved_available": 1}
+    assert saved["status"] == "available"
+    assert saved["image_url"] == cached["image_url"]
+    assert saved["selector_version"] == ev.SELECTOR_VERSION - 1
+    assert saved["selector_error_at"] == ev.iso_z(NOW)
+    assert "provider unavailable" in saved["selector_error_reason"]
+    assert not ev.should_refresh(saved, now=NOW + dt.timedelta(hours=1))
+    assert ev.should_refresh(saved, now=NOW + dt.timedelta(days=1, seconds=1))
 
 
 class CountingResolver:

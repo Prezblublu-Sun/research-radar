@@ -34,6 +34,8 @@ def _available_visual(*, image_url: str, source_url: str,
         "provider": "must-not-be-public",
         "reason": "must-not-be-public",
         "selector_version": 2,
+        "selector_error_at": "2026-08-12T11:00:00Z",
+        "selector_error_reason": "must-not-be-public",
     }
 
 

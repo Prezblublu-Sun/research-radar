@@ -899,6 +899,10 @@ def should_refresh(record: object, *, now: dt.datetime | None = None,
         return True
     if (record.get("status") == "available" and
             record.get("selector_version") != SELECTOR_VERSION):
+        last_error = parse_timestamp(record.get("selector_error_at"))
+        if (last_error is not None and
+                (now or utc_now()) - last_error < dt.timedelta(days=1)):
+            return False
         return True
     checked = parse_timestamp(record.get("checked_at"))
     if checked is None:
@@ -1027,6 +1031,20 @@ def _fresh_alias_record(
     ))
 
 
+def _last_available_record(
+        entries: Iterable[tuple[str, object]]) -> dict | None:
+    """Return last-known-good display data for transient-error fallback."""
+    available = [
+        record for _key, record in entries
+        if isinstance(record, dict) and record.get("status") == "available"
+    ]
+    return max(
+        available,
+        key=lambda record: str(record.get("checked_at") or ""),
+        default=None,
+    )
+
+
 def _store_aliases(records: dict, aliases: Iterable[str], visual: dict) -> bool:
     """Copy one result to exact renderer keys and report whether it changed."""
     changed = False
@@ -1066,8 +1084,9 @@ def enrich(*, daily_dir: Path, index_path: Path, resolver: VisualResolver,
         processed_lookups.add(lookup)
         aliases = corpus_aliases.get(lookup, [key])
 
+        cached_entries = cached_by_lookup.get(lookup, [])
         cached = _fresh_alias_record(
-            cached_by_lookup.get(lookup, []), now=current_time, force=force,
+            cached_entries, now=current_time, force=force,
         )
         if cached is not None:
             dirty = _store_aliases(records, aliases, cached) or dirty
@@ -1082,8 +1101,17 @@ def enrich(*, daily_dir: Path, index_path: Path, resolver: VisualResolver,
                 "error", checked_at=iso_z(current_time),
                 reason=f"{type(exc).__name__}: {str(exc)[:240]}",
             )
-        dirty = _store_aliases(records, aliases, visual) or dirty
         status = str(visual.get("status") or "error")
+        previous_available = _last_available_record(cached_entries)
+        if status == "error" and previous_available is not None:
+            preserved = dict(previous_available)
+            preserved["selector_error_at"] = iso_z(current_time)
+            preserved["selector_error_reason"] = str(
+                visual.get("reason") or "transient resolver error"
+            )[:240]
+            visual = preserved
+            status = "preserved_available"
+        dirty = _store_aliases(records, aliases, visual) or dirty
         counts[status] = counts.get(status, 0) + 1
         if write:
             save_registry(index_path, registry, now=current_time)
