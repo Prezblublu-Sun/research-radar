@@ -219,7 +219,20 @@ def _safe_visual_record(value: object) -> dict | None:
     """Fail closed and return the compact visual shape exposed to browsers."""
     if not isinstance(value, dict) or value.get("status") != "available":
         return None
-    if not visual_policy.has_reviewable_figure_caption(value.get("caption")):
+    # Selector v7 no longer emits raster thumbnails from arXiv semantic
+    # tables.  Keep the public projection safe immediately after deployment,
+    # before every older registry record has been refreshed.  Scope this
+    # compatibility boundary to explicit leading table labels and arXiv;
+    # ordinary Figure captions may mention a table in scientific prose, and
+    # PMC figures use independently structured JATS selection.
+    raw_caption = value.get("caption")
+    if (value.get("provider") == "arxiv" and
+            isinstance(raw_caption, str) and re.match(
+                r"^\s*tab(?:le|\.)\s*"
+                r"(?:\d+[a-z]?|[ivxlcdm]+)\s*[:.]",
+                raw_caption, re.IGNORECASE)):
+        return None
+    if not visual_policy.has_reviewable_figure_caption(raw_caption):
         return None
     if visual_policy.has_third_party_figure_rights(
             value.get("caption"), value.get("alt"),

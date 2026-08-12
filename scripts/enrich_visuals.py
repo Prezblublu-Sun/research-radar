@@ -41,7 +41,7 @@ DEFAULT_DAILY_DIR = ROOT / "data" / "daily"
 DEFAULT_INDEX_PATH = ROOT / "data" / "visuals" / "index.json"
 
 SCHEMA_VERSION = "v1"
-SELECTOR_VERSION = 6
+SELECTOR_VERSION = 7
 DEFAULT_LIMIT = 20
 DEFAULT_TIMEOUT_SECONDS = 12.0
 DEFAULT_MIN_DELAY_SECONDS = 0.5
@@ -820,6 +820,14 @@ def select_arxiv_figures(html_text: str, page_url: str) -> list[dict]:
     parser.feed(html_text)
     safe = []
     for order, figure in enumerate(parser.figures):
+        # LaTeXML represents semantic tables as outer ``figure`` elements.
+        # Raster thumbnails inside their cells inherit the Table caption but
+        # are not standalone paper figures suitable for a visual card.  Use
+        # the converter's structural class rather than an image-size guess;
+        # ordinary scientific figures may legitimately be small or narrow.
+        outer_classes = set(str(figure.get("class") or "").lower().split())
+        if "ltx_table" in outer_classes:
+            continue
         caption = figure.get("caption") or ""
         if not visual_policy.has_reviewable_figure_caption(caption):
             continue
