@@ -25,6 +25,38 @@ _CREATION_PLATFORM = (
     r"istock(?:photo)?|getty\s+images?|freepik|canva)"
 )
 
+# Direct asset credits are a separate grammar from ordinary scientific
+# passive voice.  The credit itself is deliberately Unicode/case agnostic;
+# names and organisations can legitimately be lowercase, mixed-case, or use
+# non-Latin scripts.  Method objects are filtered after matching rather than
+# using capitalization as a proxy for authorship.
+_DIRECT_ASSET_BYLINE = re.compile(
+    r"\b(?:image|photo(?:graph)?|figure|illustration|graphic|diagram|artwork)"
+    r"\s*(?:[-–—,:]\s*)?"
+    r"(?:(?:created|made|provided|supplied)\s+)?by\b\s*"
+    r"(?:[:：]\s*)?(?:[\"'“”‘’]\s*)?(?:©\s*)?"
+    r"(?:[\"'“”‘’]\s*)?(?P<credit>\w[^.;\n]{0,159})",
+    re.IGNORECASE,
+)
+
+_SCIENTIFIC_BY_OBJECT = re.compile(
+    r"^(?:(?:the|a|an)\s+)?(?:"
+    r"apply(?:ing)?\b|using\b|via\b|means\s+of\b|"
+    r"(?:inverse\s+)?fourier\s+(?:transform(?:ation)?|analysis)\b|"
+    r"(?:fft|pca)\b|finite[- ]element\s+analysis\b|"
+    r"bayesian\s+optim(?:ization|isation)\b|"
+    r"design\s+[a-z0-9]+\b|"
+    r"(?:generated|produced|computed|predicted|reconstructed)\s+by\b|"
+    r"(?:surrogate\s+|neural\s+|finite[- ]element\s+)?"
+    r"(?:model|network|solver|algorithm|method|approach|process|"
+    r"simulation|experiment|dataset|transformation|transform|filter)\b|"
+    r"(?:varying|combining|computing|solving|transforming|filtering|"
+    r"interpolating|normalizing|plotting|mapping|sampling|training|"
+    r"optimizing|evaluating|setting|selecting|rotating|scaling|"
+    r"convolving)\b)",
+    re.IGNORECASE,
+)
+
 _RIGHTS_PATTERNS = tuple(re.compile(pattern, re.IGNORECASE) for pattern in (
     # Copyright words and symbols are explicit enough to fail closed even
     # when converter punctuation has been lost or changed.
@@ -40,7 +72,6 @@ _RIGHTS_PATTERNS = tuple(re.compile(pattern, re.IGNORECASE) for pattern in (
     r"\bcourtesy\s*(?::|of\b)",
     r"\b(?:image|photo(?:graph)?|figure|illustration)\s*"
     r"(?:[-–—,:]\s*)?credits?\b",
-    r"\bphoto(?:graph)?\s+by\b",
     r"\b(?:modified|redrawn)\s+from\b",
     r"\btaken\s+from\s+(?!(?:(?:the|an?)\s+)?(?:data(?:set)?|test\s+set|"
     r"simulation|experiment|model|sample|field|solution|measurement)s?\b)",
@@ -90,6 +121,10 @@ def has_third_party_figure_rights(*values: object) -> bool:
         lower = compact.casefold()
         if any(marker in lower for marker in _FIXED_RIGHTS_MARKERS):
             return True
+        for match in _DIRECT_ASSET_BYLINE.finditer(compact):
+            credit = match.group("credit").strip()
+            if credit and not _SCIENTIFIC_BY_OBJECT.match(credit):
+                return True
         if any(pattern.search(compact) for pattern in _RIGHTS_PATTERNS):
             return True
     return False
