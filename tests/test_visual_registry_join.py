@@ -33,6 +33,7 @@ def _available_visual(*, image_url: str, source_url: str,
         "checked_at": "2026-08-12T10:00:00Z",
         "provider": "must-not-be-public",
         "reason": "must-not-be-public",
+        "selector_version": 2,
     }
 
 

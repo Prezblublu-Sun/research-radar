@@ -27,6 +27,39 @@ _VISUAL_TEXT_LIMITS = {
 }
 
 
+def _truncate_visual_text(value: str, limit: int) -> str:
+    """Bound public visual copy without ending in the middle of a word.
+
+    Figure captions can be very long (and may contain compact LaTeX tokens),
+    so a boundary is only used when it is reasonably close to the hard limit.
+    This keeps the payload cap deterministic without producing fragments such
+    as ``approximat`` in otherwise ordinary prose.
+    """
+    rendered = " ".join(value.split())
+    if len(rendered) <= limit:
+        return rendered
+    boundary = rendered.rfind(" ", 0, limit)
+    if boundary >= max(1, int(limit * 0.75)):
+        rendered = rendered[:boundary].rstrip()
+    else:
+        rendered = rendered[:limit - 1].rstrip()
+    return rendered + "…"
+
+
+def _useful_visual_alt(value: object) -> str:
+    """Drop provider placeholders that add no information to an image."""
+    if not isinstance(value, str):
+        return ""
+    rendered = " ".join(value.split()).strip()
+    placeholder = re.fullmatch(
+        r"(?:refer|see)\s+(?:to\s+)?(?:the\s+)?caption[.!]?|"
+        r"(?:figure|image|graphic)[.!]?",
+        rendered,
+        flags=re.IGNORECASE,
+    )
+    return "" if placeholder else rendered
+
+
 def _daily_json_paths(daily_dir: pathlib.Path) -> list[pathlib.Path]:
     """Return publication buckets, excluding `*.SKIPPED.json` sentinels."""
     if not daily_dir.exists():
@@ -198,8 +231,15 @@ def _safe_visual_record(value: object) -> dict | None:
     }
     for field in ("caption", "source_label", "alt", "checked_at"):
         raw = value.get(field)
+        if field == "alt":
+            raw = _useful_visual_alt(raw)
         if isinstance(raw, str) and raw.strip():
-            visual[field] = raw.strip()[:_VISUAL_TEXT_LIMITS[field]]
+            limit = _VISUAL_TEXT_LIMITS[field]
+            visual[field] = (
+                _truncate_visual_text(raw, limit)
+                if field in {"caption", "alt"}
+                else raw.strip()[:limit]
+            )
     for field in ("width", "height"):
         raw = value.get(field)
         if isinstance(raw, int) and not isinstance(raw, bool) and 0 < raw <= 100_000:
@@ -315,8 +355,10 @@ def _paper_visual(paper: dict, visual: dict | None = None) -> str:
         )
 
     caption = safe.get("caption") or ""
-    alt = safe.get("alt") or caption or (
-        f'论文“{paper.get("title") or "未命名"}”的视觉展示'
+    title = str(paper.get("title") or "").strip()
+    alt = safe.get("alt") or _truncate_visual_text(
+        f"论文插图：{title}" if title else caption or "论文插图",
+        _VISUAL_TEXT_LIMITS["alt"],
     )
     dimensions = ""
     if safe.get("width"):
@@ -331,8 +373,9 @@ def _paper_visual(paper: dict, visual: dict | None = None) -> str:
     return (
         '<figure class="paper-visual" data-visual-status="available">'
         '<div class="paper-visual__frame">'
-        f'<a class="paper-visual__image-link" href="{_esc(safe["source_url"])}" '
-        'target="_blank" rel="noopener noreferrer">'
+        f'<a class="paper-visual__image-link" href="{_esc(safe["image_url"])}" '
+        'target="_blank" rel="noopener noreferrer" '
+        'aria-label="查看原图" title="查看原图">'
         f'<img class="paper-visual__image" src="{_esc(safe["image_url"])}" '
         f'alt="{_esc(alt)}" loading="lazy" decoding="async" '
         f'referrerpolicy="no-referrer"{dimensions}></a></div>'

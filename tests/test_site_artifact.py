@@ -205,8 +205,11 @@ def test_visual_enrichment_is_a_post_daily_sidecar_writer():
     assert "Priority queue to backfill" in workflow
     assert "- High+Medium" in workflow
     assert 'VISUAL_LIMIT" -gt 500' in workflow
+    assert 'VISUAL_BATCHES" -gt 3' in workflow
     assert 'case "$VISUAL_SCOPE"' in workflow
     assert '--priorities "${priorities[@]}"' in workflow
+    assert "batch <= VISUAL_BATCHES" in workflow
+    assert "No further eligible records; stopping early." in workflow
     assert "git add data/visuals/index.json" in workflow
     assert "pipeline.run_daily" not in workflow
     assert "git add data/ docs/" not in workflow
