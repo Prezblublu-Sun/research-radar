@@ -41,7 +41,7 @@ DEFAULT_DAILY_DIR = ROOT / "data" / "daily"
 DEFAULT_INDEX_PATH = ROOT / "data" / "visuals" / "index.json"
 
 SCHEMA_VERSION = "v1"
-SELECTOR_VERSION = 3
+SELECTOR_VERSION = 4
 DEFAULT_LIMIT = 20
 DEFAULT_TIMEOUT_SECONDS = 12.0
 DEFAULT_MIN_DELAY_SECONDS = 0.5
@@ -583,7 +583,8 @@ class ArxivFigureParser(HTMLParser):
         attributes = dict(attrs)
         if tag == "figure":
             if self.depth == 0:
-                self.current = {"images": [], "caption_parts": [],
+                self.current = {"images": [], "graphics": [],
+                                "caption_parts": [],
                                 "class": attributes.get("class") or ""}
             self.figure_contexts.append({
                 "class": attributes.get("class") or "",
@@ -596,19 +597,40 @@ class ArxivFigureParser(HTMLParser):
                 f"{item['class']} {item['id']}"
                 for item in self.figure_contexts
             ).lower()
-            self.current["images"].append({
+            graphic_order = len(self.current["graphics"])
+            image = {
                 "src": attributes.get("src") or "",
                 "alt": attributes.get("alt") or "",
                 "class": attributes.get("class") or "",
                 "id": attributes.get("id") or "",
                 "width": attributes.get("width") or "",
                 "height": attributes.get("height") or "",
+                "graphic_order": graphic_order,
                 "is_subfigure": bool(re.search(
                     r"(?:^|[\s_.-])(?:subfig(?:ure)?|figure_panel|panel)"
                     r"(?:$|[\s_.-])",
                     context,
                 )),
+            }
+            self.current["images"].append(image)
+            self.current["graphics"].append({
+                "kind": "img", "src": image["src"],
+                "width": image["width"], "height": image["height"],
             })
+        if self.depth and tag == "object" and self.current is not None:
+            data = attributes.get("data") or ""
+            media_type = (attributes.get("type") or "").lower()
+            if data and (media_type.startswith("image/") or
+                         _suffix(data) == ".svg"):
+                # SVG objects are not exposed by the raster-only card
+                # contract.  Their declared geometry is still useful evidence
+                # that a nearby tiny raster is merely a colorbar/legend for a
+                # more complete scientific panel in the same outer figure.
+                self.current["graphics"].append({
+                    "kind": "object", "src": data,
+                    "width": attributes.get("width") or "",
+                    "height": attributes.get("height") or "",
+                })
         if self.depth and tag == "figcaption":
             self.caption_depth += 1
 
@@ -632,6 +654,52 @@ class ArxivFigureParser(HTMLParser):
             self.current["caption_parts"].append(data)
 
 
+def _html_image_dimension(value: object) -> float:
+    """Parse a conservative numeric HTML image dimension, or return zero."""
+    raw = str(value or "").strip().lower()
+    match = re.fullmatch(r"(\d+(?:\.\d+)?)(?:px|pt)?", raw)
+    if not match:
+        return 0.0
+    dimension = float(match.group(1))
+    return dimension if 0 < dimension <= 100_000 else 0.0
+
+
+def _looks_like_geometric_auxiliary(
+        image: dict, graphics: Iterable[dict],
+) -> bool:
+    """Identify a tiny extreme strip only beside a more complete graphic.
+
+    Aspect ratio alone is not evidence: portrait scientific fields and wide
+    timelines can be legitimate.  The candidate must also be small in both
+    absolute area and short edge, and the same outer ``figure`` must contain a
+    substantially larger graphic.  That companion may be an SVG ``object``;
+    it is selection evidence only and never crosses the raster/host boundary.
+    """
+    width = _html_image_dimension(image.get("width"))
+    height = _html_image_dimension(image.get("height"))
+    if not width or not height:
+        return False
+    short, long = sorted((width, height))
+    area = width * height
+    if not (long / short >= 4.0 and short <= 64 and
+            long <= 512 and area <= 16_000):
+        return False
+
+    own_order = image.get("graphic_order")
+    for order, graphic in enumerate(graphics):
+        if order == own_order:
+            continue
+        other_width = _html_image_dimension(graphic.get("width"))
+        other_height = _html_image_dimension(graphic.get("height"))
+        if not other_width or not other_height:
+            continue
+        other_short = min(other_width, other_height)
+        other_area = other_width * other_height
+        if other_short >= max(128, short * 2) and other_area >= area * 4:
+            return True
+    return False
+
+
 def select_arxiv_figure(html_text: str, page_url: str) -> dict | None:
     parser = ArxivFigureParser()
     parser.feed(html_text)
@@ -652,6 +720,9 @@ def select_arxiv_figure(html_text: str, page_url: str) -> dict | None:
                 continue
             if looks_like_auxiliary_image(
                     image_url, image.get("alt"), image.get("class")):
+                continue
+            if _looks_like_geometric_auxiliary(
+                    image, figure.get("graphics") or []):
                 continue
             if looks_like_decorative_image(
                     _basename(image_url), image.get("alt"),

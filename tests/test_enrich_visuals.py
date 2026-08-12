@@ -386,6 +386,93 @@ def test_arxiv_portrait_layout_class_does_not_mean_author_portrait():
     assert selected["image_url"].endswith("/html/architecture.png")
 
 
+def test_arxiv_selector_skips_geometric_colorbar_from_real_2011_structure():
+    # Mirrors arXiv:2011.15110v2 Figure 10.  x1.png is rendered as 49x199
+    # (the actual file is 97x398) beside the full 405x348 SVG eigenvector
+    # panels.  Since SVG is intentionally outside the public raster contract,
+    # selector v4 must skip this outer figure and continue to the next raster.
+    html = """
+    <figure id="S4.F10" class="ltx_figure ltx_figure_panel">
+      <div class="ltx_flex_figure">
+        <div class="ltx_flex_cell">
+          <div class="ltx_figure_panel">
+            <img src="2011.15110v2/x1.png" width="49" height="199"
+                 class="ltx_graphics ltx_img_portrait"
+                 alt="Refer to caption" />
+          </div>
+        </div>
+      </div>
+      <figcaption>Figure 10: AS and KLE eigenvectors.</figcaption>
+      <div class="ltx_flex_figure">
+        <figure class="ltx_figure_panel">
+          <object type="image/svg+xml"
+                  data="2011.15110v2/frame0_no_colorbar.svg"
+                  width="405" height="348"></object>
+        </figure>
+        <figure class="ltx_figure_panel">
+          <object type="image/svg+xml"
+                  data="2011.15110v2/frame7_no_colorbar.svg"
+                  width="405" height="348"></object>
+        </figure>
+      </div>
+    </figure>
+    <figure id="S5.F16" class="ltx_figure">
+      <img src="2011.15110v2/figures/f_blob.png"
+           width="333" height="254" alt="Refer to caption" />
+      <figcaption>Figure 16: Truncated Gaussian blob forcing term.</figcaption>
+    </figure>
+    """
+
+    selected = ev.select_arxiv_figure(
+        html, "https://arxiv.org/html/2011.15110",
+    )
+
+    assert selected is not None
+    assert selected["image_url"].endswith("/figures/f_blob.png")
+    assert not selected["image_url"].endswith("/x1.png")
+
+
+def test_geometric_filter_keeps_only_narrow_scientific_image():
+    fixtures = (
+        ("vertical-field.png", "49", "199"),
+        ("horizontal-profile.png", "199", "49"),
+    )
+    for filename, width, height in fixtures:
+        html = (
+            '<figure class="ltx_figure">'
+            f'<img src="figures/{filename}" width="{width}" '
+            f'height="{height}" alt="Scientific field" />'
+            '<figcaption>Validated scientific result.</figcaption></figure>'
+        )
+        selected = ev.select_arxiv_figure(
+            html, "https://arxiv.org/html/2608.12345",
+        )
+        assert selected is not None
+        assert selected["image_url"].endswith(f"/figures/{filename}")
+
+
+def test_geometric_filter_keeps_large_narrow_scientific_panel_with_companion():
+    # A narrow layout can be scientific even beside another panel.  The
+    # absolute small-size gates ensure it is not removed on ratio alone.
+    html = """
+    <figure class="ltx_figure">
+      <figure class="ltx_figure_panel">
+        <img src="figures/vertical-section.png" width="120" height="720"
+             alt="Depth-resolved field" />
+      </figure>
+      <figure class="ltx_figure_panel">
+        <img src="figures/context.png" width="900" height="600" />
+      </figure>
+      <figcaption>Vertical section and spatial context.</figcaption>
+    </figure>
+    """
+    selected = ev.select_arxiv_figure(
+        html, "https://arxiv.org/html/2608.12345",
+    )
+    assert selected is not None
+    assert selected["image_url"].endswith("/figures/vertical-section.png")
+
+
 def test_available_visual_truncates_caption_and_alt_at_safe_boundaries():
     latex = r"$\frac{\sigma_{equivalent}}{\varepsilon_{reference}}$"
     caption_prefix = "Validated finite-element field. " * 37
