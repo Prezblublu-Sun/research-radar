@@ -2,8 +2,9 @@
 
 This is an optional, failure-isolated enrichment command.  It reads the v2
 daily corpus and writes one metadata-only sidecar keyed by the same strict
-DOI/arXiv identities used by the public renderer.  It never downloads or
-commits image/PDF binaries and it never mutates ``data/daily``.
+DOI/arXiv identities used by the public renderer.  It transiently verifies
+bounded image responses, but never persists or commits image/PDF binaries and
+never mutates ``data/daily``.
 
 Only figures whose article metadata carries an explicit CC0, CC BY, or
 CC BY-SA licence are exposed.  Captions that signal third-party rights are
@@ -44,6 +45,7 @@ DEFAULT_LIMIT = 20
 DEFAULT_TIMEOUT_SECONDS = 12.0
 DEFAULT_MIN_DELAY_SECONDS = 0.5
 MAX_METADATA_BYTES = 8 * 1024 * 1024
+MAX_IMAGE_BYTES = 8 * 1024 * 1024
 IMAGE_SUFFIXES = {".gif", ".jpeg", ".jpg", ".png", ".webp"}
 ALLOWED_LICENSES = {"CC0", "CC BY", "CC BY-SA"}
 
@@ -52,7 +54,12 @@ ID_CONVERTER_URL = (
 )
 PMC_BUCKET_HOST = "pmc-oa-opendata.s3.amazonaws.com"
 PMC_BUCKET_URL = f"https://{PMC_BUCKET_HOST}/"
-ARXIV_OAI_URL = "https://export.arxiv.org/oai2"
+ARXIV_OAI_URL = "https://oaipmh.arxiv.org/oai"
+# ``export.arxiv.org/oai2`` is the former public endpoint and currently
+# redirects to the dedicated OAI-PMH host.  Keep both official hosts in the
+# redirect boundary so old callers remain compatible, while redirects to any
+# other host still fail closed in ``HttpClient``.
+ARXIV_OAI_HOSTS = {"oaipmh.arxiv.org", "export.arxiv.org"}
 
 THIRD_PARTY_MARKERS = (
     "reproduced with permission",
@@ -69,6 +76,12 @@ THIRD_PARTY_MARKERS = (
     "copyright ",
     "©",
 )
+
+DECORATIVE_IMAGE_TOKENS = {
+    "avatar", "avatars", "banner", "banners", "cover", "covers",
+    "favicon", "headshot", "headshots", "icon", "icons", "logo", "logos",
+    "portrait", "portraits",
+}
 
 
 class FetchError(RuntimeError):
@@ -135,6 +148,16 @@ def caption_has_third_party_rights(caption: str) -> bool:
     return any(marker in compact for marker in THIRD_PARTY_MARKERS)
 
 
+def looks_like_decorative_image(*hints: object) -> bool:
+    """Reject branding and author imagery before ranking paper figures."""
+    tokens = set(re.findall(
+        r"[a-z0-9]+", " ".join(str(value or "") for value in hints).lower(),
+    ))
+    return bool(tokens & DECORATIVE_IMAGE_TOKENS) or (
+        {"author", "photo"} <= tokens or {"journal", "cover"} <= tokens
+    )
+
+
 def _suffix(url: str) -> str:
     return Path(unquote(urlparse(url).path)).suffix.lower()
 
@@ -162,6 +185,31 @@ def pmc_media_url(value: object) -> str:
 def identity_key(paper: dict) -> str:
     """Use the renderer's exact, intentionally non-normalizing identity."""
     return corpus_view.identity_key(paper)
+
+
+def _visual_lookup_identity(identity: str) -> str:
+    """Return a provider lookup alias without changing a public identity.
+
+    DOI names are case-insensitive and an arXiv ``vN`` suffix selects a
+    version of the same work.  The renderer/localStorage contract deliberately
+    keeps those strings exact, so this normalized value is only used inside
+    enrichment to share cache entries and remote requests.
+    """
+    if not isinstance(identity, str):
+        return ""
+    if identity.startswith("doi:"):
+        value = identity[len("doi:"):].strip()
+        return f"doi:{value.lower()}" if value else ""
+    if identity.startswith("arxiv:"):
+        value = identity[len("arxiv:"):].strip()
+        base = re.sub(r"v\d+$", "", value, flags=re.IGNORECASE)
+        return f"arxiv:{base}" if base else ""
+    return ""
+
+
+def visual_lookup_key(paper: dict) -> str:
+    """Return the private request/cache key for an exact public paper key."""
+    return _visual_lookup_identity(identity_key(paper))
 
 
 def _blank_visual(status: str, *, checked_at: str, reason: str = "",
@@ -290,6 +338,21 @@ class HttpClient:
             url, params=params, allowed_hosts=allowed_hosts,
         ).decode("utf-8", errors="replace")
 
+    def verify_image(self, url: str, *, allowed_hosts: set[str]) -> None:
+        """Fetch one bounded image and reject HTML/error bodies by magic bytes."""
+        payload = self.get_bytes(
+            url, allowed_hosts=allowed_hosts, max_bytes=MAX_IMAGE_BYTES,
+        )
+        signatures = (
+            payload.startswith(b"\xff\xd8\xff"),
+            payload.startswith(b"\x89PNG\r\n\x1a\n"),
+            payload.startswith((b"GIF87a", b"GIF89a")),
+            len(payload) >= 12 and payload.startswith(b"RIFF") and
+            payload[8:12] == b"WEBP",
+        )
+        if not any(signatures):
+            raise FetchError("provider image response has an invalid signature")
+
 
 def _local_name(tag: str) -> str:
     return tag.rsplit("}", 1)[-1].lower()
@@ -357,6 +420,9 @@ def select_pmc_figure(xml_text: str, media_urls: Iterable[object]) -> dict | Non
         kind = (fig.attrib.get("fig-type") or "").lower()
         figure_id = (fig.attrib.get("id") or "").lower()
         media_name = _basename(image_url)
+        if looks_like_decorative_image(
+                kind, figure_id, media_name, label, caption):
+            continue
         haystack = f"{kind} {figure_id} {media_name} {label} {caption}".lower()
         preferred = int(
             "graphical abstract" in haystack or
@@ -446,10 +512,17 @@ def select_arxiv_figure(html_text: str, page_url: str) -> dict | None:
         if caption_has_third_party_rights(caption):
             continue
         image_url = _https_url(
-            urljoin(page_url.rstrip("/") + "/", figure.get("src") or ""),
+            # arXiv serves the document at ``/html/<id>`` (a file-like URL).
+            # A relative source such as ``<id>v1/fig.png`` therefore resolves
+            # against ``/html/``, not a synthetic ``/html/<id>/`` directory.
+            urljoin(page_url, figure.get("src") or ""),
             hosts={"arxiv.org"},
         )
         if not image_url or _suffix(image_url) not in IMAGE_SUFFIXES:
+            continue
+        if looks_like_decorative_image(
+                _basename(image_url), figure.get("alt"),
+                figure.get("class"), caption):
             continue
         haystack = f"{figure.get('class', '')} {caption}".lower()
         preferred = int("graphical abstract" in haystack)
@@ -536,6 +609,9 @@ class VisualResolver:
                 reason="pmc_no_reusable_figure", license_name=license_name,
                 provider="pmc",
             )
+        self.client.verify_image(
+            selected["image_url"], allowed_hosts={PMC_BUCKET_HOST},
+        )
         source_url = f"https://pmc.ncbi.nlm.nih.gov/articles/{pmcid}/"
         return _available_visual(
             checked_at=checked_at,
@@ -558,7 +634,7 @@ class VisualResolver:
                 "identifier": f"oai:arXiv.org:{base_id}",
                 "metadataPrefix": "arXivRaw",
             },
-            allowed_hosts={"export.arxiv.org"},
+            allowed_hosts=ARXIV_OAI_HOSTS,
         )
         try:
             root = ET.fromstring(oai)
@@ -587,6 +663,9 @@ class VisualResolver:
                 reason="arxiv_html_no_reusable_figure",
                 license_name=license_name, provider="arxiv",
             )
+        self.client.verify_image(
+            selected["image_url"], allowed_hosts={"arxiv.org"},
+        )
         return _available_visual(
             checked_at=checked_at, image_url=selected["image_url"],
             caption=selected["caption"], source_label="arXiv · 论文插图",
@@ -682,45 +761,128 @@ def should_refresh(record: object, *, now: dt.datetime | None = None,
     return age >= ttl
 
 
-def iter_candidates(
-        daily_dir: Path, priorities: set[str],
-        identities: set[str] | None = None) -> list[tuple[str, dict, str]]:
-    candidates: dict[str, tuple[dict, str]] = {}
-    for path in sorted(daily_dir.glob("*.json"), reverse=True):
-        try:
-            payload = json.loads(path.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError):
-            continue
-        papers = payload if isinstance(payload, list) else payload.get("papers", [])
-        if not isinstance(papers, list):
-            continue
-        for paper in papers:
-            if not isinstance(paper, dict):
-                continue
-            priority = str((paper.get("llm") or {}).get("priority") or "")
-            if priority not in priorities:
-                continue
-            key = identity_key(paper)
-            if identities is not None and key not in identities:
-                continue
-            if key and key not in candidates:
-                candidates[key] = (paper, path.stem)
+def _daily_papers(path: Path) -> list:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return []
+    if isinstance(payload, list):
+        return payload
+    if isinstance(payload, dict) and isinstance(payload.get("papers"), list):
+        return payload["papers"]
+    return []
+
+
+def _sort_candidates(
+        candidates: list[tuple[str, dict, str]],
+) -> list[tuple[str, dict, str]]:
     order = {"High": 0, "Medium": 1}
-    rows = [
-        (key, paper, date) for key, (paper, date) in candidates.items()
-    ]
     # Stable two-pass sort: newest Radar discovery first, then High before
     # Medium within the same discovery time. Publication buckets may be dated
     # in the future and therefore are not a reliable recency signal.
-    rows.sort(key=lambda item: (
+    candidates.sort(key=lambda item: (
         order.get(str((item[1].get("llm") or {}).get("priority")), 9),
         item[0],
     ))
-    rows.sort(
+    candidates.sort(
         key=lambda item: str(item[1].get("first_seen_at") or item[2]),
         reverse=True,
     )
-    return rows
+    return candidates
+
+
+def _canonical_snapshot(
+        daily_dir: Path, priorities: set[str],
+        identities: set[str] | None = None,
+) -> tuple[list[tuple[str, dict, str]], dict[str, list[str]]]:
+    """Return selected winners plus aliases with bounded corpus memory.
+
+    This is a two-pass projection of ``corpus_view.canonicalize_buckets``.
+    Calling its rank helper keeps first-seen winner semantics in one source of
+    truth, while the first pass retains only winner locations.  The second pass
+    keeps full paper objects only for requested priorities, rather than holding
+    the complete (large-abstract) corpus in memory.
+    """
+    paths = sorted(daily_dir.glob("*.json"))
+    winners: dict[str, tuple[tuple, str, int]] = {}
+    for path in paths:
+        bucket_date = path.stem
+        for position, paper in enumerate(_daily_papers(path)):
+            if not isinstance(paper, dict):
+                continue
+            key = identity_key(paper)
+            if not key:
+                continue
+            candidate = (
+                corpus_view._canonical_rank(bucket_date, paper, position),
+                bucket_date,
+                position,
+            )
+            current = winners.get(key)
+            if current is None or candidate[0] < current[0]:
+                winners[key] = candidate
+
+    candidates: list[tuple[str, dict, str]] = []
+    aliases_by_lookup: dict[str, list[str]] = {}
+    for path in paths:
+        bucket_date = path.stem
+        for position, paper in enumerate(_daily_papers(path)):
+            if not isinstance(paper, dict):
+                continue
+            key = identity_key(paper)
+            winner = winners.get(key)
+            if not key or winner is None or (
+                    bucket_date, position) != (winner[1], winner[2]):
+                continue
+            lookup = _visual_lookup_identity(key) or key
+            aliases_by_lookup.setdefault(lookup, []).append(key)
+            priority = str((paper.get("llm") or {}).get("priority") or "")
+            if priority in priorities and (
+                    identities is None or key in identities):
+                candidates.append((key, paper, bucket_date))
+
+    return _sort_candidates(candidates), aliases_by_lookup
+
+
+def iter_candidates(
+        daily_dir: Path, priorities: set[str],
+        identities: set[str] | None = None) -> list[tuple[str, dict, str]]:
+    """Return eligible canonical winners, never stale duplicate records."""
+    candidates, _aliases = _canonical_snapshot(
+        daily_dir, priorities, identities,
+    )
+    return candidates
+
+
+def _fresh_alias_record(
+        entries: Iterable[tuple[str, object]], *, now: dt.datetime,
+        force: bool) -> dict | None:
+    """Choose one reusable fresh cache record for a lookup alias group."""
+    if force:
+        return None
+    fresh = [
+        record for _key, record in entries
+        if isinstance(record, dict)
+        and not should_refresh(record, now=now)
+    ]
+    if not fresh:
+        return None
+    status_rank = {"available": 3, "blocked": 2, "not_found": 1, "error": 0}
+    return max(fresh, key=lambda record: (
+        status_rank.get(str(record.get("status") or ""), -1),
+        str(record.get("checked_at") or ""),
+    ))
+
+
+def _store_aliases(records: dict, aliases: Iterable[str], visual: dict) -> bool:
+    """Copy one result to exact renderer keys and report whether it changed."""
+    changed = False
+    for alias in aliases:
+        clone = dict(visual)
+        if records.get(alias) != clone:
+            records[alias] = clone
+            changed = True
+    return changed
 
 
 def enrich(*, daily_dir: Path, index_path: Path, resolver: VisualResolver,
@@ -730,14 +892,35 @@ def enrich(*, daily_dir: Path, index_path: Path, resolver: VisualResolver,
     current_time = now or utc_now()
     registry = load_registry(index_path)
     records = registry["records"]
+    candidates, corpus_aliases = _canonical_snapshot(
+        daily_dir, priorities, identities,
+    )
+
+    cached_by_lookup: dict[str, list[tuple[str, object]]] = {}
+    for exact_key, record in records.items():
+        lookup = _visual_lookup_identity(exact_key) or exact_key
+        if lookup:
+            cached_by_lookup.setdefault(lookup, []).append((exact_key, record))
+
     attempted = 0
     counts: dict[str, int] = {}
-    for key, paper, _bucket_date in iter_candidates(
-            daily_dir, priorities, identities):
+    processed_lookups: set[str] = set()
+    dirty = False
+    for key, paper, _bucket_date in candidates:
+        lookup = visual_lookup_key(paper) or key
+        if lookup in processed_lookups:
+            continue
+        processed_lookups.add(lookup)
+        aliases = corpus_aliases.get(lookup, [key])
+
+        cached = _fresh_alias_record(
+            cached_by_lookup.get(lookup, []), now=current_time, force=force,
+        )
+        if cached is not None:
+            dirty = _store_aliases(records, aliases, cached) or dirty
+            continue
         if attempted >= limit:
             break
-        if not should_refresh(records.get(key), now=current_time, force=force):
-            continue
         attempted += 1
         try:
             visual = resolver.resolve(paper, now=current_time)
@@ -746,11 +929,14 @@ def enrich(*, daily_dir: Path, index_path: Path, resolver: VisualResolver,
                 "error", checked_at=iso_z(current_time),
                 reason=f"{type(exc).__name__}: {str(exc)[:240]}",
             )
-        records[key] = visual
+        dirty = _store_aliases(records, aliases, visual) or dirty
         status = str(visual.get("status") or "error")
         counts[status] = counts.get(status, 0) + 1
         if write:
             save_registry(index_path, registry, now=current_time)
+            dirty = False
+    if write and dirty:
+        save_registry(index_path, registry, now=current_time)
     return {"attempted": attempted, "counts": counts,
             "registry_records": len(records), "registry": registry}
 
