@@ -11,6 +11,12 @@ CSS = (ROOT / "render" / "static" / "radar-ui.css").read_text(
 QUEUE_JS = (ROOT / "render" / "static" / "radar-queue.js").read_text(
     encoding="utf-8"
 )
+CARD_JS = (ROOT / "render" / "static" / "radar-card.js").read_text(
+    encoding="utf-8"
+)
+DAY_JS = (ROOT / "render" / "static" / "radar-day.js").read_text(
+    encoding="utf-8"
+)
 SEARCH_JS = (ROOT / "render" / "static" / "radar-search.js").read_text(
     encoding="utf-8"
 )
@@ -70,8 +76,9 @@ def test_paper_cards_use_two_columns_with_mobile_fallback():
 
 def test_lazy_queue_builds_untrusted_records_with_dom_text_nodes():
     assert "textContent" in QUEUE_JS
-    assert "document.createTextNode" in QUEUE_JS
-    assert "innerHTML" not in QUEUE_JS
+    assert "window.RadarCard.buildCard" in QUEUE_JS
+    assert "document.createTextNode" in CARD_JS
+    assert "innerHTML" not in QUEUE_JS + CARD_JS
     assert "PAGE_SIZE = 20" in QUEUE_JS
     assert 'document.getElementById("queue-prev")' in QUEUE_JS
     assert 'document.getElementById("queue-page")' in QUEUE_JS
@@ -79,6 +86,18 @@ def test_lazy_queue_builds_untrusted_records_with_dom_text_nodes():
     assert 'params.set("page", String(state.page))' in QUEUE_JS
     assert "filtered.slice(start, start + PAGE_SIZE)" in QUEUE_JS
     assert ".queue-pagination" in CSS
+
+
+def test_lazy_daily_loader_preserves_hash_and_local_card_state_contracts():
+    assert "PAGE_SIZE = 20" in DAY_JS
+    assert "anchor_pages" in DAY_JS
+    assert "manifest.revision" in DAY_JS
+    assert "RadarUI.hydrate" in DAY_JS
+    assert "scrollIntoView" in DAY_JS
+    assert "blurActiveEditor" in DAY_JS
+    assert "innerHTML" not in DAY_JS
+    for token in ("rui-mark-radio", "rui-note-ta", "rui-promote-btn"):
+        assert token in CARD_JS
 
 
 def test_search_is_progressive_worker_backed_and_dom_safe():

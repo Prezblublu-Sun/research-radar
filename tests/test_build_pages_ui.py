@@ -9,9 +9,9 @@ exercised here. These tests assert the *markup contract* the JS depends on:
       days carry the V3 enrichment (★, authors, direction-pill,
       motivation, <details>) and Low/Exclude-only days stay bare
   D2  high-priority.html / medium-priority.html exist and are single-priority
-  D3  each daily page has the priority filter bar + data-priority on cards
-  D4  every paper card carries mark + note controls with its identity key
-  D5  every paper card carries a promote-to-lit-system button + identity key
+  D3  each daily shell has static filters; card priorities live in day shards
+  D4  public card records and the shared renderer preserve mark/note identity
+  D5  the shared renderer preserves promote-to-lit-system controls
 
 Run with:
     pytest tests/test_build_pages_ui.py
@@ -127,7 +127,7 @@ def built(tmp_path: pathlib.Path) -> pathlib.Path:
         "counts": {"priority_counts": {"High": 2, "Medium": 1}},
     }), encoding="utf-8")
 
-    build_pages.build(docs, DIRECTIONS)
+    build_pages.build(docs, DIRECTIONS, sharded_daily=True)
     return docs
 
 
@@ -187,10 +187,10 @@ def test_workbench_root_and_archive_month_grid(built):
         assert href in archive
 
     daily = (built / "2024-12-10.html").read_text(encoding="utf-8")
-    assert '<div class="paper-grid">' in daily
-    assert daily.index('<div class="paper-grid">') < daily.index(
-        '<article class="paper"'
-    )
+    assert 'id="day-results" class="paper-grid"' in daily
+    assert '<article class="paper"' not in daily
+    assert 'class="archive-select"' not in daily
+    assert 'src="radar-day.js"' in daily
     queue = (built / "queue.html").read_text(encoding="utf-8")
     assert 'id="queue-results" class="paper-grid"' in queue
     assert 'id="queue-pagination"' in queue
@@ -289,8 +289,17 @@ def test_d3_daily_page_has_priority_filter_bar_and_data_priority(built):
     assert 'class="rui-pf-cb"' in html
     for prio in ("High", "Medium", "Low", "Exclude"):
         assert f'value="{prio}"' in html
-    # every card exposes its priority for the client-side filter
-    assert set(_article_priorities(html)) == {"High", "Medium", "Low", "Exclude"}
+    manifest = json.loads((built / "data" / "day" / "2024-12-10" /
+                           "manifest.json").read_text(encoding="utf-8"))
+    page = json.loads((built / "data" / "day" / "2024-12-10" /
+                       "page-1.json").read_text(encoding="utf-8"))
+    assert manifest["page_size"] == 20
+    assert manifest["priority_counts"] == {
+        "High": 1, "Medium": 1, "Unscored": 0, "Low": 1, "Exclude": 1,
+    }
+    assert {record["priority"] for record in page["papers"]} == {
+        "High", "Medium", "Low", "Exclude",
+    }
     # external bundle referenced, not inlined
     assert '<script src="radar-ui.js" defer></script>' in html
     assert '<link rel="stylesheet" href="radar-ui.css">' in html
@@ -300,16 +309,15 @@ def test_d3_daily_page_has_priority_filter_bar_and_data_priority(built):
 
 def test_d4_every_card_has_mark_and_note_controls_with_identity_key(built):
     html = (built / "2024-12-10.html").read_text(encoding="utf-8")
-    articles = re.findall(r"<article class=\"paper\".*?</article>", html, re.S)
-    assert len(articles) == 4
-    for art in articles:
-        assert 'data-identity-key="doi:10.1/' in art
-        assert 'class="rui-mark-radio"' in art
-        # all four mark states present
-        for state in ("to-read", "read", "interesting", "ignore"):
-            assert f'value="{state}"' in art
-        assert 'class="rui-note-btn"' in art
-        assert 'class="rui-note-ta"' in art
+    page = json.loads((built / "data" / "day" / "2024-12-10" /
+                       "page-1.json").read_text(encoding="utf-8"))
+    assert len(page["papers"]) == 4
+    assert all(record["identity_key"].startswith("doi:10.1/")
+               for record in page["papers"])
+    card_js = (built / "radar-card.js").read_text(encoding="utf-8")
+    for token in ("rui-mark-radio", "to-read", "read", "interesting",
+                  "ignore", "rui-note-btn", "rui-note-ta"):
+        assert token in card_js
     # daily-page "filter to my marks" bar present
     assert 'id="rui-marks-filter"' in html
     assert 'class="rui-mf-cb"' in html
@@ -322,13 +330,11 @@ def test_d4_every_card_has_mark_and_note_controls_with_identity_key(built):
 # ---------------------------------------------------------------- D5
 
 def test_d5_every_card_has_promote_button_with_identity_key(built):
-    html = (built / "2024-12-10.html").read_text(encoding="utf-8")
-    articles = re.findall(r"<article class=\"paper\".*?</article>", html, re.S)
-    assert articles
-    for art in articles:
-        assert 'class="rui-promote-btn"' in art
-        assert "发送到 lit-system" in art
-        assert re.search(r'data-identity-key="doi:10\.1/\w+"', art)
+    card_js = (built / "radar-card.js").read_text(encoding="utf-8")
+    assert "rui-promote-btn" in card_js
+    assert "发送到 lit-system" in card_js
+    day_js = (built / "radar-day.js").read_text(encoding="utf-8")
+    assert "RadarUI.hydrate" in day_js
     promo_pg = (built / "library.html").read_text(encoding="utf-8")
     assert 'id="rui-copy-promotes"' in promo_pg
 
@@ -338,6 +344,8 @@ def test_d5_every_card_has_promote_button_with_identity_key(built):
 def test_static_bundle_copied_into_docs(built):
     assert (built / "radar-ui.js").exists()
     assert (built / "radar-ui.css").exists()
+    assert (built / "radar-card.js").exists()
+    assert (built / "radar-day.js").exists()
     assert (built / "radar-queue.js").exists()
     assert (built / "radar-search.js").exists()
     assert (built / "radar-search-worker.js").exists()
@@ -351,7 +359,7 @@ def test_static_bundle_copied_into_docs(built):
 # are held in opt-in, year-scoped deep shards.
 
 SEARCH_INDEX_DISPLAY_FIELDS = {
-    "identity_key", "date", "title", "authors", "venue",
+    "identity_key", "anchor", "date", "title", "authors", "venue",
     "direction", "direction_name", "priority", "relevance_level",
     "tags", "term",
 }
@@ -528,7 +536,7 @@ def test_public_pages_and_search_suppress_cross_bucket_duplicate_identity(tmp_pa
     _write_v2(daily, "2024-01-10", [older_bucket])
     _write_v2(daily, "2024-02-10", [first_seen])
 
-    build_pages.build(docs, DIRECTIONS)
+    build_pages.build(docs, DIRECTIONS, sharded_daily=True)
 
     high = json.loads(
         (docs / "queue-high-2024.json").read_text(encoding="utf-8")
@@ -538,8 +546,11 @@ def test_public_pages_and_search_suppress_cross_bucket_duplicate_identity(tmp_pa
     ]
     assert high[0]["title"] == "Canonical observation"
 
-    stale_day = (docs / "2024-01-10.html").read_text(encoding="utf-8")
-    assert 'data-identity-key="doi:10.1/duplicate"' not in stale_day
+    stale_manifest = json.loads(
+        (docs / "data" / "day" / "2024-01-10" / "manifest.json")
+        .read_text(encoding="utf-8")
+    )
+    assert stale_manifest["total"] == 0
 
     manifest = json.loads(
         (docs / "search-index-manifest.json").read_text(encoding="utf-8")
@@ -559,7 +570,7 @@ def test_identityless_records_remain_distinct_across_ui_indexes(tmp_path):
                     date="2024-03-01")
     _write_v2(daily, "2024-03-01", [first, second])
 
-    build_pages.build(docs, DIRECTIONS)
+    build_pages.build(docs, DIRECTIONS, sharded_daily=True)
 
     search = json.loads(
         (docs / "search-index-2024.json").read_text(encoding="utf-8")
@@ -576,9 +587,13 @@ def test_identityless_records_remain_distinct_across_ui_indexes(tmp_path):
     assert all(identity.startswith("noid:") for identity in identities)
     assert set(identities) == {record["identity_key"] for record in deep}
     assert set(identities) == {record["identity_key"] for record in queue}
-    daily_html = (docs / "2024-03-01.html").read_text(encoding="utf-8")
-    for identity in identities:
-        assert f'data-identity-key="{identity}"' in daily_html
+    daily_page = json.loads(
+        (docs / "data" / "day" / "2024-03-01" / "page-1.json")
+        .read_text(encoding="utf-8")
+    )
+    assert set(identities) == {
+        record["identity_key"] for record in daily_page["papers"]
+    }
 
 
 def test_workbench_uses_latest_seven_valid_runs_and_excludes_failed(tmp_path):
@@ -604,10 +619,128 @@ def test_workbench_uses_latest_seven_valid_runs_and_excludes_failed(tmp_path):
             encoding="utf-8",
         )
 
-    build_pages.build(docs, DIRECTIONS)
+    build_pages.build(docs, DIRECTIONS, sharded_daily=True)
     index = (docs / "index.html").read_text(encoding="utf-8")
 
     assert "Seen on 2024-07-09" not in index  # failed run
     assert "Seen on 2024-07-01" not in index  # eighth valid run
     for day in range(2, 9):
         assert f"Seen on 2024-07-{day:02d}" in index
+
+
+# ---------------------------------------------------------------- daily JSON pages
+
+@pytest.mark.parametrize(("count", "expected_pages"), [
+    (0, 0), (20, 1), (21, 2), (40, 2), (41, 3),
+])
+def test_day_shard_boundaries(tmp_path, count, expected_pages):
+    docs = tmp_path / "docs"
+    papers = [
+        _paper(doi=f"10.9/{index}", priority="High",
+               title=f"Paper {index:02d}", date="2024-08-01")
+        for index in range(count)
+    ]
+    manifest = build_pages._build_day_shards(
+        docs, "2024-08-01", papers, DIRECTIONS,
+        date_precision="month", previous_date="2024-07-01",
+        next_date="2024-09-01",
+    )
+    day_dir = docs / "data" / "day" / "2024-08-01"
+    assert manifest["total"] == count
+    assert manifest["page_size"] == 20
+    assert manifest["page_count"] == expected_pages
+    assert manifest["date_precision"] == "month"
+    assert manifest["previous_date"] == "2024-07-01"
+    assert manifest["next_date"] == "2024-09-01"
+    assert len(list(day_dir.glob("page-*.json"))) == expected_pages
+    written = []
+    for page_number in range(1, expected_pages + 1):
+        payload = json.loads(
+            (day_dir / f"page-{page_number}.json").read_text(encoding="utf-8")
+        )
+        assert payload["page"] == page_number
+        assert payload["revision"] == manifest["revision"]
+        assert 1 <= len(payload["papers"]) <= 20
+        written.extend(payload["papers"])
+    assert len(written) == count
+    assert set(manifest["anchor_pages"]) == {
+        record["anchor"] for record in written
+    }
+
+
+def test_day_shard_rebuild_removes_stale_pages(tmp_path):
+    docs = tmp_path / "docs"
+    papers = [
+        _paper(doi=f"10.8/{index}", priority="High",
+               title=f"Paper {index}", date="2024-08-02")
+        for index in range(41)
+    ]
+    build_pages._build_day_shards(
+        docs, "2024-08-02", papers, DIRECTIONS,
+    )
+    day_dir = docs / "data" / "day" / "2024-08-02"
+    assert (day_dir / "page-3.json").exists()
+    build_pages._build_day_shards(
+        docs, "2024-08-02", papers[:1], DIRECTIONS,
+    )
+    assert (day_dir / "page-1.json").exists()
+    assert not (day_dir / "page-2.json").exists()
+    assert not (day_dir / "page-3.json").exists()
+
+
+def test_colliding_legacy_anchors_are_unique_and_consistent(tmp_path):
+    docs = tmp_path / "docs"
+    daily = tmp_path / "data" / "daily"
+    first = _paper(doi="10.1/a.b", priority="High", title="Dot DOI",
+                   date="2024-08-03")
+    second = _paper(doi="10.1/a/b", priority="High", title="Slash DOI",
+                    date="2024-08-03")
+    _write_v2(daily, "2024-08-03", [first, second])
+    build_pages.build(docs, DIRECTIONS, sharded_daily=True)
+
+    day_manifest = json.loads(
+        (docs / "data" / "day" / "2024-08-03" / "manifest.json")
+        .read_text(encoding="utf-8")
+    )
+    day_records = json.loads(
+        (docs / "data" / "day" / "2024-08-03" / "page-1.json")
+        .read_text(encoding="utf-8")
+    )["papers"]
+    anchors = [record["anchor"] for record in day_records]
+    assert anchors[0] == "doi-10-1-a-b"
+    assert anchors[1].startswith("doi-10-1-a-b--")
+    assert len(set(anchors)) == 2
+    assert day_manifest["anchor_pages"] == {anchor: 1 for anchor in anchors}
+
+    queue = json.loads(
+        (docs / "queue-high-2024.json").read_text(encoding="utf-8")
+    )
+    search = json.loads(
+        (docs / "search-index-2024.json").read_text(encoding="utf-8")
+    )
+    expected = {record["identity_key"]: record["anchor"]
+                for record in day_records}
+    assert expected == {record["identity_key"]: record["anchor"]
+                        for record in queue}
+    assert expected == {record["identity_key"]: record["anchor"]
+                        for record in search}
+
+
+def test_skipped_run_sentinel_is_not_rendered_as_publication_day(tmp_path):
+    docs = tmp_path / "docs"
+    daily = tmp_path / "data" / "daily"
+    _write_v2(daily, "2024-08-04", [
+        _paper(doi="10.7/real", priority="High", title="Real bucket",
+               date="2024-08-04")
+    ])
+    (daily / "2024-08-05.SKIPPED.json").write_text(
+        json.dumps({"date": "2024-08-05", "reason": "fetched_zero"}),
+        encoding="utf-8",
+    )
+    build_pages.build(docs, DIRECTIONS, sharded_daily=True)
+
+    assert (docs / "2024-08-04.html").exists()
+    assert not (docs / "2024-08-05.SKIPPED.html").exists()
+    assert not (docs / "data" / "day" / "2024-08-05.SKIPPED").exists()
+    archive = (docs / "archive.html").read_text(encoding="utf-8")
+    assert "SKIPPED" not in archive

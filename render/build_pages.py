@@ -10,6 +10,20 @@ import re
 from render import corpus_view
 
 
+DAY_PAGE_SIZE = 20
+_DAILY_BUCKET_FILENAME = re.compile(r"^\d{4}-\d{2}-\d{2}\.json$")
+
+
+def _daily_json_paths(daily_dir: pathlib.Path) -> list[pathlib.Path]:
+    """Return publication buckets, excluding `*.SKIPPED.json` sentinels."""
+    if not daily_dir.exists():
+        return []
+    return sorted(
+        path for path in daily_dir.glob("*.json")
+        if _DAILY_BUCKET_FILENAME.fullmatch(path.name)
+    )
+
+
 def _load_papers_v2_or_v1(path: pathlib.Path) -> tuple[list[dict], dict]:
     """Return (papers, file_meta) for a daily JSON, v2-dict or stray v1-list.
 
@@ -82,6 +96,40 @@ def _anchor_id(identity_key: str) -> str:
     return re.sub(r"[^A-Za-z0-9_-]", "-", identity_key)
 
 
+def _public_keys_for_day(papers: list[dict], bucket_date: str) -> dict[int, tuple[str, str]]:
+    """Return stable identity/anchor pairs before any display sorting.
+
+    The first record for a legacy anchor keeps that anchor so existing deep
+    links remain valid.  Later collisions get a deterministic suffix.  Object
+    ids are safe here because this mapping only lives for one build process.
+    """
+    result: dict[int, tuple[str, str]] = {}
+    used: set[str] = set()
+    for position, paper in enumerate(papers):
+        identity = _public_identity_key(paper, bucket_date, position)
+        base = _anchor_id(identity)
+        anchor = base
+        if anchor in used:
+            suffix = hashlib.sha1(identity.encode("utf-8")).hexdigest()[:8]
+            anchor = f"{base}--{suffix}"
+            counter = 2
+            while anchor in used:
+                anchor = f"{base}--{suffix}-{counter}"
+                counter += 1
+        used.add(anchor)
+        result[id(paper)] = (identity, anchor)
+    return result
+
+
+def _public_keys_for_buckets(
+        buckets: dict[str, list[dict]]) -> dict[int, tuple[str, str]]:
+    """Return the same public keys for every consumer of canonical buckets."""
+    result: dict[int, tuple[str, str]] = {}
+    for bucket_date, papers in buckets.items():
+        result.update(_public_keys_for_day(papers, bucket_date))
+    return result
+
+
 def _card_tools(p: dict, identity_key: str | None = None) -> str:
     """ADR-0016 D4 (mark + note) and D5 (promote) per-card controls.
 
@@ -120,7 +168,8 @@ def _display_priority(p: dict) -> str:
 
 
 def _paper_card(p: dict, dir_color: str, daily_link_date: str | None = None,
-                identity_key: str | None = None) -> str:
+                identity_key: str | None = None,
+                anchor: str | None = None) -> str:
     llm = p.get("llm") or {}
     priority = _display_priority(p)
     priority_label = "待评分" if priority == "Unscored" else priority
@@ -162,14 +211,15 @@ def _paper_card(p: dict, dir_color: str, daily_link_date: str | None = None,
         doi_link = f'<a href="{_esc(p["url"])}" target="_blank">link</a>'
 
     idkey = identity_key or _identity_key(p)
+    card_anchor = anchor or _anchor_id(idkey)
     daily_link = ""
     if daily_link_date:
         daily_link = (f'<a class="rui-link-tool" '
-                      f'href="{_esc(daily_link_date)}.html#{_anchor_id(idkey)}">'
+                      f'href="{_esc(daily_link_date)}.html#{_esc(card_anchor)}">'
                       f'→ {_esc(daily_link_date)} page</a>')
 
     return f"""
-<article class="paper" id="{_anchor_id(idkey)}" data-direction="{_esc(p.get('direction',''))}" data-priority="{_esc(priority)}" data-identity-key="{_esc(idkey)}" data-title="{_esc(p.get('title',''))}" data-date="{_esc(p.get('date',''))}">
+<article class="paper" id="{_esc(card_anchor)}" data-direction="{_esc(p.get('direction',''))}" data-priority="{_esc(priority)}" data-identity-key="{_esc(idkey)}" data-title="{_esc(p.get('title',''))}" data-date="{_esc(p.get('date',''))}">
   <h3 class="paper-title">{_esc(p.get('title',''))}</h3>
   <div class="paper-head">
     <span class="priority priority--{_esc(priority.lower())}">{_esc(priority_label)}</span>
@@ -269,7 +319,7 @@ def _marks_filter_bar() -> str:
 
 
 def _topbar(date: str, archive_dates: list[str]) -> str:
-    """Top navigation: prev/next day buttons + Archive dropdown."""
+    """Top navigation without copying the whole archive into every day."""
     if not archive_dates:
         archive_dates = [date]
     sorted_dates = sorted(archive_dates)
@@ -285,13 +335,41 @@ def _topbar(date: str, archive_dates: list[str]) -> str:
     next_btn = (f'<a class="navbtn" href="{next_date}.html">{next_date} →</a>'
                 if next_date else '<span class="navbtn disabled">最新 →</span>')
 
-    options = "".join(
-        f'<option value="{d}.html"{" selected" if d == date else ""}>{d}</option>'
-        for d in reversed(sorted_dates)
-    )
-    dropdown = f'<select class="archive-select" onchange="if(this.value)window.location.href=this.value">{options}</select>'
+    archive_link = '<a class="navbtn" href="archive.html">查看完整归档</a>'
+    return f'<div class="topbar">{prev_btn}{archive_link}{next_btn}</div>'
 
-    return f'<div class="topbar">{prev_btn}{dropdown}{next_btn}</div>'
+
+def _embedded_topbar(date: str, archive_dates: list[str]) -> str:
+    """Legacy dropdown retained only while branch-published pages are live."""
+    if not archive_dates:
+        archive_dates = [date]
+    sorted_dates = sorted(archive_dates)
+    try:
+        index = sorted_dates.index(date)
+    except ValueError:
+        index = len(sorted_dates) - 1
+    previous_date = sorted_dates[index - 1] if index > 0 else None
+    next_date = (sorted_dates[index + 1]
+                 if index + 1 < len(sorted_dates) else None)
+    previous = (
+        f'<a class="navbtn" href="{previous_date}.html">← {previous_date}</a>'
+        if previous_date else '<span class="navbtn disabled">← 最早</span>'
+    )
+    following = (
+        f'<a class="navbtn" href="{next_date}.html">{next_date} →</a>'
+        if next_date else '<span class="navbtn disabled">最新 →</span>'
+    )
+    options = "".join(
+        f'<option value="{item}.html"'
+        f'{" selected" if item == date else ""}>{item}</option>'
+        for item in reversed(sorted_dates)
+    )
+    return (
+        f'<div class="topbar">{previous}'
+        '<select class="archive-select" '
+        'onchange="if(this.value)window.location.href=this.value">'
+        f'{options}</select>{following}</div>'
+    )
 
 
 def _site_nav(active: str = "") -> str:
@@ -432,47 +510,82 @@ details.summary-en[open] summary{margin-bottom:var(--space-sm)}
 # NOTE: the former inline daily-page JS (direction tabs + priority buttons)
 # now lives in render/static/radar-ui.js, which also adds ADR-0016 D3/D4/D5.
 # Per ADR-0016 the script is an external, cacheable file — never inlined.
-ASSET_HEAD = (
+LEGACY_ASSET_HEAD = (
     '<link rel="stylesheet" href="radar-ui.css">'
     '<script src="radar-ui.js" defer></script>'
 )
+ASSET_HEAD = (
+    LEGACY_ASSET_HEAD + '<script src="radar-card.js" defer></script>'
+)
 
 
-def _render_daily(papers, date, directions_cfg, archive_dates, manifest):
-    order = {"High": 0, "Medium": 1, "Unscored": 2, "Low": 3, "Exclude": 4}
-    identity_by_object = {
-        id(paper): _public_identity_key(paper, date, position)
-        for position, paper in enumerate(papers)
-    }
+def _render_daily_embedded(
+        papers, date, directions_cfg, archive_dates, manifest) -> str:
+    """Legacy branch-published day page kept until Pages source is switched."""
+    order = {"High": 0, "Medium": 1, "Unscored": 2,
+             "Low": 3, "Exclude": 4}
+    public_keys = _public_keys_for_day(papers, date)
     papers_sorted = sorted(
         papers,
-        key=lambda p: (order.get(
-                           _display_priority(p), 9),
-                       p.get("direction", "zzz")),
+        key=lambda paper: (
+            order.get(_display_priority(paper), 9),
+            paper.get("direction", "zzz"),
+        ),
     )
     cards = []
-    for p in papers_sorted:
-        d = p.get("direction")
-        color = directions_cfg[d]["color"] if d in directions_cfg else "#888"
+    for paper in papers_sorted:
+        direction = paper.get("direction")
+        color = directions_cfg.get(direction, {}).get("color", "#888")
+        identity, anchor = public_keys[id(paper)]
         cards.append(_paper_card(
-            p, color, identity_key=identity_by_object[id(p)]
+            paper, color, identity_key=identity, anchor=anchor,
         ))
-
+    content = ('<div class="paper-grid">' + "".join(cards) + "</div>"
+               if cards else '<p style="color:#888">No papers today.</p>')
     return f"""<!doctype html><html lang="zh"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Research Radar — {_esc(date)}</title>
-{ASSET_HEAD}</head><body>
+{LEGACY_ASSET_HEAD}</head><body>
 {_site_nav("archive")}
 <main id="main-content">
 <div class="eyebrow">发表日期</div>
 <h1>{_esc(date)}</h1>
 <div class="subtitle">按论文发表日期归档 · 默认显示 High 与 Medium</div>
-{_topbar(date, archive_dates)}
+{_embedded_topbar(date, archive_dates)}
 {_stats_row(papers, directions_cfg)}
 {_direction_tabs(directions_cfg)}
 {_priority_filter_bar()}
 {_marks_filter_bar()}
-{f'<div class="paper-grid">{"".join(cards)}</div>' if cards else '<p style="color:#888">No papers today.</p>'}
+{content}
+{_version_footer(manifest)}
+</main>
+</body></html>"""
+
+
+def _render_daily(papers, date, directions_cfg, archive_dates, manifest):
+    """Render a lightweight day shell; paper content lives in JSON shards."""
+    return f"""<!doctype html><html lang="zh"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Research Radar — {_esc(date)}</title>
+{ASSET_HEAD}<script src="radar-day.js" defer></script></head><body>
+{_site_nav("archive")}
+<main id="main-content" data-date="{_esc(date)}">
+<div class="eyebrow">发表日期</div>
+<h1>{_esc(date)}</h1>
+<div class="subtitle">按论文发表日期归档 · 每页 {DAY_PAGE_SIZE} 篇 · 默认显示 High 与 Medium</div>
+{_topbar(date, archive_dates)}
+<div id="day-stats" class="stats" aria-live="polite"></div>
+{_direction_tabs(directions_cfg)}
+{_priority_filter_bar()}
+{_marks_filter_bar()}
+<div id="day-status" class="queue-status" aria-live="polite">正在载入论文数据…</div>
+<div id="day-results" class="paper-grid"></div>
+<nav id="day-pagination" class="queue-pagination" aria-label="每日论文分页" hidden>
+  <button type="button" id="day-prev" class="rui-btn rui-secondary">← 前一页</button>
+  <label>页面 <select id="day-page"></select></label>
+  <span id="day-page-total"></span>
+  <button type="button" id="day-next" class="rui-btn rui-secondary">后一页 →</button>
+</nav>
 {_version_footer(manifest)}
 </main>
 </body></html>"""
@@ -758,11 +871,7 @@ def _render_workbench(recent_runs: list[tuple[str, dict]],
                       corpus_stats: corpus_view.CorpusStats) -> str:
     """Root workbench: papers first seen in the seven latest valid runs."""
     run_dates = [date for date, _manifest in recent_runs]
-    identity_by_object = {
-        id(paper): _public_identity_key(paper, bucket_date, position)
-        for bucket_date, papers in buckets.items()
-        for position, paper in enumerate(papers)
-    }
+    public_keys = _public_keys_for_buckets(buckets)
     papers_by_run: dict[str, list[tuple[str, dict]]] = {
         date: [] for date in run_dates
     }
@@ -800,7 +909,8 @@ def _render_workbench(recent_runs: list[tuple[str, dict]],
                 color = directions_cfg.get(direction, {}).get("color", "#667085")
                 output.append(_paper_card(
                     paper, color, daily_link_date=bucket_date,
-                    identity_key=identity_by_object[id(paper)]
+                    identity_key=public_keys[id(paper)][0],
+                    anchor=public_keys[id(paper)][1],
                 ))
             if not output:
                 return ""
@@ -871,17 +981,34 @@ def _render_workbench(recent_runs: list[tuple[str, dict]],
 </body></html>"""
 
 
-def _queue_record(bucket_date: str, paper: dict, position: int,
-                  directions_cfg: dict) -> dict:
+def _public_card_record(bucket_date: str, paper: dict, position: int,
+                        directions_cfg: dict,
+                        identity_key: str | None = None,
+                        anchor: str | None = None) -> dict:
+    """Return the complete, browser-safe public representation of a card."""
     llm = paper.get("llm") or {}
     direction = paper.get("direction") or ""
-    identity = _public_identity_key(paper, bucket_date, position)
+    display_priority = _display_priority(paper)
+    identity = identity_key or _public_identity_key(
+        paper, bucket_date, position
+    )
+    authors = paper.get("authors") or []
+    corresponding = []
+    for item in paper.get("corresponding_authors") or []:
+        if not isinstance(item, dict) or not item.get("affiliation"):
+            continue
+        corresponding.append({
+            "name": item.get("name") or "",
+            "affiliation": item.get("affiliation") or "",
+            "inferred": bool(item.get("inferred")),
+        })
     return {
         "identity_key": identity,
-        "anchor": _anchor_id(identity),
+        "anchor": anchor or _anchor_id(identity),
         "date": bucket_date,
         "title": paper.get("title") or "",
-        "authors": (paper.get("authors") or [])[:5],
+        "authors": authors[:5],
+        "authors_truncated": len(authors) > 5,
         "venue": paper.get("venue") or "",
         "source": paper.get("source") or "",
         "doi": paper.get("doi") or "",
@@ -890,17 +1017,133 @@ def _queue_record(bucket_date: str, paper: dict, position: int,
         "direction_name": paper.get("direction_name") or
                           directions_cfg.get(direction, {}).get("display_name", direction),
         "direction_color": directions_cfg.get(direction, {}).get("color", "#667085"),
-        "priority": llm.get("priority") or "",
+        "priority": display_priority,
+        "priority_label": ("待评分" if display_priority == "Unscored"
+                           else display_priority),
         "relevance_level": llm.get("relevance_level") or "",
         "read_action": llm.get("read_action") or "",
         "validation_kind": llm.get("validation_kind") or "",
-        "flags": llm.get("flags") or {},
+        "flags": {
+            key: bool((llm.get("flags") or {}).get(key))
+            for key in (
+                "has_experimental_validation",
+                "has_uncertainty_quantification",
+                "is_patient_specific",
+                "is_review",
+            )
+        },
+        "first_author_affiliation": paper.get("first_author_affiliation") or "",
+        "corresponding_authors": corresponding,
         "relevance_to_user": llm.get("relevance_to_user") or "",
         "why_not_core": llm.get("why_not_core") or "",
         "summary_zh": llm.get("summary_zh") or {},
+        "summary_en": llm.get("summary_en") or {},
+        "key_terms": llm.get("key_terms") or [],
         "tags": llm.get("tags") or [],
         "first_seen_at": paper.get("first_seen_at") or "",
     }
+
+
+def _queue_record(bucket_date: str, paper: dict, position: int,
+                  directions_cfg: dict, identity_key: str | None = None,
+                  anchor: str | None = None) -> dict:
+    """Compatibility wrapper for the shared public card representation."""
+    return _public_card_record(
+        bucket_date, paper, position, directions_cfg,
+        identity_key=identity_key, anchor=anchor,
+    )
+
+
+def _write_json_atomic(path: pathlib.Path, payload: object) -> None:
+    """Publish one JSON document atomically inside its final directory."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temp = path.with_name(path.name + ".tmp")
+    temp.write_text(
+        json.dumps(payload, ensure_ascii=False, separators=(",", ":")),
+        encoding="utf-8",
+    )
+    temp.replace(path)
+
+
+def _build_day_shards(
+        docs_dir: pathlib.Path, bucket_date: str, papers: list[dict],
+        directions_cfg: dict, *, date_precision: str = "day",
+        previous_date: str | None = None,
+        next_date: str | None = None) -> dict:
+    """Write a compact manifest and 20-card JSON pages for one day shell."""
+    priority_order = {
+        "High": 0, "Medium": 1, "Unscored": 2, "Low": 3, "Exclude": 4,
+    }
+    public_keys = _public_keys_for_day(papers, bucket_date)
+    positioned = list(enumerate(papers))
+    positioned.sort(key=lambda item: (
+        priority_order.get(_display_priority(item[1]), 9),
+        item[1].get("direction", "zzz"),
+        item[0],
+    ))
+    records = []
+    for position, paper in positioned:
+        identity, anchor = public_keys[id(paper)]
+        records.append(_public_card_record(
+            bucket_date, paper, position, directions_cfg,
+            identity_key=identity, anchor=anchor,
+        ))
+
+    priority_counts = {
+        priority: sum(1 for paper in papers
+                      if _display_priority(paper) == priority)
+        for priority in ("High", "Medium", "Unscored", "Low", "Exclude")
+    }
+    page_count = (len(records) + DAY_PAGE_SIZE - 1) // DAY_PAGE_SIZE
+    revision_payload = json.dumps(
+        {"date": bucket_date, "records": records}, ensure_ascii=False,
+        sort_keys=True, separators=(",", ":"),
+    ).encode("utf-8")
+    revision = hashlib.sha256(revision_payload).hexdigest()[:16]
+    anchor_pages = {
+        record["anchor"]: index // DAY_PAGE_SIZE + 1
+        for index, record in enumerate(records)
+    }
+
+    day_dir = docs_dir / "data" / "day" / bucket_date
+    day_dir.mkdir(parents=True, exist_ok=True)
+    expected_pages: set[pathlib.Path] = set()
+    for index in range(page_count):
+        page_number = index + 1
+        page_path = day_dir / f"page-{page_number}.json"
+        expected_pages.add(page_path)
+        _write_json_atomic(page_path, {
+            "schema_version": 1,
+            "date": bucket_date,
+            "page": page_number,
+            "page_count": page_count,
+            "revision": revision,
+            "papers": records[
+                index * DAY_PAGE_SIZE:(index + 1) * DAY_PAGE_SIZE
+            ],
+        })
+    for stale in day_dir.glob("page-*.json"):
+        if stale not in expected_pages:
+            stale.unlink()
+
+    manifest = {
+        "schema_version": 1,
+        "date": bucket_date,
+        "date_precision": date_precision or "day",
+        "total": len(records),
+        "page_size": DAY_PAGE_SIZE,
+        "page_count": page_count,
+        "priority_counts": priority_counts,
+        "previous_date": previous_date,
+        "next_date": next_date,
+        "revision": revision,
+        "page_pattern": "page-{page}.json",
+        "anchor_pages": anchor_pages,
+    }
+    # The manifest is the commit point: browser clients never observe a new
+    # revision until every shard for that revision is already present.
+    _write_json_atomic(day_dir / "manifest.json", manifest)
+    return manifest
 
 
 def _corpus_generated_at(buckets: dict[str, list[dict]]) -> str:
@@ -924,13 +1167,18 @@ def _build_queue_index(docs_dir: pathlib.Path,
         "High": {}, "Medium": {},
     }
     for bucket_date, papers in buckets.items():
+        public_keys = _public_keys_for_day(papers, bucket_date)
         for position, paper in enumerate(papers):
             priority = (paper.get("llm") or {}).get("priority")
             if priority not in grouped:
                 continue
             year = bucket_date[:4]
+            identity, anchor = public_keys[id(paper)]
             grouped[priority].setdefault(year, []).append(
-                _queue_record(bucket_date, paper, position, directions_cfg)
+                _queue_record(
+                    bucket_date, paper, position, directions_cfg,
+                    identity_key=identity, anchor=anchor,
+                )
             )
 
     priorities = {}
@@ -1062,7 +1310,7 @@ def _render_status_page(docs_dir, data_dir):
 
         rows.append(f"""
         <tr>
-          <td><a href="{_esc(date)}.html">{_esc(date)}</a></td>
+          <td><a href="index.html">{_esc(date)}</a></td>
           <td><span class="run-status run-status--{_esc(run_status)}">{_esc(run_status)}</span></td>
           <td>{counts.get("fetched", "—")}</td>
           <td>{counts.get("after_dedup", "—")}</td>
@@ -1127,7 +1375,7 @@ def _build_search_index(docs_dir, data_dir, canonical_buckets=None,
 
     if canonical_buckets is None:
         raw_buckets = {}
-        for jpath in sorted(daily_dir.glob("20*.json")):
+        for jpath in _daily_json_paths(daily_dir):
             raw_buckets[jpath.stem], _meta = _load_papers_v2_or_v1(jpath)
         canonical_buckets, corpus_stats = corpus_view.canonicalize_buckets(
             raw_buckets
@@ -1138,6 +1386,7 @@ def _build_search_index(docs_dir, data_dir, canonical_buckets=None,
     for date, papers in sorted(canonical_buckets.items()):
         if not papers:
             continue
+        public_keys = _public_keys_for_day(papers, date)
         for position, p in enumerate(papers):
             llm = p.get("llm", {}) or {}
             s_zh = llm.get("summary_zh", {}) or {}
@@ -1162,9 +1411,10 @@ def _build_search_index(docs_dir, data_dir, canonical_buckets=None,
                 " ".join(s_zh.values()) if isinstance(s_zh, dict) else "",
                 " ".join(term_texts),
             ]
-            identity = _public_identity_key(p, date, position)
+            identity, anchor = public_keys[id(p)]
             record = {
                 "identity_key": identity,
+                "anchor": anchor,
                 "date": date,
                 "title": p.get("title", "")[:200],
                 "authors": ", ".join(authors[:3]) +
@@ -1352,8 +1602,9 @@ def _redirect_page(title: str, target: str) -> str:
 def _copy_static_assets(docs_dir: pathlib.Path) -> None:
     """Copy the dependency-free browser bundles into docs/."""
     static_dir = pathlib.Path(__file__).resolve().parent / "static"
-    for name in ("radar-ui.css", "radar-ui.js", "radar-queue.js",
-                 "radar-search.js", "radar-search-worker.js"):
+    for name in ("radar-ui.css", "radar-ui.js", "radar-card.js",
+                 "radar-day.js", "radar-queue.js", "radar-search.js",
+                 "radar-search-worker.js"):
         src = static_dir / name
         if src.exists():
             (docs_dir / name).write_text(
@@ -1367,7 +1618,7 @@ def _priority_counts_for(papers: list, meta: dict) -> dict:
 
 
 def build(docs_dir, directions_cfg, manifest=None, touched_dates=None,
-          data_dir=None):
+          data_dir=None, *, sharded_daily: bool = False):
     """Render every per-publication-date HTML page from disk, refresh index.
 
     ADR-0015 §4.5: under v2 a single radar run touches many publication-date
@@ -1381,7 +1632,7 @@ def build(docs_dir, directions_cfg, manifest=None, touched_dates=None,
                 else docs_dir.parent / "data")
     docs_dir.mkdir(parents=True, exist_ok=True)
     data_daily_dir = data_dir / "daily"
-    archive = sorted(p.stem for p in data_daily_dir.glob("20*.json")) if data_daily_dir.exists() else []
+    archive = [path.stem for path in _daily_json_paths(data_daily_dir)]
     touched = set(touched_dates or ())
 
     # Load once, then create a strict identity-key canonical site view. Raw
@@ -1389,6 +1640,7 @@ def build(docs_dir, directions_cfg, manifest=None, touched_dates=None,
     # duplicate DOI/arXiv identities.
     raw_papers_by_date: dict[str, list] = {}
     meta_by_date: dict[str, dict] = {}
+    archive_positions = {date: index for index, date in enumerate(archive)}
     for hist_date in archive:
         papers, meta = _load_papers_v2_or_v1(
             data_daily_dir / f"{hist_date}.json"
@@ -1433,10 +1685,26 @@ def build(docs_dir, directions_cfg, manifest=None, touched_dates=None,
                       f"stored={stored_counts} computed={raw_counts}")
             day_counts[hist_date] = _priority_counts_for(hist_papers, _meta)
             page_manifest = manifest if hist_date in touched else None
-            rendered = _clean_html(_render_daily(
-                hist_papers, hist_date, directions_cfg, archive,
-                page_manifest,
-            ))
+            if sharded_daily:
+                archive_index = archive_positions[hist_date]
+                _build_day_shards(
+                    docs_dir, hist_date, hist_papers, directions_cfg,
+                    date_precision=_meta.get("date_precision") or "day",
+                    previous_date=(archive[archive_index - 1]
+                                   if archive_index > 0 else None),
+                    next_date=(archive[archive_index + 1]
+                               if archive_index + 1 < len(archive) else None),
+                )
+                rendered = _render_daily(
+                    hist_papers, hist_date, directions_cfg, archive,
+                    page_manifest,
+                )
+            else:
+                rendered = _render_daily_embedded(
+                    hist_papers, hist_date, directions_cfg, archive,
+                    page_manifest,
+                )
+            rendered = _clean_html(rendered)
             if page_manifest is None:
                 rendered = _preserve_run_info(rendered, hist_html)
             hist_html.write_text(rendered, encoding="utf-8")

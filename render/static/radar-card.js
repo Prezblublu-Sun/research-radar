@@ -1,0 +1,276 @@
+/* Shared, DOM-safe paper-card renderer for lazy data views. */
+(function () {
+  "use strict";
+
+  function text(value) {
+    return value == null ? "" : String(value);
+  }
+
+  function element(tag, className, value) {
+    var node = document.createElement(tag);
+    if (className) node.className = className;
+    if (value != null) node.textContent = text(value);
+    return node;
+  }
+
+  function classToken(value) {
+    return text(value).toLowerCase().replace(/[^a-z0-9_-]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+  }
+
+  function fallbackAnchor(identity) {
+    var source = text(identity) || "paper";
+    var hash = 2166136261;
+    for (var index = 0; index < source.length; index += 1) {
+      hash ^= source.charCodeAt(index);
+      hash = Math.imul(hash, 16777619);
+    }
+    return "p-" + (hash >>> 0).toString(16);
+  }
+
+  function addTextRow(parent, label, value, keepEmpty) {
+    if (!keepEmpty && !value) return;
+    var row = element("div");
+    row.appendChild(element("b", "", label + "\u00b7 "));
+    row.appendChild(document.createTextNode(text(value)));
+    parent.appendChild(row);
+  }
+
+  function addExternalLink(parent, record) {
+    var wrapper = element("span", "doi");
+    var link = null;
+    if (record.doi) {
+      link = element("a", "", record.doi);
+      link.href = "https://doi.org/" + text(record.doi)
+        .replace(/^https?:\/\/(?:dx\.)?doi\.org\//i, "");
+    } else if (record.url) {
+      try {
+        var parsed = new URL(text(record.url), document.baseURI);
+        if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+          link = element("a", "", "link");
+          link.href = parsed.href;
+        }
+      } catch (error) {
+        /* Invalid or unsafe source URL: render no clickable link. */
+      }
+    }
+    if (link) {
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      wrapper.appendChild(link);
+    }
+    parent.appendChild(wrapper);
+  }
+
+  function authorText(record) {
+    if (record.authors_display) return text(record.authors_display);
+    if (typeof record.authors === "string") return record.authors;
+    var authors = Array.isArray(record.authors) ? record.authors : [];
+    var rendered = authors.map(text).join(", ");
+    if (record.authors_truncated && rendered) rendered += " et al.";
+    return rendered;
+  }
+
+  function buildTools(anchor) {
+    var tools = element("div", "rui-card-tools");
+    var group = element("span", "rui-mark-group");
+    group.appendChild(element("b", "", "标记："));
+    [
+      ["to-read", "待阅读"], ["read", "已阅读"],
+      ["interesting", "有启发"], ["ignore", "忽略"]
+    ].forEach(function (item) {
+      var label = element("label", "m-" + item[0]);
+      var radio = element("input", "rui-mark-radio");
+      radio.type = "radio";
+      radio.name = "rui-mark-" + anchor;
+      radio.value = item[0];
+      label.appendChild(radio);
+      label.appendChild(document.createTextNode(item[1]));
+      group.appendChild(label);
+    });
+    tools.appendChild(group);
+
+    var noteButton = element("button", "rui-note-btn", "笔记");
+    noteButton.type = "button";
+    tools.appendChild(noteButton);
+    var promoteButton = element("button", "rui-promote-btn", "发送到 lit-system");
+    promoteButton.type = "button";
+    tools.appendChild(promoteButton);
+
+    var noteWrap = element("div", "rui-note-wrap");
+    var textarea = element("textarea", "rui-note-ta");
+    textarea.placeholder = "私人笔记（失焦自动保存，仅限当前浏览器）";
+    noteWrap.appendChild(textarea);
+    tools.appendChild(noteWrap);
+    return tools;
+  }
+
+  function appendFlags(head, flags) {
+    [
+      ["has_experimental_validation", "Exp. validation"],
+      ["has_uncertainty_quantification", "UQ"],
+      ["is_patient_specific", "Patient-specific"],
+      ["is_review", "Review"]
+    ].forEach(function (item) {
+      if (flags && flags[item[0]]) {
+        head.appendChild(element("span", "flag", item[1]));
+      }
+    });
+  }
+
+  function appendCorresponding(card, corresponding) {
+    if (!Array.isArray(corresponding)) return;
+    var entries = corresponding.filter(function (entry) {
+      return entry && typeof entry === "object" && entry.affiliation;
+    });
+    if (!entries.length) return;
+    var row = element("div", "corresponding");
+    row.appendChild(element("b", "", "通讯:"));
+    row.appendChild(document.createTextNode(" "));
+    entries.forEach(function (entry, index) {
+      if (index) row.appendChild(document.createTextNode("  |  "));
+      row.appendChild(document.createTextNode(text(entry.name) + " "));
+      row.appendChild(element(
+        "span", "corresp-aff", "@ " + text(entry.affiliation).slice(0, 120)
+      ));
+      if (entry.inferred) {
+        row.appendChild(document.createTextNode(" "));
+        row.appendChild(element("i", "", "[推断]"));
+      }
+    });
+    card.appendChild(row);
+  }
+
+  function appendSummary(parent, className, summary, labels) {
+    var container = element("div", className);
+    summary = summary && typeof summary === "object" ? summary : {};
+    labels.forEach(function (item) {
+      addTextRow(container, item[1], summary[item[0]], true);
+    });
+    parent.appendChild(container);
+  }
+
+  function appendEnglishSummary(card, record) {
+    var details = element("details", "summary-en");
+    details.appendChild(element("summary", "", "英文摘要与术语"));
+    appendSummary(details, "summary en", record.summary_en, [
+      ["motivation", "Motivation"], ["method", "Method"],
+      ["result", "Result"], ["validation", "Validation"]
+    ]);
+    var terms = element("div", "key-terms");
+    (Array.isArray(record.key_terms) ? record.key_terms : []).forEach(function (term) {
+      var node = element("span", "term");
+      if (term && typeof term === "object") {
+        node.appendChild(element("b", "", term.en || ""));
+        node.appendChild(document.createTextNode(" · " + text(term.zh)));
+      } else {
+        node.textContent = text(term);
+      }
+      terms.appendChild(node);
+    });
+    details.appendChild(terms);
+    card.appendChild(details);
+  }
+
+  function buildCard(record, options) {
+    record = record && typeof record === "object" ? record : {};
+    options = options || {};
+    var identity = text(record.identity_key);
+    var anchor = text(record.anchor) || fallbackAnchor(identity || record.title);
+    var priority = text(record.priority) || "Low";
+    var priorityLabel = record.priority_label ||
+      (priority === "Unscored" ? "待评分" : priority);
+
+    var card = element("article", "paper");
+    card.id = anchor;
+    card.dataset.identityKey = identity;
+    card.dataset.direction = text(record.direction);
+    card.dataset.priority = priority;
+    card.dataset.title = text(record.title);
+    card.dataset.date = text(record.date);
+
+    card.appendChild(element("h3", "paper-title", record.title || "Untitled"));
+    var head = element("div", "paper-head");
+    head.appendChild(element(
+      "span", "priority priority--" + classToken(priority), priorityLabel
+    ));
+    var direction = element(
+      "span", "direction-pill", record.direction_name || record.direction
+    );
+    if (/^#[0-9a-f]{6}$/i.test(text(record.direction_color))) {
+      direction.style.color = record.direction_color;
+      direction.style.backgroundColor = record.direction_color + "20";
+    }
+    head.appendChild(direction);
+    if (record.source) head.appendChild(element("span", "source", record.source));
+    if (record.relevance_level) {
+      head.appendChild(element(
+        "span", "relevance-level lvl-" + classToken(record.relevance_level),
+        record.relevance_level
+      ));
+    }
+    if (record.read_action) {
+      head.appendChild(element(
+        "span", "read-action act-" + classToken(record.read_action),
+        record.read_action
+      ));
+    }
+    if (record.validation_kind) {
+      head.appendChild(element("span", "validation-kind", record.validation_kind));
+    }
+    appendFlags(head, record.flags || {});
+    card.appendChild(head);
+
+    var meta = element("div", "meta");
+    meta.appendChild(element("span", "authors", authorText(record)));
+    meta.appendChild(element("span", "venue", record.venue || ""));
+    meta.appendChild(element("span", "date", record.date || ""));
+    addExternalLink(meta, record);
+    card.appendChild(meta);
+
+    if (record.first_author_affiliation) {
+      var affiliation = element("div", "affiliations");
+      affiliation.appendChild(element("b", "", "单位:"));
+      affiliation.appendChild(document.createTextNode(
+        " " + text(record.first_author_affiliation).slice(0, 200)
+      ));
+      card.appendChild(affiliation);
+    }
+    appendCorresponding(card, record.corresponding_authors);
+
+    var relevance = element("div", "relevance");
+    relevance.appendChild(element("b", "", "相关性:"));
+    relevance.appendChild(document.createTextNode(
+      " " + text(record.relevance_to_user)
+    ));
+    card.appendChild(relevance);
+    if (record.why_not_core) {
+      var boundary = element("div", "why-not-core");
+      boundary.appendChild(element("b", "", "边界:"));
+      boundary.appendChild(document.createTextNode(" " + text(record.why_not_core)));
+      card.appendChild(boundary);
+    }
+
+    appendSummary(card, "summary", record.summary_zh, [
+      ["motivation", "动机"], ["method", "方法"],
+      ["result", "结果"], ["validation", "验证"]
+    ]);
+    appendEnglishSummary(card, record);
+
+    var tags = element("div", "tags-row");
+    (Array.isArray(record.tags) ? record.tags : []).forEach(function (tag) {
+      tags.appendChild(element("span", "tag", tag));
+    });
+    card.appendChild(tags);
+
+    if (options.dailyLink && /^\d{4}-\d{2}-\d{2}$/.test(text(record.date))) {
+      var sourceLink = element("a", "rui-link-tool", "打开发表日期页 →");
+      sourceLink.href = record.date + ".html#" + encodeURIComponent(anchor);
+      card.appendChild(sourceLink);
+    }
+    card.appendChild(buildTools(anchor));
+    return card;
+  }
+
+  window.RadarCard = { buildCard: buildCard };
+})();
