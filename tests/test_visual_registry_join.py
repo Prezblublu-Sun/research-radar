@@ -155,6 +155,58 @@ def test_visual_registry_is_fail_closed_compact_and_path_compatible(tmp_path):
     }
 
 
+def test_public_svg_visual_requires_verified_arxiv_shape_and_dimensions():
+    base = {
+        **_available_visual(
+            image_url=(
+                "https://arxiv.org/html/2608.12345v2/figures/workflow.svg"
+            ),
+            source_url="https://arxiv.org/abs/2608.12345",
+        ),
+        "provider": "arxiv",
+        "media_type": "image/svg+xml",
+        "width": 900,
+        "height": 600,
+    }
+    safe = build_pages._safe_visual_record(base)
+    assert safe is not None
+    assert safe["media_type"] == "image/svg+xml"
+
+    unsafe_variants = (
+        {"media_type": "image/png"},
+        {"provider": "pmc"},
+        {"image_url": "https://export.arxiv.org/html/2608.12345v2/f.svg"},
+        {"image_url": "https://arxiv.org/html/2608.12345/f.svg"},
+        {"image_url": "https://arxiv.org/html/2608.12345v0/f.svg"},
+        {"image_url": "https://arxiv.org/html/2608.54321v1/f.svg"},
+        {"image_url": "https://arxiv.org/html/2608.12345v2/../evil.svg"},
+        {"image_url": "https://arxiv.org/html/2608.12345v2//evil.svg"},
+        {"image_url": "https://arxiv.org:443/html/2608.12345v2/f.svg"},
+        {"image_url": "https://arxiv.org/html/2608.12345v2/f.svg?raw=1"},
+        {"image_url": "https://arxiv.org/html/2608.12345v2/f%2esvg"},
+        {"source_url": "https://publisher.example/article"},
+        {"source_url": "https://arxiv.org/abs/2608.12345?download=1"},
+        {"caption": "Figure 1: Architecture adopted from [23]."},
+        {"width": 20, "height": 20},
+        {"width": None},
+    )
+    for changes in unsafe_variants:
+        assert build_pages._safe_visual_record({**base, **changes}) is None
+
+
+def test_public_raster_media_type_must_match_file_suffix():
+    base = _available_visual(
+        image_url="https://arxiv.org/html/2608.12345/figure.png",
+        source_url="https://arxiv.org/abs/2608.12345",
+    )
+    assert build_pages._safe_visual_record({
+        **base, "media_type": "image/png",
+    }) is not None
+    assert build_pages._safe_visual_record({
+        **base, "media_type": "image/jpeg",
+    }) is None
+
+
 def test_public_visual_boundary_rejects_rights_in_caption_or_alt():
     base = _available_visual(
         image_url="https://arxiv.org/html/2608.12345/figure.png",

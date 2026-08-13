@@ -18,6 +18,20 @@ _VISUAL_IMAGE_HOSTS = {
     "export.arxiv.org",
     "pmc-oa-opendata.s3.amazonaws.com",
 }
+_VISUAL_SVG_MEDIA_TYPE = "image/svg+xml"
+_VISUAL_RASTER_MEDIA_BY_SUFFIX = {
+    ".gif": "image/gif",
+    ".jpeg": "image/jpeg",
+    ".jpg": "image/jpeg",
+    ".png": "image/png",
+    ".webp": "image/webp",
+}
+_ARXIV_SVG_PATH = re.compile(
+    r"^/html/(?P<work>(?:\d{4}\.\d{4,5}|[a-z][a-z0-9.-]*/\d{7})"
+    r"v[1-9]\d*)/"
+    r".+\.svg$",
+    re.IGNORECASE,
+)
 _VISUAL_TEXT_LIMITS = {
     "caption": 600,
     "source_label": 80,
@@ -244,6 +258,59 @@ def _safe_visual_record(value: object) -> dict | None:
     if not image_url or not source_url or not license_name:
         return None
 
+    image_parts = urllib.parse.urlsplit(image_url)
+    image_suffix = pathlib.PurePosixPath(
+        urllib.parse.unquote(image_parts.path)
+    ).suffix.lower()
+    raw_media_type = value.get("media_type")
+    media_type = (
+        raw_media_type.strip().lower()
+        if isinstance(raw_media_type, str) else ""
+    )
+    is_svg = image_suffix == ".svg" or media_type == _VISUAL_SVG_MEDIA_TYPE
+    if is_svg:
+        if any(
+            isinstance(value.get(field), str) and re.search(
+                r"\badopted\s+from\b", value[field], re.IGNORECASE,
+            )
+            for field in ("caption", "alt", "source_label")
+        ):
+            return None
+        source_parts = urllib.parse.urlsplit(source_url)
+        path_match = _ARXIV_SVG_PATH.fullmatch(
+            urllib.parse.unquote(image_parts.path)
+        )
+        source_match = re.fullmatch(
+            r"/abs/(?P<work>(?:\d{4}\.\d{4,5}|[a-z][a-z0-9.-]*/\d{7})"
+            r"(?:v[1-9]\d*)?)",
+            urllib.parse.unquote(source_parts.path).rstrip("/"),
+            re.IGNORECASE,
+        )
+        image_work = path_match.group("work") if path_match else ""
+        source_work = source_match.group("work") if source_match else ""
+        if (
+            media_type != _VISUAL_SVG_MEDIA_TYPE or
+            value.get("provider") != "arxiv" or
+            image_parts.hostname != "arxiv.org" or
+            source_parts.hostname != "arxiv.org" or
+            image_parts.netloc.lower() != "arxiv.org" or
+            source_parts.netloc.lower() != "arxiv.org" or
+            image_parts.query or image_parts.fragment or
+            source_parts.query or source_parts.fragment or
+            "%" in image_parts.path or "\\" in image_parts.path or
+            "%" in source_parts.path or "\\" in source_parts.path or
+            any(part in {"", ".", ".."} for part in
+                image_parts.path[len("/html/"):].split("/")) or
+            not path_match or not source_match or
+            re.sub(r"v\d+$", "", image_work, flags=re.IGNORECASE).lower() !=
+            re.sub(r"v\d+$", "", source_work, flags=re.IGNORECASE).lower()
+        ):
+            return None
+    elif media_type:
+        expected_media_type = _VISUAL_RASTER_MEDIA_BY_SUFFIX.get(image_suffix)
+        if not expected_media_type or media_type != expected_media_type:
+            return None
+
     visual = {
         "status": "available",
         "image_url": image_url,
@@ -265,6 +332,13 @@ def _safe_visual_record(value: object) -> dict | None:
         raw = value.get(field)
         if isinstance(raw, int) and not isinstance(raw, bool) and 0 < raw <= 100_000:
             visual[field] = raw
+    if is_svg:
+        if ("width" not in visual or "height" not in visual or
+                visual["width"] * visual["height"] < 4096):
+            return None
+        visual["media_type"] = _VISUAL_SVG_MEDIA_TYPE
+    elif media_type:
+        visual["media_type"] = media_type
     return visual
 
 
@@ -391,15 +465,34 @@ def _paper_visual(paper: dict, visual: dict | None = None) -> str:
         f'<figcaption class="paper-visual__caption">{_esc(caption)}</figcaption>'
         if caption else ""
     )
+    is_svg = safe.get("media_type") == _VISUAL_SVG_MEDIA_TYPE
+    visual_type_attr = (
+        f' data-visual-media-type="{_esc(safe["media_type"])}"'
+        if safe.get("media_type") else ""
+    )
+    if is_svg:
+        image_control = (
+            '<button class="paper-visual__image-link" type="button" '
+            f'data-visual-url="{_esc(safe["image_url"])}" '
+            'aria-label="查看大图" title="查看大图">'
+            f'<img class="paper-visual__image" src="{_esc(safe["image_url"])}" '
+            f'alt="{_esc(alt)}" loading="lazy" decoding="async" '
+            f'referrerpolicy="no-referrer"{dimensions}></button>'
+        )
+    else:
+        image_control = (
+            f'<a class="paper-visual__image-link" href="{_esc(safe["image_url"])}" '
+            'target="_blank" rel="noopener noreferrer" '
+            'aria-label="查看原图" title="查看原图">'
+            f'<img class="paper-visual__image" src="{_esc(safe["image_url"])}" '
+            f'alt="{_esc(alt)}" loading="lazy" decoding="async" '
+            f'referrerpolicy="no-referrer"{dimensions}></a>'
+        )
     return (
-        '<figure class="paper-visual" data-visual-status="available">'
+        '<figure class="paper-visual" data-visual-status="available"'
+        f'{visual_type_attr}>'
         '<div class="paper-visual__frame">'
-        f'<a class="paper-visual__image-link" href="{_esc(safe["image_url"])}" '
-        'target="_blank" rel="noopener noreferrer" '
-        'aria-label="查看原图" title="查看原图">'
-        f'<img class="paper-visual__image" src="{_esc(safe["image_url"])}" '
-        f'alt="{_esc(alt)}" loading="lazy" decoding="async" '
-        f'referrerpolicy="no-referrer"{dimensions}></a></div>'
+        f'{image_control}</div>'
         f'{caption_html}'
         '<div class="paper-visual__meta">'
         f'<a class="paper-visual__source" href="{_esc(safe["source_url"])}" '

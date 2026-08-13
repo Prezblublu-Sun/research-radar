@@ -73,6 +73,28 @@ def test_static_card_renders_compact_accessible_visual_panel():
     assert 'class="paper-visual__source" href="https://arxiv.org/abs/2608.00001"' in rendered
 
 
+def test_svg_card_is_img_only_and_never_links_to_active_top_level_document():
+    svg_url = "https://arxiv.org/html/2608.00001v2/figures/workflow.svg"
+    visual = {
+        **_available_visual(),
+        "image_url": svg_url,
+        "source_url": "https://arxiv.org/abs/2608.00001",
+        "provider": "arxiv",
+        "media_type": "image/svg+xml",
+        "width": 1200,
+        "height": 800,
+    }
+    rendered = build_pages._paper_card(_paper(), "#123456", visual=visual)
+
+    assert 'data-visual-media-type="image/svg+xml"' in rendered
+    assert '<button class="paper-visual__image-link" type="button"' in rendered
+    assert f'data-visual-url="{svg_url}"' in rendered
+    assert f'src="{svg_url}"' in rendered
+    assert f'href="{svg_url}"' not in rendered
+    assert "<object" not in rendered and "<embed" not in rendered
+    assert 'href="https://arxiv.org/abs/2608.00001"' in rendered
+
+
 def test_static_card_missing_or_unsafe_visual_has_explicit_fallback():
     missing = build_pages._paper_card(_paper(), "#123456")
     unsafe = build_pages._paper_card(_paper(), "#123456", visual={
@@ -93,17 +115,24 @@ def test_lazy_renderer_uses_same_safe_visual_and_error_contract():
         'image.decoding = "async"', 'image.referrerPolicy = "no-referrer"',
         'addEventListener("error"',
         "暂时没有获取到图片", "noopener noreferrer",
-        'imageLink.href = imageUrl', 'aria-label", "查看原图',
+        'imageLink.href = imageUrl', 'isSvg ? "查看大图" : "查看原图"',
         "ensureVisualViewer", 'dialog.showModal()',
         'viewer.source.hidden = !sourceUrl',
         'document.documentElement.contains(visualViewerState.trigger)',
         'querySelectorAll(".paper-visual img")',
         '"pmc-oa-opendata.s3.amazonaws.com": true',
         "visualImageHosts[parsed.hostname.toLowerCase()]",
+        'mediaType === "image/svg+xml"',
+        'imageLink.dataset.visualUrl = imageUrl',
+        'viewer.original.hidden = isSvg',
+        'viewer.original.removeAttribute("href")',
+        'image.closest(".paper-visual__image-link")',
     ):
         assert token in CARD_JS
     assert "innerHTML" not in CARD_JS
     assert "javascript:" not in CARD_JS
+    assert 'element("object"' not in CARD_JS
+    assert 'element("embed"' not in CARD_JS
 
 
 def test_legacy_embedded_day_loads_shared_broken_image_fallback():
@@ -127,6 +156,7 @@ def test_visual_css_is_compact_responsive_and_preserves_scientific_figures():
     assert "@media (min-width: 761px) and (max-width: 1000px)" in CSS
     assert "@media (max-width: 460px)" in CSS
     assert ".paper-visual { order: -1" in CSS
+    assert 'data-visual-media-type="image/svg+xml"' in CSS
 
 
 def test_visual_public_text_truncation_uses_a_readable_boundary():
