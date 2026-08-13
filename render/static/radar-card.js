@@ -65,7 +65,18 @@
   var visualImageHosts = {
     "arxiv.org": true,
     "export.arxiv.org": true,
+    "mdpi-res.com": true,
     "pmc-oa-opendata.s3.amazonaws.com": true
+  };
+
+  var mdpiIssnBySlug = {
+    "applsci": "2076-3417",
+    "buildings": "2075-5309",
+    "coatings": "2079-6412",
+    "designs": "2411-9660",
+    "jmmp": "2504-4494",
+    "metals": "2075-4701",
+    "psf": "2673-9984"
   };
 
   function isSafeArxivSvg(parsed, raw) {
@@ -82,6 +93,87 @@
       });
   }
 
+  function matchMdpiRasterPath(pathname) {
+    return pathname.match(
+      /^\/d_attachment\/(applsci|buildings|coatings|designs|jmmp|metals|psf)\/(\1-(\d{2})-(\d{5}))\/article_deploy\/html\/images\/\2-g(?!000)\d{3}(?:-550\.jpg|\.png)$/
+    );
+  }
+
+  function matchMdpiSourcePath(pathname) {
+    return pathname.match(
+      /^\/(\d{4}-\d{3}[\dXx])\/([1-9]\d*)\/([1-9]\d*)\/([1-9]\d*)$/
+    );
+  }
+
+  function isSafeMdpiRaster(parsed, raw, mediaType) {
+    var match = matchMdpiRasterPath(parsed.pathname);
+    if (!/^https:\/\/mdpi-res\.com\//i.test(raw) ||
+        raw !== parsed.href ||
+        parsed.protocol !== "https:" ||
+        parsed.hostname.toLowerCase() !== "mdpi-res.com" ||
+        parsed.host.toLowerCase() !== "mdpi-res.com" ||
+        parsed.username || parsed.password || parsed.search || parsed.hash ||
+        /%|\\/.test(parsed.pathname) || !match) return false;
+    var expected = /\.png$/i.test(parsed.pathname) ? "image/png" : "image/jpeg";
+    return !mediaType || text(mediaType).toLowerCase() === expected;
+  }
+
+  function isSafeMdpiSource(parsed, raw) {
+    return /^https:\/\/www\.mdpi\.com\//i.test(raw) &&
+      raw === parsed.href &&
+      parsed.protocol === "https:" &&
+      parsed.hostname.toLowerCase() === "www.mdpi.com" &&
+      parsed.host.toLowerCase() === "www.mdpi.com" &&
+      !parsed.username && !parsed.password && !parsed.search && !parsed.hash &&
+      !/%|\\/.test(parsed.pathname) &&
+      Boolean(matchMdpiSourcePath(parsed.pathname));
+  }
+
+  function visualUrlHost(value) {
+    var raw = text(value).trim();
+    if (!raw) return "";
+    try {
+      return new URL(raw, document.baseURI).hostname.toLowerCase();
+    } catch (error) {
+      return "";
+    }
+  }
+
+  function hasMdpiBoundary(visual) {
+    return text(visual.provider).toLowerCase() === "mdpi" ||
+      visualUrlHost(visual.image_url) === "mdpi-res.com" ||
+      visualUrlHost(visual.source_url) === "www.mdpi.com";
+  }
+
+  function safeMdpiVisual(visual, mediaType) {
+    if (!visual || visual.provider !== "mdpi") return null;
+    var imageRaw = text(visual.image_url).trim();
+    var sourceRaw = text(visual.source_url).trim();
+    try {
+      var imageParsed = new URL(imageRaw, document.baseURI);
+      var sourceParsed = new URL(sourceRaw, document.baseURI);
+      var imageMatch = matchMdpiRasterPath(imageParsed.pathname);
+      var sourceMatch = matchMdpiSourcePath(sourceParsed.pathname);
+      var width = positiveDimension(visual.width);
+      var height = positiveDimension(visual.height);
+      if (!isSafeMdpiRaster(imageParsed, imageRaw, mediaType) ||
+          !isSafeMdpiSource(sourceParsed, sourceRaw) ||
+          !imageMatch || !sourceMatch ||
+          mdpiIssnBySlug[imageMatch[1]] !== sourceMatch[1] ||
+          Number(imageMatch[3]) !== Number(sourceMatch[2]) ||
+          Number(imageMatch[4]) !== Number(sourceMatch[4]) ||
+          !width || !height || width * height < 4096) return null;
+      return {
+        imageUrl: imageParsed.href,
+        sourceUrl: sourceParsed.href,
+        width: width,
+        height: height
+      };
+    } catch (error) {
+      return null;
+    }
+  }
+
   function safeVisualUrl(value, imageAsset, mediaType) {
     var raw = text(value).trim();
     if (!raw || raw.charAt(0) === "#" || /^\/\//.test(raw)) return "";
@@ -94,6 +186,12 @@
         return isSafeArxivSvg(parsed, raw) ? parsed.href : "";
       }
       if (imageAsset && /\.svg$/i.test(parsed.pathname)) return "";
+      if (imageAsset && parsed.hostname.toLowerCase() === "mdpi-res.com") {
+        return isSafeMdpiRaster(parsed, raw, mediaType) ? parsed.href : "";
+      }
+      if (!imageAsset && parsed.hostname.toLowerCase() === "www.mdpi.com") {
+        return isSafeMdpiSource(parsed, raw) ? parsed.href : "";
+      }
       if (parsed.origin === window.location.origin &&
           (!hasScheme || parsed.protocol === "https:")) {
         return parsed.href;
@@ -109,9 +207,8 @@
   }
 
   function positiveDimension(value) {
-    var number = Number(value);
-    return Number.isFinite(number) && number > 0 && number <= 10000 ?
-      Math.round(number) : 0;
+    return typeof value === "number" && Number.isFinite(value) &&
+      Number.isInteger(value) && value > 0 && value <= 100000 ? value : 0;
   }
 
   function usefulVisualAlt(value) {
@@ -249,8 +346,9 @@
     });
   }
 
-  function appendVisualMeta(figure, visual) {
-    var sourceUrl = safeVisualUrl(visual.source_url, false);
+  function appendVisualMeta(figure, visual, verifiedSourceUrl) {
+    var sourceUrl = verifiedSourceUrl === undefined ?
+      safeVisualUrl(visual.source_url, false) : verifiedSourceUrl;
     var sourceLabel = text(visual.source_label).trim();
     var license = text(visual.license).trim();
     if (!sourceUrl && !sourceLabel && !license) return;
@@ -275,7 +373,14 @@
     var visual = visualRecord(record);
     var status = text(visual.status).toLowerCase();
     var mediaType = text(visual.media_type).trim().toLowerCase();
-    var imageUrl = safeVisualUrl(visual.image_url, true, mediaType);
+    var mdpiBoundary = hasMdpiBoundary(visual);
+    var mdpiVisual = mdpiBoundary ? safeMdpiVisual(visual, mediaType) : null;
+    var imageUrl = mdpiBoundary ?
+      (mdpiVisual ? mdpiVisual.imageUrl : "") :
+      safeVisualUrl(visual.image_url, true, mediaType);
+    var sourceUrl = mdpiBoundary ?
+      (mdpiVisual ? mdpiVisual.sourceUrl : "") :
+      safeVisualUrl(visual.source_url, false);
     var figure = element("figure", "paper-visual");
     if ((status !== "available" && status !== "found") || !imageUrl) {
       renderVisualFallback(figure);
@@ -293,8 +398,8 @@
     image.loading = "lazy";
     image.decoding = "async";
     image.referrerPolicy = "no-referrer";
-    var width = positiveDimension(visual.width);
-    var height = positiveDimension(visual.height);
+    var width = mdpiVisual ? mdpiVisual.width : positiveDimension(visual.width);
+    var height = mdpiVisual ? mdpiVisual.height : positiveDimension(visual.height);
     if (width) image.width = width;
     if (height) image.height = height;
 
@@ -318,7 +423,7 @@
         "figcaption", "paper-visual__caption", visual.caption
       ));
     }
-    appendVisualMeta(figure, visual);
+    appendVisualMeta(figure, visual, sourceUrl);
     bindImageFallback(image, figure);
     bindVisualViewer(image, figure);
     return figure;

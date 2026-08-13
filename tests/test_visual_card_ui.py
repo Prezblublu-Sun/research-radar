@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import json
 import pathlib
+import subprocess
 import sys
 
 
@@ -95,6 +97,29 @@ def test_svg_card_is_img_only_and_never_links_to_active_top_level_document():
     assert 'href="https://arxiv.org/abs/2608.00001"' in rendered
 
 
+def test_mdpi_card_uses_verified_official_raster_and_article_links():
+    image_url = (
+        "https://mdpi-res.com/d_attachment/buildings/buildings-16-02321/"
+        "article_deploy/html/images/buildings-16-02321-g001-550.jpg"
+    )
+    source_url = "https://www.mdpi.com/2075-5309/16/12/2321"
+    visual = {
+        **_available_visual(),
+        "image_url": image_url,
+        "source_url": source_url,
+        "source_label": "MDPI · Figure 1",
+        "provider": "mdpi",
+        "media_type": "image/jpeg",
+    }
+    rendered = build_pages._paper_card(_paper(), "#123456", visual=visual)
+
+    assert f'href="{image_url}"' in rendered
+    assert f'src="{image_url}"' in rendered
+    assert f'href="{source_url}"' in rendered
+    assert 'data-visual-media-type="image/jpeg"' in rendered
+    assert "MDPI · Figure 1" in rendered
+
+
 def test_static_card_missing_or_unsafe_visual_has_explicit_fallback():
     missing = build_pages._paper_card(_paper(), "#123456")
     unsafe = build_pages._paper_card(_paper(), "#123456", visual={
@@ -121,6 +146,10 @@ def test_lazy_renderer_uses_same_safe_visual_and_error_contract():
         'document.documentElement.contains(visualViewerState.trigger)',
         'querySelectorAll(".paper-visual img")',
         '"pmc-oa-opendata.s3.amazonaws.com": true',
+        '"mdpi-res.com": true',
+        "isSafeMdpiRaster", "isSafeMdpiSource", "safeMdpiVisual",
+        "hasMdpiBoundary", "mdpiIssnBySlug",
+        "raw !== parsed.href", "raw === parsed.href",
         "visualImageHosts[parsed.hostname.toLowerCase()]",
         'mediaType === "image/svg+xml"',
         'imageLink.dataset.visualUrl = imageUrl',
@@ -133,6 +162,114 @@ def test_lazy_renderer_uses_same_safe_visual_and_error_contract():
     assert "javascript:" not in CARD_JS
     assert 'element("object"' not in CARD_JS
     assert 'element("embed"' not in CARD_JS
+
+
+def test_lazy_mdpi_renderer_executes_joint_work_and_dimension_checks():
+    image_url = (
+        "https://mdpi-res.com/d_attachment/buildings/buildings-16-02321/"
+        "article_deploy/html/images/buildings-16-02321-g001-550.jpg"
+    )
+    source_url = "https://www.mdpi.com/2075-5309/16/12/2321"
+    valid = {
+        "status": "available",
+        "image_url": image_url,
+        "source_url": source_url,
+        "provider": "mdpi",
+        "media_type": "image/jpeg",
+        "width": 550,
+        "height": 331,
+    }
+    cases = [
+        valid,
+        {**valid, "source_url": source_url.replace("/2321", "/2322")},
+        {**valid, "provider": "pmc"},
+        {key: value for key, value in valid.items() if key != "width"},
+        {**valid, "width": 20, "height": 20},
+        {**valid, "width": True},
+        {**valid, "height": False},
+    ]
+    harness = r"""
+const fs = require("fs");
+
+class FakeNode {
+  constructor(tag) {
+    this.tagName = String(tag || "").toUpperCase();
+    this.className = "";
+    this.dataset = {};
+    this.style = {};
+    this.children = [];
+    this.parentNode = null;
+    this.attributes = {};
+    this.complete = false;
+    this.naturalWidth = 1;
+    this.textContent = "";
+  }
+  appendChild(child) {
+    child.parentNode = this;
+    this.children.push(child);
+    return child;
+  }
+  replaceChildren(...children) {
+    this.children = [];
+    children.forEach((child) => this.appendChild(child));
+  }
+  setAttribute(name, value) { this.attributes[name] = String(value); }
+  removeAttribute(name) { delete this.attributes[name]; }
+  addEventListener() {}
+  focus() {}
+  closest(selector) {
+    if (!selector.startsWith(".")) return null;
+    const wanted = selector.slice(1);
+    for (let node = this; node; node = node.parentNode) {
+      if (String(node.className).split(/\s+/).includes(wanted)) return node;
+    }
+    return null;
+  }
+  querySelector() { return null; }
+  querySelectorAll() { return []; }
+}
+
+const document = {
+  baseURI: "https://example.test/queue.html",
+  body: new FakeNode("body"),
+  documentElement: { contains: () => true },
+  createElement: (tag) => new FakeNode(tag),
+  createTextNode: (value) => {
+    const node = new FakeNode("#text");
+    node.textContent = String(value);
+    return node;
+  },
+  querySelectorAll: () => []
+};
+const window = { location: { origin: "https://example.test" } };
+global.document = document;
+global.window = window;
+
+let source = fs.readFileSync("render/static/radar-card.js", "utf8");
+source = source.replace(
+  "  window.RadarCard = {",
+  "  window.__RadarCardTest = { buildVisual: buildVisual };\n" +
+    "  window.RadarCard = {"
+);
+eval(source);
+const cases = JSON.parse(process.argv[1]);
+const statuses = cases.map((visual) =>
+  window.__RadarCardTest.buildVisual({ title: "MDPI paper", visual })
+    .dataset.visualStatus
+);
+process.stdout.write(JSON.stringify(statuses));
+"""
+    completed = subprocess.run(
+        ["node", "-e", harness, json.dumps(cases)],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    assert json.loads(completed.stdout) == [
+        "available", "unavailable", "unavailable", "unavailable",
+        "unavailable", "unavailable", "unavailable",
+    ]
 
 
 def test_legacy_embedded_day_loads_shared_broken_image_fallback():

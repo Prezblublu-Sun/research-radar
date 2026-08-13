@@ -32,7 +32,7 @@ import sys
 import time
 from typing import Iterable
 import urllib.error
-from urllib.parse import unquote, urlencode, urljoin, urlparse
+from urllib.parse import quote, unquote, urlencode, urljoin, urlparse
 import urllib.request
 import xml.etree.ElementTree as ET
 
@@ -44,7 +44,12 @@ DEFAULT_DAILY_DIR = ROOT / "data" / "daily"
 DEFAULT_INDEX_PATH = ROOT / "data" / "visuals" / "index.json"
 
 SCHEMA_VERSION = "v1"
-SELECTOR_VERSION = 8
+SELECTOR_VERSION = 9
+# Selector milestones remain explicit because a provider addition must not
+# make unrelated cached negatives (or already-safe available records) spend
+# network quota again.
+ARXIV_SVG_SELECTOR_VERSION = 8
+MDPI_SELECTOR_VERSION = 9
 # v8 adds an SVG-only fallback and deliberately leaves v7 raster selection
 # unchanged.  Existing v7 available records therefore remain current and do
 # not spend network quota merely because the fallback version advanced.
@@ -78,6 +83,28 @@ ARXIV_OAI_URL = "https://oaipmh.arxiv.org/oai"
 # redirect boundary so old callers remain compatible, while redirects to any
 # other host still fail closed in ``HttpClient``.
 ARXIV_OAI_HOSTS = {"oaipmh.arxiv.org", "export.arxiv.org"}
+CROSSREF_HOST = "api.crossref.org"
+CROSSREF_WORKS_URL = f"https://{CROSSREF_HOST}/works/"
+MDPI_SOURCE_HOST = "www.mdpi.com"
+MDPI_ASSET_HOST = "mdpi-res.com"
+MDPI_ASSET_ROOT = f"https://{MDPI_ASSET_HOST}/d_attachment"
+# DOI journal token -> MDPI delivery slug and electronic ISSN.  This narrow
+# table is intentional: a new journal must be audited before its assets can
+# cross the public-card boundary.
+MDPI_JOURNALS = {
+    "app": ("applsci", "2076-3417"),
+    "buildings": ("buildings", "2075-5309"),
+    "coatings": ("coatings", "2079-6412"),
+    "designs": ("designs", "2411-9660"),
+    "jmmp": ("jmmp", "2504-4494"),
+    "met": ("metals", "2075-4701"),
+    "psf": ("psf", "2673-9984"),
+}
+MDPI_XML_MEDIA_TYPES = {"application/xml", "text/xml"}
+MDPI_RASTER_MEDIA_TYPES = {
+    ".jpg": {"image/jpeg"},
+    ".png": {"image/png"},
+}
 
 DECORATIVE_IMAGE_TOKENS = {
     "avatar", "avatars", "banner", "banners", "cover", "covers",
@@ -96,6 +123,10 @@ class FetchError(RuntimeError):
 
 class SvgValidationError(FetchError):
     """A deterministic SVG policy rejection which may try another figure."""
+
+
+class MdpiImageValidationError(FetchError):
+    """A deterministic MDPI raster rejection which may try another asset."""
 
 
 def utc_now() -> dt.datetime:
@@ -151,6 +182,223 @@ def normalize_license(value: object) -> str:
     if "BY" in tokens:
         return "CC BY"
     return raw[:120]
+
+
+def _creative_commons_license_url(
+        value: object, *, allow_http: bool = False) -> str:
+    """Return an allowlisted Creative Commons licence label from an exact URL."""
+    raw = str(value or "").strip()
+    parsed = urlparse(raw)
+    allowed_schemes = {"https", "http"} if allow_http else {"https"}
+    if (parsed.scheme not in allowed_schemes or parsed.netloc.lower() !=
+            "creativecommons.org" or parsed.username or parsed.password or
+            parsed.port is not None or parsed.query or parsed.fragment or
+            parsed.params):
+        return ""
+    match = re.fullmatch(
+        r"/licenses/(by|by-sa)/(\d+(?:\.\d+)?)/", parsed.path.lower(),
+    )
+    if match:
+        return "CC BY-SA" if match.group(1) == "by-sa" else "CC BY"
+    if re.fullmatch(
+            r"/publicdomain/zero/(\d+(?:\.\d+)?)/",
+            parsed.path.lower()):
+        return "CC0"
+    return ""
+
+
+def _text_http_urls(value: object) -> list[str]:
+    """Extract complete HTTP(S) URLs from prose, trimming sentence punctuation."""
+    return [
+        match.rstrip(".,;:)]}")
+        for match in re.findall(
+            r"https?://[^\s<>\"']+", str(value or ""), flags=re.IGNORECASE,
+        )
+    ]
+
+
+def _jats_license_text_has_restrictions(value: object) -> bool:
+    """Detect explicit non-commercial or no-derivatives licence qualifiers."""
+    text = " ".join(str(value or "").lower().split())
+    return bool(re.search(
+        r"\b(?:nc|nd)\b|"
+        r"\bnon[\s-]*commercial\b|"
+        r"\bno[\s-]*derivatives?\b|"
+        r"\bno[\s-]*derivs?\b|"
+        r"\ball rights reserved\b|"
+        r"\bnot (?:covered|included)\b|"
+        r"\bexcluded from\b|"
+        r"\bthird[\s-]*party\b",
+        text,
+    ))
+
+
+def _crossref_license_started(record: dict, as_of: dt.datetime) -> bool:
+    """Validate an optional Crossref licence start and require it to be live."""
+    if "start" not in record:
+        return True
+    start = record.get("start")
+    if not isinstance(start, dict) or not start or not set(start) <= {
+            "date-parts", "date-time", "timestamp"}:
+        return False
+
+    precise: list[dt.datetime] = []
+    parts: list[int] | None = None
+    if "date-time" in start:
+        if not isinstance(start["date-time"], str):
+            return False
+        parsed = parse_timestamp(start["date-time"])
+        if parsed is None:
+            return False
+        precise.append(parsed)
+    if "timestamp" in start:
+        timestamp = start["timestamp"]
+        if (not isinstance(timestamp, (int, float)) or
+                isinstance(timestamp, bool) or not math.isfinite(timestamp)):
+            return False
+        try:
+            parsed = dt.datetime.fromtimestamp(
+                timestamp / 1000, tz=dt.timezone.utc,
+            )
+        except (OverflowError, OSError, ValueError):
+            return False
+        precise.append(parsed)
+    if "date-parts" in start:
+        raw_parts = start["date-parts"]
+        if (not isinstance(raw_parts, list) or len(raw_parts) != 1 or
+                not isinstance(raw_parts[0], list) or
+                not 1 <= len(raw_parts[0]) <= 3 or
+                any(not isinstance(value, int) or isinstance(value, bool)
+                    for value in raw_parts[0])):
+            return False
+        parts = raw_parts[0]
+        try:
+            dt.datetime(
+                parts[0], parts[1] if len(parts) > 1 else 1,
+                parts[2] if len(parts) > 2 else 1,
+                tzinfo=dt.timezone.utc,
+            )
+        except ValueError:
+            return False
+    if not precise and parts is None:
+        return False
+    if len(precise) > 1 and max(precise) - min(precise) > dt.timedelta(
+            seconds=1):
+        return False
+    if parts is not None:
+        for value in precise:
+            actual = (value.year, value.month, value.day)
+            if tuple(parts) != actual[:len(parts)]:
+                return False
+        effective = dt.datetime(
+            parts[0], parts[1] if len(parts) > 1 else 1,
+            parts[2] if len(parts) > 2 else 1,
+            tzinfo=dt.timezone.utc,
+        )
+    else:
+        effective = max(precise)
+    return effective <= as_of.astimezone(dt.timezone.utc)
+
+
+def _crossref_vor_license_name(metadata: dict, as_of: dt.datetime) -> str:
+    """Return one consistently allowlisted, effective Crossref VOR licence."""
+    licenses = metadata.get("license")
+    if not isinstance(licenses, list) or not licenses:
+        return ""
+    names = set()
+    for record in licenses:
+        if not isinstance(record, dict):
+            return ""
+        if str(record.get("content-version") or "").strip().lower() != "vor":
+            return ""
+        if not _crossref_license_started(record, as_of):
+            return ""
+        name = _creative_commons_license_url(record.get("URL"))
+        if not name:
+            return ""
+        names.add(name)
+    return next(iter(names)) if len(names) == 1 else ""
+
+
+def _mdpi_doi_context(value: object) -> dict | None:
+    """Parse only an audited ``10.3390`` journal DOI family."""
+    doi = str(value or "").strip().lower()
+    for token, (slug, issn) in MDPI_JOURNALS.items():
+        if re.fullmatch(rf"10\.3390/{re.escape(token)}\d+", doi):
+            return {"doi": doi, "token": token, "slug": slug, "issn": issn}
+    return None
+
+
+def _mdpi_source_context(value: object, doi_context: dict) -> dict | None:
+    """Validate an exact official MDPI article URL and derive its asset stem."""
+    raw = str(value or "").strip()
+    parsed = urlparse(raw)
+    if (parsed.scheme != "https" or parsed.netloc.lower() != MDPI_SOURCE_HOST or
+            parsed.username or parsed.password or parsed.port is not None or
+            parsed.params or parsed.query or parsed.fragment or
+            unquote(parsed.path) != parsed.path):
+        return None
+    match = re.fullmatch(
+        r"/(\d{4}-\d{3}[\dXx])/(\d+)/(\d+)/(\d+)", parsed.path,
+    )
+    if not match or match.group(1).upper() != doi_context["issn"].upper():
+        return None
+    volume, issue, article = (int(value) for value in match.groups()[1:])
+    if not volume or not issue or not article:
+        return None
+    slug = doi_context["slug"]
+    stem = f"{slug}-{volume:02d}-{article:05d}"
+    return {
+        **doi_context,
+        "source_url": raw,
+        "volume": volume,
+        "issue": issue,
+        "article": article,
+        "stem": stem,
+    }
+
+
+def _mdpi_xml_url(context: dict) -> str:
+    slug = str(context["slug"])
+    stem = str(context["stem"])
+    return (
+        f"{MDPI_ASSET_ROOT}/{slug}/{stem}/article_deploy/{stem}.xml"
+    )
+
+
+def _mdpi_asset_url(value: object, context: dict | None = None) -> str:
+    """Return an exact audited MDPI browser-raster URL, or an empty string."""
+    raw = str(value or "").strip()
+    parsed = urlparse(raw)
+    if (parsed.scheme != "https" or parsed.netloc.lower() != MDPI_ASSET_HOST or
+            parsed.username or parsed.password or parsed.port is not None or
+            parsed.params or parsed.query or parsed.fragment or
+            unquote(parsed.path) != parsed.path or "\\" in parsed.path):
+        return ""
+    match = re.fullmatch(
+        r"/d_attachment/([a-z][a-z0-9]*)/"
+        r"([a-z][a-z0-9]*-\d{2}-\d{5})/article_deploy/html/images/"
+        r"([a-z][a-z0-9]*-\d{2}-\d{5}-g\d{3})"
+        r"(?:-550\.jpg|\.png)",
+        parsed.path,
+    )
+    if not match:
+        return ""
+    slug, stem, graphic_stem = match.groups()
+    if not stem.startswith(f"{slug}-") or not graphic_stem.startswith(
+            f"{stem}-"):
+        return ""
+    graphic_number = graphic_stem.rsplit("-g", 1)[-1]
+    if graphic_number == "000":
+        return ""
+    if context is not None and (
+            slug != context.get("slug") or stem != context.get("stem")):
+        return ""
+    return raw
+
+
+def _http_not_found(exc: FetchError) -> bool:
+    return str(exc) in {"HTTP 404", "HTTP 410"}
 
 
 def caption_has_third_party_rights(caption: str) -> bool:
@@ -461,11 +709,45 @@ class HttpClient:
             raise FetchError("provider JSON root is not an object")
         return payload
 
+    def get_crossref_work(self, doi: str) -> dict:
+        """Fetch an exact Crossref work record without following path changes."""
+        url = f"{CROSSREF_WORKS_URL}{quote(doi, safe='')}"
+        payload, media_type, final_url = self._get_bytes_response(
+            url, allowed_hosts={CROSSREF_HOST}, max_bytes=MAX_METADATA_BYTES,
+        )
+        if final_url != url:
+            raise FetchError("Crossref redirected away from the exact work URL")
+        if media_type != "application/json":
+            raise FetchError("Crossref work response has an invalid media type")
+        try:
+            root = json.loads(payload.decode("utf-8"))
+        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+            raise FetchError("Crossref returned invalid JSON") from exc
+        message = root.get("message") if isinstance(root, dict) else None
+        if not isinstance(message, dict):
+            raise FetchError("Crossref work response has no message object")
+        return message
+
     def get_text(self, url: str, *, params: dict | None = None,
                  allowed_hosts: set[str]) -> str:
         return self.get_bytes(
             url, params=params, allowed_hosts=allowed_hosts,
         ).decode("utf-8", errors="replace")
+
+    def get_mdpi_xml(self, url: str) -> str:
+        """Fetch one exact official MDPI JATS object with an XML MIME type."""
+        payload, media_type, final_url = self._get_bytes_response(
+            url, allowed_hosts={MDPI_ASSET_HOST},
+            max_bytes=MAX_METADATA_BYTES,
+        )
+        if final_url != url:
+            raise FetchError("MDPI JATS redirected away from its exact asset URL")
+        if media_type not in MDPI_XML_MEDIA_TYPES:
+            raise FetchError("MDPI JATS response has an invalid media type")
+        try:
+            return payload.decode("utf-8")
+        except UnicodeDecodeError as exc:
+            raise FetchError("MDPI JATS response is not UTF-8 XML") from exc
 
     def verify_image(self, url: str, *,
                      allowed_hosts: set[str]) -> tuple[int, int]:
@@ -474,6 +756,28 @@ class HttpClient:
             url, allowed_hosts=allowed_hosts, max_bytes=MAX_IMAGE_BYTES,
         )
         return _raster_dimensions(payload)
+
+    def verify_mdpi_image(self, url: str) -> tuple[int, int]:
+        """Verify an exact MDPI raster, including URL, redirect, and MIME."""
+        if not _mdpi_asset_url(url):
+            raise MdpiImageValidationError(
+                "MDPI image URL is outside its exact asset path"
+            )
+        payload, media_type, final_url = self._get_bytes_response(
+            url, allowed_hosts={MDPI_ASSET_HOST}, max_bytes=MAX_IMAGE_BYTES,
+        )
+        if final_url != url or not _mdpi_asset_url(final_url):
+            raise MdpiImageValidationError(
+                "MDPI image redirected away from its exact asset URL"
+            )
+        if media_type not in MDPI_RASTER_MEDIA_TYPES.get(_suffix(url), set()):
+            raise MdpiImageValidationError(
+                "MDPI image response has an invalid media type"
+            )
+        try:
+            return _raster_dimensions(payload)
+        except FetchError as exc:
+            raise MdpiImageValidationError(str(exc)) from exc
 
     def verify_svg(self, url: str, *,
                    allowed_hosts: set[str]) -> tuple[int, int]:
@@ -943,6 +1247,163 @@ def select_pmc_figure(xml_text: str, media_urls: Iterable[object]) -> dict | Non
     return next(iter(select_pmc_figures(xml_text, media_urls)), None)
 
 
+def _direct_child(node: ET.Element | None, name: str) -> ET.Element | None:
+    if node is None:
+        return None
+    return next((child for child in node
+                 if _local_name(child.tag) == name), None)
+
+
+def _jats_article_meta(root: ET.Element) -> ET.Element | None:
+    return _direct_child(_direct_child(root, "front"), "article-meta")
+
+
+def _jats_article_dois(root: ET.Element) -> set[str]:
+    article_meta = _jats_article_meta(root)
+    return {
+        _node_text(node).lower()
+        for node in (article_meta or [])
+        if (_local_name(node.tag) == "article-id" and
+            str(node.attrib.get("pub-id-type") or "").lower() == "doi" and
+            _node_text(node))
+    }
+
+
+def _jats_mdpi_publisher(root: ET.Element) -> bool:
+    journal_meta = _direct_child(_direct_child(root, "front"), "journal-meta")
+    publisher = _direct_child(journal_meta, "publisher")
+    names = {
+        _node_text(node).strip().lower()
+        for node in (publisher or [])
+        if _local_name(node.tag) == "publisher-name" and _node_text(node)
+    }
+    return bool(names) and all(name in {"mdpi", "mdpi ag"} for name in names)
+
+
+def _jats_license_names(root: ET.Element) -> set[str] | None:
+    """Return one fully allowlisted licence set; omissions fail closed.
+
+    A present licence node fails closed unless every declared link is the same
+    exact allowlisted Creative Commons URL.  Older MDPI JATS legitimately uses
+    canonical HTTP CC links, and a small legacy subset has no ``href``; those
+    must contain exactly one complete CC URL in the licence prose.  Crossref's
+    authoritative layer remains HTTPS-only.
+    """
+    article_meta = _jats_article_meta(root)
+    permissions = _direct_child(article_meta, "permissions")
+    license_nodes = [node for node in (permissions or [])
+                     if _local_name(node.tag) == "license"]
+    if not license_nodes:
+        return set()
+    names = set()
+    for license_node in license_nodes:
+        license_text = _node_text(license_node)
+        if _jats_license_text_has_restrictions(license_text):
+            return set()
+        hrefs = []
+        for node in license_node.iter():
+            for key, value in node.attrib.items():
+                if key == "href" or key.endswith("}href"):
+                    hrefs.append(value)
+        text_urls = _text_http_urls(license_text)
+        declared_urls = hrefs if hrefs else text_urls
+        # A no-href legacy node must have exactly one complete URL.  When
+        # hrefs exist, prose URLs are corroborating declarations too and may
+        # not introduce another licence or unrelated destination.
+        if not declared_urls or (not hrefs and len(text_urls) != 1):
+            return set()
+        if hrefs:
+            declared_urls = hrefs + text_urls
+        node_names = set()
+        for href in declared_urls:
+            name = _creative_commons_license_url(href, allow_http=True)
+            if not name:
+                return set()
+            node_names.add(name)
+        if len(node_names) != 1:
+            return set()
+        names.update(node_names)
+    return names if len(names) == 1 else set()
+
+
+def select_mdpi_figures(xml_text: str, context: dict) -> tuple[list[dict], str]:
+    """Validate one exact MDPI JATS article and derive safe raster candidates.
+
+    Absolute or relative asset URLs from XML are never trusted.  Only a plain
+    ``{article-stem}-gNNN`` graphic filename is used to construct audited
+    browser-image locations under the same official article deployment.
+    """
+    try:
+        root = ET.fromstring(xml_text)
+    except ET.ParseError:
+        return [], "invalid_xml"
+    if (_local_name(root.tag) != "article" or
+            _jats_article_dois(root) != {str(context["doi"]).lower()} or
+            not _jats_mdpi_publisher(root)):
+        return [], "identity_mismatch"
+
+    jats_licenses = _jats_license_names(root)
+    if jats_licenses == set():
+        return [], "license_not_reusable"
+    if (jats_licenses is not None and
+            jats_licenses != {str(context.get("license_name") or "")}):
+        return [], "license_not_reusable"
+
+    ranked = []
+    stem = str(context["stem"])
+    slug = str(context["slug"])
+    graphic_pattern = re.compile(
+        rf"({re.escape(stem)}-g\d{{3}})\.(?:tiff?|png|jpe?g)",
+        flags=re.IGNORECASE,
+    )
+    for order, fig in enumerate(node for node in root.iter()
+                                if _local_name(node.tag) == "fig"):
+        caption_node = next((node for node in fig.iter()
+                             if _local_name(node.tag) == "caption"), None)
+        label_node = next((node for node in fig.iter()
+                           if _local_name(node.tag) == "label"), None)
+        caption = _node_text(caption_node)
+        label = _node_text(label_node)
+        if not visual_policy.has_reviewable_figure_caption(caption):
+            continue
+        if visual_policy.has_third_party_figure_rights(_node_text(fig)):
+            continue
+        href = _graphic_href(fig).strip()
+        match = graphic_pattern.fullmatch(href)
+        if not match:
+            continue
+        graphic_stem = match.group(1).lower()
+        kind = str(fig.attrib.get("fig-type") or "").lower()
+        figure_id = str(fig.attrib.get("id") or "").lower()
+        if looks_like_auxiliary_image(graphic_stem, label):
+            continue
+        if looks_like_decorative_image(
+                kind, figure_id, graphic_stem, label, caption):
+            continue
+        haystack = f"{kind} {figure_id} {label} {caption}".lower()
+        preferred = int(
+            "graphical abstract" in haystack or
+            "graphical-abstract" in haystack
+        )
+        base = (
+            f"{MDPI_ASSET_ROOT}/{slug}/{stem}/article_deploy/html/images/"
+            f"{graphic_stem}"
+        )
+        display_label = label or (
+            "Graphical abstract" if preferred else "Figure"
+        )
+        for format_order, image_url in enumerate((
+                f"{base}-550.jpg", f"{base}.png")):
+            if not _mdpi_asset_url(image_url, context):
+                continue
+            ranked.append((-preferred, order, format_order, {
+                "image_url": image_url,
+                "caption": caption,
+                "label": display_label,
+            }))
+    return [item for _preferred, _order, _format, item in sorted(ranked)], ""
+
+
 def _pmc_versions(list_xml: str, pmcid: str) -> list[str]:
     try:
         root = ET.fromstring(list_xml)
@@ -1303,6 +1764,34 @@ class VisualResolver:
             return candidate, width, height
         return None
 
+    def _verified_mdpi_candidate(
+            self, candidates: Iterable[dict]) -> tuple[dict, int, int] | None:
+        """Return the first card-sized MDPI raster within the shared budget."""
+        seen_urls = set()
+        checked = 0
+        for candidate in candidates:
+            image_url = str(candidate.get("image_url") or "")
+            if not image_url or image_url in seen_urls:
+                continue
+            seen_urls.add(image_url)
+            if checked >= MAX_IMAGE_CANDIDATES:
+                break
+            checked += 1
+            try:
+                width, height = self.client.verify_mdpi_image(image_url)
+            except MdpiImageValidationError:
+                # A 404/malformed body/wrong MIME/signature is deterministic
+                # for the derived format and may fall through to PNG/next fig.
+                continue
+            except FetchError as exc:
+                if _http_not_found(exc):
+                    continue
+                raise
+            if width * height < MIN_CARD_IMAGE_PIXELS:
+                continue
+            return candidate, width, height
+        return None
+
     def _pmcid(self, paper: dict) -> str:
         requested = str(paper.get("pmid") or "").strip()
         if not requested:
@@ -1465,6 +1954,103 @@ class VisualResolver:
             media_type=str(selected.get("media_type") or ""),
         )
 
+    def resolve_mdpi(self, paper: dict, checked_at: str) -> dict | None:
+        doi_context = _mdpi_doi_context(paper.get("doi"))
+        if doi_context is None:
+            return None
+        requested_doi = str(doi_context["doi"])
+        try:
+            metadata = self.client.get_crossref_work(requested_doi)
+        except FetchError as exc:
+            if _http_not_found(exc):
+                return _blank_visual(
+                    "not_found", checked_at=checked_at,
+                    reason="mdpi_metadata_not_available", provider="mdpi",
+                )
+            raise
+        if str(metadata.get("DOI") or "").strip().lower() != requested_doi:
+            return _blank_visual(
+                "not_found", checked_at=checked_at,
+                reason="mdpi_metadata_not_available", provider="mdpi",
+            )
+        publisher = " ".join(str(metadata.get("publisher") or "").split())
+        if publisher.lower() not in {"mdpi", "mdpi ag"}:
+            return _blank_visual(
+                "not_found", checked_at=checked_at,
+                reason="mdpi_metadata_not_available", provider="mdpi",
+            )
+
+        as_of = parse_timestamp(checked_at)
+        license_name = (
+            _crossref_vor_license_name(metadata, as_of)
+            if as_of is not None else ""
+        )
+        if not license_name:
+            return _blank_visual(
+                "blocked", checked_at=checked_at,
+                reason="mdpi_license_not_reusable",
+                provider="mdpi",
+            )
+        primary = metadata.get("resource") or {}
+        primary = primary.get("primary") if isinstance(primary, dict) else {}
+        source_url = primary.get("URL") if isinstance(primary, dict) else ""
+        context = _mdpi_source_context(source_url, doi_context)
+        if context is None:
+            return _blank_visual(
+                "not_found", checked_at=checked_at,
+                reason="mdpi_metadata_not_available",
+                license_name=license_name, provider="mdpi",
+            )
+        context["license_name"] = license_name
+
+        xml_url = _mdpi_xml_url(context)
+        try:
+            xml_text = self.client.get_mdpi_xml(xml_url)
+        except FetchError as exc:
+            if _http_not_found(exc):
+                return _blank_visual(
+                    "not_found", checked_at=checked_at,
+                    reason="mdpi_jats_not_available",
+                    license_name=license_name, provider="mdpi",
+                )
+            raise
+        candidates, rejection = select_mdpi_figures(xml_text, context)
+        if rejection == "license_not_reusable":
+            return _blank_visual(
+                "blocked", checked_at=checked_at,
+                reason="mdpi_license_not_reusable",
+                license_name=license_name, provider="mdpi",
+            )
+        if rejection in {"invalid_xml", "identity_mismatch"}:
+            return _blank_visual(
+                "not_found", checked_at=checked_at,
+                reason="mdpi_jats_not_available",
+                license_name=license_name, provider="mdpi",
+            )
+        if not candidates:
+            return _blank_visual(
+                "not_found", checked_at=checked_at,
+                reason="mdpi_no_reusable_figure",
+                license_name=license_name, provider="mdpi",
+            )
+        verified = self._verified_mdpi_candidate(candidates)
+        if not verified:
+            return _blank_visual(
+                "not_found", checked_at=checked_at,
+                reason="mdpi_no_card_sized_figure",
+                license_name=license_name, provider="mdpi",
+            )
+        selected, width, height = verified
+        return _available_visual(
+            checked_at=checked_at, image_url=selected["image_url"],
+            caption=selected["caption"],
+            source_label=f"MDPI · {selected['label']}",
+            source_url=str(context["source_url"]),
+            license_name=license_name,
+            alt=selected["caption"] or paper.get("title") or "MDPI 论文插图",
+            provider="mdpi", width=width, height=height,
+        )
+
     def resolve(self, paper: dict, *, now: dt.datetime | None = None) -> dict:
         checked_at = iso_z(now or utc_now())
         # PMC has structured media, figure captions, and article-level licence
@@ -1484,6 +2070,9 @@ class VisualResolver:
             errors.append(f"arxiv: {exc}")
         if arxiv is not None and arxiv.get("status") == "available":
             return arxiv
+        # Preserve the complete PMC/arXiv result precedence.  MDPI is a
+        # deliberately narrow extension of the former source-less branch,
+        # never an override for an existing provider result or error.
         if pmc is not None and pmc.get("status") == "blocked":
             return pmc
         if arxiv is not None:
@@ -1495,6 +2084,15 @@ class VisualResolver:
                 "error", checked_at=checked_at,
                 reason="; ".join(errors)[:240],
             )
+        try:
+            mdpi = self.resolve_mdpi(paper, checked_at)
+        except FetchError as exc:
+            return _blank_visual(
+                "error", checked_at=checked_at,
+                reason=f"mdpi: {exc}"[:240], provider="mdpi",
+            )
+        if mdpi is not None:
+            return mdpi
         return _blank_visual(
             "not_found", checked_at=checked_at,
             reason="no_supported_public_figure_source",
@@ -1540,7 +2138,10 @@ def should_refresh(record: object, *, now: dt.datetime | None = None,
             record.get("reason") in {
                 "arxiv_html_no_reusable_figure",
                 "arxiv_no_card_sized_figure",
-            } and record.get("selector_version") != SELECTOR_VERSION):
+            } and (
+                not isinstance(record.get("selector_version"), int) or
+                record.get("selector_version") < ARXIV_SVG_SELECTOR_VERSION
+            )):
         # Selector v8 adds independently hosted, strictly validated SVG
         # objects.  Retry each old arXiv negative once without waiting for its
         # 30-day TTL; the refreshed blank also records v8 and resumes caching.
@@ -1783,7 +2384,18 @@ def enrich(*, daily_dir: Path, index_path: Path, resolver: VisualResolver,
             cached.get("status") == "not_found" and
             cached.get("reason") == "no_supported_public_figure_source"
         )
-        if cached is not None and not newly_resolvable_negative:
+        newly_supported_mdpi = (
+            cached is not None and
+            cached.get("status") == "not_found" and
+            cached.get("reason") == "no_supported_public_figure_source" and
+            _mdpi_doi_context(paper.get("doi")) is not None and
+            (
+                not isinstance(cached.get("selector_version"), int) or
+                cached.get("selector_version") < MDPI_SELECTOR_VERSION
+            )
+        )
+        if (cached is not None and not newly_resolvable_negative and
+                not newly_supported_mdpi):
             dirty = _store_aliases(records, aliases, cached) or dirty
             continue
         if attempted >= limit:
