@@ -31,117 +31,6 @@
     return node;
   }
 
-  function addTextRow(parent, label, value) {
-    if (!value) return;
-    var row = element("div", "");
-    row.appendChild(element("b", "", label + "· "));
-    row.appendChild(document.createTextNode(value));
-    parent.appendChild(row);
-  }
-
-  function buildTools(record) {
-    var tools = element("div", "rui-card-tools");
-    var group = element("span", "rui-mark-group");
-    group.appendChild(element("b", "", "标记："));
-    [
-      ["to-read", "待阅读"], ["read", "已阅读"],
-      ["interesting", "有启发"], ["ignore", "忽略"]
-    ].forEach(function (item) {
-      var label = element("label", "m-" + item[0]);
-      var radio = element("input", "rui-mark-radio");
-      radio.type = "radio";
-      radio.name = "rui-mark-" + record.anchor;
-      radio.value = item[0];
-      label.appendChild(radio);
-      label.appendChild(document.createTextNode(item[1]));
-      group.appendChild(label);
-    });
-    tools.appendChild(group);
-
-    var noteButton = element("button", "rui-note-btn", "笔记");
-    noteButton.type = "button";
-    tools.appendChild(noteButton);
-    var promoteButton = element("button", "rui-promote-btn", "发送到 lit-system");
-    promoteButton.type = "button";
-    tools.appendChild(promoteButton);
-
-    var noteWrap = element("div", "rui-note-wrap");
-    var textarea = element("textarea", "rui-note-ta");
-    textarea.placeholder = "私人笔记（失焦自动保存，仅限当前浏览器）";
-    noteWrap.appendChild(textarea);
-    tools.appendChild(noteWrap);
-    return tools;
-  }
-
-  function buildCard(record) {
-    var card = element("article", "paper");
-    card.id = record.anchor;
-    card.dataset.identityKey = record.identity_key || "";
-    card.dataset.direction = record.direction || "";
-    card.dataset.priority = record.priority || "";
-    card.dataset.title = record.title || "";
-    card.dataset.date = record.date || "";
-
-    card.appendChild(element("h3", "paper-title", record.title || "Untitled"));
-    var head = element("div", "paper-head");
-    head.appendChild(element("span", "priority priority--" +
-      String(record.priority || "low").toLowerCase(), record.priority));
-    var direction = element("span", "direction-pill", record.direction_name || record.direction);
-    if (/^#[0-9a-f]{6}$/i.test(record.direction_color || "")) {
-      direction.style.color = record.direction_color;
-      direction.style.backgroundColor = record.direction_color + "20";
-    }
-    head.appendChild(direction);
-    if (record.relevance_level) {
-      head.appendChild(element("span", "relevance-level lvl-" +
-        record.relevance_level.toLowerCase(), record.relevance_level));
-    }
-    if (record.read_action) {
-      head.appendChild(element("span", "read-action", record.read_action));
-    }
-    card.appendChild(head);
-
-    var meta = element("div", "meta");
-    var authors = (record.authors || []).join(", ");
-    [authors, record.venue, record.date, record.source].filter(Boolean)
-      .forEach(function (value) { meta.appendChild(element("span", "", value)); });
-    card.appendChild(meta);
-
-    if (record.relevance_to_user) {
-      var relevance = element("div", "relevance");
-      relevance.appendChild(element("b", "", "相关性："));
-      relevance.appendChild(document.createTextNode(record.relevance_to_user));
-      card.appendChild(relevance);
-    }
-    if (record.why_not_core) {
-      var boundary = element("div", "why-not-core");
-      boundary.appendChild(element("b", "", "边界："));
-      boundary.appendChild(document.createTextNode(record.why_not_core));
-      card.appendChild(boundary);
-    }
-
-    var summary = element("div", "summary");
-    var zh = record.summary_zh || {};
-    addTextRow(summary, "动机", zh.motivation);
-    addTextRow(summary, "方法", zh.method);
-    addTextRow(summary, "结果", zh.result);
-    addTextRow(summary, "验证", zh.validation);
-    card.appendChild(summary);
-
-    if ((record.tags || []).length) {
-      var tags = element("div", "tags-row");
-      record.tags.forEach(function (tag) {
-        tags.appendChild(element("span", "tag", tag));
-      });
-      card.appendChild(tags);
-    }
-    var sourceLink = element("a", "rui-link-tool", "打开发表日期页 →");
-    sourceLink.href = record.date + ".html#" + record.anchor;
-    card.appendChild(sourceLink);
-    card.appendChild(buildTools(record));
-    return card;
-  }
-
   function yearsForPriority() {
     if (!manifest) return [];
     var info = manifest.priorities[state.priority] || { years: {} };
@@ -227,7 +116,9 @@
     var start = (state.page - 1) * PAGE_SIZE;
     var fragment = document.createDocumentFragment();
     filtered.slice(start, start + PAGE_SIZE).forEach(function (record) {
-      fragment.appendChild(buildCard(record));
+      fragment.appendChild(window.RadarCard.buildCard(record, {
+        dailyLink: true
+      }));
     });
     results.replaceChildren(fragment);
     if (window.RadarUI && window.RadarUI.hydrate) {
@@ -381,6 +272,11 @@
         status.textContent = error.message;
         renderPagination(knownFilteredTotal() || 0);
       });
+  }
+
+  if (!window.RadarCard || !window.RadarCard.buildCard) {
+    status.textContent = "卡片组件加载失败，请刷新页面重试。";
+    return;
   }
 
   fetch("queue-manifest.json")
