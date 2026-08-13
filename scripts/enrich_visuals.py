@@ -19,9 +19,12 @@ Usage::
 from __future__ import annotations
 
 import argparse
+import base64
+import binascii
 import datetime as dt
 from html.parser import HTMLParser
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -41,16 +44,27 @@ DEFAULT_DAILY_DIR = ROOT / "data" / "daily"
 DEFAULT_INDEX_PATH = ROOT / "data" / "visuals" / "index.json"
 
 SCHEMA_VERSION = "v1"
-SELECTOR_VERSION = 7
+SELECTOR_VERSION = 8
+# v8 adds an SVG-only fallback and deliberately leaves v7 raster selection
+# unchanged.  Existing v7 available records therefore remain current and do
+# not spend network quota merely because the fallback version advanced.
+MIN_CURRENT_AVAILABLE_SELECTOR_VERSION = 7
 DEFAULT_LIMIT = 20
 DEFAULT_TIMEOUT_SECONDS = 12.0
 DEFAULT_MIN_DELAY_SECONDS = 0.5
 MAX_METADATA_BYTES = 8 * 1024 * 1024
 MAX_IMAGE_BYTES = 8 * 1024 * 1024
+MAX_SVG_BYTES = 2 * 1024 * 1024
 MAX_IMAGE_CANDIDATES = 6
 MIN_CARD_IMAGE_PIXELS = 4096
 MAX_IMAGE_DIMENSION = 100_000
+MAX_SVG_ELEMENTS = 20_000
+MAX_SVG_ATTRIBUTES = 100_000
+MAX_SVG_DEPTH = 64
+MAX_SVG_EMBEDDED_IMAGES = 32
+MAX_SVG_EMBEDDED_RASTER_PIXELS = 100_000_000
 IMAGE_SUFFIXES = {".gif", ".jpeg", ".jpg", ".png", ".webp"}
+SVG_MEDIA_TYPE = "image/svg+xml"
 ALLOWED_LICENSES = {"CC0", "CC BY", "CC BY-SA"}
 
 ID_CONVERTER_URL = (
@@ -78,6 +92,10 @@ AUXILIARY_IMAGE_TOKENS = {
 
 class FetchError(RuntimeError):
     """A bounded remote-fetch failure suitable for negative caching."""
+
+
+class SvgValidationError(FetchError):
+    """A deterministic SVG policy rejection which may try another figure."""
 
 
 def utc_now() -> dt.datetime:
@@ -312,6 +330,7 @@ def _blank_visual(status: str, *, checked_at: str, reason: str = "",
         "width": None,
         "height": None,
         "checked_at": checked_at,
+        "selector_version": SELECTOR_VERSION,
     }
     if reason:
         result["reason"] = reason
@@ -324,8 +343,9 @@ def _available_visual(*, checked_at: str, image_url: str, caption: str,
                       source_label: str, source_url: str,
                       license_name: str, alt: str, provider: str,
                       width: int | None = None,
-                      height: int | None = None) -> dict:
-    return {
+                      height: int | None = None,
+                      media_type: str = "") -> dict:
+    result = {
         "status": "available",
         "image_url": image_url,
         "caption": _truncate_text(caption, 1200),
@@ -339,6 +359,9 @@ def _available_visual(*, checked_at: str, image_url: str, caption: str,
         "provider": provider,
         "selector_version": SELECTOR_VERSION,
     }
+    if media_type:
+        result["media_type"] = media_type
+    return result
 
 
 class HttpClient:
@@ -363,8 +386,12 @@ class HttpClient:
         if remaining > 0:
             time.sleep(remaining)
 
-    def get_bytes(self, url: str, *, params: dict | None = None,
-                  allowed_hosts: set[str], max_bytes: int = MAX_METADATA_BYTES) -> bytes:
+    def _get_bytes_response(
+            self, url: str, *, params: dict | None = None,
+            allowed_hosts: set[str],
+            max_bytes: int = MAX_METADATA_BYTES,
+    ) -> tuple[bytes, str, str]:
+        """Return bounded bytes, response media type, and final URL."""
         if params:
             separator = "&" if "?" in url else "?"
             url = f"{url}{separator}{urlencode(params, doseq=True)}"
@@ -388,12 +415,15 @@ class HttpClient:
                     declared = response.headers.get("Content-Length")
                     if declared and int(declared) > max_bytes:
                         raise FetchError("provider response exceeded size limit")
+                    media_type = str(
+                        response.headers.get("Content-Type") or ""
+                    ).split(";", 1)[0].strip().lower()
                     payload = response.read(max_bytes + 1)
                 finally:
                     response.close()
                 if len(payload) > max_bytes:
                     raise FetchError("provider response exceeded size limit")
-                return payload
+                return payload, media_type, final.geturl()
             except urllib.error.HTTPError as exc:
                 self._last_request_at = time.monotonic()
                 last_error = f"HTTP {exc.code}"
@@ -409,6 +439,15 @@ class HttpClient:
                     break
                 time.sleep(min(2.0, 0.5 * (2 ** attempt)))
         raise FetchError(last_error)
+
+    def get_bytes(self, url: str, *, params: dict | None = None,
+                  allowed_hosts: set[str],
+                  max_bytes: int = MAX_METADATA_BYTES) -> bytes:
+        payload, _media_type, _final_url = self._get_bytes_response(
+            url, params=params, allowed_hosts=allowed_hosts,
+            max_bytes=max_bytes,
+        )
+        return payload
 
     def get_json(self, url: str, *, params: dict | None = None,
                  allowed_hosts: set[str]) -> dict:
@@ -435,6 +474,25 @@ class HttpClient:
             url, allowed_hosts=allowed_hosts, max_bytes=MAX_IMAGE_BYTES,
         )
         return _raster_dimensions(payload)
+
+    def verify_svg(self, url: str, *,
+                   allowed_hosts: set[str]) -> tuple[int, int]:
+        """Fetch and strictly validate one bounded, passive arXiv SVG."""
+        if allowed_hosts != {"arxiv.org"} or not _arxiv_svg_url(url):
+            raise SvgValidationError("SVG URL is outside the arXiv HTML asset path")
+        payload, media_type, final_url = self._get_bytes_response(
+            url, allowed_hosts=allowed_hosts, max_bytes=MAX_SVG_BYTES,
+        )
+        if (not _arxiv_svg_url(final_url) or
+                _arxiv_html_work_id(final_url) != _arxiv_html_work_id(url)):
+            raise SvgValidationError(
+                "SVG redirected outside its arXiv HTML work path"
+            )
+        if media_type != SVG_MEDIA_TYPE:
+            raise SvgValidationError(
+                "provider SVG response has an invalid media type"
+            )
+        return _svg_dimensions(payload)
 
 
 def _valid_image_dimensions(width: int, height: int) -> tuple[int, int]:
@@ -549,6 +607,237 @@ def _raster_dimensions(payload: bytes) -> tuple[int, int]:
             payload[8:12] == b"WEBP"):
         return _webp_dimensions(payload)
     raise FetchError("provider image response has an invalid signature")
+
+
+def _arxiv_svg_url(value: object) -> str:
+    """Return an exact passive-asset URL under ``https://arxiv.org/html/``.
+
+    SVG gets a narrower boundary than ordinary links because the browser will
+    parse it as an image document.  User-info, ports, queries, fragments,
+    encoded path components, traversal, and non-HTML arXiv endpoints all fail
+    closed.  Relative references are resolved before reaching this helper.
+    """
+    raw = str(value or "").strip()
+    parsed = urlparse(raw)
+    path = parsed.path
+    asset_path = path[len("/html/"):] if path.startswith("/html/") else ""
+    versioned_id = bool(re.fullmatch(
+        r"(?:\d{4}\.\d{4,5}v[1-9]\d*|"
+        r"[a-z][a-z0-9.-]*/\d{7}v[1-9]\d*)/.+\.svg",
+        asset_path,
+        flags=re.IGNORECASE,
+    ))
+    if (parsed.scheme != "https" or parsed.netloc.lower() != "arxiv.org" or
+            parsed.query or parsed.fragment or not versioned_id or
+            not path.lower().endswith(".svg") or "%" in path or
+            "\\" in path or any(
+                part in {"", ".", ".."} for part in asset_path.split("/")
+            )):
+        return ""
+    return parsed.geturl()
+
+
+def _arxiv_html_work_id(value: object) -> str:
+    """Return the normalized work id from an arXiv HTML page or asset."""
+    parsed = urlparse(str(value or "").strip())
+    if (parsed.scheme != "https" or parsed.netloc.lower() != "arxiv.org" or
+            not parsed.path.startswith("/html/")):
+        return ""
+    relative = parsed.path[len("/html/"):]
+    match = re.match(
+        r"(?P<id>\d{4}\.\d{4,5}(?:v[1-9]\d*)?|"
+        r"[a-z][a-z0-9.-]*/\d{7}(?:v[1-9]\d*)?)(?:/|$)",
+        relative,
+        flags=re.IGNORECASE,
+    )
+    if not match:
+        return ""
+    return re.sub(r"v\d+$", "", match.group("id"), flags=re.IGNORECASE).lower()
+
+
+def _svg_length(value: object) -> float:
+    """Parse one finite absolute SVG length into CSS reference pixels."""
+    raw = str(value or "").strip().lower()
+    match = re.fullmatch(
+        r"([+]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?)"
+        r"(px|pt|pc|in|cm|mm|q)?",
+        raw,
+    )
+    if not match:
+        return 0.0
+    number = float(match.group(1))
+    scale = {
+        "": 1.0, "px": 1.0, "pt": 96 / 72, "pc": 16.0,
+        "in": 96.0, "cm": 96 / 2.54, "mm": 96 / 25.4,
+        "q": 96 / 101.6,
+    }[match.group(2) or ""]
+    pixels = number * scale
+    return pixels if math.isfinite(pixels) and pixels > 0 else 0.0
+
+
+def _svg_viewbox_dimensions(value: object) -> tuple[float, float]:
+    raw = str(value or "").strip()
+    parts = [part for part in re.split(r"[\s,]+", raw) if part]
+    if len(parts) != 4:
+        return 0.0, 0.0
+    try:
+        numbers = [float(part) for part in parts]
+    except ValueError:
+        return 0.0, 0.0
+    if not all(math.isfinite(number) for number in numbers):
+        return 0.0, 0.0
+    width, height = numbers[2:]
+    return (width, height) if width > 0 and height > 0 else (0.0, 0.0)
+
+
+def _embedded_raster(value: str) -> tuple[int, int]:
+    """Validate a base64 raster data URI without allowing nested SVG."""
+    match = re.fullmatch(
+        r"data:(image/(?:png|jpeg|gif|webp));base64,([A-Za-z0-9+/=\s]+)",
+        value,
+        flags=re.IGNORECASE,
+    )
+    if not match:
+        raise SvgValidationError("SVG contains a non-raster data reference")
+    encoded = re.sub(r"\s+", "", match.group(2))
+    try:
+        payload = base64.b64decode(encoded, validate=True)
+    except (ValueError, binascii.Error) as exc:
+        raise SvgValidationError("SVG contains invalid base64 raster data") from exc
+    try:
+        dimensions = _raster_dimensions(payload)
+    except FetchError as exc:
+        raise SvgValidationError("SVG contains invalid embedded raster data") from exc
+    if dimensions[0] * dimensions[1] > MAX_SVG_EMBEDDED_RASTER_PIXELS:
+        raise SvgValidationError("SVG embedded raster exceeds the pixel limit")
+    declared = match.group(1).lower()
+    signature_type = (
+        "image/png" if payload.startswith(b"\x89PNG\r\n\x1a\n") else
+        "image/gif" if payload.startswith((b"GIF87a", b"GIF89a")) else
+        "image/jpeg" if payload.startswith(b"\xff\xd8\xff") else
+        "image/webp"
+    )
+    if declared != signature_type:
+        raise SvgValidationError("SVG embedded raster media type is misleading")
+    return dimensions
+
+
+def _svg_dimensions(payload: bytes) -> tuple[int, int]:
+    """Validate passive SVG XML and return bounded intrinsic dimensions."""
+    try:
+        decoded = payload.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise SvgValidationError("provider SVG response is not UTF-8 XML") from exc
+    if decoded.startswith("\ufeff"):
+        raise SvgValidationError("provider SVG response has a byte-order mark")
+    declaration = re.match(r"\s*<\?xml\s+([^?]+)\?>", decoded,
+                           flags=re.IGNORECASE)
+    if declaration:
+        encoding = re.search(
+            r"\bencoding\s*=\s*(['\"])([^'\"]+)\1",
+            declaration.group(1),
+            flags=re.IGNORECASE,
+        )
+        if encoding and encoding.group(2).lower().replace("_", "-") not in {
+                "utf-8", "utf8"}:
+            raise SvgValidationError("provider SVG declares a non-UTF-8 encoding")
+    upper = payload.upper()
+    if (b"<!DOCTYPE" in upper or b"<!ENTITY" in upper or
+            b"<?XML-STYLESHEET" in upper):
+        raise SvgValidationError("SVG contains a forbidden XML declaration")
+    try:
+        root = ET.fromstring(payload)
+    except ET.ParseError as exc:
+        raise SvgValidationError("provider SVG response has invalid XML") from exc
+    if root.tag != "{http://www.w3.org/2000/svg}svg":
+        raise SvgValidationError("provider SVG response has a non-SVG root")
+
+    active_elements = {
+        "script", "foreignobject", "iframe", "object", "embed", "audio",
+        "video", "canvas", "animate", "animatecolor", "animatemotion",
+        "animatetransform", "set", "discard", "handler", "style",
+    }
+    element_count = 0
+    attribute_count = 0
+    embedded_images = 0
+    stack = [(root, 1)]
+    while stack:
+        node, depth = stack.pop()
+        element_count += 1
+        attribute_count += len(node.attrib)
+        if (element_count > MAX_SVG_ELEMENTS or
+                attribute_count > MAX_SVG_ATTRIBUTES or
+                depth > MAX_SVG_DEPTH):
+            raise SvgValidationError("SVG exceeds the complexity limit")
+        tag = _local_name(node.tag)
+        if tag in active_elements:
+            raise SvgValidationError("SVG contains active content")
+        for raw_name, raw_value in node.attrib.items():
+            name = _local_name(raw_name)
+            value = str(raw_value or "").strip()
+            lower = value.lower()
+            if name.startswith("on"):
+                raise SvgValidationError("SVG contains an event handler")
+            if name == "base":
+                raise SvgValidationError("SVG contains an XML base URL")
+            if name in {"href", "src"} and value:
+                if value.startswith("#") and re.fullmatch(
+                        r"#[A-Za-z_][A-Za-z0-9_.:-]*", value):
+                    pass
+                elif name == "href" and tag == "image" and lower.startswith(
+                        "data:image/"
+                ):
+                    embedded_images += 1
+                    if embedded_images > MAX_SVG_EMBEDDED_IMAGES:
+                        raise SvgValidationError(
+                            "SVG contains too many embedded raster images"
+                        )
+                    _embedded_raster(value)
+                else:
+                    raise SvgValidationError("SVG contains an external reference")
+            if ("javascript:" in lower or "vbscript:" in lower or
+                    "@import" in lower or "expression(" in lower):
+                raise SvgValidationError("SVG contains active CSS or a script URL")
+            if (name not in {"href", "src"} and
+                    ("\\" in value or "/*" in value or "*/" in value or
+                     re.search(r"(?:https?:|data:|//)", lower))):
+                raise SvgValidationError("SVG contains an obfuscated reference")
+            if name == "style" and (
+                    "\\" in value or "@" in value or
+                    re.search(r"(?:https?:|data:|//)", lower)):
+                raise SvgValidationError("SVG contains non-passive inline CSS")
+            for reference in re.findall(
+                    r"url\(\s*['\"]?([^)'\"]+)['\"]?\s*\)", value,
+                    flags=re.IGNORECASE):
+                if not re.fullmatch(
+                        r"#[A-Za-z_][A-Za-z0-9_.:-]*", reference.strip()):
+                    raise SvgValidationError("SVG contains an external CSS reference")
+        stack.extend((child, depth + 1) for child in node)
+
+    raw_width = root.attrib.get("width")
+    raw_height = root.attrib.get("height")
+    has_width = raw_width is not None and str(raw_width).strip() != ""
+    has_height = raw_height is not None and str(raw_height).strip() != ""
+    if has_width != has_height:
+        raise SvgValidationError("provider SVG response has invalid dimensions")
+    if has_width:
+        width = _svg_length(raw_width)
+        height = _svg_length(raw_height)
+        # An explicitly invalid intrinsic size must not silently borrow a
+        # valid viewBox.  That would turn zero, negative, relative, or
+        # malformed author geometry into an apparently usable card asset.
+        if not width or not height:
+            raise SvgValidationError("provider SVG response has invalid dimensions")
+    else:
+        width, height = _svg_viewbox_dimensions(root.attrib.get("viewBox"))
+    if (not width or not height or width > MAX_IMAGE_DIMENSION or
+            height > MAX_IMAGE_DIMENSION):
+        raise SvgValidationError("provider SVG response has invalid dimensions")
+    rounded_width = round(width)
+    rounded_height = round(height)
+    if rounded_width <= 0 or rounded_height <= 0:
+        raise SvgValidationError("provider SVG response has invalid dimensions")
+    return _valid_image_dimensions(rounded_width, rounded_height)
 
 
 def _local_name(tag: str) -> str:
@@ -731,14 +1020,26 @@ class ArxivFigureParser(HTMLParser):
             media_type = (attributes.get("type") or "").lower()
             if data and (media_type.startswith("image/") or
                          _suffix(data) == ".svg"):
-                # SVG objects are not exposed by the raster-only card
-                # contract.  Their declared geometry is still useful evidence
-                # that a nearby tiny raster is merely a colorbar/legend for a
-                # more complete scientific panel in the same outer figure.
+                context = " ".join(
+                    f"{item['class']} {item['id']}"
+                    for item in self.figure_contexts
+                ).lower()
+                object_label = " ".join(
+                    " ".join(str(attributes.get(name) or "").split())
+                    for name in ("title", "aria-label")
+                    if str(attributes.get(name) or "").strip()
+                )
                 self.current["graphics"].append({
                     "kind": "object", "src": data,
+                    "alt": object_label,
                     "width": attributes.get("width") or "",
                     "height": attributes.get("height") or "",
+                    "graphic_order": len(self.current["graphics"]),
+                    "is_subfigure": bool(re.search(
+                        r"(?:^|[\s_.-])(?:subfig(?:ure)?|figure_panel|panel)"
+                        r"(?:$|[\s_.-])",
+                        context,
+                    )),
                 })
         if self.depth and tag == "figcaption":
             self.caption_depth += 1
@@ -815,10 +1116,11 @@ def _looks_like_geometric_auxiliary(
 
 
 def select_arxiv_figures(html_text: str, page_url: str) -> list[dict]:
-    """Return one safe raster candidate per outer figure, preference first."""
+    """Return safe arXiv candidates with every raster ahead of SVG fallback."""
     parser = ArxivFigureParser()
     parser.feed(html_text)
-    safe = []
+    raster_safe = []
+    svg_safe = []
     for order, figure in enumerate(parser.figures):
         # LaTeXML represents semantic tables as outer ``figure`` elements.
         # Raster thumbnails inside their cells inherit the Table caption but
@@ -831,10 +1133,25 @@ def select_arxiv_figures(html_text: str, page_url: str) -> list[dict]:
         caption = figure.get("caption") or ""
         if not visual_policy.has_reviewable_figure_caption(caption):
             continue
+        figure_text = str(figure.get("figure_text") or "")
+        object_labels = tuple(
+            str(graphic.get("alt") or "")
+            for graphic in figure.get("graphics") or []
+            if graphic.get("kind") == "object"
+        )
         if visual_policy.has_third_party_figure_rights(
-                figure.get("figure_text"), *(image.get("alt") for image in
-                           figure.get("images") or [])):
+                figure_text, *(image.get("alt") for image in
+                               figure.get("images") or [])):
             continue
+        # Object-only labels did not participate in v7 raster selection.
+        # Keep them scoped to the SVG fallback so a risky SVG sibling cannot
+        # remove an otherwise eligible, previously selected raster figure.
+        svg_rights_risk = (
+            visual_policy.has_third_party_figure_rights(*object_labels) or
+            any(re.search(
+                r"\badopted\s+from\b", value, flags=re.IGNORECASE,
+            ) for value in (figure_text, *object_labels))
+        )
         images = []
         for image_order, image in enumerate(figure.get("images") or []):
             image_url = _https_url(
@@ -861,25 +1178,81 @@ def select_arxiv_figures(html_text: str, page_url: str) -> list[dict]:
                 "is_subfigure": bool(image.get("is_subfigure")),
                 "order": image_order,
             })
-        if not images:
-            continue
-
-        # A standalone non-panel image represents the complete figure and is
-        # preferred over nested panels.  If an author supplies only panels,
-        # retain the first eligible panel in document order rather than making
-        # a size-based semantic guess.  Single images always remain eligible
-        # regardless of their generated class names.
-        full_images = [image for image in images if not image["is_subfigure"]]
-        pool = full_images or images
-        selected = min(pool, key=lambda image: image["order"])
         haystack = f"{figure.get('class', '')} {caption}".lower()
         preferred = int("graphical abstract" in haystack)
-        safe.append((-preferred, order, {
-            "image_url": selected["image_url"],
-            "caption": caption,
-            "alt": selected["alt"],
-        }))
-    return [candidate for _rank, _order, candidate in sorted(safe)]
+        if images:
+            # A standalone non-panel image represents the complete figure and
+            # is preferred over nested panels.  If an author supplies only
+            # panels, retain the first eligible panel in document order.
+            full_images = [
+                image for image in images if not image["is_subfigure"]
+            ]
+            pool = full_images or images
+            selected = min(pool, key=lambda image: image["order"])
+            raster_safe.append((-preferred, order, {
+                "image_url": selected["image_url"],
+                "caption": caption,
+                "alt": selected["alt"],
+            }))
+
+        svg_objects = []
+        if svg_rights_risk:
+            continue
+        page_work_id = _arxiv_html_work_id(page_url)
+        for graphic_order, graphic in enumerate(figure.get("graphics") or []):
+            if graphic.get("kind") != "object":
+                continue
+            raw_src = str(graphic.get("src") or "")
+            # LaTeXML usually emits a version-prefixed path, for which arXiv's
+            # HTML URL behaves file-like.  A few pages emit a plain relative
+            # object path; only for SVG, retry against the versioned paper
+            # directory.  Raster resolution above remains byte-for-byte v7.
+            image_url = _arxiv_svg_url(urljoin(page_url, raw_src))
+            if not image_url:
+                image_url = _arxiv_svg_url(urljoin(
+                    f"{page_url.rstrip('/')}/", raw_src,
+                ))
+            if (not image_url or not page_work_id or
+                    _arxiv_html_work_id(image_url) != page_work_id):
+                continue
+            if looks_like_auxiliary_image(image_url):
+                continue
+            svg_graphic = dict(graphic)
+            svg_graphic.setdefault("graphic_order", graphic_order)
+            if _looks_like_geometric_auxiliary(
+                    svg_graphic, figure.get("graphics") or []):
+                continue
+            if looks_like_decorative_image(_basename(image_url), caption):
+                continue
+            svg_objects.append({
+                "image_url": image_url,
+                "is_subfigure": bool(graphic.get("is_subfigure")),
+                "order": graphic_order,
+            })
+        if svg_objects:
+            full_objects = [
+                graphic for graphic in svg_objects
+                if not graphic["is_subfigure"]
+            ]
+            pool = full_objects or svg_objects
+            selected = min(pool, key=lambda graphic: graphic["order"])
+            svg_safe.append((-preferred, order, {
+                "image_url": selected["image_url"],
+                "caption": caption,
+                "alt": caption,
+                "media_type": SVG_MEDIA_TYPE,
+            }))
+
+    # Raster behavior remains the first choice.  SVG is reached only when all
+    # earlier raster candidates are too small or absent, within the same
+    # six-fetch budget enforced by the resolver.
+    ranked_rasters = [
+        candidate for _rank, _order, candidate in sorted(raster_safe)
+    ]
+    ranked_svgs = [
+        candidate for _rank, _order, candidate in sorted(svg_safe)
+    ]
+    return ranked_rasters + ranked_svgs
 
 
 def select_arxiv_figure(html_text: str, page_url: str) -> dict | None:
@@ -906,11 +1279,25 @@ class VisualResolver:
             if checked >= MAX_IMAGE_CANDIDATES:
                 break
             checked += 1
-            # Do not catch FetchError here: transport or malformed-response
-            # failures remain transient errors and preserve last-known-good.
-            width, height = self.client.verify_image(
-                image_url, allowed_hosts=allowed_hosts,
-            )
+            # Transport, HTTP, and response-size failures remain transient and
+            # preserve last-known-good.  A fully downloaded SVG that fails the
+            # passive-content policy is deterministic and may fall through to
+            # the next candidate.
+            try:
+                if candidate.get("media_type") == SVG_MEDIA_TYPE:
+                    width, height = self.client.verify_svg(
+                        image_url, allowed_hosts=allowed_hosts,
+                    )
+                else:
+                    width, height = self.client.verify_image(
+                        image_url, allowed_hosts=allowed_hosts,
+                    )
+            except SvgValidationError:
+                # Active, externally-referencing, malformed, or otherwise
+                # non-passive SVG is a deterministic candidate rejection.
+                # Network/HTTP/size failures remain ordinary FetchError and
+                # still preserve last-known-good through the outer resolver.
+                continue
             if width * height < MIN_CARD_IMAGE_PIXELS:
                 continue
             return candidate, width, height
@@ -1013,6 +1400,11 @@ class VisualResolver:
         if not raw_id:
             return None
         base_id = re.sub(r"v\d+$", "", raw_id, flags=re.IGNORECASE)
+        versioned_id = raw_id if re.fullmatch(
+            r"(?:\d{4}\.\d{4,5}|[a-z][a-z0-9.-]*/\d{7})v[1-9]\d*",
+            raw_id,
+            flags=re.IGNORECASE,
+        ) else ""
         oai = self.client.get_text(
             ARXIV_OAI_URL,
             params={
@@ -1038,7 +1430,10 @@ class VisualResolver:
                 reason="arxiv_license_not_reusable", license_name=license_name,
                 provider="arxiv",
             )
-        page_url = f"https://arxiv.org/html/{base_id}"
+        # Pin official HTML assets to a paper version when the corpus supplies
+        # one.  Unversioned records retain raster behavior, while the strict
+        # SVG boundary rejects their unstable relative object URLs.
+        page_url = f"https://arxiv.org/html/{versioned_id or base_id}"
         html_text = self.client.get_text(
             page_url, allowed_hosts={"arxiv.org"},
         )
@@ -1067,6 +1462,7 @@ class VisualResolver:
             alt=selected.get("alt") or selected["caption"] or
                 paper.get("title") or "arXiv 论文插图",
             provider="arxiv", width=width, height=height,
+            media_type=str(selected.get("media_type") or ""),
         )
 
     def resolve(self, paper: dict, *, now: dt.datetime | None = None) -> dict:
@@ -1140,8 +1536,19 @@ def should_refresh(record: object, *, now: dt.datetime | None = None,
                    force: bool = False) -> bool:
     if force or not isinstance(record, dict):
         return True
+    if (record.get("status") == "not_found" and
+            record.get("reason") in {
+                "arxiv_html_no_reusable_figure",
+                "arxiv_no_card_sized_figure",
+            } and record.get("selector_version") != SELECTOR_VERSION):
+        # Selector v8 adds independently hosted, strictly validated SVG
+        # objects.  Retry each old arXiv negative once without waiting for its
+        # 30-day TTL; the refreshed blank also records v8 and resumes caching.
+        return True
+    selector_version = record.get("selector_version")
     if (record.get("status") == "available" and
-            record.get("selector_version") != SELECTOR_VERSION):
+            (not isinstance(selector_version, int) or
+             selector_version < MIN_CURRENT_AVAILABLE_SELECTOR_VERSION)):
         last_error = parse_timestamp(record.get("selector_error_at"))
         if (last_error is not None and
                 (now or utc_now()) - last_error < dt.timedelta(days=1)):

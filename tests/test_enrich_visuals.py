@@ -1,3 +1,4 @@
+import base64
 import datetime as dt
 import html as html_mod
 import json
@@ -56,12 +57,14 @@ ORDINARY_SCIENTIFIC_CAPTIONS = (
 
 class FakeHttpResponse:
     def __init__(self, payload=b"{}", *, url="https://example.test/data",
-                 content_length=None):
+                 content_length=None, content_type=None):
         self.payload = payload
         self.url = url
         self.headers = {}
         if content_length is not None:
             self.headers["Content-Length"] = str(content_length)
+        if content_type is not None:
+            self.headers["Content-Type"] = content_type
         self.closed = False
 
     def geturl(self):
@@ -101,6 +104,13 @@ def webp_image(kind, data):
         chunk += b"\x00"
     body = b"WEBP" + chunk
     return b"RIFF" + len(body).to_bytes(4, "little") + body
+
+
+def safe_svg(*, width="640", height="480", body="<path d='M0 0h1v1z'/>"):
+    return (
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" '
+        f'height="{height}" viewBox="0 0 640 480">{body}</svg>'
+    ).encode()
 
 
 def test_http_client_encodes_params_and_bounds_provider_response():
@@ -216,6 +226,200 @@ def test_http_client_returns_png_dimensions_and_rejects_html():
         assert "invalid signature" in str(exc)
     else:
         raise AssertionError("an HTML error page was accepted as an image")
+
+
+def test_http_client_accepts_only_svg_mime_on_exact_arxiv_html_path():
+    url = "https://arxiv.org/html/2608.12345v1/figures/result.svg"
+    response = FakeHttpResponse(
+        safe_svg(width="480pt", height="240pt"), url=url,
+        content_type="image/svg+xml; charset=utf-8",
+    )
+    client = ev.HttpClient(opener=FakeOpener(response), min_delay=0)
+
+    assert client.verify_svg(url, allowed_hosts={"arxiv.org"}) == (640, 320)
+    assert response.closed
+
+    wrong_type = FakeHttpResponse(
+        safe_svg(), url=url, content_type="text/xml",
+    )
+    with pytest.raises(ev.SvgValidationError, match="media type"):
+        ev.HttpClient(opener=FakeOpener(wrong_type), min_delay=0).verify_svg(
+            url, allowed_hosts={"arxiv.org"},
+        )
+
+
+def test_http_client_caps_svg_response_at_two_mib():
+    assert ev.MAX_SVG_BYTES == 2 * 1024 * 1024
+    url = "https://arxiv.org/html/2608.12345v1/result.svg"
+    oversized = FakeHttpResponse(
+        safe_svg(), url=url, content_length=ev.MAX_SVG_BYTES + 1,
+        content_type="image/svg+xml",
+    )
+
+    with pytest.raises(ev.FetchError, match="size limit"):
+        ev.HttpClient(opener=FakeOpener(oversized), min_delay=0).verify_svg(
+            url, allowed_hosts={"arxiv.org"},
+        )
+    assert oversized.closed
+
+
+def test_http_client_rejects_svg_redirect_to_another_arxiv_work():
+    requested = "https://arxiv.org/html/2608.12345v1/result.svg"
+    redirected = FakeHttpResponse(
+        safe_svg(),
+        url="https://arxiv.org/html/2608.99999v1/result.svg",
+        content_type="image/svg+xml",
+    )
+    with pytest.raises(ev.SvgValidationError, match="work path"):
+        ev.HttpClient(opener=FakeOpener(redirected), min_delay=0).verify_svg(
+            requested, allowed_hosts={"arxiv.org"},
+        )
+
+
+@pytest.mark.parametrize("url", [
+    "http://arxiv.org/html/2608.12345/figure.svg",
+    "https://export.arxiv.org/html/2608.12345/figure.svg",
+    "https://arxiv.org:443/html/2608.12345/figure.svg",
+    "https://arxiv.org/pdf/2608.12345/figure.svg",
+    "https://arxiv.org/html/2608.12345/../figure.svg",
+    "https://arxiv.org/html/2608.12345/figure.svg?download=1",
+    "https://arxiv.org/html/2608.12345/figure.svg#panel",
+    "https://arxiv.org/html/2608.12345/figure%2esvg",
+    "https://arxiv.org/html/2608.12345/figure.svg",
+    "https://arxiv.org/html/hep-th/9901001/figure.svg",
+    "https://arxiv.org/html/not-an-id-v2/figure.svg",
+])
+def test_svg_url_boundary_rejects_nonexact_arxiv_html_assets(url):
+    assert ev._arxiv_svg_url(url) == ""
+
+
+def test_svg_validator_allows_internal_references_and_embedded_raster():
+    embedded = base64.b64encode(png_header(32, 32)).decode()
+    payload = safe_svg(body=(
+        "<defs><linearGradient id='g'><stop offset='0'/></linearGradient>"
+        "<clipPath id='c'><path d='M0 0h1v1z'/></clipPath></defs>"
+        "<g style='fill:url(#g)' clip-path='url(#c)'>"
+        "<use href='#c'/><image href='data:image/png;base64,"
+        f"{embedded}'/></g>"
+    ))
+
+    assert ev._svg_dimensions(payload) == (640, 480)
+
+
+def test_svg_validator_rejects_embedded_raster_decode_bomb_dimensions():
+    assert ev.MAX_SVG_EMBEDDED_RASTER_PIXELS == 100_000_000
+    embedded = base64.b64encode(png_header(100_000, 100_000)).decode()
+    with pytest.raises(ev.SvgValidationError, match="pixel limit"):
+        ev._svg_dimensions(safe_svg(
+            body=f"<image href='data:image/png;base64,{embedded}'/>",
+        ))
+
+
+@pytest.mark.parametrize("body", [
+    "<script>alert(1)</script>",
+    "<foreignObject><div>active HTML</div></foreignObject>",
+    "<animate attributeName='x' to='2'/>",
+    "<animateColor attributeName='fill' to='red'/>",
+    "<path onload='alert(1)'/>",
+    "<image href='https://publisher.example/image.png'/>",
+    "<use href='../symbols.svg#mark'/>",
+    "<style>@import url(https://publisher.example/a.css)</style>",
+    "<path style='fill:url(https://publisher.example/pattern.svg#p)'/>",
+    r"<path fill='u\72l(https://publisher.example/pattern.svg#p)'/>",
+    "<path fill='u/**/rl(../pattern.svg#p)'/>",
+    "<image href='data:image/svg+xml;base64,PHN2Zy8+'/>",
+])
+def test_svg_validator_rejects_active_or_external_content(body):
+    with pytest.raises(ev.SvgValidationError):
+        ev._svg_dimensions(safe_svg(body=body))
+
+
+@pytest.mark.parametrize("payload", [
+    b"<html><body>not SVG</body></html>",
+    b"<svg><broken></svg>",
+    b"<!DOCTYPE svg><svg width='10' height='10'/>",
+    b"<!DOCTYPE svg [<!ENTITY x 'x'>]><svg width='10' height='10'/>",
+    b"<svg width='100%' height='100%'/>",
+    b"<svg viewBox='0 0 0 100'/>",
+])
+def test_svg_validator_fails_closed_on_malformed_xml_or_dimensions(payload):
+    with pytest.raises(ev.SvgValidationError):
+        ev._svg_dimensions(payload)
+
+
+def test_svg_validator_rejects_non_utf8_and_encoded_doctype_bypass():
+    utf16 = (
+        '<?xml version="1.0" encoding="UTF-16"?>'
+        '<!DOCTYPE svg [<!ENTITY x "external">]>'
+        '<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100">'
+        '<text>&x;</text></svg>'
+    ).encode("utf-16")
+    with pytest.raises(ev.SvgValidationError, match="UTF-8"):
+        ev._svg_dimensions(utf16)
+
+    latin1 = safe_svg().replace(b"</svg>", b"<text>\xe9</text></svg>")
+    with pytest.raises(ev.SvgValidationError, match="UTF-8"):
+        ev._svg_dimensions(latin1)
+
+
+def test_svg_validator_rejects_subpixel_rounding_and_one_sided_geometry():
+    with pytest.raises(ev.SvgValidationError, match="dimensions"):
+        ev._svg_dimensions(safe_svg(width="0.4", height="100"))
+    with pytest.raises(ev.SvgValidationError, match="dimensions"):
+        ev._svg_dimensions(
+            b'<svg xmlns="http://www.w3.org/2000/svg" width="100" '
+            b'viewBox="0 0 200 100"/>',
+        )
+
+
+@pytest.mark.parametrize(("width", "height"), [
+    ("0", "100"),
+    ("100", "0"),
+    ("-100", "100"),
+    ("100", "-100"),
+])
+def test_svg_validator_does_not_fallback_from_explicit_invalid_dimensions(
+        width, height):
+    payload = (
+        '<svg xmlns="http://www.w3.org/2000/svg" '
+        f'width="{width}" height="{height}" viewBox="0 0 200 100"/>'
+    ).encode()
+    with pytest.raises(ev.SvgValidationError, match="dimensions"):
+        ev._svg_dimensions(payload)
+
+
+@pytest.mark.parametrize("url", [
+    "https://arxiv.org/html/2608.12345v1/figure.svg",
+    "https://arxiv.org/html/hep-th/9901001v2/figures/figure.svg",
+])
+def test_svg_url_boundary_accepts_versioned_new_and_old_arxiv_ids(url):
+    assert ev._arxiv_svg_url(url) == url
+
+
+def test_svg_validator_bounds_depth_elements_attributes_and_embedded_images(
+        monkeypatch):
+    monkeypatch.setattr(ev, "MAX_SVG_DEPTH", 2)
+    with pytest.raises(ev.SvgValidationError, match="complexity"):
+        ev._svg_dimensions(safe_svg(body="<g><g><path/></g></g>"))
+
+    monkeypatch.setattr(ev, "MAX_SVG_DEPTH", 64)
+    monkeypatch.setattr(ev, "MAX_SVG_ELEMENTS", 2)
+    with pytest.raises(ev.SvgValidationError, match="complexity"):
+        ev._svg_dimensions(safe_svg(body="<g/><g/>"))
+
+    monkeypatch.setattr(ev, "MAX_SVG_ELEMENTS", 20_000)
+    monkeypatch.setattr(ev, "MAX_SVG_ATTRIBUTES", 1)
+    with pytest.raises(ev.SvgValidationError, match="complexity"):
+        ev._svg_dimensions(safe_svg())
+
+    monkeypatch.setattr(ev, "MAX_SVG_ATTRIBUTES", 100_000)
+    monkeypatch.setattr(ev, "MAX_SVG_EMBEDDED_IMAGES", 1)
+    embedded = base64.b64encode(png_header(32, 32)).decode()
+    images = (
+        f"<image href='data:image/png;base64,{embedded}'/>" * 2
+    )
+    with pytest.raises(ev.SvgValidationError, match="too many"):
+        ev._svg_dimensions(safe_svg(body=images))
 
 
 def test_raster_dimensions_cover_jpeg_gif_and_all_webp_headers():
@@ -692,6 +896,123 @@ def test_arxiv_selector_never_promotes_legend_when_main_asset_is_not_raster():
 
     assert selected is not None
     assert selected["image_url"].endswith("/figures/next-complete.png")
+
+
+def test_arxiv_selector_uses_exact_svg_object_only_after_all_rasters():
+    html = """
+    <figure class="ltx_figure">
+      <object type="image/svg+xml" data="2608.12345v2/workflow.svg"
+              width="600" height="400"></object>
+      <figcaption>Figure 1: Complete SVG workflow.</figcaption>
+    </figure>
+    <figure class="ltx_figure">
+      <img src="figures/result.png" width="640" height="480" />
+      <figcaption>Figure 2: Raster validation result.</figcaption>
+    </figure>
+    """
+
+    candidates = ev.select_arxiv_figures(
+        html, "https://arxiv.org/html/2608.12345",
+    )
+
+    assert [pathlib.PurePosixPath(row["image_url"]).suffix
+            for row in candidates] == [".png", ".svg"]
+    svg = candidates[1]
+    assert svg["image_url"] == (
+        "https://arxiv.org/html/2608.12345v2/workflow.svg"
+    )
+    assert svg["media_type"] == ev.SVG_MEDIA_TYPE
+
+
+def test_arxiv_selector_rejects_svg_outside_html_path_and_rights_risk():
+    html = """
+    <figure class="ltx_figure">
+      <object type="image/svg+xml"
+              data="https://publisher.example/workflow.svg"></object>
+      <figcaption>Figure 1: External workflow.</figcaption>
+    </figure>
+    <figure class="ltx_figure">
+      <object type="image/svg+xml"
+              data="https://arxiv.org/pdf/2608.12345/workflow.svg"></object>
+      <figcaption>Figure 2: Wrong arXiv endpoint.</figcaption>
+    </figure>
+    <figure class="ltx_figure">
+      <object type="image/svg+xml" data="risky.svg"></object>
+      <figcaption>Figure 3: Architecture adopted from [23].</figcaption>
+    </figure>
+    """
+
+    assert ev.select_arxiv_figures(
+        html, "https://arxiv.org/html/2608.12345",
+    ) == []
+
+    # Selector v8's additional SVG-only guard must not alter the established
+    # raster selector; the shared policy remains its source of truth.
+    raster = ev.select_arxiv_figure(
+        '<figure><img src="existing.png" />'
+        '<figcaption>Figure 3: Architecture adopted from [23].</figcaption>'
+        '</figure>',
+        "https://arxiv.org/html/2608.12345",
+    )
+    assert raster is not None
+    assert raster["image_url"].endswith("/html/existing.png")
+
+
+def test_arxiv_selector_rejects_cross_work_official_svg():
+    html = """
+    <figure><object type="image/svg+xml"
+      data="https://arxiv.org/html/2608.99999v1/other.svg"></object>
+      <figcaption>Figure 1: Cross-work asset.</figcaption></figure>
+    """
+    assert ev.select_arxiv_figures(
+        html, "https://arxiv.org/html/2608.12345v2",
+    ) == []
+
+
+def test_arxiv_selector_checks_object_labels_without_cross_figure_leakage():
+    html = """
+    <figure><object type="image/svg+xml" data="title-risk.svg"
+      title="Copyright: Example Publisher"></object>
+      <figcaption>Figure 1: First workflow.</figcaption></figure>
+    <figure><object type="image/svg+xml" data="aria-risk.svg"
+      aria-label="Image by Example Artist"></object>
+      <figcaption>Figure 2: Second workflow.</figcaption></figure>
+    <figure><object type="image/svg+xml" data="title-adopted.svg"
+      title="Architecture adopted from [23]"></object>
+      <figcaption>Figure 3: Third workflow.</figcaption></figure>
+    <figure><object type="image/svg+xml" data="aria-adopted.svg"
+      aria-label="Architecture adopted from [24]"></object>
+      <figcaption>Figure 4: Fourth workflow.</figcaption></figure>
+    <figure><object type="image/svg+xml" data="safe.svg"
+      title="Independent validation workflow"></object>
+      <figcaption>Figure 5: Independent validation workflow.</figcaption></figure>
+    """
+
+    candidates = ev.select_arxiv_figures(
+        html, "https://arxiv.org/html/2608.12345v2",
+    )
+
+    assert [candidate["image_url"] for candidate in candidates] == [
+        "https://arxiv.org/html/2608.12345v2/safe.svg",
+    ]
+
+
+def test_arxiv_object_rights_label_does_not_change_v7_raster_selection():
+    html = """
+    <figure><img src="existing.png" alt="Validation field" />
+      <object type="image/svg+xml" data="risky.svg"
+        title="Copyright: Example Publisher"></object>
+      <figcaption>Figure 1: Mixed-format validation result.</figcaption>
+    </figure>
+    """
+
+    candidates = ev.select_arxiv_figures(
+        html, "https://arxiv.org/html/2608.12345v2",
+    )
+
+    assert [candidate["image_url"] for candidate in candidates] == [
+        "https://arxiv.org/html/existing.png",
+    ]
 
 
 def test_auxiliary_asset_filter_covers_colorbars_and_keys_without_overreach():
@@ -1216,6 +1537,21 @@ class CandidateArxivClient(FakeArxivClient):
         return outcome
 
 
+class SvgCandidateArxivClient(CandidateArxivClient):
+    def __init__(self, html, dimensions, svg_dimensions):
+        super().__init__(html, dimensions)
+        self.svg_dimensions = svg_dimensions
+        self.svg_calls = []
+
+    def verify_svg(self, url, *, allowed_hosts):
+        self.svg_calls.append(url)
+        assert allowed_hosts == {"arxiv.org"}
+        outcome = self.svg_dimensions[pathlib.PurePosixPath(url).name]
+        if isinstance(outcome, Exception):
+            raise outcome
+        return outcome
+
+
 TARGET_TINY_ARXIV_HTML = """
 <html><body>
   <figure class="ltx_figure">
@@ -1284,6 +1620,100 @@ def test_arxiv_resolver_skips_tiny_then_persists_next_image_dimensions():
     assert visual["image_url"].endswith("/complete.png")
     assert (visual["width"], visual["height"]) == (800, 600)
     assert len(client.image_calls) == 2
+
+
+def test_arxiv_resolver_uses_svg_fallback_and_persists_media_type():
+    html = """
+    <figure><img src="tiny.png" />
+      <figcaption>Figure 1: Small raster tile.</figcaption></figure>
+    <figure><object type="image/svg+xml" data="2608.12345v1/result.svg"
+              width="640" height="480"></object>
+      <figcaption>Figure 2: Complete vector result.</figcaption></figure>
+    """
+    client = SvgCandidateArxivClient(
+        html, {"tiny.png": (28, 28)}, {"result.svg": (800, 600)},
+    )
+
+    visual = ev.VisualResolver(client).resolve_arxiv(
+        {"arxiv_id": "2608.12345v1"}, ev.iso_z(NOW),
+    )
+
+    assert visual["status"] == "available"
+    assert visual["image_url"].endswith("/result.svg")
+    assert visual["media_type"] == "image/svg+xml"
+    assert (visual["width"], visual["height"]) == (800, 600)
+    assert len(client.image_calls) == 1
+    assert len(client.svg_calls) == 1
+
+
+def test_arxiv_resolver_pins_relative_svg_to_requested_version():
+    html = """
+    <figure><object type="image/svg+xml" data="result.svg"
+              width="640" height="480"></object>
+      <figcaption>Figure 1: Complete vector result.</figcaption></figure>
+    """
+    versioned = SvgCandidateArxivClient(
+        html, {}, {"result.svg": (640, 480)},
+    )
+    visual = ev.VisualResolver(versioned).resolve_arxiv(
+        {"arxiv_id": "2608.12345v2"}, ev.iso_z(NOW),
+    )
+    assert visual["image_url"] == (
+        "https://arxiv.org/html/2608.12345v2/result.svg"
+    )
+
+    unversioned = SvgCandidateArxivClient(
+        html, {}, {"result.svg": (640, 480)},
+    )
+    visual = ev.VisualResolver(unversioned).resolve_arxiv(
+        {"arxiv_id": "2608.12345"}, ev.iso_z(NOW),
+    )
+    assert visual["status"] == "not_found"
+    assert visual["reason"] == "arxiv_html_no_reusable_figure"
+    assert unversioned.svg_calls == []
+
+
+def test_svg_policy_rejection_tries_next_candidate_within_six_budget():
+    candidates = [
+        {"image_url": "https://arxiv.org/html/2608.12345v1/unsafe.svg",
+         "media_type": ev.SVG_MEDIA_TYPE},
+        {"image_url": "https://arxiv.org/html/2608.12345v1/safe.svg",
+         "media_type": ev.SVG_MEDIA_TYPE},
+    ]
+    client = SvgCandidateArxivClient("", {}, {
+        "unsafe.svg": ev.SvgValidationError("active content"),
+        "safe.svg": (640, 480),
+    })
+
+    verified = ev.VisualResolver(client)._verified_card_candidate(
+        candidates, allowed_hosts={"arxiv.org"},
+    )
+
+    assert verified == (candidates[1], 640, 480)
+    assert [pathlib.PurePosixPath(url).name for url in client.svg_calls] == [
+        "unsafe.svg", "safe.svg",
+    ]
+
+
+def test_svg_network_error_remains_transient_and_stops_fallback():
+    first = {
+        "image_url": "https://arxiv.org/html/2608.12345v1/first.svg",
+        "media_type": ev.SVG_MEDIA_TYPE,
+    }
+    second = {
+        "image_url": "https://arxiv.org/html/2608.12345v1/second.svg",
+        "media_type": ev.SVG_MEDIA_TYPE,
+    }
+    client = SvgCandidateArxivClient("", {}, {
+        "first.svg": ev.FetchError("temporary SVG timeout"),
+        "second.svg": (640, 480),
+    })
+
+    with pytest.raises(ev.FetchError, match="temporary SVG timeout"):
+        ev.VisualResolver(client)._verified_card_candidate(
+            [first, second], allowed_hosts={"arxiv.org"},
+        )
+    assert len(client.svg_calls) == 1
 
 
 def test_arxiv_image_fetch_error_remains_error_not_not_found():
@@ -1381,15 +1811,52 @@ def test_registry_cache_ttls():
         "status": "available", "checked_at": recent,
         "selector_version": ev.SELECTOR_VERSION,
     }, now=NOW)
+    assert not ev.should_refresh({
+        "status": "available", "checked_at": recent,
+        "selector_version": ev.MIN_CURRENT_AVAILABLE_SELECTOR_VERSION,
+    }, now=NOW)
+    assert ev.should_refresh({
+        "status": "available", "checked_at": recent,
+        "selector_version": ev.MIN_CURRENT_AVAILABLE_SELECTOR_VERSION - 1,
+    }, now=NOW)
     stale_with_recent_error = {
         "status": "available", "checked_at": recent,
-        "selector_version": ev.SELECTOR_VERSION - 1,
+        "selector_version": ev.MIN_CURRENT_AVAILABLE_SELECTOR_VERSION - 1,
         "selector_error_at": ev.iso_z(NOW - dt.timedelta(hours=4)),
     }
     assert not ev.should_refresh(stale_with_recent_error, now=NOW)
     assert ev.should_refresh(
         stale_with_recent_error, now=NOW + dt.timedelta(days=1, seconds=1),
     )
+
+
+@pytest.mark.parametrize("reason", [
+    "arxiv_html_no_reusable_figure",
+    "arxiv_no_card_sized_figure",
+])
+def test_selector_v8_retries_old_arxiv_negative_once(reason):
+    old_selector = {
+        "status": "not_found",
+        "reason": reason,
+        "checked_at": ev.iso_z(NOW - dt.timedelta(hours=1)),
+        "selector_version": ev.SELECTOR_VERSION - 1,
+    }
+    assert ev.should_refresh(old_selector, now=NOW)
+
+    refreshed = ev._blank_visual(
+        "not_found", checked_at=ev.iso_z(NOW), reason=reason,
+        provider="arxiv",
+    )
+    assert refreshed["selector_version"] == ev.SELECTOR_VERSION
+    assert not ev.should_refresh(
+        refreshed, now=NOW + dt.timedelta(seconds=1),
+    )
+
+
+def test_blank_visuals_persist_current_selector_version():
+    assert ev._blank_visual(
+        "error", checked_at=ev.iso_z(NOW), reason="timeout",
+    )["selector_version"] == ev.SELECTOR_VERSION
 
 
 def test_candidates_are_recent_first_then_priority(tmp_path):
@@ -1515,7 +1982,9 @@ def test_transient_refresh_error_preserves_last_known_good_visual(tmp_path):
         source_url="https://arxiv.org/abs/1", license_name="CC BY",
         alt="Good", provider="arxiv",
     )
-    cached["selector_version"] = ev.SELECTOR_VERSION - 1
+    cached["selector_version"] = (
+        ev.MIN_CURRENT_AVAILABLE_SELECTOR_VERSION - 1
+    )
     index.write_text(json.dumps({
         "schema_version": "v1", "records": {"doi:10.1/first": cached},
     }), encoding="utf-8")
@@ -1532,7 +2001,9 @@ def test_transient_refresh_error_preserves_last_known_good_visual(tmp_path):
     assert result["counts"] == {"preserved_available": 1}
     assert saved["status"] == "available"
     assert saved["image_url"] == cached["image_url"]
-    assert saved["selector_version"] == ev.SELECTOR_VERSION - 1
+    assert saved["selector_version"] == (
+        ev.MIN_CURRENT_AVAILABLE_SELECTOR_VERSION - 1
+    )
     assert saved["selector_error_at"] == ev.iso_z(NOW)
     assert "provider unavailable" in saved["selector_error_reason"]
     assert not ev.should_refresh(saved, now=NOW + dt.timedelta(hours=1))
@@ -1572,7 +2043,9 @@ def test_policy_results_replace_stale_available_last_known_good(tmp_path):
             source_url="https://arxiv.org/abs/1", license_name="CC BY",
             alt="Old visual", provider="arxiv",
         )
-        cached["selector_version"] = ev.SELECTOR_VERSION - 1
+        cached["selector_version"] = (
+            ev.MIN_CURRENT_AVAILABLE_SELECTOR_VERSION - 1
+        )
         index.write_text(json.dumps({
             "schema_version": "v1",
             "records": {"doi:10.1/policy": cached},

@@ -68,12 +68,32 @@
     "pmc-oa-opendata.s3.amazonaws.com": true
   };
 
-  function safeVisualUrl(value, imageAsset) {
+  function isSafeArxivSvg(parsed, raw) {
+    return /^https:\/\/arxiv\.org\//i.test(raw) && raw.indexOf("\\") === -1 &&
+      parsed.protocol === "https:" &&
+      parsed.hostname.toLowerCase() === "arxiv.org" &&
+      !parsed.username && !parsed.password &&
+      (!parsed.port || parsed.port === "443") &&
+      !parsed.search && !parsed.hash && !/%|\\/.test(parsed.pathname) &&
+      /^\/html\/(?:\d{4}\.\d{4,5}|[a-z][a-z0-9.-]*\/\d{7})v[1-9]\d*\/.+\.svg$/i
+        .test(parsed.pathname) &&
+      parsed.pathname.slice(6).split("/").every(function (part) {
+        return part && part !== "." && part !== "..";
+      });
+  }
+
+  function safeVisualUrl(value, imageAsset, mediaType) {
     var raw = text(value).trim();
     if (!raw || raw.charAt(0) === "#" || /^\/\//.test(raw)) return "";
     var hasScheme = /^[a-z][a-z0-9+.-]*:/i.test(raw);
     try {
       var parsed = new URL(raw, document.baseURI);
+      if (parsed.username || parsed.password ||
+          (parsed.port && parsed.port !== "443")) return "";
+      if (imageAsset && text(mediaType).toLowerCase() === "image/svg+xml") {
+        return isSafeArxivSvg(parsed, raw) ? parsed.href : "";
+      }
+      if (imageAsset && /\.svg$/i.test(parsed.pathname)) return "";
       if (parsed.origin === window.location.origin &&
           (!hasScheme || parsed.protocol === "https:")) {
         return parsed.href;
@@ -193,7 +213,7 @@
   }
 
   function bindVisualViewer(image, figure) {
-    var link = image.closest("a.paper-visual__image-link");
+    var link = image.closest(".paper-visual__image-link");
     if (!link || link.dataset.visualViewerReady === "1") return;
     link.dataset.visualViewerReady = "1";
     link.addEventListener("click", function (event) {
@@ -201,13 +221,22 @@
           event.shiftKey || event.altKey) return;
       var viewer = ensureVisualViewer();
       if (!viewer) return;
-      var imageUrl = safeVisualUrl(link.href, true);
+      var mediaType = text(figure.dataset.visualMediaType).toLowerCase();
+      var imageUrl = safeVisualUrl(
+        link.dataset.visualUrl || image.src, true, mediaType
+      );
       if (!imageUrl) return;
       event.preventDefault();
       viewer.trigger = link;
       viewer.image.src = imageUrl;
       viewer.image.alt = image.alt;
-      viewer.original.href = imageUrl;
+      var isSvg = mediaType === "image/svg+xml";
+      viewer.original.hidden = isSvg;
+      if (isSvg) {
+        viewer.original.removeAttribute("href");
+      } else {
+        viewer.original.href = imageUrl;
+      }
       var sourceLink = figure.querySelector("a.paper-visual__source[href]");
       var sourceUrl = sourceLink ? safeVisualUrl(sourceLink.href, false) : "";
       viewer.source.hidden = !sourceUrl;
@@ -245,7 +274,8 @@
   function buildVisual(record) {
     var visual = visualRecord(record);
     var status = text(visual.status).toLowerCase();
-    var imageUrl = safeVisualUrl(visual.image_url, true);
+    var mediaType = text(visual.media_type).trim().toLowerCase();
+    var imageUrl = safeVisualUrl(visual.image_url, true, mediaType);
     var figure = element("figure", "paper-visual");
     if ((status !== "available" && status !== "found") || !imageUrl) {
       renderVisualFallback(figure);
@@ -253,6 +283,7 @@
     }
 
     figure.dataset.visualStatus = "available";
+    if (mediaType) figure.dataset.visualMediaType = mediaType;
     var frame = element("div", "paper-visual__frame");
     var image = element("img", "paper-visual__image");
     image.src = imageUrl;
@@ -267,12 +298,18 @@
     if (width) image.width = width;
     if (height) image.height = height;
 
-    var imageLink = element("a", "paper-visual__image-link");
-    imageLink.href = imageUrl;
-    imageLink.target = "_blank";
-    imageLink.rel = "noopener noreferrer";
-    imageLink.setAttribute("aria-label", "查看原图");
-    imageLink.title = "查看原图";
+    var isSvg = mediaType === "image/svg+xml";
+    var imageLink = element(isSvg ? "button" : "a", "paper-visual__image-link");
+    if (isSvg) {
+      imageLink.type = "button";
+      imageLink.dataset.visualUrl = imageUrl;
+    } else {
+      imageLink.href = imageUrl;
+      imageLink.target = "_blank";
+      imageLink.rel = "noopener noreferrer";
+    }
+    imageLink.setAttribute("aria-label", isSvg ? "查看大图" : "查看原图");
+    imageLink.title = isSvg ? "查看大图" : "查看原图";
     imageLink.appendChild(image);
     frame.appendChild(imageLink);
     figure.appendChild(frame);
