@@ -477,6 +477,217 @@ def test_normalize_license_is_fail_closed():
     assert ev.ALLOWED_LICENSES == {"CC0", "CC BY", "CC BY-SA"}
 
 
+@pytest.mark.parametrize(("doi", "source_url", "stem"), [
+    ("10.3390/app12094197", "https://www.mdpi.com/2076-3417/12/9/4197",
+     "applsci-12-04197"),
+    ("10.3390/buildings16122321",
+     "https://www.mdpi.com/2075-5309/16/12/2321",
+     "buildings-16-02321"),
+    ("10.3390/met12091476", "https://www.mdpi.com/2075-4701/12/9/1476",
+     "metals-12-01476"),
+    ("10.3390/psf2021003006", "https://www.mdpi.com/2673-9984/3/1/6",
+     "psf-03-00006"),
+])
+def test_mdpi_context_uses_audited_doi_issn_and_asset_slug(
+        doi, source_url, stem):
+    doi_context = ev._mdpi_doi_context(doi)
+    assert doi_context is not None
+    context = ev._mdpi_source_context(source_url, doi_context)
+    assert context is not None
+    assert context["stem"] == stem
+    assert ev._mdpi_xml_url(context) == (
+        f"https://mdpi-res.com/d_attachment/{context['slug']}/{stem}/"
+        f"article_deploy/{stem}.xml"
+    )
+
+
+@pytest.mark.parametrize("url", [
+    "http://mdpi-res.com/d_attachment/metals/metals-12-01476/"
+    "article_deploy/html/images/metals-12-01476-g001-550.jpg",
+    "https://www.mdpi.com/d_attachment/metals/metals-12-01476/"
+    "article_deploy/html/images/metals-12-01476-g001-550.jpg",
+    "https://mdpi-res.com:443/d_attachment/metals/metals-12-01476/"
+    "article_deploy/html/images/metals-12-01476-g001-550.jpg",
+    "https://mdpi-res.com/d_attachment/metals/other-12-01476/"
+    "article_deploy/html/images/other-12-01476-g001-550.jpg",
+    "https://mdpi-res.com/d_attachment/metals/metals-12-01476/"
+    "article_deploy/html/images/metals-12-01476-g000-550.jpg",
+    "https://mdpi-res.com/d_attachment/metals/metals-12-01476/"
+    "article_deploy/html/images/metals-12-01476-g001.jpg",
+    "https://mdpi-res.com/d_attachment/metals/metals-12-01476/"
+    "article_deploy/html/images/metals-12-01476-g001-550.jpg?download=1",
+])
+def test_mdpi_asset_url_rejects_nonexact_or_unapproved_paths(url):
+    assert ev._mdpi_asset_url(url) == ""
+
+
+def _mdpi_jats(*, doi="10.3390/met12091476", extra_license="",
+               figures=""):
+    return f"""
+    <article xmlns:xlink="http://www.w3.org/1999/xlink">
+      <front><journal-meta><publisher><publisher-name>MDPI</publisher-name>
+        </publisher></journal-meta><article-meta>
+        <article-id pub-id-type="doi">{doi}</article-id>
+        <permissions><license><license-p><ext-link
+          xlink:href="https://creativecommons.org/licenses/by/4.0/" />
+        </license-p></license>{extra_license}</permissions>
+      </article-meta></front><body>{figures}</body>
+    </article>
+    """
+
+
+def _metals_mdpi_context():
+    context = ev._mdpi_source_context(
+        "https://www.mdpi.com/2075-4701/12/9/1476",
+        ev._mdpi_doi_context("10.3390/met12091476"),
+    )
+    assert context is not None
+    context["license_name"] = "CC BY"
+    return context
+
+
+def test_mdpi_selector_derives_assets_and_skips_third_party_figures():
+    figures = """
+      <fig><label>Figure 1</label><caption><p>Reproduced with permission
+        from Example Publisher.</p></caption>
+        <graphic xlink:href="metals-12-01476-g001.tif" /></fig>
+      <fig><label>Figure 2</label><caption><p>Computed stress and validation
+        fields.</p></caption>
+        <graphic xlink:href="metals-12-01476-g002.tif" /></fig>
+      <fig><label>Figure 3</label><caption><p>Untrusted asset.</p></caption>
+        <graphic xlink:href="https://attacker.example/g003.tif" /></fig>
+    """
+    candidates, rejection = ev.select_mdpi_figures(
+        _mdpi_jats(figures=figures), _metals_mdpi_context(),
+    )
+    assert rejection == ""
+    assert [candidate["image_url"] for candidate in candidates] == [
+        "https://mdpi-res.com/d_attachment/metals/metals-12-01476/"
+        "article_deploy/html/images/metals-12-01476-g002-550.jpg",
+        "https://mdpi-res.com/d_attachment/metals/metals-12-01476/"
+        "article_deploy/html/images/metals-12-01476-g002.png",
+    ]
+    assert all(candidate["label"] == "Figure 2" for candidate in candidates)
+
+
+def test_mdpi_jats_identity_and_mixed_license_fail_closed():
+    context = _metals_mdpi_context()
+    figures = """
+      <fig><caption><p>Computed field.</p></caption>
+        <graphic xlink:href="metals-12-01476-g001.tif" /></fig>
+    """
+    assert ev.select_mdpi_figures(
+        _mdpi_jats(doi="10.3390/met99999999", figures=figures), context,
+    )[1] == "identity_mismatch"
+    mixed = '<license><ext-link xlink:href="https://creativecommons.org/' \
+            'licenses/by-nc/4.0/" /></license>'
+    assert ev.select_mdpi_figures(
+        _mdpi_jats(extra_license=mixed, figures=figures), context,
+    )[1] == "license_not_reusable"
+
+
+def _mdpi_jats_with_license(license_xml, *, outside=""):
+    return f"""
+    <article xmlns:xlink="http://www.w3.org/1999/xlink">
+      <front><journal-meta><publisher><publisher-name>MDPI</publisher-name>
+        </publisher></journal-meta><article-meta>
+        <article-id pub-id-type="doi">10.3390/met12091476</article-id>
+        <permissions>{license_xml}</permissions>
+      </article-meta></front><body>
+        <fig><label>Figure 1</label><caption><p>Computed stress field and
+          experimental validation.</p></caption>
+          <graphic xlink:href="metals-12-01476-g001.tif" /></fig>
+      </body>{outside}
+    </article>
+    """
+
+
+@pytest.mark.parametrize("license_xml", [
+    # Current/older MDPI JATS commonly carries the canonical CC URL in href.
+    '<license><license-p>CC BY <ext-link xlink:href="http://'
+    'creativecommons.org/licenses/by/4.0/" /></license-p></license>',
+    # A legacy 2016 structure has no href but includes one complete URL in the
+    # licence prose.
+    '<license><license-p>This article is distributed under the Creative '
+    'Commons Attribution (CC-BY) license '
+    '(http://creativecommons.org/licenses/by/4.0/).</license-p></license>',
+])
+def test_mdpi_jats_accepts_real_http_cc_by_license_structures(license_xml):
+    candidates, rejection = ev.select_mdpi_figures(
+        _mdpi_jats_with_license(license_xml), _metals_mdpi_context(),
+    )
+    assert rejection == ""
+    assert candidates[0]["image_url"].endswith("g001-550.jpg")
+
+
+@pytest.mark.parametrize("license_xml", [
+    '<license><ext-link xlink:href="http://creativecommons.org/licenses/by/'
+    '4.0/"/><ext-link xlink:href="http://creativecommons.org/licenses/by-nc/'
+    '4.0/"/></license>',
+    '<license><license-p>http://creativecommons.org/licenses/by/4.0/ '
+    'http://creativecommons.org/licenses/by-sa/4.0/</license-p></license>',
+    '<license><license-p>Creative Commons Attribution CC BY 4.0'
+    '</license-p></license>',
+    '<license><license-p>http://creativecommons.org.evil.example/licenses/'
+    'by/4.0/</license-p></license>',
+    '<license><license-p>See https://publisher.example/licence and '
+    'http://creativecommons.org/licenses/by/4.0/</license-p></license>',
+    '<license><license-p>CC BY-NC; <ext-link xlink:href="http://'
+    'creativecommons.org/licenses/by/4.0/" /></license-p></license>',
+    '<license><license-p>No derivatives; <ext-link xlink:href="http://'
+    'creativecommons.org/licenses/by/4.0/" /></license-p></license>',
+    '<license><license-p>Third-party material is excluded from this license; '
+    '<ext-link xlink:href="http://creativecommons.org/licenses/by/4.0/" />'
+    '</license-p></license>',
+])
+def test_mdpi_jats_rejects_mixed_fake_or_non_cc_license_text(license_xml):
+    assert ev.select_mdpi_figures(
+        _mdpi_jats_with_license(license_xml), _metals_mdpi_context(),
+    )[1] == "license_not_reusable"
+
+
+def test_mdpi_jats_requires_article_level_license_node():
+    assert ev.select_mdpi_figures(
+        _mdpi_jats_with_license(""), _metals_mdpi_context(),
+    )[1] == "license_not_reusable"
+
+
+def test_mdpi_jats_does_not_use_cc_url_outside_license_node():
+    license_xml = (
+        "<license><license-p>Creative Commons Attribution CC BY 4.0"
+        "</license-p></license>"
+    )
+    outside = (
+        '<back><ref-list><ref><ext-link xlink:href="http://'
+        'creativecommons.org/licenses/by/4.0/">Reference licence</ext-link>'
+        '</ref></ref-list></back>'
+    )
+    assert ev.select_mdpi_figures(
+        _mdpi_jats_with_license(license_xml, outside=outside),
+        _metals_mdpi_context(),
+    )[1] == "license_not_reusable"
+
+
+def test_crossref_reader_requires_exact_url_and_json_mime():
+    doi = "10.3390/met12091476"
+    exact_url = f"{ev.CROSSREF_WORKS_URL}10.3390%2Fmet12091476"
+    response = FakeHttpResponse(
+        b'{"message":{"DOI":"10.3390/met12091476"}}',
+        url=exact_url, content_type="application/json; charset=utf-8",
+    )
+    client = ev.HttpClient(opener=FakeOpener(response), min_delay=0)
+    assert client.get_crossref_work(doi)["DOI"] == doi
+    assert client.opener.calls[0][0].full_url == exact_url
+
+    redirected = FakeHttpResponse(
+        b'{"message":{}}', url="https://api.crossref.org/works/other",
+        content_type="application/json",
+    )
+    with pytest.raises(ev.FetchError, match="redirected"):
+        ev.HttpClient(opener=FakeOpener(redirected), min_delay=0) \
+            .get_crossref_work(doi)
+
+
 def test_pmc_media_url_allows_only_public_raster_bucket_objects():
     assert ev.pmc_media_url(
         "s3://pmc-oa-opendata/PMC123.1/gr1.jpg?md5=abc"
@@ -1465,6 +1676,144 @@ def test_pmc_resolver_blocks_non_allowlisted_article_license():
     assert visual["license"] == "CC BY-NC-ND"
 
 
+class FakeMdpiClient:
+    def __init__(self, *, licenses=None):
+        self.calls = []
+        self.licenses = licenses or [{
+            "content-version": "vor",
+            "URL": "https://creativecommons.org/licenses/by/4.0/",
+        }]
+
+    def get_crossref_work(self, doi):
+        self.calls.append(("crossref", doi))
+        return {
+            "DOI": "10.3390/met12091476",
+            "publisher": "MDPI AG",
+            "license": self.licenses,
+            "resource": {"primary": {"URL":
+                "https://www.mdpi.com/2075-4701/12/9/1476"}},
+        }
+
+    def get_mdpi_xml(self, url):
+        self.calls.append(("xml", url))
+        return _mdpi_jats(figures="""
+          <fig><label>Figure 1</label><caption><p>Finite-element stress
+            and experimental validation.</p></caption>
+            <graphic xlink:href="metals-12-01476-g001.tif" /></fig>
+        """)
+
+    def verify_mdpi_image(self, url):
+        self.calls.append(("image", url))
+        if url.endswith("-550.jpg"):
+            raise ev.MdpiImageValidationError("format unavailable")
+        return 3531, 1131
+
+
+def test_mdpi_resolver_uses_crossref_jats_and_png_fallback():
+    client = FakeMdpiClient()
+    visual = ev.VisualResolver(client).resolve_mdpi(
+        {"doi": "10.3390/met12091476", "title": "Paper"}, ev.iso_z(NOW),
+    )
+    assert visual["status"] == "available"
+    assert visual["provider"] == "mdpi"
+    assert visual["license"] == "CC BY"
+    assert visual["source_url"] == (
+        "https://www.mdpi.com/2075-4701/12/9/1476"
+    )
+    assert visual["source_label"] == "MDPI · Figure 1"
+    assert visual["image_url"].endswith("metals-12-01476-g001.png")
+    assert (visual["width"], visual["height"]) == (3531, 1131)
+    assert [call[0] for call in client.calls] == [
+        "crossref", "xml", "image", "image",
+    ]
+
+
+def test_mdpi_resolver_blocks_mixed_or_unknown_crossref_vor_license():
+    client = FakeMdpiClient(licenses=[
+        {"content-version": "vor",
+         "URL": "https://creativecommons.org/licenses/by/4.0/"},
+        {"content-version": "vor",
+         "URL": "https://creativecommons.org/licenses/by-nc/4.0/"},
+    ])
+    visual = ev.VisualResolver(client).resolve_mdpi(
+        {"doi": "10.3390/met12091476"}, ev.iso_z(NOW),
+    )
+    assert visual["status"] == "blocked"
+    assert visual["reason"] == "mdpi_license_not_reusable"
+    assert [call[0] for call in client.calls] == ["crossref"]
+
+
+@pytest.mark.parametrize("unknown", [
+    "not-a-license-record",
+    {"URL": "https://creativecommons.org/licenses/by/4.0/"},
+    {"content-version": "am",
+     "URL": "https://creativecommons.org/licenses/by/4.0/"},
+])
+def test_mdpi_resolver_blocks_safe_license_mixed_with_unknown_record(unknown):
+    client = FakeMdpiClient(licenses=[
+        {"content-version": "vor",
+         "URL": "https://creativecommons.org/licenses/by/4.0/"},
+        unknown,
+    ])
+    visual = ev.VisualResolver(client).resolve_mdpi(
+        {"doi": "10.3390/met12091476"}, ev.iso_z(NOW),
+    )
+    assert visual["status"] == "blocked"
+    assert visual["reason"] == "mdpi_license_not_reusable"
+    assert [call[0] for call in client.calls] == ["crossref"]
+
+
+def test_mdpi_resolver_blocks_crossref_license_with_future_start():
+    client = FakeMdpiClient(licenses=[{
+        "content-version": "vor",
+        "URL": "https://creativecommons.org/licenses/by/4.0/",
+        "start": {"date-time": "2026-08-13T00:00:00Z"},
+    }])
+    visual = ev.VisualResolver(client).resolve_mdpi(
+        {"doi": "10.3390/met12091476"}, ev.iso_z(NOW),
+    )
+    assert visual["status"] == "blocked"
+    assert [call[0] for call in client.calls] == ["crossref"]
+
+
+def test_mdpi_resolver_accepts_effective_consistent_crossref_start():
+    client = FakeMdpiClient(licenses=[{
+        "content-version": "vor",
+        "URL": "https://creativecommons.org/licenses/by/4.0/",
+        "start": {
+            "date-parts": [[2022, 9, 4]],
+            "date-time": "2022-09-04T00:00:00Z",
+            "timestamp": 1662249600000,
+        },
+    }])
+    visual = ev.VisualResolver(client).resolve_mdpi(
+        {"doi": "10.3390/met12091476"}, ev.iso_z(NOW),
+    )
+    assert visual["status"] == "available"
+    assert visual["license"] == "CC BY"
+
+
+@pytest.mark.parametrize("start", [
+    {},
+    {"date-parts": [["2022", 9, 4]]},
+    {"timestamp": "1662249600000"},
+    {"date-time": "not-a-date"},
+    {"date-parts": [[2022, 9, 4]], "unknown": 1},
+])
+def test_mdpi_resolver_blocks_malformed_crossref_license_start(start):
+    client = FakeMdpiClient(licenses=[{
+        "content-version": "vor",
+        "URL": "https://creativecommons.org/licenses/by/4.0/",
+        "start": start,
+    }])
+    visual = ev.VisualResolver(client).resolve_mdpi(
+        {"doi": "10.3390/met12091476"}, ev.iso_z(NOW),
+    )
+    assert visual["status"] == "blocked"
+    assert visual["reason"] == "mdpi_license_not_reusable"
+    assert [call[0] for call in client.calls] == ["crossref"]
+
+
 class FakeArxivClient:
     def __init__(self, license_url="https://creativecommons.org/licenses/by/4.0/"):
         self.license_url = license_url
@@ -1839,7 +2188,7 @@ def test_selector_v8_retries_old_arxiv_negative_once(reason):
         "status": "not_found",
         "reason": reason,
         "checked_at": ev.iso_z(NOW - dt.timedelta(hours=1)),
-        "selector_version": ev.SELECTOR_VERSION - 1,
+        "selector_version": ev.ARXIV_SVG_SELECTOR_VERSION - 1,
     }
     assert ev.should_refresh(old_selector, now=NOW)
 
@@ -1851,6 +2200,18 @@ def test_selector_v8_retries_old_arxiv_negative_once(reason):
     assert not ev.should_refresh(
         refreshed, now=NOW + dt.timedelta(seconds=1),
     )
+
+
+@pytest.mark.parametrize("selector_version", [
+    ev.ARXIV_SVG_SELECTOR_VERSION, ev.SELECTOR_VERSION,
+])
+def test_selector_v9_does_not_retry_v8_arxiv_negative(selector_version):
+    assert not ev.should_refresh({
+        "status": "not_found",
+        "reason": "arxiv_html_no_reusable_figure",
+        "checked_at": ev.iso_z(NOW - dt.timedelta(hours=1)),
+        "selector_version": selector_version,
+    }, now=NOW)
 
 
 def test_blank_visuals_persist_current_selector_version():
@@ -2081,6 +2442,41 @@ class CountingResolver:
             source_url="https://arxiv.org/abs/2608.12345",
             license_name="CC BY", alt="Safe", provider="arxiv",
         )
+
+
+def test_selector_v9_retries_only_newly_supported_mdpi_negative(tmp_path):
+    daily = tmp_path / "daily"
+    daily.mkdir()
+    papers = [
+        {"doi": "10.3390/met12091476", "llm": {"priority": "High"}},
+        {"doi": "10.1234/still-unsupported", "llm": {"priority": "High"}},
+    ]
+    (daily / "2026-08-12.json").write_text(json.dumps({
+        "papers": papers,
+    }), encoding="utf-8")
+    index = tmp_path / "visuals" / "index.json"
+    index.parent.mkdir()
+    cached = ev._blank_visual(
+        "not_found", checked_at=ev.iso_z(NOW - dt.timedelta(hours=1)),
+        reason="no_supported_public_figure_source",
+    )
+    cached["selector_version"] = ev.MDPI_SELECTOR_VERSION - 1
+    index.write_text(json.dumps({
+        "schema_version": "v1",
+        "records": {ev.identity_key(paper): cached for paper in papers},
+    }), encoding="utf-8")
+    resolver = CountingResolver()
+
+    result = ev.enrich(
+        daily_dir=daily, index_path=index, resolver=resolver, limit=10,
+        priorities={"High"}, now=NOW,
+    )
+
+    assert result["attempted"] == 1
+    assert resolver.calls == ["doi:10.3390/met12091476"]
+    saved = json.loads(index.read_text(encoding="utf-8"))["records"]
+    assert saved["doi:10.3390/met12091476"]["status"] == "available"
+    assert saved["doi:10.1234/still-unsupported"] == cached
 
 
 def test_lookup_aliases_deduplicate_requests_without_changing_public_keys(

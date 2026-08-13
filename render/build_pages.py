@@ -16,6 +16,7 @@ _DAILY_BUCKET_FILENAME = re.compile(r"^\d{4}-\d{2}-\d{2}\.json$")
 _VISUAL_IMAGE_HOSTS = {
     "arxiv.org",
     "export.arxiv.org",
+    "mdpi-res.com",
     "pmc-oa-opendata.s3.amazonaws.com",
 }
 _VISUAL_SVG_MEDIA_TYPE = "image/svg+xml"
@@ -31,6 +32,25 @@ _ARXIV_SVG_PATH = re.compile(
     r"v[1-9]\d*)/"
     r".+\.svg$",
     re.IGNORECASE,
+)
+_MDPI_ISSN_BY_SLUG = {
+    "applsci": "2076-3417",
+    "buildings": "2075-5309",
+    "coatings": "2079-6412",
+    "designs": "2411-9660",
+    "jmmp": "2504-4494",
+    "metals": "2075-4701",
+    "psf": "2673-9984",
+}
+_MDPI_RASTER_PATH = re.compile(
+    r"^/d_attachment/(?P<slug>applsci|buildings|coatings|designs|jmmp|metals|psf)/"
+    r"(?P<stem>(?P=slug)-(?P<volume>\d{2})-(?P<article>\d{5}))/"
+    r"article_deploy/html/images/(?P=stem)-g(?P<figure>(?!000)\d{3})"
+    r"(?:-550\.jpg|\.png)$"
+)
+_MDPI_SOURCE_PATH = re.compile(
+    r"^/(?P<issn>\d{4}-\d{3}[\dXx])/(?P<volume>[1-9]\d*)/"
+    r"(?P<issue>[1-9]\d*)/(?P<article>[1-9]\d*)$"
 )
 _VISUAL_TEXT_LIMITS = {
     "caption": 600,
@@ -259,6 +279,7 @@ def _safe_visual_record(value: object) -> dict | None:
         return None
 
     image_parts = urllib.parse.urlsplit(image_url)
+    source_parts = urllib.parse.urlsplit(source_url)
     image_suffix = pathlib.PurePosixPath(
         urllib.parse.unquote(image_parts.path)
     ).suffix.lower()
@@ -276,7 +297,6 @@ def _safe_visual_record(value: object) -> dict | None:
             for field in ("caption", "alt", "source_label")
         ):
             return None
-        source_parts = urllib.parse.urlsplit(source_url)
         path_match = _ARXIV_SVG_PATH.fullmatch(
             urllib.parse.unquote(image_parts.path)
         )
@@ -306,6 +326,36 @@ def _safe_visual_record(value: object) -> dict | None:
             re.sub(r"v\d+$", "", source_work, flags=re.IGNORECASE).lower()
         ):
             return None
+    elif (
+        value.get("provider") == "mdpi" or
+        image_parts.hostname == "mdpi-res.com" or
+        source_parts.hostname == "www.mdpi.com"
+    ):
+        image_match = _MDPI_RASTER_PATH.fullmatch(image_parts.path)
+        source_match = _MDPI_SOURCE_PATH.fullmatch(source_parts.path)
+        slug = image_match.group("slug") if image_match else ""
+        if (
+            value.get("provider") != "mdpi" or
+            image_parts.hostname != "mdpi-res.com" or
+            source_parts.hostname != "www.mdpi.com" or
+            image_parts.netloc.lower() != "mdpi-res.com" or
+            source_parts.netloc.lower() != "www.mdpi.com" or
+            image_parts.query or image_parts.fragment or
+            source_parts.query or source_parts.fragment or
+            "%" in image_parts.path or "\\" in image_parts.path or
+            "%" in source_parts.path or "\\" in source_parts.path or
+            not image_match or not source_match or
+            _MDPI_ISSN_BY_SLUG.get(slug) != source_match.group("issn") or
+            int(image_match.group("volume")) !=
+            int(source_match.group("volume")) or
+            int(image_match.group("article")) !=
+            int(source_match.group("article"))
+        ):
+            return None
+        expected_media_type = _VISUAL_RASTER_MEDIA_BY_SUFFIX.get(image_suffix)
+        if not expected_media_type or (
+                media_type and media_type != expected_media_type):
+            return None
     elif media_type:
         expected_media_type = _VISUAL_RASTER_MEDIA_BY_SUFFIX.get(image_suffix)
         if not expected_media_type or media_type != expected_media_type:
@@ -332,6 +382,14 @@ def _safe_visual_record(value: object) -> dict | None:
         raw = value.get(field)
         if isinstance(raw, int) and not isinstance(raw, bool) and 0 < raw <= 100_000:
             visual[field] = raw
+    if value.get("provider") == "mdpi":
+        if ("width" not in visual or "height" not in visual or
+                visual["width"] * visual["height"] < 4096):
+            return None
+        # The lazy renderer needs this one provider discriminator to repeat
+        # the server-side image/source work binding. Other resolver internals
+        # remain private, and search documents omit the optional visual.
+        visual["provider"] = "mdpi"
     if is_svg:
         if ("width" not in visual or "height" not in visual or
                 visual["width"] * visual["height"] < 4096):

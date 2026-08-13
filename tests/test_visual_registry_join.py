@@ -207,6 +207,107 @@ def test_public_raster_media_type_must_match_file_suffix():
     }) is None
 
 
+def test_public_mdpi_raster_requires_official_matching_work():
+    image_base = (
+        "https://mdpi-res.com/d_attachment/buildings/buildings-16-02321/"
+        "article_deploy/html/images/buildings-16-02321-g001-550.jpg"
+    )
+    source_base = "https://www.mdpi.com/2075-5309/16/12/2321"
+    base = {
+        **_available_visual(image_url=image_base, source_url=source_base),
+        "provider": "mdpi",
+        "media_type": "image/jpeg",
+    }
+    safe = build_pages._safe_visual_record(base)
+    assert safe is not None
+    assert safe["image_url"] == image_base
+    assert safe["source_url"] == source_base
+    assert safe["media_type"] == "image/jpeg"
+    assert safe["provider"] == "mdpi"
+    without_media_type = dict(base)
+    without_media_type.pop("media_type")
+    safe_without_media_type = build_pages._safe_visual_record(
+        without_media_type
+    )
+    assert safe_without_media_type is not None
+    assert "media_type" not in safe_without_media_type
+    assert safe_without_media_type["provider"] == "mdpi"
+
+    old_png = {
+        **_available_visual(
+            image_url=(
+                "https://mdpi-res.com/d_attachment/metals/metals-06-00166/"
+                "article_deploy/html/images/metals-06-00166-g001.png"
+            ),
+            source_url="https://www.mdpi.com/2075-4701/6/7/166",
+        ),
+        "provider": "mdpi",
+        "media_type": "image/png",
+    }
+    assert build_pages._safe_visual_record(old_png) is not None
+
+    for slug, issn in (
+        ("applsci", "2076-3417"),
+        ("buildings", "2075-5309"),
+        ("coatings", "2079-6412"),
+        ("designs", "2411-9660"),
+        ("jmmp", "2504-4494"),
+        ("metals", "2075-4701"),
+        ("psf", "2673-9984"),
+    ):
+        mapped = {
+            **_available_visual(
+                image_url=(
+                    f"https://mdpi-res.com/d_attachment/{slug}/"
+                    f"{slug}-16-02321/article_deploy/html/images/"
+                    f"{slug}-16-02321-g001-550.jpg"
+                ),
+                source_url=f"https://www.mdpi.com/{issn}/16/12/2321",
+            ),
+            "provider": "mdpi",
+        }
+        assert build_pages._safe_visual_record(mapped) is not None
+
+    for missing_dimension in ("width", "height"):
+        missing = dict(base)
+        missing.pop(missing_dimension)
+        assert build_pages._safe_visual_record(missing) is None
+
+    unsafe_variants = (
+        {"provider": None},
+        {"provider": "pmc"},
+        {"image_url": image_base.replace("mdpi-res.com", "images.example.com")},
+        {"image_url": image_base.replace("mdpi-res.com", "cdn.mdpi-res.com")},
+        {"image_url": image_base.replace("https://", "http://")},
+        {"image_url": image_base.replace("mdpi-res.com", "mdpi-res.com:444")},
+        {"image_url": image_base.replace("mdpi-res.com", "user@mdpi-res.com")},
+        {"image_url": image_base.replace("mdpi-res.com", "mdpi-res.com:443")},
+        {"image_url": image_base + "?download=1"},
+        {"image_url": image_base.replace("-550.jpg", ".jpg")},
+        {"image_url": image_base.replace("g001", "g000")},
+        {"image_url": image_base.replace("g001-550.jpg", "g001-550.png")},
+        {"image_url": image_base.replace("buildings-16-02321-g001", "buildings-16-02322-g001")},
+        {"image_url": image_base.replace("buildings-16-02321/", "buildings-16-02322/")},
+        {"source_url": source_base.replace("www.mdpi.com", "mdpi.com")},
+        {"source_url": source_base.replace("https://", "http://")},
+        {"source_url": source_base.replace("www.mdpi.com", "www.mdpi.com:444")},
+        {"source_url": source_base.replace("www.mdpi.com", "user@www.mdpi.com")},
+        {"source_url": source_base.replace("www.mdpi.com", "www.mdpi.com:443")},
+        {"source_url": source_base + "?type=check_update&version=1"},
+        {"source_url": source_base.replace("2075-5309", "2076-3417")},
+        {"source_url": source_base.replace("/16/12/2321", "/15/12/2321")},
+        {"source_url": source_base.replace("/16/12/2321", "/16/12/2322")},
+        {"media_type": "image/png"},
+        {"width": 20, "height": 20},
+        {"width": True},
+        {"height": False},
+        {"width": 100_001},
+        {"height": 100_001},
+    )
+    for changes in unsafe_variants:
+        assert build_pages._safe_visual_record({**base, **changes}) is None
+
+
 def test_public_visual_boundary_rejects_rights_in_caption_or_alt():
     base = _available_visual(
         image_url="https://arxiv.org/html/2608.12345/figure.png",
