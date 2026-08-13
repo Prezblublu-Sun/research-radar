@@ -1683,3 +1683,235 @@ def test_fresh_registry_alias_is_reused_and_copied_to_current_exact_key(tmp_path
     saved = json.loads(index.read_text(encoding="utf-8"))["records"]
     assert saved["doi:10.1234/lowercase"] == cached
     assert saved["doi:10.1234/LOWERCASE"] == cached
+
+
+class MetadataCapturingResolver:
+    def __init__(self):
+        self.papers = []
+
+    def resolve(self, paper, *, now=None):
+        self.papers.append(paper)
+        return ev._available_visual(
+            checked_at=ev.iso_z(now),
+            image_url="https://arxiv.org/html/2608.12345/figure.png",
+            caption="Safe aliased figure", source_label="arXiv",
+            source_url="https://arxiv.org/abs/2608.12345",
+            license_name="CC BY", alt="Safe aliased figure",
+            provider="arxiv",
+        )
+
+
+def _write_fresh_negative(index, *, status="not_found",
+                          reason="no_supported_public_figure_source"):
+    index.parent.mkdir()
+    cached = ev._blank_visual(
+        status, checked_at=ev.iso_z(NOW - dt.timedelta(hours=1)),
+        reason=reason,
+    )
+    index.write_text(json.dumps({
+        "schema_version": "v1",
+        "records": {"doi:10.1234/samework": cached},
+    }), encoding="utf-8")
+    return cached
+
+
+def test_doi_alias_metadata_enriches_resolver_without_changing_public_identity(
+        tmp_path):
+    daily = tmp_path / "daily"
+    daily.mkdir()
+    papers = [
+        {
+            "doi": "10.1234/samework",
+            "title": "Canonical title",
+            "source": "openalex",
+            "llm": {"priority": "High"},
+        },
+        {
+            "doi": "10.1234/SameWork",
+            "arxiv_id": "2608.12345v2",
+            "title": "Metadata donor title",
+            "source": "arxiv",
+            "llm": {"priority": "Medium"},
+        },
+    ]
+    bucket = daily / "2026-08-12.json"
+    bucket.write_text(json.dumps({"papers": papers}), encoding="utf-8")
+    original_daily = bucket.read_bytes()
+    index = tmp_path / "visuals" / "index.json"
+    _write_fresh_negative(index)
+    resolver = MetadataCapturingResolver()
+
+    result = ev.enrich(
+        daily_dir=daily, index_path=index, resolver=resolver, limit=10,
+        priorities={"High"}, now=NOW,
+    )
+
+    assert result["attempted"] == 1
+    assert result["counts"] == {"available": 1}
+    assert len(resolver.papers) == 1
+    resolver_paper = resolver.papers[0]
+    assert ev.identity_key(resolver_paper) == "doi:10.1234/samework"
+    assert resolver_paper["arxiv_id"] == "2608.12345v2"
+    assert resolver_paper["title"] == "Canonical title"
+    assert resolver_paper["source"] == "openalex"
+    assert resolver_paper["llm"] == {"priority": "High"}
+    assert bucket.read_bytes() == original_daily
+
+    saved = json.loads(index.read_text(encoding="utf-8"))["records"]
+    assert set(saved) == {
+        "doi:10.1234/samework", "doi:10.1234/SameWork",
+    }
+    assert all(record["status"] == "available" for record in saved.values())
+
+    # The one-time bypass is specific to the old source-less negative.  Once
+    # an ordinary fresh result exists, normal cache reuse resumes.
+    second_resolver = MetadataCapturingResolver()
+    second = ev.enrich(
+        daily_dir=daily, index_path=index, resolver=second_resolver, limit=10,
+        priorities={"High"}, now=NOW + dt.timedelta(seconds=1),
+    )
+    assert second["attempted"] == 0
+    assert second_resolver.papers == []
+
+
+def test_doi_metadata_donor_can_come_from_noncanonical_raw_observation(
+        tmp_path):
+    daily = tmp_path / "daily"
+    daily.mkdir()
+    (daily / "2026-01-01.json").write_text(json.dumps({
+        "papers": [{
+            "doi": "10.1234/samework",
+            "title": "Canonical title",
+            "source": "openalex",
+            "llm": {"priority": "High"},
+        }],
+    }), encoding="utf-8")
+    (daily / "2026-08-12.json").write_text(json.dumps({
+        "papers": [{
+            "doi": "10.1234/samework",
+            "arxiv_id": "2608.12345v3",
+            "first_seen_at": "2026-08-12T00:00:00Z",
+            "title": "Later donor title",
+            "source": "arxiv",
+            "llm": {"priority": "Low"},
+        }],
+    }), encoding="utf-8")
+    index = tmp_path / "visuals" / "index.json"
+    _write_fresh_negative(index)
+    resolver = MetadataCapturingResolver()
+
+    result = ev.enrich(
+        daily_dir=daily, index_path=index, resolver=resolver, limit=10,
+        priorities={"High"}, now=NOW,
+    )
+
+    assert result["attempted"] == 1
+    assert len(resolver.papers) == 1
+    assert resolver.papers[0]["arxiv_id"] == "2608.12345v3"
+    assert resolver.papers[0]["title"] == "Canonical title"
+    assert resolver.papers[0]["llm"] == {"priority": "High"}
+
+
+@pytest.mark.parametrize(("status", "reason"), [
+    ("not_found", "arxiv_html_no_reusable_figure"),
+    ("blocked", "pmc_license_not_reusable"),
+    ("error", "pmc: HTTP 429"),
+])
+def test_alias_metadata_does_not_bypass_other_fresh_cache_results(
+        tmp_path, status, reason):
+    daily = tmp_path / "daily"
+    daily.mkdir()
+    (daily / "2026-08-12.json").write_text(json.dumps({
+        "papers": [
+            {
+                "doi": "10.1234/samework",
+                "llm": {"priority": "High"},
+            },
+            {
+                "doi": "10.1234/SameWork",
+                "arxiv_id": "2608.12345v1",
+                "llm": {"priority": "Low"},
+            },
+        ],
+    }), encoding="utf-8")
+    index = tmp_path / "visuals" / "index.json"
+    cached = _write_fresh_negative(index, status=status, reason=reason)
+    resolver = MetadataCapturingResolver()
+
+    result = ev.enrich(
+        daily_dir=daily, index_path=index, resolver=resolver, limit=10,
+        priorities={"High"}, now=NOW,
+    )
+
+    assert result["attempted"] == 0
+    assert resolver.papers == []
+    saved = json.loads(index.read_text(encoding="utf-8"))["records"]
+    assert saved["doi:10.1234/samework"] == cached
+    assert saved["doi:10.1234/SameWork"] == cached
+
+
+def test_doi_alias_arxiv_versions_are_one_nonconflicting_work(tmp_path):
+    daily = tmp_path / "daily"
+    daily.mkdir()
+    (daily / "2026-08-12.json").write_text(json.dumps({
+        "papers": [
+            {
+                "doi": "10.1234/samework",
+                "llm": {"priority": "High"},
+            },
+            {
+                "doi": "10.1234/SameWork",
+                "arxiv_id": "2608.12345v1",
+                "llm": {"priority": "Low"},
+            },
+            {
+                "doi": "10.1234/SAMEWORK",
+                "arxiv_id": "2608.12345v3",
+                "llm": {"priority": "Exclude"},
+            },
+        ],
+    }), encoding="utf-8")
+
+    rows = ev.iter_candidates(daily, {"High"})
+
+    assert len(rows) == 1
+    assert rows[0][0] == "doi:10.1234/samework"
+    assert rows[0][1]["arxiv_id"] == "2608.12345v1"
+
+
+def test_conflicting_doi_alias_arxiv_metadata_fails_closed(tmp_path):
+    daily = tmp_path / "daily"
+    daily.mkdir()
+    (daily / "2026-08-12.json").write_text(json.dumps({
+        "papers": [
+            {
+                "doi": "10.1234/samework",
+                "llm": {"priority": "High"},
+            },
+            {
+                "doi": "10.1234/SameWork",
+                "arxiv_id": "2608.11111v1",
+                "llm": {"priority": "Low"},
+            },
+            {
+                "doi": "10.1234/SAMEWORK",
+                "arxiv_id": "2608.22222v1",
+                "llm": {"priority": "Exclude"},
+            },
+        ],
+    }), encoding="utf-8")
+    index = tmp_path / "visuals" / "index.json"
+    _write_fresh_negative(index)
+    resolver = MetadataCapturingResolver()
+
+    rows = ev.iter_candidates(daily, {"High"})
+    assert len(rows) == 1
+    assert rows[0][0] == "doi:10.1234/samework"
+    assert not rows[0][1].get("arxiv_id")
+
+    result = ev.enrich(
+        daily_dir=daily, index_path=index, resolver=resolver, limit=10,
+        priorities={"High"}, now=NOW,
+    )
+    assert result["attempted"] == 0
+    assert resolver.papers == []

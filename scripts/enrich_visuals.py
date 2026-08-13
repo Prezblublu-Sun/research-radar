@@ -1194,17 +1194,28 @@ def _sort_candidates(
 def _canonical_snapshot(
         daily_dir: Path, priorities: set[str],
         identities: set[str] | None = None,
-) -> tuple[list[tuple[str, dict, str]], dict[str, list[str]]]:
-    """Return selected winners plus aliases with bounded corpus memory.
+) -> tuple[
+        list[tuple[str, dict, str]], dict[str, list[str]], set[str],
+]:
+    """Return selected winners, aliases, and resolver-only enrichments.
 
     This is a two-pass projection of ``corpus_view.canonicalize_buckets``.
     Calling its rank helper keeps first-seen winner semantics in one source of
-    truth, while the first pass retains only winner locations.  The second pass
-    keeps full paper objects only for requested priorities, rather than holding
-    the complete (large-abstract) corpus in memory.
+    truth.  In addition to winner locations, the first pass retains only a
+    compact arXiv identifier map for normalized DOI lookup groups.  The second
+    pass keeps full paper objects only for requested priorities, rather than
+    holding the complete (large-abstract) corpus in memory.
+
+    A canonical winner can be less metadata-rich than another observation of
+    the same case-insensitive DOI.  When every non-empty arXiv identifier in
+    that DOI group names the same arXiv work, a shallow candidate copy receives
+    one of those identifiers for provider resolution only.  Its DOI, exact
+    public identity, priority, and all persisted corpus data stay unchanged.
+    Conflicting arXiv works fail closed and are not merged.
     """
     paths = sorted(daily_dir.glob("*.json"))
     winners: dict[str, tuple[tuple, str, int]] = {}
+    arxiv_ids_by_lookup: dict[str, dict[str, str]] = {}
     for path in paths:
         bucket_date = path.stem
         for position, paper in enumerate(_daily_papers(path)):
@@ -1222,8 +1233,24 @@ def _canonical_snapshot(
             if current is None or candidate[0] < current[0]:
                 winners[key] = candidate
 
+            # DOI is already the paper's strict public identity here.  Retain
+            # a compact provider-only bridge to an arXiv observation of that
+            # same DOI, including observations that did not win canonical
+            # selection.  Grouping uses the established private DOI alias and
+            # never changes the exact renderer/localStorage key.
+            lookup = _visual_lookup_identity(key) or key
+            raw_arxiv_id = str(paper.get("arxiv_id") or "").strip()
+            if lookup.startswith("doi:") and raw_arxiv_id:
+                arxiv_base = re.sub(
+                    r"v\d+$", "", raw_arxiv_id, flags=re.IGNORECASE,
+                )
+                arxiv_ids_by_lookup.setdefault(lookup, {}).setdefault(
+                    arxiv_base, raw_arxiv_id,
+                )
+
     candidates: list[tuple[str, dict, str]] = []
     aliases_by_lookup: dict[str, list[str]] = {}
+    enriched_lookups: set[str] = set()
     for path in paths:
         bucket_date = path.stem
         for position, paper in enumerate(_daily_papers(path)):
@@ -1239,16 +1266,23 @@ def _canonical_snapshot(
             priority = str((paper.get("llm") or {}).get("priority") or "")
             if priority in priorities and (
                     identities is None or key in identities):
-                candidates.append((key, paper, bucket_date))
+                resolver_paper = paper
+                arxiv_ids = arxiv_ids_by_lookup.get(lookup, {})
+                if (not str(paper.get("arxiv_id") or "").strip() and
+                        len(arxiv_ids) == 1):
+                    resolver_paper = dict(paper)
+                    resolver_paper["arxiv_id"] = next(iter(arxiv_ids.values()))
+                    enriched_lookups.add(lookup)
+                candidates.append((key, resolver_paper, bucket_date))
 
-    return _sort_candidates(candidates), aliases_by_lookup
+    return _sort_candidates(candidates), aliases_by_lookup, enriched_lookups
 
 
 def iter_candidates(
         daily_dir: Path, priorities: set[str],
         identities: set[str] | None = None) -> list[tuple[str, dict, str]]:
     """Return eligible canonical winners, never stale duplicate records."""
-    candidates, _aliases = _canonical_snapshot(
+    candidates, _aliases, _enriched = _canonical_snapshot(
         daily_dir, priorities, identities,
     )
     return candidates
@@ -1306,7 +1340,7 @@ def enrich(*, daily_dir: Path, index_path: Path, resolver: VisualResolver,
     current_time = now or utc_now()
     registry = load_registry(index_path)
     records = registry["records"]
-    candidates, corpus_aliases = _canonical_snapshot(
+    candidates, corpus_aliases, metadata_enriched_lookups = _canonical_snapshot(
         daily_dir, priorities, identities,
     )
 
@@ -1331,7 +1365,18 @@ def enrich(*, daily_dir: Path, index_path: Path, resolver: VisualResolver,
         cached = _fresh_alias_record(
             cached_entries, now=current_time, force=force,
         )
-        if cached is not None:
+        # A previously source-less winner may now inherit a trustworthy arXiv
+        # identifier from the same normalized DOI group.  Retry that precise
+        # negative result immediately instead of hiding the new provider path
+        # behind its 30-day TTL.  Every other fresh status/reason keeps the
+        # existing cache semantics.
+        newly_resolvable_negative = (
+            cached is not None and
+            lookup in metadata_enriched_lookups and
+            cached.get("status") == "not_found" and
+            cached.get("reason") == "no_supported_public_figure_source"
+        )
+        if cached is not None and not newly_resolvable_negative:
             dirty = _store_aliases(records, aliases, cached) or dirty
             continue
         if attempted >= limit:
