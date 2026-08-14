@@ -1,0 +1,2383 @@
+{
+  "schema_version": "v2",
+  "date": "2026-08-13",
+  "date_precision": "day",
+  "papers": [
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2608.13552v1",
+      "doi": "",
+      "arxiv_id": "2608.13552v1",
+      "title": "PlayWorld: Benchmarking World Models with Agent Players over Long-Horizon Objectives",
+      "abstract": "Video world models simulate future states conditioned on current observations and user actions. Recent systems have demonstrated impressive video consistency and action controllability over long sequences. However, fairly comparing these interactive models remains challenging. In practice, a human player typically evaluates a world model by pursuing long-horizon objectives through interaction. For example, a user may turn around 360 degrees to see whether the environment remains consistent, or walk into the water and inspect whether realistic water ripples are generated. The action sequence required to achieve the same objective may vary substantially between models, making fixed action-conditioned evaluation unsuitable for cross-model comparison. To address this, we employ multi-modal Agent Players to interact with world models toward specified long-horizon objectives. Building on this paradigm, we introduce PlayWorld, a benchmark providing 171 scenarios, each with a specified objective. To evaluate performance thoroughly, we assess models along four core dimensions: geometry consistency, interaction fidelity, out-of-sight evolution, and insight evolution. In addition, we incorporate basic ability metrics for video quality and controllability. Experiments across nine state-of-the-art world models reveal that current models remain unreliable on long-horizon interactive objectives, particularly in maintaining spatial consistency and persistent state evolution. Code and data are available at https://github.com/kxding/PlayWorld.",
+      "authors": [
+        "Kaixin Ding",
+        "Xi Chen",
+        "Minghong Cai",
+        "Zhiyuan Xu",
+        "Yiyang Wang",
+        "Yuxiang Lu",
+        "Junyi Li",
+        "Shuyang Chen",
+        "Yuan Gao",
+        "Xin Tao",
+        "Pengfei Wan",
+        "Hengshuang Zhao"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-08-13",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2608.13552v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.CV"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "world model"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该论文聚焦于视频世界模型的基准测试，与工程仿真或生物力学设计无直接关联，仅作为世界模型领域的背景参考。",
+        "why_not_core": "This paper does not connect world models to engineering simulation, FEA/FEM data, or design optimization; it focuses on video consistency and interaction fidelity in game-like scenarios.",
+        "validation_kind": "numerical_benchmark",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "world models",
+          "benchmark",
+          "video generation",
+          "agent players",
+          "long-horizon objectives"
+        ],
+        "summary_zh": {
+          "motivation": "现有视频世界模型缺乏公平的交互式评估方法。",
+          "method": "提出PlayWorld基准，利用多模态Agent Players与模型交互完成长程目标。",
+          "result": "九个先进模型在长程交互任务中表现不可靠，尤其空间一致性和状态演化不足。",
+          "validation": "基于171个场景的数值基准测试。"
+        },
+        "summary_en": {
+          "motivation": "The paper addresses the lack of fair evaluation methods for interactive video world models by proposing an agent-based benchmark.",
+          "method": "It introduces PlayWorld, a benchmark with 171 scenarios where multi-modal agent players interact with world models to achieve specified long-horizon objectives.",
+          "result": "Experiments on nine state-of-the-art world models reveal unreliable performance on long-horizon interactive tasks, particularly in spatial consistency and persistent state evolution.",
+          "validation": "The validation is a numerical benchmark using the proposed PlayWorld dataset and evaluation metrics."
+        },
+        "key_terms": [
+          {
+            "en": "world models",
+            "zh": "世界模型"
+          },
+          {
+            "en": "video generation",
+            "zh": "视频生成"
+          },
+          {
+            "en": "benchmark",
+            "zh": "基准测试"
+          },
+          {
+            "en": "agent players",
+            "zh": "智能体玩家"
+          },
+          {
+            "en": "long-horizon objectives",
+            "zh": "长程目标"
+          },
+          {
+            "en": "geometry consistency",
+            "zh": "几何一致性"
+          },
+          {
+            "en": "interaction fidelity",
+            "zh": "交互保真度"
+          },
+          {
+            "en": "out-of-sight evolution",
+            "zh": "视野外演化"
+          },
+          {
+            "en": "insight evolution",
+            "zh": "洞察演化"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-08-14T04:47:05Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2608.13546v1",
+      "doi": "",
+      "arxiv_id": "2608.13546v1",
+      "title": "Alaya-EVOKE: From Linear-Scaling Supervision to Endless World",
+      "abstract": "Interactive world models must support persistent memory, responsive interaction, and long-horizon generation, yet these requirements place conflicting demands on the model. Maintaining history in the denoiser context or key-value cache incurs growing cost, forcing a trade-off between session length and retained memory, while low-latency interaction relies on few-step generation whose capabilities are bounded by its teacher. Evoke addresses both limitations by externalizing persistent world state and redesigning the teacher for long-horizon interactive generation. Scene geometry is maintained in an external, camera-indexed world state bank, from which only view-relevant information is retrieved, keeping the denoiser context bounded as the session grows. Rather than treating the teacher as a fixed generator, we design it for long-horizon supervision: its sparse attention combines chunk-wise grouping, retrieval of selected distant frames, and a linear-attention global state, yielding linear growth in memory and compute while enabling supervision over long horizons. Such supervision exposes content drift that stays locally plausible within short windows, while per-chunk conditioning enables prompt changes and event control throughout the sequence. A 30-second distribution-matching objective, applied under self-forced rollouts, transfers both capabilities to a three-step student that uses no classifier-free guidance, improving resistance to long-term drift while preserving responsive conditioning. With bounded context and recurrent external memory, Evoke supports open-ended, continuously evolving generation; on a single H200 at $384\\times 640$, each $1.5\\,\\mathrm{s}$ chunk is generated in $2.11\\,\\mathrm{s}$. As a three-step world model, Evoke achieves state-of-the-art performance on WBench while remaining competitive on VBench-Long and VBench-2.0.",
+      "authors": [
+        "Yuanyang Yin",
+        "Gongxuan Wang",
+        "Yifan Zhan",
+        "Chuanhao Li",
+        "Kaipeng Zhang",
+        "Feng Zhao"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-08-13",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2608.13546v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.CV"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "world model"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该论文涉及世界模型和长时程生成，但与工程仿真或生物力学设计无直接关联。",
+        "why_not_core": "This paper does not connect to engineering simulation, FEA/FEM data, or design optimization; it focuses on video world models for interactive generation.",
+        "validation_kind": "numerical_benchmark",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "world models",
+          "long-horizon generation",
+          "interactive generation",
+          "video generation",
+          "efficient attention"
+        ],
+        "summary_zh": {
+          "motivation": "解决交互式世界模型在长会话中记忆与计算成本冲突的问题。",
+          "method": "采用外部状态库和线性注意力教师模型，训练三步学生模型。",
+          "result": "在WBench上达到最优，同时保持VBench竞争力。",
+          "validation": "在标准视频生成基准上评估性能。"
+        },
+        "summary_en": {
+          "motivation": "Interactive world models face conflicting demands of persistent memory, responsive interaction, and long-horizon generation, which current approaches fail to balance.",
+          "method": "The proposed Evoke model externalizes persistent world state into a camera-indexed bank and redesigns the teacher with sparse attention and linear-attention global state to enable long-horizon supervision.",
+          "result": "Evoke achieves state-of-the-art performance on WBench while remaining competitive on VBench-Long and VBench-2.0, with efficient generation on a single H200.",
+          "validation": "The model is validated on standard video generation benchmarks (WBench, VBench-Long, VBench-2.0) with no physical or engineering simulation."
+        },
+        "key_terms": [
+          {
+            "en": "world model",
+            "zh": "世界模型"
+          },
+          {
+            "en": "long-horizon generation",
+            "zh": "长时程生成"
+          },
+          {
+            "en": "external memory",
+            "zh": "外部记忆"
+          },
+          {
+            "en": "linear attention",
+            "zh": "线性注意力"
+          },
+          {
+            "en": "student model",
+            "zh": "学生模型"
+          },
+          {
+            "en": "classifier-free guidance",
+            "zh": "无分类器引导"
+          },
+          {
+            "en": "video generation",
+            "zh": "视频生成"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-08-14T04:47:05Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2608.13518v1",
+      "doi": "",
+      "arxiv_id": "2608.13518v1",
+      "title": "Intervention-Aware Clinical World Model for Post-Op Outcome Forecasting in Cardiology",
+      "abstract": "Many clinical prediction models treat post-intervention outcomes as a one-step mapping from baseline measurements to a future endpoint. However, recovery after a procedure often unfolds as an irregular trajectory: clinical observations, medication changes, repeat interventions, and physiological measurements are recorded asynchronously and can change risk assessment over time. We propose an intervention-aware clinical world model that represents each patient with a structured latent state and evolves it through time-ordered post-intervention events. The model first encodes baseline imaging into a 3D spatial latent state. It then updates this state using procedural context, static covariates, elapsed time, and peri-event physiological embeddings. Follow-up imaging provides training-only supervision through a latent forecasting objective. We apply the framework to atrial fibrillation ablation. During the 90-day recovery window, irregular post-procedure records provide clinically meaningful evidence for long-term recurrence risk. In repeated internal cross-validation on DECAAF-II, our model achieves AUROC 0.756 and AUPRC 0.777 for recurrence prediction. It also achieves a scar-extent MAE of 2.971 percentage points without requiring follow-up MRI intensities at inference. The learned state supports recurrence-risk queries at different horizons and retrospective input editing of blanking-period records.",
+      "authors": [
+        "Yunsung Chung",
+        "Yingshuo Liu",
+        "Abboud F. Hassan",
+        "Han Feng",
+        "Mary M. Maleckar",
+        "Nassir Marrouche",
+        "Jihun Hamm"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-08-13",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2608.13518v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.LG",
+        "cs.CV"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "world model"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该论文将世界模型应用于临床心脏病学预测，与用户的工程仿真和生物力学设计方向无直接关联。",
+        "why_not_core": "This paper does not involve engineering simulation, FEA, implant mechanics, or design optimization; it is purely clinical prediction with no connection to the user's RL-for-simulation direction.",
+        "validation_kind": "clinical",
+        "flags": {
+          "has_experimental_validation": true,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": true,
+          "is_review": false
+        },
+        "tags": [
+          "world model",
+          "clinical prediction",
+          "cardiology",
+          "latent state",
+          "irregular time series"
+        ],
+        "summary_zh": {
+          "motivation": "临床术后恢复轨迹不规则，现有模型难以捕捉动态风险变化。",
+          "method": "提出干预感知的临床世界模型，用结构化潜状态编码并更新患者状态。",
+          "result": "在DECAAF-II上复发预测AUROC 0.756，疤痕范围MAE 2.971。",
+          "validation": "基于临床数据集DECAAF-II进行内部交叉验证。"
+        },
+        "summary_en": {
+          "motivation": "Post-operative recovery is an irregular trajectory, and existing models fail to capture dynamic risk changes over time.",
+          "method": "An intervention-aware clinical world model is proposed, representing each patient with a structured latent state that evolves through time-ordered events.",
+          "result": "The model achieves AUROC 0.756 and AUPRC 0.777 for recurrence prediction on DECAAF-II, with scar-extent MAE of 2.971 percentage points.",
+          "validation": "Validation is performed via repeated internal cross-validation on the DECAAF-II clinical dataset."
+        },
+        "key_terms": [
+          {
+            "en": "world model",
+            "zh": "世界模型"
+          },
+          {
+            "en": "clinical prediction",
+            "zh": "临床预测"
+          },
+          {
+            "en": "latent state",
+            "zh": "潜状态"
+          },
+          {
+            "en": "irregular time series",
+            "zh": "不规则时间序列"
+          },
+          {
+            "en": "atrial fibrillation ablation",
+            "zh": "房颤消融"
+          },
+          {
+            "en": "recurrence prediction",
+            "zh": "复发预测"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-08-14T04:47:05Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2608.13506v1",
+      "doi": "",
+      "arxiv_id": "2608.13506v1",
+      "title": "Equivariant learning of a transferable three-dimensional classical density functional",
+      "abstract": "Liquids exhibit collective behavior that depends sensitively on thermodynamic conditions, interfaces and confinement, yet predicting each new state commonly requires a separate atomistic simulation. Classical density functional theory offers a reusable variational description, but its central excess free-energy functional is generally unknown, and learned approximations have largely remained restricted to planar or lower-dimensional settings. Here we show that this functional can be learned directly from fully three-dimensional equilibrium density fields while preserving spatial symmetry and variational consistency, without free-energy or chemical-potential labels. A single learned functional transfers across temperatures, system sizes and statistical ensembles, and recovers structure factors, the equation of state, liquid--vapor coexistence and interfacial broadening, none of which are used as training targets. Applied to complex three-dimensional geometries, it predicts the non-monotonic force associated with formation and rupture of a solvent-depleted bridge between colloids and adsorption in an interconnected gyroid pore. These results demonstrate that equilibrium density data can be converted into a transferable thermodynamic generator connecting microscopic liquid structure to response, phase behavior and collective phenomena.",
+      "authors": [
+        "Bingqing Cheng"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-08-13",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2608.13506v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cond-mat.stat-mech",
+        "cond-mat.soft",
+        "cs.LG",
+        "physics.chem-ph",
+        "physics.comp-ph"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "am_biomedical"
+      ],
+      "direction": "am_biomedical",
+      "direction_name": "AM Biomedical Materials",
+      "routing_matches": {
+        "am_biomedical": [
+          "gyroid"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该论文涉及机器学习预测液体密度分布，与生物医学增材制造或植入物力学无直接关联。",
+        "why_not_core": "This paper does not address porous implant structures, stress shielding, LPBF fabrication, mechanical testing, or osseointegration; it focuses on classical density functional theory for liquids.",
+        "validation_kind": "numerical_benchmark",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "equivariant learning",
+          "classical density functional theory",
+          "transferable model",
+          "liquid structure",
+          "machine learning"
+        ],
+        "summary_zh": {
+          "motivation": "预测液体在不同条件下的集体行为通常需要单独模拟，缺乏可重用模型。",
+          "method": "利用等变神经网络直接从三维平衡密度场学习自由能泛函，保持对称性和变分一致性。",
+          "result": "单一模型可跨温度、尺寸和系综迁移，预测结构因子、状态方程及复杂几何中的力。",
+          "validation": "通过数值模拟数据验证，未涉及实验或生物医学应用。"
+        },
+        "summary_en": {
+          "motivation": "Predicting collective liquid behavior across conditions typically requires separate atomistic simulations, motivating a reusable variational model.",
+          "method": "An equivariant neural network learns the excess free-energy functional directly from three-dimensional equilibrium density fields, preserving symmetry and variational consistency.",
+          "result": "The learned functional transfers across temperatures, sizes, and ensembles, accurately predicting structure factors, equation of state, and forces in complex geometries.",
+          "validation": "Validated against numerical simulation data, with no experimental or biomedical validation."
+        },
+        "key_terms": [
+          {
+            "en": "equivariant learning",
+            "zh": "等变学习"
+          },
+          {
+            "en": "classical density functional theory",
+            "zh": "经典密度泛函理论"
+          },
+          {
+            "en": "transferable model",
+            "zh": "可迁移模型"
+          },
+          {
+            "en": "liquid structure",
+            "zh": "液体结构"
+          },
+          {
+            "en": "machine learning",
+            "zh": "机器学习"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-08-14T04:47:05Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2608.13489v1",
+      "doi": "",
+      "arxiv_id": "2608.13489v1",
+      "title": "DreamX-Phi 1.0: Action-Conditioned Video World Model for Robotic Manipulation",
+      "abstract": "We present \\textbf{DreamX-Phi 1.0}, an action-conditioned video world model for robotic manipulation that, given an observed frame, a language instruction, and a prescribed action sequence comprising end-effector poses and gripper states, predicts the resulting future observations. Yet realism alone does not guarantee faithfulness: a convincing rollout can still move the wrong arm or lose the manipulated object. To ensure the prediction respects each arm's commanded path, we inject per-arm $\\mathrm{SE}(3)$ transformations into attention via \\textbf{PRoPE-style geometric encoding}, preserving arm identity and rigid-motion structure. Action control alone does not fully constrain scene geometry or the evolution of small manipulated objects. We therefore add a lightweight \\textbf{depth branch} for scene-level geometry and use \\textbf{SAM3 masks} with a frozen \\textbf{V-JEPA teacher} to maintain object consistency throughout grasping. We further distill the multi-step generator into a few-step student via distribution-matching distillation for efficient deployment. At the time of writing, \\model{} achieves first place on Track~1 and second place on Track~2 of the WorldArena~2.0 Challenge. Our model and code will be publicly available.",
+      "authors": [
+        " DreamX Team",
+        "Rui Chen",
+        "Xiangxiang Chu",
+        "Geng Li",
+        "Jifan Li",
+        "Qingfeng Shi",
+        "Datao Tang",
+        "Jing Tang",
+        "Jun Wang",
+        "Pengfei Zhang"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-08-13",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2608.13489v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.CV",
+        "cs.RO"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "world model"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该论文聚焦于机器人操作中的视频世界模型，与工程仿真或生物力学设计无直接关联，仅作为世界模型方法论的背景参考。",
+        "why_not_core": "This paper does not connect to engineering simulation, FEA/FEM data, or design optimization; it is purely a robotics world model for manipulation, lacking any physics-based simulation or biomechanical context.",
+        "validation_kind": "numerical_benchmark",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "world model",
+          "robotic manipulation",
+          "video prediction",
+          "action-conditioned",
+          "geometric encoding"
+        ],
+        "summary_zh": {
+          "motivation": "提升机器人操作中视频世界模型的预测真实性与物理一致性。",
+          "method": "结合PRoPE几何编码、深度分支和SAM3掩码，并蒸馏为少步生成器。",
+          "result": "在WorldArena 2.0挑战赛中获得两项前列排名。",
+          "validation": "在WorldArena 2.0基准上评估，无物理实验验证。"
+        },
+        "summary_en": {
+          "motivation": "To improve the realism and physical consistency of action-conditioned video world models for robotic manipulation.",
+          "method": "The model integrates PRoPE-style geometric encoding, a depth branch, and SAM3 masks with a V-JEPA teacher, and distills the multi-step generator into a few-step student.",
+          "result": "The model achieved first place on Track 1 and second place on Track 2 of the WorldArena 2.0 Challenge.",
+          "validation": "Validation was performed on the WorldArena 2.0 benchmark, without physical experiments."
+        },
+        "key_terms": [
+          {
+            "en": "world model",
+            "zh": "世界模型"
+          },
+          {
+            "en": "robotic manipulation",
+            "zh": "机器人操作"
+          },
+          {
+            "en": "video prediction",
+            "zh": "视频预测"
+          },
+          {
+            "en": "action-conditioned",
+            "zh": "动作条件化"
+          },
+          {
+            "en": "geometric encoding",
+            "zh": "几何编码"
+          },
+          {
+            "en": "depth branch",
+            "zh": "深度分支"
+          },
+          {
+            "en": "SAM3 masks",
+            "zh": "SAM3掩码"
+          },
+          {
+            "en": "distribution-matching distillation",
+            "zh": "分布匹配蒸馏"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-08-14T04:47:05Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2608.13438v1",
+      "doi": "",
+      "arxiv_id": "2608.13438v1",
+      "title": "ContactGuard: Pre-Contact Execution Monitoring with Action-Conditioned Latent World Models",
+      "abstract": "Contact-rich manipulation failures are often detected only after the robot has committed to contact. This is especially limiting in wrist-camera setups: close gripper--object views help observe contact, but a poor approach may already push, miss, slip, or disturb the object before conventional detectors react. We introduce \\emph{ContactGuard}, a pre-contact execution monitor for chunked visuomotor policies. Given the policy's planned action chunk, ContactGuard predicts its short-horizon consequence in latent visual space and aborts if the predicted future latent indicates likely failure. Its latent world model is trained from unlabelled robot trajectories to predict compact multi-view visual embeddings under planned actions, avoiding pixel-level video prediction. A lightweight failure probe is then trained from a small labelled set of pre-contact clips. At deployment, ContactGuard anchors prediction before an imminent contact event, rolls the model forward under the policy's own actions, and verifies the predicted post-contact latent. Across real-world contact-rich manipulation tasks, ContactGuard predicts failure more accurately than direct and corrupted-action ablations, and transfers to live robot as a pre-contact abort signal without modifying the underlying policy.",
+      "authors": [
+        "Gehan Zheng",
+        "Matthew Johnson-Roberson",
+        "Weiming Zhi"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-08-13",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2608.13438v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.RO",
+        "cs.AI",
+        "cs.CV"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "world model"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该论文涉及世界模型在机器人操作中的应用，与用户的工程仿真和生物力学设计方向关联较弱。",
+        "why_not_core": "This paper does not connect to engineering simulation, FEA/FEM data, or design optimization; it focuses on robot manipulation monitoring without any physics-based simulation or biomechanical context.",
+        "validation_kind": "simulation_case",
+        "flags": {
+          "has_experimental_validation": true,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "world models",
+          "robot manipulation",
+          "pre-contact monitoring",
+          "latent space prediction",
+          "visuomotor policies"
+        ],
+        "summary_zh": {
+          "motivation": "接触丰富操作常在接触后才检测到失败，需要提前预测。",
+          "method": "利用潜在世界模型预测动作块后果，并在接触前中止失败操作。",
+          "result": "在真实操作任务中比基线更准确预测失败，并可作为实时中止信号。",
+          "validation": "通过真实机器人操作任务和消融实验验证。"
+        },
+        "summary_en": {
+          "motivation": "Contact-rich manipulation failures are often detected only after contact, motivating a pre-contact monitoring approach.",
+          "method": "ContactGuard trains a latent world model to predict future visual embeddings under planned actions and uses a failure probe to abort before contact.",
+          "result": "It achieves higher failure prediction accuracy than baselines and transfers to live robot as a pre-contact abort signal.",
+          "validation": "Validated on real-world contact-rich manipulation tasks with ablations and live robot deployment."
+        },
+        "key_terms": [
+          {
+            "en": "world model",
+            "zh": "世界模型"
+          },
+          {
+            "en": "latent space",
+            "zh": "潜在空间"
+          },
+          {
+            "en": "contact-rich manipulation",
+            "zh": "接触丰富操作"
+          },
+          {
+            "en": "visuomotor policy",
+            "zh": "视觉运动策略"
+          },
+          {
+            "en": "pre-contact monitoring",
+            "zh": "接触前监控"
+          },
+          {
+            "en": "action chunk",
+            "zh": "动作块"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-08-14T04:47:05Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2608.13345v1",
+      "doi": "",
+      "arxiv_id": "2608.13345v1",
+      "title": "Rules or Character? Scaling Laws for AI Safety Design",
+      "abstract": "Artificial Intelligence (AI) safety systems combine character shaping (e.g., Reinforcement Learning from Human Feedback [RLHF], Constitutional AI), which modifies behavioral distributions at training time, with rule enforcement (e.g., output filters, safety classifiers), which blocks harmful outputs at inference time, yet little formal analysis exists on how their optimal balance should change as deployment scales increase. We introduce a stylized comparative-statics model that parameterizes safety design as a resource allocation alpha in [0,1] between these two approaches, incorporating scale-dependent filter degradation, common-mode failures, and character fragility -- the risk that shaped behavior degrades or collapses under novel conditions. Under a multiplicative Pareto damage model, we derive closed-form expected harm and supplement it with tail-risk (CVaR) analysis via Monte Carlo simulation. Across three scenarios (optimistic, moderate, pessimistic), the optimal alpha* is interior or at the rules-only boundary and shifts weakly toward character shaping as deployment scale T grows, from negligible (Delta alpha* = +0.01) to pronounced (Delta alpha* = +0.21) depending on scenario. The dominant parameter is the baseline character fragility rate p^(0)_frag, which shifts alpha* by 0.50 across its range -- far exceeding the effect of tail severity, filter quality, or common-mode failure probability. CVaR and expected-harm optima converge at large T. These results suggest that safety architecture decisions depend less on deployment scale per se than on the reliability of character shaping under distributional shift.",
+      "authors": [
+        "Satoshi Takahashi",
+        "Nobuji Kouno",
+        "Masaaki Komatsu",
+        "Ryuji Hamamoto"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-08-13",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2608.13345v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.AI"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "reinforcement learning + simulation"
+        ]
+      },
+      "llm": {
+        "priority": "Exclude",
+        "relevance_level": "Peripheral",
+        "read_action": "Ignore",
+        "relevance_to_user": "该论文讨论AI安全设计中的规则与性格塑造，与用户的工程仿真、生物力学或增材制造方向无直接关联。",
+        "why_not_core": "This paper does not address engineering simulation, FEA, biomechanics, or any physical system; it is a theoretical AI safety resource allocation model.",
+        "validation_kind": "numerical_benchmark",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": true,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "AI safety",
+          "RLHF",
+          "world models",
+          "scaling laws",
+          "Monte Carlo simulation"
+        ],
+        "summary_zh": {
+          "motivation": "分析AI安全系统中性格塑造与规则执行的资源分配如何随规模变化。",
+          "method": "建立比较静态模型，参数化分配系数，结合蒙特卡洛模拟进行尾部风险分析。",
+          "result": "最优分配偏向性格塑造，但主要受性格脆弱率影响，而非规模本身。",
+          "validation": "通过三种情景的蒙特卡洛模拟验证理论推导。"
+        },
+        "summary_en": {
+          "motivation": "The paper aims to formalize the optimal balance between character shaping and rule enforcement in AI safety systems as deployment scale increases.",
+          "method": "A comparative-statics model parameterizes the resource allocation between the two approaches and incorporates scale-dependent degradation and fragility, with closed-form expected harm and Monte Carlo CVaR analysis.",
+          "result": "The optimal allocation shifts toward character shaping with scale, but the dominant factor is the baseline character fragility rate, not scale or tail severity.",
+          "validation": "The model is validated through Monte Carlo simulations across three scenarios, comparing expected harm and CVaR optima."
+        },
+        "key_terms": [
+          {
+            "en": "AI safety",
+            "zh": "AI安全"
+          },
+          {
+            "en": "character shaping",
+            "zh": "性格塑造"
+          },
+          {
+            "en": "rule enforcement",
+            "zh": "规则执行"
+          },
+          {
+            "en": "RLHF",
+            "zh": "人类反馈强化学习"
+          },
+          {
+            "en": "Constitutional AI",
+            "zh": "宪法AI"
+          },
+          {
+            "en": "CVaR",
+            "zh": "条件风险价值"
+          },
+          {
+            "en": "Monte Carlo simulation",
+            "zh": "蒙特卡洛模拟"
+          },
+          {
+            "en": "scaling laws",
+            "zh": "规模定律"
+          },
+          {
+            "en": "distributional shift",
+            "zh": "分布偏移"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-08-14T04:47:05Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2608.13132v1",
+      "doi": "",
+      "arxiv_id": "2608.13132v1",
+      "title": "Analysis of Error Propagation in Autoencoder-Based Reduced-Order Neural Ordinary Differential Equations",
+      "abstract": "Neural ODE reduced-order models often achieve comparable local prediction accuracy, yet their long-horizon extrapolation behavior can differ substantially. To analyze this discrepancy, we develop a path-integral identity that separates local discrepancy injection from amplification in the learned latent dynamics. The associated multi-step Jacobian norms quantify transport sensitivity and distinguish different propagation regimes. Experiments on the Burgers and Gray--Scott systems exhibit two distinct patterns of error evolution. In Burgers systems, prediction errors remain bounded and are primarily associated with persistent local discrepancies. In contrast, Gray--Scott systems exhibit pronounced amplification during extrapolation, where Jacobian norms serve as sensitivity diagnostics rather than direct indicators of physical prediction accuracy.",
+      "authors": [
+        "Jingyi Zhang",
+        "Gwanghyun Jo"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-08-13",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2608.13132v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "math.NA"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "latent dynamics"
+        ]
+      },
+      "llm": {
+        "priority": "Medium",
+        "relevance_level": "Transferable",
+        "read_action": "Skim only",
+        "relevance_to_user": "该论文研究神经ODE降阶模型的误差传播分析，其方法可迁移至基于FEA的代理模型不确定性量化，但未涉及工程仿真或生物医学应用。",
+        "why_not_core": "This paper does not connect to engineering simulation (e.g., FEA/FEM data, design optimization) nor to biomedical implant/biomechanics contexts, focusing instead on abstract PDE systems.",
+        "validation_kind": "numerical_benchmark",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": true,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "neural ODE",
+          "reduced-order model",
+          "error propagation",
+          "world model",
+          "surrogate modeling"
+        ],
+        "summary_zh": {
+          "motivation": "神经ODE降阶模型长期外推误差行为差异大，需分析误差传播机制。",
+          "method": "提出路径积分恒等式分离局部误差注入与放大，用多步Jacobian范数表征传输敏感性。",
+          "result": "Burgers系统误差有界，Gray-Scott系统外推时误差显著放大。",
+          "validation": "在Burgers和Gray-Scott数值基准上验证。"
+        },
+        "summary_en": {
+          "motivation": "Neural ODE reduced-order models exhibit similar local accuracy but divergent long-horizon extrapolation, motivating a theoretical analysis of error propagation.",
+          "method": "A path-integral identity is developed to separate local discrepancy injection from amplification, with multi-step Jacobian norms quantifying transport sensitivity.",
+          "result": "Burgers systems show bounded errors dominated by local discrepancies, while Gray-Scott systems display pronounced amplification during extrapolation.",
+          "validation": "Numerical experiments on Burgers and Gray-Scott benchmark systems validate the theoretical analysis."
+        },
+        "key_terms": [
+          {
+            "en": "neural ODE",
+            "zh": "神经常微分方程"
+          },
+          {
+            "en": "reduced-order model",
+            "zh": "降阶模型"
+          },
+          {
+            "en": "error propagation",
+            "zh": "误差传播"
+          },
+          {
+            "en": "Jacobian norm",
+            "zh": "雅可比范数"
+          },
+          {
+            "en": "extrapolation",
+            "zh": "外推"
+          },
+          {
+            "en": "latent dynamics",
+            "zh": "潜变量动力学"
+          },
+          {
+            "en": "path-integral identity",
+            "zh": "路径积分恒等式"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-08-14T04:47:05Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2608.13103v1",
+      "doi": "",
+      "arxiv_id": "2608.13103v1",
+      "title": "S2-HWM: Sparse Event-Structured Hierarchical World Model for Long-Horizon Surgical Robot Manipulation",
+      "abstract": "Long-horizon surgical robot manipulation is challenging because task rewards are sparse, while meaningful interaction changes occur at irregular intervals. Existing world-model agents typically imagine at primitive-step resolution, leaving variable-duration task progress implicit. Manually specified stages can provide intermediate structure, but their task specific boundaries are difficult to align with state-dependent interaction transitions. We propose S2-HWM, a Sparse Event-Structured Hierarchical World Model that learns sparse event evidence from primitive latent trajectories to coordinate an event-level manager and a primitive-step worker. The event evidence schedules manager goal updates, and each selected latent goal conditions the worker's primitive actions until the next update. The learned event evidence also forms variable-duration segments for an Event Transition Model (ETM), which predicts the next?boundary stochastic state, segment duration, and accumulated segment reward. Chaining these event-level predictions provides a variable-duration continuation beyond the primitive imagination horizon for manager learning, while the worker retains primitive-step actor-critic learning. On a SurRoL-based PegTransfer task, S2-HWM achieves a success rate of 98.7%, outperforming the flat GAS DreamerV3 baseline by 22.7 percentage points.",
+      "authors": [
+        "Shuzhe Zhang",
+        "Xin Zhu",
+        "Yinling Qian",
+        "Qiong Wang"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-08-13",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2608.13103v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.RO",
+        "eess.SY"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "world model"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该论文涉及机器人操作中的世界模型，与用户的工程仿真和生物力学设计方向关联较弱。",
+        "why_not_core": "This paper does not connect to engineering simulation, FEA, or biomechanical design; it focuses on surgical robot manipulation with sparse rewards, lacking any physics-based simulation or implant-related context.",
+        "validation_kind": "simulation_case",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "world models",
+          "hierarchical RL",
+          "surgical robotics",
+          "sparse rewards",
+          "long-horizon manipulation"
+        ],
+        "summary_zh": {
+          "motivation": "解决长时程手术机器人操作中奖励稀疏和事件间隔不规则的问题。",
+          "method": "提出稀疏事件结构层次世界模型，学习事件证据以协调高层管理者和低层执行者。",
+          "result": "在PegTransfer任务上成功率98.7%，比基线高22.7个百分点。",
+          "validation": "在SurRoL仿真环境中进行任务验证。"
+        },
+        "summary_en": {
+          "motivation": "To address the challenges of sparse rewards and irregular interaction intervals in long-horizon surgical robot manipulation.",
+          "method": "Proposes a sparse event-structured hierarchical world model that learns event evidence to coordinate a high-level manager and a low-level worker.",
+          "result": "Achieves 98.7% success rate on a PegTransfer task, outperforming the flat baseline by 22.7 percentage points.",
+          "validation": "Validated in the SurRoL simulation environment on a surgical manipulation task."
+        },
+        "key_terms": [
+          {
+            "en": "world model",
+            "zh": "世界模型"
+          },
+          {
+            "en": "hierarchical reinforcement learning",
+            "zh": "层次强化学习"
+          },
+          {
+            "en": "sparse rewards",
+            "zh": "稀疏奖励"
+          },
+          {
+            "en": "surgical robot",
+            "zh": "手术机器人"
+          },
+          {
+            "en": "long-horizon manipulation",
+            "zh": "长时程操作"
+          },
+          {
+            "en": "event transition model",
+            "zh": "事件转移模型"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-08-14T04:47:05Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2608.13037v1",
+      "doi": "",
+      "arxiv_id": "2608.13037v1",
+      "title": "Spatially-Grounded Text-to-Video Generation via Inference-Time Gradient-Free Optimization",
+      "abstract": "Diffusion Transformer Text-to-Video models have achieved remarkable synthesis quality, yet fine-grained spatial controllability remains a significant challenge. While existing training-free methods produce solid overall results in spatially grounded generation, \\ie, placing a specific object in a designated location, they rely on gradient-based optimization techniques that incur prohibitive computational overhead, a bottleneck amplified in modern large-scale architectures. To address this limitation, we present Gradient-free Analytical Trajectory Optimization Video Generation (GATO-Vid), a novel training-free and gradient-free approach for precise spatial guidance. Rather than relying on costly backward passes, we introduce an alternative cross-attention score and solve it analytically to obtain an exact, closed-form solution. To use our analytical solution, we propose an on-the-fly injection mechanism tailored to the topological manifold of the transformer's latent space. Our experiments demonstrate that GATO-Vid significantly outperforms existing baselines in localization accuracy while introducing minimal computational overhead.",
+      "authors": [
+        "Guillaume Jeanneret",
+        "Mathis Koroglu",
+        "Hugo Caselles-Dupré",
+        "Arnaud Dapogny",
+        "Matthieu Cord"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-08-13",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2608.13037v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.CV"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "trajectory optimization"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该论文涉及生成模型中的空间控制，与您的强化学习和世界模型研究方向关联不大，但可能对生成式AI在工程可视化中的应用有背景参考价值。",
+        "why_not_core": "This paper does not address reinforcement learning, world models, or any engineering simulation (e.g., FEA, physics simulators), focusing instead on text-to-video generation with spatial control.",
+        "validation_kind": "numerical_benchmark",
+        "flags": {
+          "has_experimental_validation": true,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "text-to-video",
+          "spatial control",
+          "diffusion transformer",
+          "gradient-free optimization",
+          "generative models"
+        ],
+        "summary_zh": {
+          "motivation": "现有文本生成视频方法空间控制精度不足且梯度优化开销大。",
+          "method": "提出GATO-Vid，利用解析交叉注意力分数实现免梯度的精确空间引导。",
+          "result": "在定位精度上优于基线，计算开销显著降低。",
+          "validation": "在标准视频生成基准上对比验证。"
+        },
+        "summary_en": {
+          "motivation": "Existing text-to-video generation methods lack fine-grained spatial control and rely on costly gradient-based optimization.",
+          "method": "GATO-Vid introduces an analytical cross-attention score and an on-the-fly injection mechanism to achieve gradient-free spatial guidance.",
+          "result": "The method achieves superior localization accuracy with minimal computational overhead compared to baselines.",
+          "validation": "Validated on standard video generation benchmarks, demonstrating improved spatial accuracy and efficiency."
+        },
+        "key_terms": [
+          {
+            "en": "text-to-video generation",
+            "zh": "文本生成视频"
+          },
+          {
+            "en": "spatial controllability",
+            "zh": "空间可控性"
+          },
+          {
+            "en": "diffusion transformer",
+            "zh": "扩散Transformer"
+          },
+          {
+            "en": "gradient-free optimization",
+            "zh": "免梯度优化"
+          },
+          {
+            "en": "cross-attention score",
+            "zh": "交叉注意力分数"
+          },
+          {
+            "en": "closed-form solution",
+            "zh": "闭式解"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-08-14T04:47:05Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2608.12936v1",
+      "doi": "",
+      "arxiv_id": "2608.12936v1",
+      "title": "AutoQuREO: A Framework for Automated Quantum Resource Estimation and Optimization",
+      "abstract": "As quantum computing progresses from proof-of-principle demonstrations toward practical utility, a significant impediment is the need to augment algorithmic feasibility with system-level optimization across heterogeneous hardware and software stacks. Quantum resource estimation (QRE) plays a central role in this transition, yet existing approaches remain largely compilation-heavy or domain-knowledge-guided symbolic annotations, and tightly coupled to long-term fault-tolerant assumptions, limiting their topical applicability.   In this work, we introduce AutoQuREO, an Automated framework for full-stack Quantum Resource Estimation and Optimization. AutoQuREO is built around four core novelties: (i) a flexible, user-defined abstraction of the quantum computing stack; (ii) a modular library of reusable stack components enabling rapid full-stack prototyping; (iii) surrogate modeling of layer-wise resources via algorithmic profiling and neuro-symbolic learning; and (iv) integrated multi-objective optimization that embeds QRE directly into deployment pipelines. Together, these design choices enable AutoQuREO to serve as a digital twin for quantum computing stacks, supporting the tractable exploration of complex design spaces.   We demonstrate the capabilities of AutoQuREO through representative co-design case studies, including early-fault-tolerant quantum algorithms, small error correction codes, gate decomposition and variational training of parametric quantum circuits. These examples illustrate how AutoQuREO enables systematic discovery of unexploited resource trade-offs that are computationally intractable or abstruse using existing QRE tools. AutoQuREO is positioned as a general-purpose platform for advancing quantum technology readiness.",
+      "authors": [
+        "Harshkumar Oza",
+        "Aritra Sarkar",
+        "Syed Naqi Abbas",
+        "Rahul Bhowmick",
+        "Aryan Prakash",
+        "Prateek P Kulkarni",
+        "Krishna Kumar Sabapathy"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-08-13",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2608.12936v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "quant-ph",
+        "cs.AI",
+        "cs.ET"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "ai_bioprinting"
+      ],
+      "direction": "ai_bioprinting",
+      "direction_name": "AI for Bioprinting",
+      "routing_matches": {
+        "ai_bioprinting": [
+          "digital twin"
+        ]
+      },
+      "llm": {
+        "priority": "Exclude",
+        "relevance_level": "Peripheral",
+        "read_action": "Ignore",
+        "relevance_to_user": "该论文涉及量子计算资源估算，与生物打印或生物医学工程完全无关。",
+        "why_not_core": "This paper does not address any bioprinting workflow, AI-driven bioprinting, or biomedical application; it focuses on quantum computing resource estimation and optimization.",
+        "validation_kind": "simulation_case",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "quantum computing",
+          "resource estimation",
+          "surrogate modeling",
+          "digital twin",
+          "optimization"
+        ],
+        "summary_zh": {
+          "motivation": "量子计算向实用化发展，需要系统级资源估算与优化。",
+          "method": "提出AutoQuREO框架，结合模块化组件、代理建模与多目标优化。",
+          "result": "通过案例展示发现资源权衡，支持量子栈设计空间探索。",
+          "validation": "通过多个量子算法案例进行演示验证。"
+        },
+        "summary_en": {
+          "motivation": "The paper addresses the need for system-level resource estimation and optimization in quantum computing as it moves toward practical utility.",
+          "method": "It introduces AutoQuREO, a framework that combines modular stack components, surrogate modeling via neuro-symbolic learning, and multi-objective optimization to enable full-stack quantum resource estimation.",
+          "result": "Case studies demonstrate that AutoQuREO can uncover resource trade-offs that are intractable with existing tools, supporting co-design of quantum stacks.",
+          "validation": "Validation is performed through representative simulation case studies of early-fault-tolerant algorithms and variational circuits."
+        },
+        "key_terms": [
+          {
+            "en": "quantum resource estimation",
+            "zh": "量子资源估算"
+          },
+          {
+            "en": "surrogate modeling",
+            "zh": "代理建模"
+          },
+          {
+            "en": "neuro-symbolic learning",
+            "zh": "神经符号学习"
+          },
+          {
+            "en": "multi-objective optimization",
+            "zh": "多目标优化"
+          },
+          {
+            "en": "digital twin",
+            "zh": "数字孪生"
+          },
+          {
+            "en": "co-design",
+            "zh": "协同设计"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-08-14T04:47:05Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2608.12917v1",
+      "doi": "",
+      "arxiv_id": "2608.12917v1",
+      "title": "Towards Socially Compliant Navigation in Deep Reinforcement Learning via Proxemics-Based Reward Modeling",
+      "abstract": "Developing effective robot navigation methods in crowded environments is essential for real-world applications. Although recent deep reinforcement learning (DRL) methods have improved navigation performance in crowded environments, they often focus primarily on task-centric objectives and underrepresent social compliance objectives. In this paper, we introduce a novel proxemics-based reward formulation for DRL social navigation that provides a dense, interpretable social learning signal while maintaining navigation efficiency. Our approach models each human's personal space as a radial Gaussian-mixture field derived from Hall's proxemics theory and computes a robot-centric local cost over the robot's field of view. We integrate the proposed reward into established DRL navigation methods and evaluate it in simulation across multiple crowd scenarios, reward baselines, and crowd densities using both navigation metrics and social metrics. Results show that the proposed reward consistently improves social metrics in simulation while maintaining competitive navigation performance relative to the compared reward models.",
+      "authors": [
+        "Takieddine Soualhi",
+        "Jacques Saraydaryan",
+        "Laetitia Matignon"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-08-13",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2608.12917v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.LG",
+        "cs.RO"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "reinforcement learning + simulation"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该论文涉及深度强化学习中的奖励设计，但未与工程仿真或生物力学设计结合，与用户研究方向关联较弱。",
+        "why_not_core": "This paper does not connect RL/world models to engineering simulation, FEA, or design optimization; it focuses on social navigation in robotics with no biomedical or implant context.",
+        "validation_kind": "simulation_case",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "deep reinforcement learning",
+          "social navigation",
+          "reward design",
+          "proxemics",
+          "simulation"
+        ],
+        "summary_zh": {
+          "motivation": "现有DRL导航方法忽视社会合规目标，需改进奖励设计。",
+          "method": "基于Hall的亲近学理论构建径向高斯混合场奖励，集成到DRL导航方法中。",
+          "result": "在仿真中社会指标提升，导航性能保持竞争力。",
+          "validation": "在多种人群场景和密度下进行仿真评估。"
+        },
+        "summary_en": {
+          "motivation": "Current DRL navigation methods often neglect social compliance, motivating a reward formulation that encodes proxemics.",
+          "method": "A proxemics-based reward using radial Gaussian mixture fields is integrated into existing DRL navigation frameworks.",
+          "result": "The proposed reward improves social metrics in simulation while maintaining competitive navigation performance.",
+          "validation": "Simulation experiments across multiple crowd scenarios and densities compare navigation and social metrics."
+        },
+        "key_terms": [
+          {
+            "en": "deep reinforcement learning",
+            "zh": "深度强化学习"
+          },
+          {
+            "en": "social navigation",
+            "zh": "社交导航"
+          },
+          {
+            "en": "reward design",
+            "zh": "奖励设计"
+          },
+          {
+            "en": "proxemics",
+            "zh": "亲近学"
+          },
+          {
+            "en": "Gaussian mixture model",
+            "zh": "高斯混合模型"
+          },
+          {
+            "en": "crowd simulation",
+            "zh": "人群仿真"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-08-14T04:47:05Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2608.12904v1",
+      "doi": "",
+      "arxiv_id": "2608.12904v1",
+      "title": "HounsWorld: A Multimodal World Model for Hidden Patient-State Readout, Reconstruction, and Simulation",
+      "abstract": "Clinical intelligence requires estimating a patient's underlying condition from incomplete observations rather than learning isolated mappings from scans to answers. Volumetric medical images provide dense observations of anatomy, attenuation, and lesions, whereas clinical language provides sparse but complementary semantic observations. We formulate CT-centered intelligence as inference over a shared latent patient state, under which readout, reconstruction, and simulation all become state-dependent prediction problems. To operationalize this view, we introduce HounsBench, a computed tomography (CT) centric patient-state benchmark that unifies these three task families with patient-disjoint splits and per-family metrics, and HounsWorld, a 3B multimodal world model that treats volumetric scans and language as observations of the shared state through Joint Understanding-Generation Learning. A shared transformer forms an implicit patient-state estimate and supports three outputs: query-conditioned answers that read out the state, reports and captions that reconstruct it in language, and condition-specific CT volumes for low-dose denoising, virtual contrast enhancement, and anatomy-constrained text-and-mask-to-volume generation. Zero-initialized CT adapters preserve pretrained multimodal mappings, while condition-explicit Hounsfield-unit window sampling exposes clinically meaningful density observations. HounsWorld shows strong performance across all three task families while consistently improving CT understanding through clinically structured completion. Our project is available at https://github.com/byhwhite/HounsWorld.git",
+      "authors": [
+        "Yunhao Bai",
+        "Zhongwei Qiu",
+        "Guangyu Guo",
+        "Yiming Huang",
+        "Tony C. W. Mok",
+        "Qinji Yu",
+        "Ling Zhang",
+        "Yan Wang"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-08-13",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2608.12904v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.CV"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "world model",
+          "world model + simulation"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该论文将世界模型应用于医学影像，而非工程仿真，与用户的研究方向关联较弱。",
+        "why_not_core": "This paper does not involve engineering simulation, FEA/FEM data, or design optimization; it focuses on medical image understanding and generation.",
+        "validation_kind": "numerical_benchmark",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": true,
+          "is_review": false
+        },
+        "tags": [
+          "world model",
+          "medical imaging",
+          "CT",
+          "multimodal",
+          "patient-state"
+        ],
+        "summary_zh": {
+          "motivation": "从医学影像推断患者潜在状态，而非简单映射。",
+          "method": "构建3B多模态世界模型，共享潜在状态支持读取、重建和模拟。",
+          "result": "在三个任务族上表现优异，提升CT理解。",
+          "validation": "在HounsBench基准上评估，采用患者分离划分。"
+        },
+        "summary_en": {
+          "motivation": "To estimate a patient's underlying condition from incomplete observations, the paper proposes a CT-centric world model that unifies readout, reconstruction, and simulation.",
+          "method": "A 3B multimodal world model with a shared transformer and zero-initialized CT adapters is trained via joint understanding-generation learning.",
+          "result": "The model achieves strong performance across all three task families and improves CT understanding through clinically structured completion.",
+          "validation": "The model is evaluated on the HounsBench benchmark with patient-disjoint splits and per-family metrics."
+        },
+        "key_terms": [
+          {
+            "en": "world model",
+            "zh": "世界模型"
+          },
+          {
+            "en": "patient-state",
+            "zh": "患者状态"
+          },
+          {
+            "en": "CT imaging",
+            "zh": "CT成像"
+          },
+          {
+            "en": "multimodal",
+            "zh": "多模态"
+          },
+          {
+            "en": "readout",
+            "zh": "读出"
+          },
+          {
+            "en": "reconstruction",
+            "zh": "重建"
+          },
+          {
+            "en": "simulation",
+            "zh": "模拟"
+          },
+          {
+            "en": "Hounsfield unit",
+            "zh": "亨斯菲尔德单位"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-08-14T04:47:05Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2608.12823v1",
+      "doi": "",
+      "arxiv_id": "2608.12823v1",
+      "title": "BTF-PINN: Enforcing Dirichlet Boundary Conditions Without Boundary Training",
+      "abstract": "The homogeneous Dirichlet boundary value problem captures the core difficulty of solving Dirichlet problems with non-interpolatory methods. We propose BTF-PINN (Boundary-Training-Free Physics-Informed Neural Network), an interior-only strategy for solving homogeneous Dirichlet boundary value problems that requires no boundary training, boundary penalties, or boundary-conforming parametrizations. The key idea is to embed the essential boundary condition into a newly designed boundary-free loss function. We prove the equivalence between the proposed interior-only variational formulation and the original boundary value problem, establish a sharp threshold condition for the residual weight, and develop a convergence analysis based on the coercivity of the functional. Numerical experiments on high-dimensional problems, irregular geometries, and anisotropic elliptic equations demonstrate the effectiveness of BTF-PINN. Comparisons with standard boundary-penalty PINNs further show that BTF-PINN achieves superior boundary trace accuracy.",
+      "authors": [
+        "Wenyu Dong",
+        "Shuo Zhang"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-08-13",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2608.12823v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "math.NA"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "fea_surrogate"
+      ],
+      "direction": "fea_surrogate",
+      "direction_name": "FEA & Surrogate Modelling",
+      "routing_matches": {
+        "fea_surrogate": [
+          "physics-informed neural network",
+          "PINN"
+        ]
+      },
+      "llm": {
+        "priority": "Medium",
+        "relevance_level": "Transferable",
+        "read_action": "Skim only",
+        "relevance_to_user": "该论文提出了一种无需边界训练的PINN变体，可提高求解偏微分方程的精度和效率，对开发面向生物力学模拟的代理模型具有潜在借鉴意义。",
+        "why_not_core": "This paper does not address FEA surrogate modeling for implant design, lacks uncertainty quantification, and does not consider biomechanical constraints or patient-specific geometries.",
+        "validation_kind": "numerical_benchmark",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "PINN",
+          "boundary conditions",
+          "variational formulation",
+          "elliptic PDEs",
+          "interior-only training"
+        ],
+        "summary_zh": {
+          "motivation": "解决非插值方法求解Dirichlet边界问题的困难，避免边界训练开销。",
+          "method": "提出BTF-PINN，通过设计无边界损失函数将本质边界条件嵌入变分形式，并证明等价性与收敛性。",
+          "result": "在高维、不规则几何和各向异性椭圆方程上验证有效，边界迹精度优于标准边界惩罚PINN。",
+          "validation": "通过数值基准测试与标准PINN对比，展示边界精度提升。"
+        },
+        "summary_en": {
+          "motivation": "To overcome the challenges of enforcing homogeneous Dirichlet boundary conditions in non-interpolatory methods without incurring boundary training costs.",
+          "method": "Proposes a boundary-training-free PINN that embeds essential boundary conditions into a novel boundary-free loss function, with theoretical equivalence and convergence guarantees.",
+          "result": "Demonstrates superior boundary trace accuracy and effectiveness on high-dimensional, irregular, and anisotropic elliptic problems compared to standard boundary-penalty PINNs.",
+          "validation": "Validated through numerical benchmarks on diverse elliptic PDEs, comparing against standard PINNs."
+        },
+        "key_terms": [
+          {
+            "en": "Physics-Informed Neural Network",
+            "zh": "物理信息神经网络"
+          },
+          {
+            "en": "Dirichlet boundary condition",
+            "zh": "Dirichlet边界条件"
+          },
+          {
+            "en": "boundary-free loss",
+            "zh": "无边界损失函数"
+          },
+          {
+            "en": "variational formulation",
+            "zh": "变分形式"
+          },
+          {
+            "en": "coercivity",
+            "zh": "强制性"
+          },
+          {
+            "en": "elliptic equation",
+            "zh": "椭圆方程"
+          },
+          {
+            "en": "high-dimensional problem",
+            "zh": "高维问题"
+          },
+          {
+            "en": "irregular geometry",
+            "zh": "不规则几何"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-08-14T04:47:05Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2608.12687v1",
+      "doi": "",
+      "arxiv_id": "2608.12687v1",
+      "title": "Finding the Needle in a Haystack: Test-Time Analog Circuit Representation Adaptation for Bayesian Optimization",
+      "abstract": "Bayesian optimization (BO) is a sample-efficient framework for analog circuit topology search, where evaluating each candidate topology can require costly simulation. However, representation-based BO methods typically treat circuit embeddings as fixed after encoder training. This creates a mismatch between representation learning and optimization: embeddings learned to encode or reconstruct circuit structure are not necessarily organized according to the figure of merit (FoM) being optimized. This paper introduces Test-Time Analog Representation Adaptation for Bayesian Optimization (TTARO), an online deep-kernel BO framework that adapts circuit representations throughout the search process. Starting from pretrained circuit embeddings, TTARO jointly learns a nonlinear feature transformation and a Gaussian-process surrogate using the FoM labels of the circuits evaluated so far. Following each new evaluation, TTARO updates the representation and surrogate before selecting the next candidate. We compare TTARO with conventional Gaussian Process-based BO over fixed embeddings and with Deep Kernel Learning (DKL), which learns the representation only from the initial evaluated designs and keeps it fixed throughout the remainder of the search. By continually incorporating newly observed FoM labels into representation learning, TTARO aligns the search space with the optimization objective as BO progresses. In our experiments, TTARO reduces regret AUC by 15.2% on average relative to BO and by 20.7% relative to DKL across 40 encoder/kernel/acquisition settings, outperforming prior art in most settings with reductions as large as 46.7%.",
+      "authors": [
+        "Fin Amin",
+        "Sounak Dutta",
+        "Paul D. Franzon"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-08-13",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2608.12687v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.LG"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "fea_surrogate"
+      ],
+      "direction": "fea_surrogate",
+      "direction_name": "FEA & Surrogate Modelling",
+      "routing_matches": {
+        "fea_surrogate": [
+          "Bayesian optimization",
+          "Gaussian process"
+        ]
+      },
+      "llm": {
+        "priority": "Medium",
+        "relevance_level": "Transferable",
+        "read_action": "Save for project",
+        "relevance_to_user": "该论文提出的测试时表示自适应方法可迁移至生物力学代理模型的贝叶斯优化，提升采样效率并处理约束。",
+        "why_not_core": "This paper does not address FEA or biomechanics; it focuses on analog circuit topology search, lacking any biomedical or implant design context.",
+        "validation_kind": "numerical_benchmark",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": true,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "Bayesian optimization",
+          "representation learning",
+          "deep kernel learning",
+          "test-time adaptation",
+          "analog circuit"
+        ],
+        "summary_zh": {
+          "motivation": "固定嵌入表示与优化目标不匹配，降低贝叶斯优化效率。",
+          "method": "提出TTARO，在线调整电路表示并联合学习高斯过程代理模型。",
+          "result": "相比固定嵌入和DKL，平均后悔AUC降低15.2%和20.7%。",
+          "validation": "在40种编码器/核/采集设置下进行数值基准测试。"
+        },
+        "summary_en": {
+          "motivation": "Fixed circuit embeddings used in Bayesian optimization are misaligned with the optimization objective, reducing sample efficiency.",
+          "method": "TTARO adapts circuit representations online by jointly learning a nonlinear feature transformation and a Gaussian-process surrogate using labels from evaluated designs.",
+          "result": "TTARO reduces regret AUC by 15.2% on average over standard BO and 20.7% over DKL across 40 settings, with up to 46.7% reduction.",
+          "validation": "The method is validated through numerical benchmarks on analog circuit topology search, comparing against multiple baselines."
+        },
+        "key_terms": [
+          {
+            "en": "Bayesian optimization",
+            "zh": "贝叶斯优化"
+          },
+          {
+            "en": "representation learning",
+            "zh": "表示学习"
+          },
+          {
+            "en": "deep kernel learning",
+            "zh": "深度核学习"
+          },
+          {
+            "en": "test-time adaptation",
+            "zh": "测试时自适应"
+          },
+          {
+            "en": "Gaussian process surrogate",
+            "zh": "高斯过程代理模型"
+          },
+          {
+            "en": "figure of merit",
+            "zh": "品质因数"
+          },
+          {
+            "en": "regret AUC",
+            "zh": "后悔曲线下面积"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-08-14T04:47:05Z"
+    },
+    {
+      "source": "openalex",
+      "id": "https://openalex.org/W7202248549",
+      "doi": "10.1016/j.bioactmat.2026.07.022",
+      "title": "A clinically translatable coating-free strategy for 3D-printed porous titanium implants: TiO2 nanotubes simultaneously prevent infection and promote bone integration",
+      "abstract": "",
+      "authors": [
+        "Chenao Xiong",
+        "Zhe Zhang",
+        "Zehao Jing",
+        "Youhao Wang",
+        "Hui Feng",
+        "Yiyuan Yang",
+        "倪仁华",
+        "Chongbin Wei",
+        "Dapeng Zhao",
+        "Hong Cai"
+      ],
+      "first_author_affiliation": "",
+      "corresponding_authors": [],
+      "venue": "Bioactive Materials",
+      "year": 2026,
+      "date": "2026-08-13",
+      "date_precision": "day",
+      "url": "https://doi.org/10.1016/j.bioactmat.2026.07.022",
+      "cited_by_count": 0,
+      "concepts": [
+        "Titanium",
+        "Materials science",
+        "Biomedical engineering",
+        "Nanotechnology",
+        "Porosity",
+        "Chemistry",
+        "Biocompatible material",
+        "Chemical engineering"
+      ],
+      "categories": [],
+      "raw_type": "article",
+      "directions": [
+        "am_biomedical"
+      ],
+      "direction": "am_biomedical",
+      "direction_name": "AM Biomedical Materials",
+      "routing_matches": {
+        "am_biomedical": [
+          "porous titanium"
+        ]
+      },
+      "llm": {
+        "priority": "Medium",
+        "relevance_level": "Transferable",
+        "read_action": "Save for project",
+        "relevance_to_user": "该论文涉及3D打印多孔钛植入体的表面改性，与AM生物医学方向相关，但未涉及应力遮挡或力学性能匹配。",
+        "why_not_core": "This paper does not report stress shielding, stiffness matching, fatigue testing, or mechanical characterization of the porous structure; it focuses solely on surface nanotube modification for antibacterial and osseointegration outcomes.",
+        "validation_kind": "in_vitro",
+        "flags": {
+          "has_experimental_validation": true,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "3D-printed titanium",
+          "TiO2 nanotubes",
+          "osseointegration",
+          "antibacterial",
+          "surface modification"
+        ],
+        "summary_zh": {
+          "motivation": "解决3D打印钛植入体感染与骨整合不足的问题。",
+          "method": "在多孔钛表面原位生长TiO2纳米管，实现无涂层抗菌与促成骨。",
+          "result": "纳米管表面显著抑制细菌并促进骨整合。",
+          "validation": "体外细胞与细菌实验验证。"
+        },
+        "summary_en": {
+          "motivation": "To address the dual challenges of infection and insufficient osseointegration in 3D-printed porous titanium implants.",
+          "method": "In-situ growth of TiO2 nanotubes on the porous titanium surface to provide a coating-free antibacterial and osteogenic modification.",
+          "result": "The nanotube-modified surface effectively inhibited bacterial adhesion and enhanced osteogenic differentiation in vitro.",
+          "validation": "In vitro assays with bacterial cultures and osteoblast-like cells were employed to evaluate antibacterial and osteogenic performance."
+        },
+        "key_terms": [
+          {
+            "en": "3D-printed porous titanium",
+            "zh": "3D打印多孔钛"
+          },
+          {
+            "en": "TiO2 nanotubes",
+            "zh": "TiO2纳米管"
+          },
+          {
+            "en": "osseointegration",
+            "zh": "骨整合"
+          },
+          {
+            "en": "antibacterial",
+            "zh": "抗菌"
+          },
+          {
+            "en": "surface modification",
+            "zh": "表面改性"
+          },
+          {
+            "en": "coating-free",
+            "zh": "无涂层"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-08-14T04:47:05Z"
+    },
+    {
+      "source": "pubmed",
+      "id": "pubmed:42595150",
+      "doi": "10.1016/j.ijbiomac.2026.154009",
+      "pmid": "42595150",
+      "title": "In vitro and in vivo chondrogenic performance of κ-carrageenan/silk fibroin bioinks containing ADMSCs-seeded microcarriers for auricular cartilage regeneration.",
+      "abstract": "Elastic cartilage is essential for preserving the structural integrity and functional flexibility of tissues such as the auricle and epiglottis. However, its limited capacity for self-repair poses significant challenges in the treatment of injuries resulting from trauma, congenital defects, or disease. This study investigates the in vitro and in vivo regenerative potential of a bioink designed for auricular cartilage repair. The primary polymeric components of the bioink were κ-carrageenan and silk fibroin (κ-CA/SF), while the cellular component consisted of adipose-derived stem cells (ADMSCs) isolated from rabbits, which were subsequently seeded onto poly(butylene adipate-co-terephthalate) (PBAT) microcarriers. These components were successfully printed utilizing an extrusion-based bioprinter. In vitro analyses demonstrated that ADMSCs were effectively encapsulated within the bioink, maintaining their viability for a duration of 21 days. Quantitative RT-qPCR analyses confirmed the expression of COL2A1, the major structural protein of cartilage and a critical indicator of the chondrocyte phenotype; its expression was observed to be approximately 35-fold higher in the κ-CA/SF + PBAT group compared to the κ-CA/SF group (***p < 0.001). Additionally, the presence of collagen II and aggrecan within the constructs was confirmed through immunostaining. For in vivo experiments, a circular defect in auricular cartilage, encompassing the perichondrium on both sides, was created in New Zealand rabbits to facilitate the implantation of tissue scaffolds. Cartilage regeneration was evaluated through histological staining at 4 and 8 weeks post-implantation. In the κ-CA/SF + PBAT group, distinct microcircular structures were identified within the connective tissue, and at later time points, the defect area was predominantly populated with mature cartilage cells, indicating advanced tissue development.",
+      "authors": [
+        "Sena Koç Akbayrak",
+        "Ülkü Çayır",
+        "Etkin Boynuyoğun",
+        "Elif Yavaş",
+        "Menemşe Gümüşderelioğlu",
+        "Sevil Çaylı",
+        "Mert Çalış"
+      ],
+      "first_author_affiliation": "Graduate School of Science and Engineering, Hacettepe University, Ankara, Turkey; Chemical Engineering Department, Hacettepe University, Ankara, Turkey.",
+      "corresponding_authors": [
+        {
+          "name": "Menemşe Gümüşderelioğlu",
+          "affiliation": "Chemical Engineering Department, Hacettepe University, Ankara, Turkey; Bioengineering Department, Hacettepe University, Ankara, Turkey. Electronic address: menemse@hacettepe.edu.tr."
+        }
+      ],
+      "venue": "International journal of biological macromolecules",
+      "year": 2026,
+      "date": "2026-08-13",
+      "date_precision": "day",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/42595150/",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [],
+      "raw_type": "journal article",
+      "directions": [
+        "ai_bioprinting"
+      ],
+      "direction": "ai_bioprinting",
+      "direction_name": "AI for Bioprinting",
+      "routing_matches": {
+        "ai_bioprinting": [
+          "bioink"
+        ]
+      },
+      "llm": {
+        "priority": "Exclude",
+        "relevance_level": "Peripheral",
+        "read_action": "Ignore",
+        "relevance_to_user": "该论文聚焦于生物墨水的体外和体内软骨再生性能，未涉及AI在生物打印流程中的集成或自动化决策。",
+        "why_not_core": "This paper does not incorporate any AI/ML methods into the bioprinting workflow, nor does it address autonomous decision-making or computational modeling; it is purely experimental biomaterial and cell-based research.",
+        "validation_kind": "animal",
+        "flags": {
+          "has_experimental_validation": true,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "bioprinting",
+          "bioink",
+          "cartilage regeneration",
+          "κ-carrageenan",
+          "silk fibroin",
+          "ADMSCs",
+          "microcarriers",
+          "in vivo",
+          "in vitro"
+        ],
+        "summary_zh": {
+          "motivation": "开发用于耳廓软骨再生的生物墨水，解决弹性软骨自我修复能力有限的问题。",
+          "method": "将兔ADMSCs接种于PBAT微载体，与κ-CA/SF复合制备生物墨水，通过挤出式生物打印构建支架。",
+          "result": "体外细胞存活21天，COL2A1表达显著上调；体内植入后8周缺陷区充满成熟软骨细胞。",
+          "validation": "通过体外细胞活性和基因表达分析，以及兔耳廓缺损模型的体内组织学评估。"
+        },
+        "summary_en": {
+          "motivation": "To develop a bioink for auricular cartilage regeneration, addressing the limited self-repair capacity of elastic cartilage.",
+          "method": "Rabbit ADMSCs seeded on PBAT microcarriers were incorporated into a κ-carrageenan/silk fibroin bioink and printed via extrusion-based bioprinting.",
+          "result": "In vitro, cells remained viable for 21 days with significantly upregulated COL2A1 expression; in vivo, the defect area was filled with mature cartilage cells by 8 weeks.",
+          "validation": "Validation included in vitro cell viability and gene expression assays, as well as in vivo histological evaluation in a rabbit auricular defect model."
+        },
+        "key_terms": [
+          {
+            "en": "bioink",
+            "zh": "生物墨水"
+          },
+          {
+            "en": "κ-carrageenan",
+            "zh": "κ-卡拉胶"
+          },
+          {
+            "en": "silk fibroin",
+            "zh": "丝素蛋白"
+          },
+          {
+            "en": "ADMSCs",
+            "zh": "脂肪间充质干细胞"
+          },
+          {
+            "en": "microcarriers",
+            "zh": "微载体"
+          },
+          {
+            "en": "extrusion-based bioprinting",
+            "zh": "挤出式生物打印"
+          },
+          {
+            "en": "cartilage regeneration",
+            "zh": "软骨再生"
+          },
+          {
+            "en": "COL2A1",
+            "zh": "II型胶原蛋白基因"
+          },
+          {
+            "en": "in vivo",
+            "zh": "体内"
+          },
+          {
+            "en": "auricular defect",
+            "zh": "耳廓缺损"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-08-14T04:47:05Z"
+    },
+    {
+      "source": "pubmed",
+      "id": "pubmed:42594708",
+      "doi": "10.1016/j.identj.2026.109811",
+      "pmid": "42594708",
+      "title": "Therapeutic Effects of Forced Running on Osseointegration in Rats With Diabetes.",
+      "abstract": "BACKGROUND: Poor osseointegration in diabetes is a significant challenge faced by dental implants; existing strategies are still limited in their effectiveness to fully promote osseointegration. Physical exercise is an important treatment for diabetes and has shown its effect in improving the skeletal condition of patients with diabetes. Yet it remains unclear whether physical exercise has an effect on long-term implant retention of diabetes. OBJECTIVES: This study aimed to explore the effect of exercise on implant osseointegration in diabetic rats and to provide proof-of-concept evidence that nonpharmacological intervention may improve long-term survival rates of dental implants in diabetic patients. MATERIAL AND METHODS: Type 2 diabetes was induced in a subset of rats via a high-sucrose and high-fat diet followed by a low-dose streptozotocin injection. Some of these rats were forced running for 40 minutes/d. Diabetes-related parameters were measured in groups of healthy rats (NC), diabetes rats (DM), and running diabetes rats (DM + EX). Titanium implants were implanted in proximal tibia of some rats, and the osseointegration was compared in the 3 groups. RESULTS: A running-diabetes-rat model was successfully established, where effect of running significantly effect of running significantly reduced the high blood levels of triglyceride and low-density lipoprotein, but did not improve hyperglycaemia or insulin resistance. In addition, osseointegration of the metal implants was substantially improved upon running. CONCLUSION: A simple running device for rats can be used to study effect of physical exercise on diabetes-related deficits. Intensive physical exercise may substantially improve health condition of diabetes patients and reduce the failure rate of implant for diabetes.",
+      "authors": [
+        "Wang Yuxi",
+        "Chen Zijun",
+        "Yang Liu",
+        "Song Shuang",
+        "Tian Lei",
+        "Ding Mingchao",
+        "Liu Xiangdong"
+      ],
+      "first_author_affiliation": "State Key Laboratory of Oral & Maxillofacial Reconstruction and Regeneration, National Clinical Research Center for Oral Diseases, Shaanxi Clinical Research Center for Oral Diseases, Department of Oral Implantology, School of Stomatology, The Fourth Military Medical University, Xi'an, Shaanxi, 710032, China.",
+      "corresponding_authors": [
+        {
+          "name": "Ding Mingchao",
+          "affiliation": "State Key Laboratory of Oral & Maxillofacial Reconstruction and Regeneration, National Clinical Research Center for Oral Diseases, Shaanxi Clinical Research Center for Oral Diseases, Department of Oral and Maxillofacial Surgery, School of Stomatology, The Fourth Military Medical University, Xi'an, Shaanxi, 710032, China. Electronic address: blackdoctor@163.com."
+        },
+        {
+          "name": "Liu Xiangdong",
+          "affiliation": "State Key Laboratory of Oral & Maxillofacial Reconstruction and Regeneration, National Clinical Research Center for Oral Diseases, Shaanxi Clinical Research Center for Oral Diseases, Department of Oral and Maxillofacial Surgery, School of Stomatology, The Fourth Military Medical University, Xi'an, Shaanxi, 710032, China. Electronic address: liuxiangdong@fmmu.edu.cn."
+        }
+      ],
+      "venue": "International dental journal",
+      "year": 2026,
+      "date": "2026-08-13",
+      "date_precision": "day",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/42594708/",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [],
+      "raw_type": "journal article",
+      "directions": [
+        "am_biomedical"
+      ],
+      "direction": "am_biomedical",
+      "direction_name": "AM Biomedical Materials",
+      "routing_matches": {
+        "am_biomedical": [
+          "osseointegration"
+        ]
+      },
+      "llm": {
+        "priority": "Exclude",
+        "relevance_level": "Peripheral",
+        "read_action": "Ignore",
+        "relevance_to_user": "该论文研究糖尿病大鼠运动对种植体骨整合的影响，与AM生物医学材料方向无直接关联。",
+        "why_not_core": "This paper does not involve additive manufacturing, porous structure design, mechanical testing, or fatigue analysis of implants.",
+        "validation_kind": "animal",
+        "flags": {
+          "has_experimental_validation": true,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "diabetes",
+          "osseointegration",
+          "exercise",
+          "rat model",
+          "dental implant"
+        ],
+        "summary_zh": {
+          "motivation": "探究运动对糖尿病大鼠种植体骨整合的影响。",
+          "method": "建立糖尿病大鼠模型，部分大鼠进行强迫跑步，植入钛种植体后比较骨整合。",
+          "result": "跑步显著改善血脂，但未改善高血糖，却显著提高骨整合。",
+          "validation": "动物实验验证，通过糖尿病指标和骨整合比较。"
+        },
+        "summary_en": {
+          "motivation": "To investigate whether physical exercise can improve implant osseointegration in diabetic conditions.",
+          "method": "A type 2 diabetic rat model was induced, and a subset of rats underwent forced running; titanium implants were placed in the proximal tibia to compare osseointegration among groups.",
+          "result": "Forced running significantly reduced triglyceride and LDL levels but did not improve hyperglycemia; however, it substantially enhanced implant osseointegration.",
+          "validation": "Validation was performed through an in vivo animal study with diabetic and running diabetic rat groups."
+        },
+        "key_terms": [
+          {
+            "en": "osseointegration",
+            "zh": "骨整合"
+          },
+          {
+            "en": "diabetes",
+            "zh": "糖尿病"
+          },
+          {
+            "en": "forced running",
+            "zh": "强迫跑步"
+          },
+          {
+            "en": "dental implant",
+            "zh": "牙种植体"
+          },
+          {
+            "en": "titanium implant",
+            "zh": "钛种植体"
+          },
+          {
+            "en": "rat model",
+            "zh": "大鼠模型"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-08-14T04:47:05Z"
+    },
+    {
+      "source": "pubmed",
+      "id": "pubmed:42594037",
+      "doi": "10.1159/jvr/adiag001",
+      "pmid": "42594037",
+      "title": "Evolution of Endothelialised Vascular Grafts: A Bibliometric Analysis for Surgical Innovation.",
+      "abstract": "INTRODUCTION: Rapid endothelialisation is crucial for developing hemocompatible vascular grafts for coronary artery disease. This bibliometric analysis maps the research landscape of endothelial cells and endothelialisation in tissue-engineered vascular grafts (TEVGs) to identify evolving trends and surgical relevance. METHODS: We analysed 1991 publications (2000-2024) from Web of Science using Bibliometrix, VOSviewer, and CiteSpace. Patent and clinical trial data were obtained from Lens.org and ClinicalTrials.gov. RESULTS: Publication output peaked in 2016 (119 articles), then declined post-2020. The United States led in volume (559 articles; 34,186 citations), while Singapore had the highest citation impact (119.9 average citations). Core themes included endothelialisation, angiogenesis, mesenchymal stem cells, and vascular endothelial growth factor. Early focus on prostheses and in vitro models declined, while 3D bioprinting, gelMA scaffolds, and surface modification emerged. Surface modification was identified as the primary research hotspot, with small-diameter TEVGs remaining the central translational focus. Patent activity decreased notably after 2016, and no clinical trials specifically linking TEVGs with endothelial cells were identified. CONCLUSION: Endothelialisation remains essential in TEVG research but is increasingly integrated into broader scaffold fabrication and validation strategies. The field is shifting toward biofabrication approaches like 3D bioprinting and functional evaluation platforms. However, significant translational gaps persist between laboratory research and clinical implementation.",
+      "authors": [
+        "Ahmad Hafiz Murtadha",
+        "Muhammad Dain Yazid",
+        "Nur Najmi Mohamad Anuar",
+        "Mohamad Fikeri Ishak",
+        "Nadiah Sulaiman"
+      ],
+      "first_author_affiliation": "",
+      "corresponding_authors": [],
+      "venue": "Journal of vascular research",
+      "year": 2026,
+      "date": "2026-08-13",
+      "date_precision": "day",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/42594037/",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [],
+      "raw_type": "journal article",
+      "directions": [
+        "ai_bioprinting"
+      ],
+      "direction": "ai_bioprinting",
+      "direction_name": "AI for Bioprinting",
+      "routing_matches": {
+        "ai_bioprinting": [
+          "3D bioprinting",
+          "biofabrication"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该论文为文献计量分析，仅概述了内皮化血管移植物领域的研究趋势，未涉及AI在生物打印中的具体应用。",
+        "why_not_core": "This paper is a bibliometric analysis without any AI implementation, experimental validation, or bioprinting workflow integration.",
+        "validation_kind": "none",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": true
+        },
+        "tags": [
+          "bibliometric analysis",
+          "vascular grafts",
+          "endothelialisation",
+          "tissue engineering",
+          "3D bioprinting"
+        ],
+        "summary_zh": {
+          "motivation": "分析内皮化血管移植物研究趋势，识别外科创新方向。",
+          "method": "利用Bibliometrix、VOSviewer和CiteSpace对1991篇文献进行计量分析。",
+          "result": "发现研究热点转向3D生物打印和表面修饰，但临床转化不足。",
+          "validation": "基于文献计量数据，无实验验证。"
+        },
+        "summary_en": {
+          "motivation": "To map the research landscape of endothelialised vascular grafts and identify evolving trends for surgical innovation.",
+          "method": "A bibliometric analysis of 1991 publications from 2000-2024 using Bibliometrix, VOSviewer, and CiteSpace, supplemented by patent and clinical trial data.",
+          "result": "The field is shifting toward biofabrication approaches like 3D bioprinting, but significant translational gaps remain between laboratory research and clinical implementation.",
+          "validation": "No experimental validation; the study relies solely on bibliometric and patent data analysis."
+        },
+        "key_terms": [
+          {
+            "en": "bibliometric analysis",
+            "zh": "文献计量分析"
+          },
+          {
+            "en": "vascular grafts",
+            "zh": "血管移植物"
+          },
+          {
+            "en": "endothelialisation",
+            "zh": "内皮化"
+          },
+          {
+            "en": "tissue engineering",
+            "zh": "组织工程"
+          },
+          {
+            "en": "3D bioprinting",
+            "zh": "3D生物打印"
+          },
+          {
+            "en": "surface modification",
+            "zh": "表面修饰"
+          },
+          {
+            "en": "small-diameter TEVGs",
+            "zh": "小直径组织工程血管移植物"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-08-14T04:47:05Z"
+    },
+    {
+      "source": "pubmed",
+      "id": "pubmed:42593962",
+      "doi": "10.1016/j.xpro.2026.104780",
+      "pmid": "42593962",
+      "title": "Protocol for extrusion 3D bioprinting of human-scale cardiac patches using cardiac spheroid-laden bioinks.",
+      "abstract": "Extrusion-based bioprinting is a promising approach for developing novel clinical therapies for heart failure patients. Here, we present a protocol for bioprinting personalized human-scale cardiac patches incorporating human cardiac spheroids in a 1% silk fibroin/4% alginate/8% gelatin hydrogel. We describe steps for extrusion 3D bioprinting using a temperature-controlled hydrogel bioink. We also detail adjusting print parameters for optimal results. Although prepared for a specific experimental setup, the techniques described can be applied to other temperature-controlled biomaterials or extrusion 3D bioprinters. For complete details on the use and execution of this protocol, please refer to Roche et al.,1,2 Sharma et al.,3 and Vettori et al.4.",
+      "authors": [
+        "Niina Matthews",
+        "Carmine Gentile"
+      ],
+      "first_author_affiliation": "University of Technology Sydney, School of Electrical, Mechanical and Biomedical Engineering, Ultimo, NSW 2007, Australia. Electronic address: niina.matthews@student.uts.edu.au.",
+      "corresponding_authors": [
+        {
+          "name": "Niina Matthews",
+          "affiliation": "University of Technology Sydney, School of Electrical, Mechanical and Biomedical Engineering, Ultimo, NSW 2007, Australia. Electronic address: niina.matthews@student.uts.edu.au."
+        },
+        {
+          "name": "Carmine Gentile",
+          "affiliation": "University of Technology Sydney, School of Electrical, Mechanical and Biomedical Engineering, Ultimo, NSW 2007, Australia; Heart Research Institute, Newtown, NSW 2042, Australia. Electronic address: carmine.gentile@uts.edu.au."
+        }
+      ],
+      "venue": "STAR protocols",
+      "year": 2026,
+      "date": "2026-08-13",
+      "date_precision": "day",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/42593962/",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [],
+      "raw_type": "journal article",
+      "directions": [
+        "ai_bioprinting"
+      ],
+      "direction": "ai_bioprinting",
+      "direction_name": "AI for Bioprinting",
+      "routing_matches": {
+        "ai_bioprinting": [
+          "3D bioprinting",
+          "bioink"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该论文提供了挤出式生物打印的详细实验方案，但未涉及AI集成，仅作为生物打印流程的背景参考。",
+        "why_not_core": "This paper does not incorporate AI/ML into any bioprinting stage, lacks experimental validation of AI models, and does not address autonomous decision-making or intelligent process control.",
+        "validation_kind": "in_vitro",
+        "flags": {
+          "has_experimental_validation": true,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": true,
+          "is_review": false
+        },
+        "tags": [
+          "extrusion bioprinting",
+          "cardiac patch",
+          "bioink",
+          "protocol",
+          "spheroids"
+        ],
+        "summary_zh": {
+          "motivation": "为心力衰竭患者提供个性化心脏补片的生物打印方案。",
+          "method": "采用温控水凝胶生物墨水，通过挤出式3D生物打印构建含心脏球体的补片。",
+          "result": "提供了可复现的打印参数调整步骤，适用于其他温控生物材料。",
+          "validation": "基于具体实验设置，未进行AI模型验证。"
+        },
+        "summary_en": {
+          "motivation": "To provide a detailed protocol for extrusion-based bioprinting of personalized cardiac patches for heart failure therapy.",
+          "method": "The protocol describes using a temperature-controlled silk fibroin/alginate/gelatin bioink laden with cardiac spheroids for extrusion bioprinting.",
+          "result": "The protocol details print parameter adjustments for optimal outcomes and claims applicability to other temperature-sensitive biomaterials.",
+          "validation": "Validation is based on the described experimental setup, with no AI or computational model validation."
+        },
+        "key_terms": [
+          {
+            "en": "extrusion bioprinting",
+            "zh": "挤出式生物打印"
+          },
+          {
+            "en": "cardiac patch",
+            "zh": "心脏补片"
+          },
+          {
+            "en": "bioink",
+            "zh": "生物墨水"
+          },
+          {
+            "en": "cardiac spheroids",
+            "zh": "心脏球体"
+          },
+          {
+            "en": "silk fibroin",
+            "zh": "丝素蛋白"
+          },
+          {
+            "en": "alginate",
+            "zh": "海藻酸盐"
+          },
+          {
+            "en": "gelatin",
+            "zh": "明胶"
+          },
+          {
+            "en": "temperature-controlled",
+            "zh": "温控"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-08-14T04:47:05Z"
+    },
+    {
+      "source": "pubmed",
+      "id": "pubmed:42593646",
+      "doi": "10.1186/s11671-026-04824-y",
+      "pmid": "42593646",
+      "title": "Anisotropic nanospikes on micro and nanoscale hierarchical titanium surfaces enhance early osseointegration of dental implants.",
+      "abstract": "Anisotropic titanium nano-surfaces produced by alkali etching exert diverse biological effects through physicochemical cues derived from anisotropically distributed nanospikes. These effects can be further enhanced by hierarchically superimposing nanostructures onto micro-roughened surfaces. This study aimed to investigate the effects of micro/nano three-dimensionally hierarchical titanium surfaces on the osteoblastic functions and osseointegration of dental implants. Three-dimensionally nano-roughened titanium surfaces fabricated using a combination of hot acid and alkaline treatments showed a higher density and anisotropic distribution of nanospikes than that on conventional nano-roughened surfaces, while exhibiting key physicochemical features similar to those of conventional nano-roughened surfaces, including superhydrophilicity and negative surface potential associated with surface hydroxyl groups. These three-dimensionally nano-roughened surfaces significantly enhanced bovine serum albumin adsorption. They also promoted the proliferation and osteoblastic differentiation of mouse bone marrow stromal cells compared with conventional micro-roughened or nano-roughened titanium surfaces. In vivo, titanium implants with three-dimensional nano-surfaces showed significantly greater osseointegration strength than that of micro-roughened implants when placed in the rat maxillary molar region. This enhancement was associated with enhanced early bone formation and increased contact and distant osteogenesis. Exploratory association analysis suggested that the composite topographical descriptor reflecting nanospike density and spatial heterogeneity was associated with increased albumin adsorption under controlled in vitro conditions. Collectively, micro/nano three-dimensionally hierarchical titanium surfaces are associated with enhanced early osseointegration and promoted osteoblastic differentiation, highlighting their potential for advanced implant surface design.",
+      "authors": [
+        "Takayuki Ohtake",
+        "Haruki Shikanai",
+        "Masahiro Yamada",
+        "Jun Watanabe",
+        "Hiroshi Egusa"
+      ],
+      "first_author_affiliation": "Division of Molecular and Regenerative Prosthodontics, Tohoku University Graduate School of Dentistry, 4-1 Seiryo-machi, Aoba-ku, Sendai, 980-8575, Miyagi, Japan.",
+      "corresponding_authors": [
+        {
+          "name": "Masahiro Yamada",
+          "affiliation": "Division of Molecular and Regenerative Prosthodontics, Tohoku University Graduate School of Dentistry, 4-1 Seiryo-machi, Aoba-ku, Sendai, 980-8575, Miyagi, Japan. yamamasa@tohoku.ac.jp.; Division of Mechanobiology and Biomedical-Dental Engineering, Tohoku University Graduate School of Biomedical Engineering, 4-1 Seiryo-machi, Aoba-ku, Sendai, 980-8575, Miyagi, Japan. yamamasa@tohoku.ac.jp.; Centre of Excellence for Dental Stem Cell Biology, Faculty of Dentistry, Chulalongkorn University, Pathumwan, Bangkok, Thailand. yamamasa@tohoku.ac.jp."
+        },
+        {
+          "name": "Hiroshi Egusa",
+          "affiliation": "Division of Molecular and Regenerative Prosthodontics, Tohoku University Graduate School of Dentistry, 4-1 Seiryo-machi, Aoba-ku, Sendai, 980-8575, Miyagi, Japan. egu@tohoku.ac.jp.; Center for Advanced Stem Cell and Regenerative Research, Tohoku University Graduate School of Dentistry, Sendai, Miyagi, Japan. egu@tohoku.ac.jp.; Centre of Excellence for Dental Stem Cell Biology, Faculty of Dentistry, Chulalongkorn University, Pathumwan, Bangkok, Thailand. egu@tohoku.ac.jp.; Department of Next-Generation Dental Material Engineering, Tohoku University Graduate School of Dentistry, Sendai, Miyagi, Japan. egu@tohoku.ac.jp."
+        }
+      ],
+      "venue": "Discover nano",
+      "year": 2026,
+      "date": "2026-08-13",
+      "date_precision": "day",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/42593646/",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [],
+      "raw_type": "journal article",
+      "directions": [
+        "am_biomedical"
+      ],
+      "direction": "am_biomedical",
+      "direction_name": "AM Biomedical Materials",
+      "routing_matches": {
+        "am_biomedical": [
+          "osseointegration"
+        ]
+      },
+      "llm": {
+        "priority": "Medium",
+        "relevance_level": "Transferable",
+        "read_action": "Save for project",
+        "relevance_to_user": "该论文研究了钛表面微纳层级结构对骨整合的影响，与AM生物医学材料方向相关，但未涉及增材制造或力学性能。",
+        "why_not_core": "This paper does not involve additive manufacturing (LPBF), mechanical testing (fatigue or static), or stress shielding/stiffness matching; it focuses on surface topography and biological osseointegration.",
+        "validation_kind": "animal",
+        "flags": {
+          "has_experimental_validation": true,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "titanium surface",
+          "nanospikes",
+          "osseointegration",
+          "dental implant",
+          "hierarchical surface",
+          "alkali etching"
+        ],
+        "summary_zh": {
+          "motivation": "探究微纳层级钛表面对骨整合的增强作用。",
+          "method": "通过热酸和碱处理制备三维纳米粗糙钛表面，表征理化性质并评估细胞行为。",
+          "result": "三维纳米表面促进成骨分化，显著提高大鼠种植体骨整合强度。",
+          "validation": "体外细胞实验和动物体内植入实验验证。"
+        },
+        "summary_en": {
+          "motivation": "To investigate whether hierarchical micro/nano titanium surfaces enhance early osseointegration of dental implants.",
+          "method": "Three-dimensional nano-roughened titanium surfaces were fabricated via combined hot acid and alkaline treatments, and their physicochemical properties, protein adsorption, and osteoblastic responses were characterized.",
+          "result": "The hierarchical surfaces exhibited higher nanospike density and anisotropy, promoted osteoblast proliferation and differentiation in vitro, and significantly increased osseointegration strength in a rat model.",
+          "validation": "Validation included in vitro cell assays with mouse bone marrow stromal cells and in vivo implantation in rat maxillary molars."
+        },
+        "key_terms": [
+          {
+            "en": "titanium surface",
+            "zh": "钛表面"
+          },
+          {
+            "en": "nanospikes",
+            "zh": "纳米尖峰"
+          },
+          {
+            "en": "hierarchical surface",
+            "zh": "层级表面"
+          },
+          {
+            "en": "osseointegration",
+            "zh": "骨整合"
+          },
+          {
+            "en": "dental implant",
+            "zh": "牙种植体"
+          },
+          {
+            "en": "alkali etching",
+            "zh": "碱蚀刻"
+          },
+          {
+            "en": "osteoblastic differentiation",
+            "zh": "成骨分化"
+          },
+          {
+            "en": "protein adsorption",
+            "zh": "蛋白质吸附"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-08-14T04:47:05Z"
+    },
+    {
+      "source": "pubmed",
+      "id": "pubmed:42591049",
+      "doi": "10.1039/d6tb01442a",
+      "pmid": "42591049",
+      "title": "Functional oligo(ethylene glycol) methacrylate copolymers enabling combined thermal and photocrosslinking for additive manufacturing of thermoresponsive soft biomaterials.",
+      "abstract": "Thermogelling materials are attractive candidates for advanced biofabrication and 4D printing. However, achieving materials that combine reversible thermal responsiveness with sufficient mechanical stability and compatibility with multiple additive manufacturing techniques remains an important challenge. To address this limitation, we synthesized POEGMA-based diblock copolymers with pendant amine groups, capable of temperature-induced physical gelation with additional chemical crosslinking to produce structurally stable inks for advanced printing applications. The diblock copolymers (P(A(+)O)-b-PD or P(AO)-b-PD) consisted of a shorter block with randomly distributed units of 2-aminoethyl methacrylate (in A(+)NH3+ and A NH2 form) and oligo(ethylene glycol) methacrylate (O) and a longer block of poly[di(ethylene glycol) methacrylate] (D). The presence and ionization state of amine groups as well as polymer concentration were found to influence thermogel formation and rheological behavior. Thermogels were additionally chemically crosslinked using poly(ethylene glycol) diacrylate and N,N'-methylenebisacrylamide by photo-induced radical crosslinking coupled with nucleophilic amine addition. Rheological analysis confirmed shear-thinning behavior, suitable viscoelastic properties and rapid structural recovery, enabling extrusion-based 3D printing. In addition, the materials were successfully processed into well-defined structures by volumetric additive manufacturing (VAM), demonstrating their versatility across multiple additive manufacturing platforms. Temperature-induced swelling-deswelling cycles revealed the responsiveness of the constructs, demonstrating characteristics that may be beneficial for the future development of 4D printed thermoresponsive materials. In vitro studies supported cytocompatibility of the material toward fibroblasts and keratinocytes, which maintained cell viability within the gel matrix. Overall, the obtained results highlight that the incorporation of functional amine groups into diblock copolymers enhances thermogel strength and expands the design space of POEGMA-based materials, especially toward advanced manufacturing techniques for biomedical applications.",
+      "authors": [
+        "Daria Lipowska-Kur",
+        "Łukasz Otulakowski",
+        "Paweł Groch",
+        "Julia Stanny",
+        "Katarzyna Filipek",
+        "Łukasz Sieroń",
+        "Katarzyna Jelonek",
+        "Armin Shavandi",
+        "Alicja Utrata-Wesołek"
+      ],
+      "first_author_affiliation": "Centre of Polymer and Carbon Materials, Polish Academy of Sciences, M. Curie-Skłodowskiej 34, Zabrze, 41-819, Poland. dlipowska@cmpw-pan.pl.",
+      "corresponding_authors": [
+        {
+          "name": "Daria Lipowska-Kur",
+          "affiliation": "Centre of Polymer and Carbon Materials, Polish Academy of Sciences, M. Curie-Skłodowskiej 34, Zabrze, 41-819, Poland. dlipowska@cmpw-pan.pl."
+        },
+        {
+          "name": "Łukasz Otulakowski",
+          "affiliation": "Centre of Polymer and Carbon Materials, Polish Academy of Sciences, M. Curie-Skłodowskiej 34, Zabrze, 41-819, Poland. dlipowska@cmpw-pan.pl."
+        },
+        {
+          "name": "Katarzyna Filipek",
+          "affiliation": "Centre of Polymer and Carbon Materials, Polish Academy of Sciences, M. Curie-Skłodowskiej 34, Zabrze, 41-819, Poland. dlipowska@cmpw-pan.pl."
+        },
+        {
+          "name": "Katarzyna Jelonek",
+          "affiliation": "Centre of Polymer and Carbon Materials, Polish Academy of Sciences, M. Curie-Skłodowskiej 34, Zabrze, 41-819, Poland. dlipowska@cmpw-pan.pl."
+        },
+        {
+          "name": "Alicja Utrata-Wesołek",
+          "affiliation": "Centre of Polymer and Carbon Materials, Polish Academy of Sciences, M. Curie-Skłodowskiej 34, Zabrze, 41-819, Poland. dlipowska@cmpw-pan.pl."
+        }
+      ],
+      "venue": "Journal of materials chemistry. B",
+      "year": 2026,
+      "date": "2026-08-13",
+      "date_precision": "day",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/42591049/",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [],
+      "raw_type": "journal article",
+      "directions": [
+        "ai_bioprinting"
+      ],
+      "direction": "ai_bioprinting",
+      "direction_name": "AI for Bioprinting",
+      "routing_matches": {
+        "ai_bioprinting": [
+          "biofabrication"
+        ]
+      },
+      "llm": {
+        "priority": "Medium",
+        "relevance_level": "Transferable",
+        "read_action": "Skim only",
+        "relevance_to_user": "该论文涉及热响应性生物墨水的合成与打印，但未集成AI，仅可作为生物打印材料背景参考。",
+        "why_not_core": "This paper does not integrate AI into any bioprinting workflow stage, lacks experimental validation of AI models, and does not address autonomous decision-making in bioprinting.",
+        "validation_kind": "in_vitro",
+        "flags": {
+          "has_experimental_validation": true,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "thermoresponsive",
+          "bioink",
+          "extrusion bioprinting",
+          "volumetric additive manufacturing",
+          "4D printing",
+          "POEGMA",
+          "photocrosslinking"
+        ],
+        "summary_zh": {
+          "motivation": "开发兼具热响应性和机械稳定性的生物墨水，以支持多种增材制造技术。",
+          "method": "合成含胺基的POEGMA二嵌段共聚物，结合热凝胶和光交联，实现可打印墨水。",
+          "result": "墨水具有剪切变稀和快速恢复特性，成功用于挤出打印和体积增材制造，并保持细胞活性。",
+          "validation": "通过流变学、打印实验和体外细胞培养验证材料性能。"
+        },
+        "summary_en": {
+          "motivation": "To develop thermoresponsive bioinks that combine reversible thermal gelation with sufficient mechanical stability for advanced additive manufacturing techniques.",
+          "method": "Synthesized POEGMA-based diblock copolymers with pendant amine groups, enabling temperature-induced physical gelation and subsequent photo-induced chemical crosslinking.",
+          "result": "The inks exhibited shear-thinning behavior and rapid recovery, were successfully processed via extrusion and volumetric additive manufacturing, and supported fibroblast and keratinocyte viability.",
+          "validation": "Rheological characterization, printing tests, and in vitro cytocompatibility assays were performed."
+        },
+        "key_terms": [
+          {
+            "en": "thermoresponsive",
+            "zh": "热响应性"
+          },
+          {
+            "en": "bioink",
+            "zh": "生物墨水"
+          },
+          {
+            "en": "extrusion bioprinting",
+            "zh": "挤出式生物打印"
+          },
+          {
+            "en": "volumetric additive manufacturing",
+            "zh": "体积增材制造"
+          },
+          {
+            "en": "4D printing",
+            "zh": "4D打印"
+          },
+          {
+            "en": "POEGMA",
+            "zh": "聚低聚乙二醇甲基丙烯酸酯"
+          },
+          {
+            "en": "photocrosslinking",
+            "zh": "光交联"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-08-14T04:47:05Z"
+    }
+  ],
+  "counts": {
+    "fetched_total": 22,
+    "by_source": {
+      "arxiv": 15,
+      "openalex": 1,
+      "pubmed": 6
+    },
+    "after_dedup": 22,
+    "after_routing": 22,
+    "by_direction": {
+      "rl_world_model": 11,
+      "am_biomedical": 4,
+      "ai_bioprinting": 5,
+      "fea_surrogate": 2
+    },
+    "routed_by_source": {
+      "arxiv": 15,
+      "openalex": 1,
+      "pubmed": 6
+    },
+    "scored": 22,
+    "priority_counts": {
+      "Low": 12,
+      "Exclude": 4,
+      "Medium": 6
+    }
+  }
+}
