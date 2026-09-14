@@ -63,6 +63,17 @@ commits and deletes the obsolete generated daily HTML from version control.
   removes historical generated `docs/` files and Git history is handled
   separately if desired.
 
+## Follow-up (2026-09-14)
+
+Completed: writers no longer render or commit `docs/` (`run_daily` renders
+only when `RADAR_PREVIEW_DIR` is set); the 4,490 generated files under
+`docs/` (daily and month pages, index/queue/search shards, legacy weekly
+pages, previews, session logs) are removed from version control;
+`docs/analytics` stays as the only tracked content and is still copied into
+the artifact; `weekly.yml` is retired because the artifact rebuilds every
+weekly report from data. Git history still holds the old blobs, so a fresh
+clone only shrinks after a history rewrite, which is a separate decision.
+
 ## Rollback
 
 Before the Pages-source switch, no rollback is needed because legacy `docs/`
