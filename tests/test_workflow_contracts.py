@@ -62,14 +62,34 @@ def test_daily_cron_avoids_the_top_of_the_hour():
 def test_writers_push_through_the_retry_script():
     # 2026-09-12: one failed push lost the whole day. Every writer must use
     # scripts/git_push_retry.sh instead of a bare `git push`.
-    for workflow_name, job, step_name in (
-        ("daily.yml", "run", "Commit results"),
-        ("weekly.yml", "weekly", "Commit results"),
-        ("manual-backfill.yml", "backfill", "Commit backfill results"),
-    ):
+    for workflow_name, job, step_name in _WRITER_COMMIT_STEPS:
         run = _step(_workflow(workflow_name), job, step_name)["run"]
         assert "scripts/git_push_retry.sh" in run, workflow_name
         assert "\ngit push\n" not in run and not run.rstrip().endswith("git push"), workflow_name
+
+
+_WRITER_COMMIT_STEPS = (
+    ("daily.yml", "run", "Commit results"),
+    ("manual-backfill.yml", "backfill", "Commit backfill results"),
+    ("manual-rescore.yml", "rescore", "Commit rescore results"),
+)
+
+
+def test_writers_never_commit_generated_docs():
+    # ADR-0028 follow-up: the site is a disposable artifact built from data/.
+    for workflow_name, job, step_name in _WRITER_COMMIT_STEPS:
+        run = _step(_workflow(workflow_name), job, step_name)["run"]
+        assert "docs/" not in run, workflow_name
+    assert not (ROOT / ".github/workflows/weekly.yml").exists()
+    pages = _workflow("pages.yml")
+    assert "weekly-research-radar" not in pages[True]["workflow_run"]["workflows"]
+
+
+def test_pytest_runs_in_ci_for_pull_requests():
+    tests = _workflow("tests.yml")
+    assert "pull_request" in tests[True]
+    runs = " ".join(step.get("run", "") for step in tests["jobs"]["pytest"]["steps"])
+    assert "pytest" in runs
 
 
 def test_retry_script_is_committed_and_bounded():

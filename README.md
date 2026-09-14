@@ -44,7 +44,24 @@ Every daily run is reproducible:
 - `data/manifests/YYYY-MM-DD.json` — git commit, config hashes, model snapshot, package versions
 - `CHANGELOG.md` — auto-updated when config or prompt changes
 - `prompts/scorer_vN.txt` — versioned scorer prompts (never overwritten)
-- Monthly GitHub Release `archive-YYYY-MM` — long-term data archive
+- GitHub Release `archive-2026-05` is a one-off data snapshot; the monthly
+  archive job sketched in `TODO.md` was never automated
+
+## Site build
+
+The public site is a disposable GitHub Pages artifact built from `data/` by
+`.github/workflows/pages.yml` after every successful writer run (ADR-0028).
+Writers commit `data/` only; `docs/` holds nothing but the manually generated
+analytics artifacts from `scripts/build_analytics.py`, which the build copies
+into the artifact.
+
+Local preview of the exact artifact:
+
+```bash
+python -m scripts.rebuild_site --docs-dir _site --sharded-daily
+```
+
+A dry run can also render a preview: `RADAR_PREVIEW_DIR=_site python -m pipeline.run_daily 1 --skip-zotero`.
 
 ## Open-license card visuals
 
