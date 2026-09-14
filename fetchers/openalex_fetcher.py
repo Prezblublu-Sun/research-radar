@@ -9,6 +9,19 @@ import requests
 OPENALEX_BASE = "https://api.openalex.org/works"
 MAX_ATTEMPTS = 5
 
+# Daily-mode page cap per query (ADR-0030). The daily window is
+# from_publication_date = today-14d with no upper bound; on 2026-09-14 that
+# window held ~3.7k works for the concept query and ~3.9k for the keyword
+# query, while the old cap (4 pages x 100) returned the same top-400 every
+# day. 60 pages x 100 covers the whole window with headroom; the fetcher
+# reports `truncated` in `stats` whenever a query still had a next_cursor.
+DAILY_MAX_PAGES = 60
+DAILY_SORT = "publication_date:desc"
+# Historical (backfill) page cap per query and month window. The concept
+# query alone returns ~4.2k works/month for every year 2018-2025 (live
+# meta.count on 2026-09-14), so the old 40-page cap truncated each month.
+HISTORICAL_MAX_PAGES = 60
+
 
 class OpenAlexError(RuntimeError):
     """Base class for errors that callers may surface in run manifests."""
@@ -110,7 +123,8 @@ def _build_filter(concepts: list[str], from_date: str,
 
 
 def _fetch_one(flt: str, search_query: str | None, per_page: int,
-               max_pages: int) -> list[dict]:
+               max_pages: int, sort: str | None = None,
+               stats: dict | None = None) -> list[dict]:
     """One cursor-paginated OpenAlex query → list of normalised paper dicts.
 
     Extracted so the AND→OR dispatch in :func:`fetch` can issue two
@@ -119,6 +133,7 @@ def _fetch_one(flt: str, search_query: str | None, per_page: int,
     """
     results: list[dict] = []
     cursor = "*"
+    pages = 0
     for _ in range(max_pages):
         params = {
             "filter": flt,
@@ -130,8 +145,11 @@ def _fetch_one(flt: str, search_query: str | None, per_page: int,
             params["mailto"] = email
         if search_query:
             params["search"] = search_query
+        if sort:
+            params["sort"] = sort
 
         data = _request_json(params)
+        pages += 1
 
         for work in data.get("results", []):
             results.append(_normalize(work))
@@ -140,6 +158,12 @@ def _fetch_one(flt: str, search_query: str | None, per_page: int,
         if not cursor:
             break
 
+    if stats is not None:
+        # A live next_cursor after the last allowed page means OpenAlex had
+        # more matches than we read: the window was truncated (ADR-0030).
+        stats["pages"] = pages
+        stats["results"] = len(results)
+        stats["truncated"] = bool(cursor)
     return results
 
 
@@ -151,15 +175,17 @@ def fetch(
     max_pages: int | None = None,
     from_date: str | None = None,
     to_date: str | None = None,
+    stats: dict | None = None,
 ) -> list[dict]:
     """Returns a list of normalized paper dicts.
 
     Two modes:
       - Daily (default): from_date computed from `days_back`, no upper
-        bound. Default `max_pages` is 4 (~200 papers/day).
+        bound, results sorted newest-first (`DAILY_SORT`). Default
+        `max_pages` is `DAILY_MAX_PAGES` per query (ADR-0030).
       - Historical (when both from_date and to_date are set as 'YYYY-MM-DD'):
         both bounds passed to the OpenAlex filter. Default `max_pages` is
-        bumped to 40 internally (up to ~4000 papers/month per query).
+        `HISTORICAL_MAX_PAGES` (up to ~6,000 papers/month per query).
 
     Dispatch — changed from AND to OR semantics on 2026-05-19 after the
     DOI verifier surfaced 4 must_read papers that were concept-relevant
@@ -179,16 +205,37 @@ def fetch(
     selection, and `max_pages` semantics are unchanged — each query in
     the fan-out is capped at `effective_max_pages` independently.
     Callers may always override `max_pages` explicitly.
+
+    `stats`, when given, is filled with per-query page/result counts and a
+    top-level `truncated` flag so the caller can surface a capped window.
     """
     historical = bool(from_date and to_date)
     if historical:
         effective_from = from_date
         effective_to = to_date
-        effective_max_pages = max_pages if max_pages is not None else 40
+        effective_max_pages = max_pages if max_pages is not None else HISTORICAL_MAX_PAGES
+        sort = None
     else:
         effective_from = (dt.date.today() - dt.timedelta(days=days_back)).isoformat()
         effective_to = None
-        effective_max_pages = max_pages if max_pages is not None else 4
+        effective_max_pages = max_pages if max_pages is not None else DAILY_MAX_PAGES
+        sort = DAILY_SORT
+
+    query_stats: list[dict] = []
+
+    def _run(name: str, flt: str, search: str | None) -> list[dict]:
+        one: dict = {"query": name}
+        rows = _fetch_one(flt, search, per_page, effective_max_pages,
+                          sort=sort, stats=one)
+        query_stats.append(one)
+        return rows
+
+    def _publish_stats() -> None:
+        if stats is None:
+            return
+        stats["queries"] = query_stats
+        stats["max_pages"] = effective_max_pages
+        stats["truncated"] = any(q.get("truncated") for q in query_stats)
 
     has_concepts = bool(concepts)
     has_keywords = bool(keywords)
@@ -198,8 +245,8 @@ def fetch(
         flt_concepts = _build_filter(concepts, effective_from, effective_to)
         flt_no_concepts = _build_filter([], effective_from, effective_to)
         search_query = " OR ".join(f'"{k}"' for k in keywords)
-        rows_a = _fetch_one(flt_concepts, None, per_page, effective_max_pages)
-        rows_b = _fetch_one(flt_no_concepts, search_query, per_page, effective_max_pages)
+        rows_a = _run("concepts", flt_concepts, None)
+        rows_b = _run("search", flt_no_concepts, search_query)
         # Union with stable A-first ordering, dedup by OpenAlex work id.
         seen: set[str] = set()
         merged: list[dict] = []
@@ -210,12 +257,15 @@ def fetch(
             if rid:
                 seen.add(rid)
             merged.append(r)
+        _publish_stats()
         return merged
 
     # Single-query path (keywords-only or concepts-only) — unchanged.
     flt = _build_filter(concepts, effective_from, effective_to)
     search_query = " OR ".join(f'"{k}"' for k in keywords) if has_keywords else None
-    return _fetch_one(flt, search_query, per_page, effective_max_pages)
+    rows = _run("single", flt, search_query)
+    _publish_stats()
+    return rows
 
 
 def _normalize(work: dict) -> dict:

@@ -207,6 +207,11 @@ Track major architectural decisions to avoid forgetting rationale.
 | 2026-05-12 | Public GitHub Pages | Research topic public is fine, also enables free unlimited Actions |
 | 2026-05-12 | Scopus/WoS via email alerts only | Avoid ToS risk |
 | 2026-07-20 | Canonical site view + workbench/index v2 (ADR-0027) | Keep raw evidence, fix counts, and shorten the paper-triage loop at 100k scale |
+| 2026-09-14 | OpenAlex daily cap 4→60 pages, newest-first sort, `openalex_truncated` flag (ADR-0030) | Live window held ~3.7k+3.9k works; the 800 cap returned the same top-400 daily, ~90% of the window never fetched |
+| 2026-09-14 | arXiv lookback floor 5 days, `max_results` scales per day (ADR-0030) | Announcement lag made Fri–Sun submissions invisible to a 1-day window; 46/48 weekend-Monday runs had zero arXiv |
+| 2026-09-14 | Health gate blocks only on missing/unscored data; single-source failures are warnings (ADR-0030) | 09-08 and 09-13 committed good data but the failed gate skipped the Pages deploy |
+| 2026-09-14 | Writers push via `scripts/git_push_retry.sh`; CLI default `days_back=2`; cron `17 3` (ADR-0030) | 09-12 lost a full day to one transient push failure; top-of-hour cron queued 4–5 h |
+| 2026-09-14 | `seen_dois.json` kept in first-seen order, cap 150k, never wiped by `--force` (ADR-0030) | Old 50k set-slice forgot random already-scored keys |
 |   |   |   |
 
 Add a row whenever making a substantive change.

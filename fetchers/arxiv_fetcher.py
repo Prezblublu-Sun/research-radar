@@ -15,7 +15,8 @@ def fetch(categories: list[str], days_back: int = 1,
     Two modes:
       - Daily (default): submitted within the last `days_back` days, iterating
         results sorted by date descending until older than the cutoff.
-        Default `max_results` is 2000.
+        Default `max_results` is 2000 per lookback day (ADR-0030), so a
+        wider window is not silently capped at one day's volume.
       - Historical (when both from_date and to_date are set as 'YYYY-MM-DD'):
         uses an arXiv `submittedDate:[YYYYMMDD0000 TO YYYYMMDD2359]` query
         and iterates all results in the window (no cutoff break).
@@ -24,9 +25,11 @@ def fetch(categories: list[str], days_back: int = 1,
 
     Callers may always override `max_results` explicitly.
 
-    Outer retry: if arxiv returns 429 (rate limit), wait 60/180 seconds
-    between attempts (3 total). The arxiv package's internal num_retries
-    only does ~10 second waits which arxiv often rejects.
+    Outer retry: if arxiv returns 429 (rate limit), wait 60 / 300 / 900
+    seconds between attempts (4 total, ~21 min worst case; the daily job
+    allows 90). The arxiv package's internal num_retries only does ~10 second
+    waits which arxiv often rejects, and two consecutive daily runs
+    (2026-09-13/14) still failed after the old 60 s + 180 s schedule.
     """
     if not categories:
         return []
@@ -44,14 +47,15 @@ def fetch(categories: list[str], days_back: int = 1,
     else:
         query = cat_query
         cutoff_date = dt.date.today() - dt.timedelta(days=days_back)
-        effective_max_results = max_results if max_results is not None else 2000
+        effective_max_results = (max_results if max_results is not None
+                                 else 2000 * max(1, int(days_back)))
 
-    wait_seconds = [0, 60, 180]
+    wait_seconds = [0, 60, 300, 900]
     last_error = None
 
     for attempt, wait in enumerate(wait_seconds, 1):
         if wait > 0:
-            print(f"  arxiv attempt {attempt}/3 after {wait}s wait...")
+            print(f"  arxiv attempt {attempt}/{len(wait_seconds)} after {wait}s wait...")
             time.sleep(wait)
         try:
             search = arxiv.Search(

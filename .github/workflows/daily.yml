@@ -2,7 +2,9 @@ name: daily-research-radar
 
 on:
   schedule:
-    - cron: "0 3 * * *"
+    # Off the top of the hour: GitHub queues :00 schedules for hours during
+    # busy periods (September runs started 07:19-08:14 UTC for a 03:00 cron).
+    - cron: "17 3 * * *"
   workflow_dispatch:
 
 permissions:
@@ -62,10 +64,17 @@ jobs:
           git config user.name "research-radar-bot"
           git config user.email "actions@github.com"
           git add data/ docs/ CHANGELOG.md 2>/dev/null || true
-          git diff --staged --quiet || git commit -m "daily: $(date -u +%Y-%m-%d)"
-          git push
+          if git diff --staged --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "daily: $(date -u +%Y-%m-%d)"
+          bash scripts/git_push_retry.sh main 5
 
       - name: Daily run health gate
+        # Blocks only when the day's data is missing or largely unscored;
+        # single-source outages and truncation surface as warnings so the
+        # Pages deploy (gated on this workflow's conclusion) still runs.
         run: python -m pipeline.health_gate
 
       - name: Fail if scope_audit reported errors

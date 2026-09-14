@@ -33,6 +33,17 @@ MANIFESTS_DIR = DATA_DIR / "manifests"
 SNAPSHOTS_DIR = DATA_DIR / "config_snapshots"
 CHANGELOG = ROOT / "CHANGELOG.md"
 
+# Per-source lookback floors (ADR-0030).
+# arXiv filters on the v1 submission date, but a paper only becomes visible
+# after its announcement, which lags submission by 1-4 days (post-14:00 ET
+# cutoff, weekends, holidays). With a 1-day lookback the Sat/Sun/Mon runs
+# returned zero and Fri-Sun submissions were never fetched at all. Five days
+# keeps every submission inside the window until it has been announced.
+ARXIV_MIN_LOOKBACK_DAYS = 5
+# OpenAlex indexes publisher deposits days to weeks after the publication
+# date, so its window stays wide and relies on DOI dedup for repeats.
+OPENALEX_MIN_LOOKBACK_DAYS = 14
+
 
 def _print(msg: str):
     print(f"[{dt.datetime.now().strftime('%H:%M:%S')}] {msg}", flush=True)
@@ -58,17 +69,24 @@ def run(days_back: int = 2, skip_zotero: bool = False, force: bool = False) -> d
         openalex_concepts.update(sources.get("openalex_concepts", []))
         pubmed_terms.update(sources.get("pubmed_terms", []))
 
+    arxiv_lookback = max(days_back, ARXIV_MIN_LOOKBACK_DAYS)
+    openalex_lookback = max(days_back, OPENALEX_MIN_LOOKBACK_DAYS)
+    pubmed_lookback = days_back
+
+    # Record the *effective* per-source window. The manifest used to claim
+    # days_back=1 for OpenAlex while the fetcher actually looked back 14d.
     sources_used = {
-        "arxiv": {"categories": sorted(arxiv_cats), "days_back": days_back},
+        "arxiv": {"categories": sorted(arxiv_cats),
+                  "days_back": arxiv_lookback,
+                  "requested_days_back": days_back},
         "openalex": {"keywords": sorted(openalex_kws),
                      "concepts": sorted(openalex_concepts),
-                     "days_back": days_back},
-        "pubmed":   {"terms": sorted(pubmed_terms), "days_back": days_back},
+                     "days_back": openalex_lookback,
+                     "requested_days_back": days_back},
+        "pubmed":   {"terms": sorted(pubmed_terms),
+                     "days_back": pubmed_lookback,
+                     "requested_days_back": days_back},
     }
-
-    arxiv_lookback = days_back
-    openalex_lookback = max(days_back, 14)
-    pubmed_lookback = days_back
 
     # Machine-readable source health is persisted in the manifest. This keeps
     # a single-source outage visible even when the other sources are healthy.
@@ -104,6 +122,7 @@ def run(days_back: int = 2, skip_zotero: bool = False, force: bool = False) -> d
             record_source("arxiv", error=e)
             _print(f"  ! arxiv failed: {e}")
 
+    openalex_stats: dict = {}
     if openalex_kws or openalex_concepts:
         _print(f"Fetching OpenAlex (lookback={openalex_lookback}d): {len(openalex_kws)} keywords, {len(openalex_concepts)} concepts")
         try:
@@ -111,9 +130,14 @@ def run(days_back: int = 2, skip_zotero: bool = False, force: bool = False) -> d
                 concepts=sorted(openalex_concepts),
                 keywords=sorted(openalex_kws),
                 days_back=openalex_lookback,
+                stats=openalex_stats,
             ))
             record_source("openalex", len(all_lists[-1]))
-            _print(f"  -> {len(all_lists[-1])} papers")
+            if openalex_stats:
+                source_status["openalex"]["fetch_stats"] = dict(openalex_stats)
+            truncated_note = (" (window TRUNCATED at the page cap)"
+                              if openalex_stats.get("truncated") else "")
+            _print(f"  -> {len(all_lists[-1])} papers{truncated_note}")
         except Exception as e:
             record_source("openalex", error=e)
             _print(f"  ! OpenAlex failed: {e}")
@@ -297,6 +321,10 @@ def run(days_back: int = 2, skip_zotero: bool = False, force: bool = False) -> d
             quality_flags.append(f"{src}_returned_zero")
     for src in source_errors:
         quality_flags.append(f"{src}_failed")
+    # ADR-0030: a capped OpenAlex window silently drops the oldest-dated
+    # part of the 14-day window. Surface it so the cap can be raised.
+    if openalex_stats.get("truncated"):
+        quality_flags.append("openalex_truncated")
     # =================================
 
 
@@ -376,7 +404,10 @@ def run(days_back: int = 2, skip_zotero: bool = False, force: bool = False) -> d
 
 if __name__ == "__main__":
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
-    days = int(args[0]) if args else 1
+    # Default lookback is 2 days so a lost run (network failure on push,
+    # runner outage) is re-covered by the next run; per-source floors above
+    # widen this further for arXiv and OpenAlex.
+    days = int(args[0]) if args else 2
     skip_zot = "--skip-zotero" in sys.argv
     force = "--force" in sys.argv
     if force:

@@ -32,3 +32,54 @@ def test_manual_backfill_dry_run_never_commits():
         if step.get("name") == "Commit backfill results"
     )
     assert commit["if"] == "${{ !inputs.dry_run }}"
+
+
+# ---------------------------------------------------------------------------
+# ADR-0030: publish resilience
+# ---------------------------------------------------------------------------
+
+def _workflow(name: str) -> dict:
+    return yaml.safe_load(
+        (ROOT / ".github/workflows" / name).read_text(encoding="utf-8")
+    )
+
+
+def _step(workflow: dict, job: str, name: str) -> dict:
+    return next(
+        step for step in workflow["jobs"][job]["steps"]
+        if step.get("name") == name
+    )
+
+
+def test_daily_cron_avoids_the_top_of_the_hour():
+    # September 2026: a "0 3" schedule actually started 07:19-08:14 UTC.
+    daily = _workflow("daily.yml")
+    cron = daily[True]["schedule"][0]["cron"]  # PyYAML parses `on:` as True
+    minute = cron.split()[0]
+    assert minute.isdigit() and int(minute) != 0
+
+
+def test_writers_push_through_the_retry_script():
+    # 2026-09-12: one failed push lost the whole day. Every writer must use
+    # scripts/git_push_retry.sh instead of a bare `git push`.
+    for workflow_name, job, step_name in (
+        ("daily.yml", "run", "Commit results"),
+        ("weekly.yml", "weekly", "Commit results"),
+        ("manual-backfill.yml", "backfill", "Commit backfill results"),
+    ):
+        run = _step(_workflow(workflow_name), job, step_name)["run"]
+        assert "scripts/git_push_retry.sh" in run, workflow_name
+        assert "\ngit push\n" not in run and not run.rstrip().endswith("git push"), workflow_name
+
+
+def test_retry_script_is_committed_and_bounded():
+    script = (ROOT / "scripts/git_push_retry.sh").read_text(encoding="utf-8")
+    assert "git push origin" in script
+    assert "git pull --rebase" in script
+    assert "exit 1" in script  # gives up loudly instead of looping forever
+
+
+def test_daily_health_gate_runs_after_commit():
+    steps = _workflow("daily.yml")["jobs"]["run"]["steps"]
+    names = [s.get("name") for s in steps]
+    assert names.index("Commit results") < names.index("Daily run health gate")
