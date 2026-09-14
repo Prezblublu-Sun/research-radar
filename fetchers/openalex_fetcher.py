@@ -47,10 +47,17 @@ MAX_ATTEMPTS = 5
 # from_publication_date = today-14d with no upper bound; on 2026-09-14 that
 # window held ~3.7k works for the concept query and ~3.9k for the keyword
 # query, while the old cap (4 pages x 100) returned the same top-400 every
-# day. 60 pages x 100 covers the whole window with headroom; the fetcher
+# day. 60 pages x 200 covers the whole window with headroom; the fetcher
 # reports `truncated` in `stats` whenever a query still had a next_cursor.
+#
+# Cost model (help.openalex.org/access/example-costs, 2026-09): OpenAlex
+# bills per API call, not per result. A `search=` call costs $1 per 1,000,
+# a filter-only call $0.10 per 1,000; anonymous callers get $0.10/day, a
+# free API key $1/day. PER_PAGE=200 (the API maximum) therefore halves the
+# spend of every window compared with the old 100.
 DAILY_MAX_PAGES = 60
 DAILY_SORT = "publication_date:desc"
+PER_PAGE = 200
 # Historical (backfill) page cap per query and month window. The concept
 # query alone returns ~4.2k works/month for every year 2018-2025 (live
 # meta.count on 2026-09-14), so the old 40-page cap truncated each month.
@@ -205,7 +212,7 @@ def fetch(
     concepts: list[str],
     keywords: list[str],
     days_back: int = 1,
-    per_page: int = 100,
+    per_page: int = PER_PAGE,
     max_pages: int | None = None,
     from_date: str | None = None,
     to_date: str | None = None,
@@ -219,7 +226,7 @@ def fetch(
         `max_pages` is `DAILY_MAX_PAGES` per query (ADR-0030).
       - Historical (when both from_date and to_date are set as 'YYYY-MM-DD'):
         both bounds passed to the OpenAlex filter. Default `max_pages` is
-        `HISTORICAL_MAX_PAGES` (up to ~6,000 papers/month per query).
+        `HISTORICAL_MAX_PAGES` (up to ~12,000 papers/month per query).
 
     Dispatch — changed from AND to OR semantics on 2026-05-19 after the
     DOI verifier surfaced 4 must_read papers that were concept-relevant

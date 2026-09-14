@@ -31,7 +31,19 @@ def test_manual_backfill_dry_run_never_commits():
         for step in _manual_backfill_steps()
         if step.get("name") == "Commit backfill results"
     )
-    assert commit["if"] == "${{ !inputs.dry_run }}"
+    assert "!inputs.dry_run" in commit["if"]
+    # ...but a failed month must not discard the completed ones (ADR-0030 §10).
+    assert "!cancelled()" in commit["if"]
+
+
+def test_manual_backfill_progress_dir_is_stable_per_range():
+    run = next(
+        step
+        for step in _manual_backfill_steps()
+        if step.get("name") == "Run historical backfill"
+    )["run"]
+    assert "${{ inputs.from_date }}_${{ inputs.to_date }}" in run
+    assert "github.run_id" not in run
 
 
 # ---------------------------------------------------------------------------

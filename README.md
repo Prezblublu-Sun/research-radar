@@ -26,9 +26,14 @@ Quick reference:
 
 ## Optional GitHub Secrets
 
-- `OPENALEX_API_KEY` — Free OpenAlex account key. Anonymous queries remain
-  supported; configuring a key gives the scheduled runner a larger,
-  account-bound allowance and reduces shared-IP rate limiting.
+- `OPENALEX_API_KEY` — Free OpenAlex account key. **Required for
+  backfills.** OpenAlex bills per API call: a keyword `search=` call costs
+  $1 per 1,000, a filter-only call $0.10 per 1,000; anonymous callers get
+  $0.10/day (about 100 search calls), a free key $1/day. The daily run
+  spends ≈$0.03/day and works anonymously; one backfill month spends
+  ≈$0.04, so without a key the second month of any backfill hits the
+  budget (2026-09-14, run 34857448578). Create the key in an OpenAlex
+  account and add it as a repository secret.
 
 ## Required GitHub Variables
 
