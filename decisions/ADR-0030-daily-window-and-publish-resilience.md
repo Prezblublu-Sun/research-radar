@@ -84,6 +84,12 @@ schedules.
    appends new keys deterministically, never drops keys it did not see, and
    caps at 150,000 (the whole corpus fits).
 7. **Cron moved to `17 3 * * *`** to leave the crowded :00 slot.
+8. **arXiv backoff** 60 / 300 / 900 s (4 attempts): the 09-13 and 09-14
+   runs both exhausted the old 60 s + 180 s schedule on HTTP 429.
+9. **Historical OpenAlex cap** 40 → 60 pages per query and month window
+   (`HISTORICAL_MAX_PAGES`): the concept query alone holds ~4.2k works per
+   month in every year 2018–2025, above the old 4,000 cap. Needed before the
+   2022-12 .. 2026-05 OpenAlex re-backfill that ADR-0023 left pending.
 
 ## Consequences
 

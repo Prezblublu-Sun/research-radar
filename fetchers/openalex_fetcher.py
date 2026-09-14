@@ -17,6 +17,10 @@ MAX_ATTEMPTS = 5
 # reports `truncated` in `stats` whenever a query still had a next_cursor.
 DAILY_MAX_PAGES = 60
 DAILY_SORT = "publication_date:desc"
+# Historical (backfill) page cap per query and month window. The concept
+# query alone returns ~4.2k works/month for every year 2018-2025 (live
+# meta.count on 2026-09-14), so the old 40-page cap truncated each month.
+HISTORICAL_MAX_PAGES = 60
 
 
 class OpenAlexError(RuntimeError):
@@ -181,7 +185,7 @@ def fetch(
         `max_pages` is `DAILY_MAX_PAGES` per query (ADR-0030).
       - Historical (when both from_date and to_date are set as 'YYYY-MM-DD'):
         both bounds passed to the OpenAlex filter. Default `max_pages` is
-        bumped to 40 internally (up to ~4000 papers/month per query).
+        `HISTORICAL_MAX_PAGES` (up to ~6,000 papers/month per query).
 
     Dispatch — changed from AND to OR semantics on 2026-05-19 after the
     DOI verifier surfaced 4 must_read papers that were concept-relevant
@@ -209,7 +213,7 @@ def fetch(
     if historical:
         effective_from = from_date
         effective_to = to_date
-        effective_max_pages = max_pages if max_pages is not None else 40
+        effective_max_pages = max_pages if max_pages is not None else HISTORICAL_MAX_PAGES
         sort = None
     else:
         effective_from = (dt.date.today() - dt.timedelta(days=days_back)).isoformat()

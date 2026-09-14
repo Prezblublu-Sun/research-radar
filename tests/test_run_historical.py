@@ -119,11 +119,13 @@ def test_openalex_filter_contains_to_publication_date(monkeypatch):
     assert "to_publication_date:2024-01-31" in flt
 
 
-def test_openalex_historical_bumps_max_pages_to_40(monkeypatch):
-    counter = _install_openalex_pagination(monkeypatch, want_pages=50)
+def test_openalex_historical_uses_historical_cap(monkeypatch):
+    counter = _install_openalex_pagination(
+        monkeypatch, want_pages=openalex_fetcher.HISTORICAL_MAX_PAGES + 50)
     openalex_fetcher.fetch(concepts=[], keywords=["x"],
                            from_date="2024-01-01", to_date="2024-01-31")
-    assert counter["n"] == 40
+    assert counter["n"] == openalex_fetcher.HISTORICAL_MAX_PAGES
+    assert openalex_fetcher.HISTORICAL_MAX_PAGES >= 50  # ~4.2k works/month
 
 
 def test_openalex_daily_max_pages_uses_daily_cap(monkeypatch):
