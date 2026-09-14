@@ -47,10 +47,8 @@ jobs:
           python -m scripts.rescore_silent \
             --limit ${{ inputs.limit }}
 
-      - name: Rebuild site and candidate export
-        run: |
-          python -m scripts.rebuild_site
-          python -m pipeline.export_candidates
+      - name: Candidate export
+        run: python -m pipeline.export_candidates
 
       - name: SCOPE.md boundary audit
         id: scope_audit
@@ -63,12 +61,12 @@ jobs:
         run: |
           git config user.name "research-radar-bot"
           git config user.email "actions@github.com"
-          git add data/ docs/ 2>/dev/null || true
+          git add data/ 2>/dev/null || true
           if git diff --staged --quiet; then
             echo "No changes from rescore (silent count may already be 0)."
           else
             git commit -m "rescore: up to ${{ inputs.limit }} silent papers (ADR-0017)"
-            git push
+            bash scripts/git_push_retry.sh main 5
           fi
 
       - name: Fail if scope_audit reported errors

@@ -32,7 +32,9 @@ def main(argv: list[str] | None = None) -> int:
         description="Rebuild static site pages and JSON indexes from local data."
     )
     parser.add_argument("--docs-dir", type=pathlib.Path,
-                        default=ROOT / "docs")
+                        default=ROOT / "_site",
+                        help="output directory (default: the ignored _site/; "
+                             "docs/ is no longer a writer target, ADR-0028)")
     parser.add_argument("--data-dir", type=pathlib.Path,
                         default=ROOT / "data")
     parser.add_argument("--directions-yaml", type=pathlib.Path,

@@ -8,6 +8,7 @@
 from __future__ import annotations
 import datetime as dt
 import json
+import os
 import pathlib
 import sys
 import yaml
@@ -28,6 +29,9 @@ from render import build_pages
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 CONFIG = ROOT / "config" / "directions.yaml"
 DATA_DIR = ROOT / "data"
+# Legacy writer target. The public site is a disposable Pages artifact
+# built from data/ by .github/workflows/pages.yml (ADR-0028); the daily run
+# no longer renders here. Kept as a symbol for callers and tests.
 DOCS_DIR = ROOT / "docs"
 SEEN_STATE = DATA_DIR / "seen_dois.json"
 MANIFESTS_DIR = DATA_DIR / "manifests"
@@ -385,13 +389,18 @@ def run(days_back: int = 2, skip_zotero: bool = False, force: bool = False) -> d
         _print("CHANGELOG updated (config or prompt drift detected)")
     clu.save_config_snapshot(CONFIG, SNAPSHOTS_DIR / f"{today}.yaml")
 
-    _print("Rendering HTML")
-    build_pages.build(DOCS_DIR, directions, manifest=manifest,
-                      touched_dates=set(touched_dates.keys()))
-    if touched_dates:
-        _print(f"  -> re-rendered {len(touched_dates)} touched page(s) + index.html")
+    # ADR-0028 follow-up: the site is rebuilt from data/ by the Pages
+    # workflow after every writer, so the daily run does not render (or
+    # commit) HTML any more. A local dry-run can still get a preview by
+    # pointing RADAR_PREVIEW_DIR at an ignored directory such as _site.
+    preview_dir = os.environ.get("RADAR_PREVIEW_DIR", "").strip()
+    if preview_dir:
+        _print(f"Rendering local preview into {preview_dir}")
+        build_pages.build(pathlib.Path(preview_dir), directions, manifest=manifest,
+                          touched_dates=set(touched_dates.keys()))
     else:
-        _print("  -> nothing new to render; refreshed index.html only")
+        _print("Site rendering is left to the Pages workflow "
+               "(set RADAR_PREVIEW_DIR=_site for a local preview)")
 
     if skip_zotero:
         _print("Skipping Zotero sync (skip_zotero=True)")

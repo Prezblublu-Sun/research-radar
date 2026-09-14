@@ -1,0 +1,46 @@
+name: tests
+
+# Runs the pytest suite for every pull request and for human pushes to main.
+# Bot commits from the writer workflows use GITHUB_TOKEN and therefore never
+# trigger this workflow; data-only changes are excluded anyway.
+on:
+  pull_request:
+    paths-ignore:
+      - "data/**"
+      - "docs/**"
+      - "reports/**"
+      - "CHANGELOG.md"
+  push:
+    branches: [main]
+    paths-ignore:
+      - "data/**"
+      - "docs/**"
+      - "reports/**"
+      - "CHANGELOG.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - run: pip install -e ".[analytics]" pytest
+
+      - name: Run test suite
+        env:
+          PYTHONUTF8: "1"
+        run: python -m pytest -q --no-header -p no:cacheprovider

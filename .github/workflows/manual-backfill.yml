@@ -75,11 +75,9 @@ jobs:
             --output-dir "data/historical/runs/${{ github.run_id }}-${{ github.run_attempt }}" \
             ${{ inputs.dry_run && '--dry-run' || '' }}
 
-      - name: Rebuild site and candidate export
+      - name: Candidate export
         if: ${{ !inputs.dry_run }}
-        run: |
-          python -m scripts.rebuild_site
-          python -m pipeline.export_candidates
+        run: python -m pipeline.export_candidates
 
       - name: SCOPE.md boundary audit
         id: scope_audit
@@ -93,7 +91,7 @@ jobs:
         run: |
           git config user.name "research-radar-bot"
           git config user.email "actions@github.com"
-          git add data/ docs/ 2>/dev/null || true
+          git add data/ 2>/dev/null || true
           if git diff --staged --quiet; then
             echo "No changes from backfill (already in corpus)."
           else

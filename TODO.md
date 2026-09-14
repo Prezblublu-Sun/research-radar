@@ -212,6 +212,7 @@ Track major architectural decisions to avoid forgetting rationale.
 | 2026-09-14 | Health gate blocks only on missing/unscored data; single-source failures are warnings (ADR-0030) | 09-08 and 09-13 committed good data but the failed gate skipped the Pages deploy |
 | 2026-09-14 | Writers push via `scripts/git_push_retry.sh`; CLI default `days_back=2`; cron `17 3` (ADR-0030) | 09-12 lost a full day to one transient push failure; top-of-hour cron queued 4–5 h |
 | 2026-09-14 | `seen_dois.json` kept in first-seen order, cap 150k, never wiped by `--force` (ADR-0030) | Old 50k set-slice forgot random already-scored keys |
+| 2026-09-14 | Writers stop rendering/committing `docs/`; 4,490 generated pages removed; `weekly.yml` retired; pytest runs in CI (ADR-0028 follow-up) | 1.4 GB of generated HTML was re-committed daily although Pages already builds from data; 30 test files had never run in CI |
 |   |   |   |
 
 Add a row whenever making a substantive change.
