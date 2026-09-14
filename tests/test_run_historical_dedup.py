@@ -241,7 +241,7 @@ def test_first_seen_wins_dedups_within_a_single_novel_batch(
     # both papers reach routing/pre-dedup/scoring, then collide at write.
     counter = {"n": 0}
 
-    def uniq_key(paper):
+    def uniq_key(paper, aliases=None):  # ADR-0031 signature
         counter["n"] += 1
         return f"uniq:{counter['n']}"
     monkeypatch.setattr(rh, "_dedup_key", uniq_key)

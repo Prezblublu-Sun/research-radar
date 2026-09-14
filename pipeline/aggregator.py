@@ -6,6 +6,8 @@ import json
 import pathlib
 from typing import Iterable
 
+from render import identity as _identity
+
 
 def _norm_doi(doi: str) -> str:
     if not doi:
@@ -17,17 +19,24 @@ def _norm_doi(doi: str) -> str:
     return d
 
 
-def _dedup_key(paper: dict) -> str:
+def _legacy_dedup_key(paper: dict) -> str:
+    """Pre-ADR-0031 key; still honoured when reading an older seen-state."""
     doi = _norm_doi(paper.get("doi", ""))
     if doi:
         return f"doi:{doi}"
     return f"{paper['source']}:{paper.get('id', '')}"
 
 
+def _dedup_key(paper: dict, aliases: dict | None = None) -> str:
+    """Canonical work identity (ADR-0031), falling back to the legacy key."""
+    return _identity.canonical_key(paper, aliases) or _legacy_dedup_key(paper)
+
+
 def aggregate(
     paper_lists: Iterable[list[dict]],
     seen_state_path: pathlib.Path | None = None,
     force: bool = False,
+    aliases: dict | None = None,
 ) -> tuple[list[dict], set[str]]:
     seen: set[str] = set()
     if seen_state_path and seen_state_path.exists() and not force:
@@ -38,16 +47,26 @@ def aggregate(
 
     for plist in paper_lists:
         for p in plist:
-            key = _dedup_key(p)
-            if key in seen:
+            key = _dedup_key(p, aliases)
+            # A seen-state written before ADR-0031 holds legacy keys; honour
+            # both so the switch does not re-score the whole window once.
+            if key in seen or _legacy_dedup_key(p) in seen:
                 continue
             if key in keep:
                 existing = keep[key]
                 if (not existing.get("abstract")) and p.get("abstract"):
+                    p.setdefault("also_seen_in", existing["source"])
                     keep[key] = p
-                elif existing["source"] == "arxiv" and p["source"] in ("openalex", "pubmed"):
+                elif (existing["source"] == "arxiv"
+                      and p["source"] in ("openalex", "pubmed")
+                      and _norm_doi(p.get("doi", ""))):
+                    # The published version (it has a DOI) supersedes the
+                    # preprint record. A DOI-less OpenAlex copy of the same
+                    # arXiv id does not: the arXiv record is richer.
                     p["also_seen_in"] = existing["source"]
                     keep[key] = p
+                else:
+                    existing.setdefault("also_seen_in", p["source"])
                 continue
             keep[key] = p
             new_keys.add(key)

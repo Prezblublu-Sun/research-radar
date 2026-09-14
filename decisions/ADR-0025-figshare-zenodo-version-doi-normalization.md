@@ -1,6 +1,9 @@
 # ADR-0025: figshare / Zenodo 版本化 DOI 的 identity_key 规范化
 
-**Status**: Draft（提案；尚未实施；不要在确认前修改 fetcher 或 ADR-0015）
+**Status**: Superseded by ADR-0031 (2026-09-14). The figshare `.vN` rule below
+is implemented there; Zenodo concept and version DOIs are consecutive integers
+(`22057603` / `22057604`), so they are resolved through the Zenodo record API
+instead of a suffix rule.
 **Date**: 2026-05-26
 **Related**: ADR-0015 §4.4（identity_key, DOI-only strict dedup），
 CLAUDE.md §4（"DOI-only 严格 dedup，不做模糊 dedup"），W21 pilot 周报 §5.2

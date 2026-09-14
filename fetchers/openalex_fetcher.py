@@ -3,10 +3,44 @@
 from __future__ import annotations
 import os
 import datetime as dt
+import re
 import time
 import requests
 
 OPENALEX_BASE = "https://api.openalex.org/works"
+
+# ADR-0031: OpenAlex indexes arXiv preprints without a DOI; the arXiv id is
+# only visible in the location URLs (arxiv.org/abs/<id>). Kept local so the
+# fetcher layer does not import the render package.
+_ARXIV_URL = re.compile(r"arxiv\.org/(?:abs|pdf)/([^\s?#]+)", re.IGNORECASE)
+_ARXIV_VERSION = re.compile(r"v\d+$", re.IGNORECASE)
+
+
+def _arxiv_id_from_url(url) -> str:
+    match = _ARXIV_URL.search(str(url or ""))
+    if not match:
+        return ""
+    ident = match.group(1).strip("/")
+    if ident.lower().endswith(".pdf"):
+        ident = ident[:-4]
+    return _ARXIV_VERSION.sub("", ident).lower()
+
+
+def _arxiv_id_from_work(work: dict) -> str:
+    locations = [work.get("primary_location") or {}]
+    locations.extend(loc or {} for loc in (work.get("locations") or []))
+    for loc in locations:
+        for url_key in ("landing_page_url", "pdf_url"):
+            ident = _arxiv_id_from_url(loc.get(url_key))
+            if ident:
+                return ident
+    return ""
+
+
+def _pmid_from_work(work: dict) -> str:
+    raw = str((work.get("ids") or {}).get("pmid") or "").strip()
+    pmid = raw.rstrip("/").rsplit("/", 1)[-1]
+    return pmid if pmid.isdigit() else ""
 MAX_ATTEMPTS = 5
 
 
@@ -273,6 +307,9 @@ def _normalize(work: dict) -> dict:
         "source": "openalex",
         "id": work.get("id", ""),
         "doi": doi,
+        # ADR-0031: exact secondary identifiers for canonical dedup.
+        "pmid": _pmid_from_work(work),
+        "arxiv_id": _arxiv_id_from_work(work),
         "title": work.get("title", "") or "",
         "abstract": _abstract_from_inverted_index(work.get("abstract_inverted_index")),
         "authors": authors,
