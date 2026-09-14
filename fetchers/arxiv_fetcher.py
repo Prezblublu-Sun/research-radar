@@ -15,7 +15,8 @@ def fetch(categories: list[str], days_back: int = 1,
     Two modes:
       - Daily (default): submitted within the last `days_back` days, iterating
         results sorted by date descending until older than the cutoff.
-        Default `max_results` is 2000.
+        Default `max_results` is 2000 per lookback day (ADR-0030), so a
+        wider window is not silently capped at one day's volume.
       - Historical (when both from_date and to_date are set as 'YYYY-MM-DD'):
         uses an arXiv `submittedDate:[YYYYMMDD0000 TO YYYYMMDD2359]` query
         and iterates all results in the window (no cutoff break).
@@ -44,7 +45,8 @@ def fetch(categories: list[str], days_back: int = 1,
     else:
         query = cat_query
         cutoff_date = dt.date.today() - dt.timedelta(days=days_back)
-        effective_max_results = max_results if max_results is not None else 2000
+        effective_max_results = (max_results if max_results is not None
+                                 else 2000 * max(1, int(days_back)))
 
     wait_seconds = [0, 60, 180]
     last_error = None

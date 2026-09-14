@@ -55,9 +55,33 @@ def aggregate(
     return list(keep.values()), seen | new_keys
 
 
+# Upper bound on remembered dedup keys (ADR-0030). The corpus is ~108k
+# works; the old cap (50k) sliced a *set*, so which keys survived each save
+# was arbitrary and already-scored papers could be re-fetched and re-scored.
+# Keys are now kept in first-seen order and the oldest are dropped first.
+MAX_SEEN_KEYS = 150_000
+
+
 def save_state(seen_keys: set[str], state_path: pathlib.Path) -> None:
+    """Persist the dedup state, preserving first-seen order.
+
+    Keys already in the file keep their position; keys new to this run are
+    appended (sorted, for determinism). Keys previously on disk are never
+    dropped by a run that did not see them, so a ``--force`` run no longer
+    wipes the history it bypassed.
+    """
     state_path.parent.mkdir(parents=True, exist_ok=True)
-    keys = list(seen_keys)
-    if len(keys) > 50000:
-        keys = keys[-50000:]
-    state_path.write_text(json.dumps({"keys": keys}, ensure_ascii=False))
+    previous: list[str] = []
+    if state_path.exists():
+        try:
+            loaded = json.loads(state_path.read_text(encoding="utf-8")).get("keys", [])
+            previous = [k for k in loaded if isinstance(k, str)]
+        except (json.JSONDecodeError, OSError, AttributeError):
+            previous = []
+    known = set(previous)
+    ordered = list(previous)
+    ordered.extend(sorted(k for k in set(seen_keys) if k not in known))
+    if len(ordered) > MAX_SEEN_KEYS:
+        ordered = ordered[-MAX_SEEN_KEYS:]
+    state_path.write_text(json.dumps({"keys": ordered}, ensure_ascii=False),
+                          encoding="utf-8")
