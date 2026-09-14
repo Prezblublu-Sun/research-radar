@@ -17,9 +17,16 @@ import os
 import pathlib
 import re
 
+from render import identity as _identity
+
 
 def identity_key(paper: dict) -> str:
-    """ADR-0015 §4.4 dedup key: `doi:<doi>` or `arxiv:<arxiv_id>` or ''."""
+    """ADR-0015 §4.4 dedup key: `doi:<doi>` or `arxiv:<arxiv_id>` or ''.
+
+    This is the *public* identity: it names anchors, localStorage marks,
+    discovery-log rows and the visual registry, so it never changes shape.
+    Use :func:`canonical_key` to decide whether two records are one work.
+    """
     doi = (paper.get("doi") or "").strip()
     if doi:
         return f"doi:{doi}"
@@ -27,6 +34,11 @@ def identity_key(paper: dict) -> str:
     if arxiv:
         return f"arxiv:{arxiv}"
     return ""
+
+
+def canonical_key(paper: dict, aliases: dict | None = None) -> str:
+    """ADR-0031 canonical identity used for dedup decisions (never anchors)."""
+    return _identity.canonical_key(paper, aliases)
 
 
 def infer_date_precision(date_str: str) -> str:

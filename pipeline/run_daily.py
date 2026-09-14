@@ -21,6 +21,7 @@ from pipeline import (
     zotero_sync,
     manifest as mf,
     changelog_updater as clu,
+    doi_aliases,
 )
 from render import build_pages
 
@@ -154,8 +155,23 @@ def run(days_back: int = 2, skip_zotero: bool = False, force: bool = False) -> d
 
     fetched_total = sum(len(l) for l in all_lists)
 
-    _print("Aggregating + dedup by DOI")
-    papers, updated_seen = aggregator.aggregate(all_lists, SEEN_STATE, force=force)
+    # ADR-0031: map Zenodo version DOIs to their concept DOI before any dedup
+    # decision. Bounded, cached, and skipped (not fatal) when Zenodo is down.
+    aliases: dict = {}
+    try:
+        aliases, alias_report = doi_aliases.resolve_zenodo(
+            (p.get("doi") for lst in all_lists for p in lst),
+            DATA_DIR / "doi_aliases.json",
+        )
+        if alias_report["looked_up"]:
+            _print(f"  Zenodo concept-DOI lookups: {alias_report}")
+    except Exception as e:  # pragma: no cover - defensive
+        _print(f"  ! DOI alias resolution skipped: {e}")
+
+    _print("Aggregating + dedup by canonical identity")
+    papers, updated_seen = aggregator.aggregate(
+        all_lists, SEEN_STATE, force=force, aliases=aliases,
+    )
     _print(f"  -> {len(papers)} unique new papers")
 
     _print("Routing papers to directions")
@@ -248,11 +264,11 @@ def run(days_back: int = 2, skip_zotero: bool = False, force: bool = False) -> d
             target = daily_dir / f"{bucket_date}.json"
             existing_papers, _existing_meta = v2.load_existing_v2(target)
             existing_keys = {
-                k for k in (v2.identity_key(p) for p in existing_papers) if k
+                k for k in (v2.canonical_key(p, aliases) for p in existing_papers) if k
             }
             added = 0
             for p in new_papers:
-                k = v2.identity_key(p)
+                k = v2.canonical_key(p, aliases)
                 if k and k in existing_keys:
                     continue  # first-seen wins; do not re-score in place
                 p_out = dict(p)

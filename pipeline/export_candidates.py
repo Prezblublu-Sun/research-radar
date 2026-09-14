@@ -207,12 +207,26 @@ def _build_record(paper: dict, source_date: str, export_date: str) -> dict:
     }
 
 
+_ALIASES: dict | None = None
+
+
+def _aliases() -> dict:
+    """Zenodo concept-DOI map (ADR-0031), loaded once per process."""
+    global _ALIASES
+    if _ALIASES is None:
+        from pipeline import doi_aliases
+        _ALIASES = doi_aliases.flat(
+            doi_aliases.load(DAILY_DIR.parent / "doi_aliases.json")
+        )
+    return _ALIASES
+
+
 def _dedup_key(rec: dict) -> str:
-    """Stable primary key for cross-day dedup: doi > arxiv_id > title."""
-    if rec.get("doi"):
-        return f"doi:{rec['doi']}"
-    if rec.get("arxiv_id"):
-        return f"arxiv:{rec['arxiv_id']}"
+    """Stable primary key for cross-day dedup: canonical id (ADR-0031) > title."""
+    from render import identity as _identity
+    key = _identity.canonical_key(rec, _aliases())
+    if key:
+        return key
     return f"title:{rec.get('title', '')}"
 
 

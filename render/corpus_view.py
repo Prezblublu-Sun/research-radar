@@ -14,6 +14,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from render import identity as _identity
+
 
 PRIORITIES = ("High", "Medium", "Low", "Exclude")
 
@@ -79,12 +81,16 @@ def _canonical_rank(bucket_date: str, paper: dict, position: int) -> tuple:
 
 def canonicalize_buckets(
     buckets: dict[str, list[dict]],
+    aliases: dict | None = None,
 ) -> tuple[dict[str, list[dict]], CorpusStats]:
     """Return per-date papers with duplicate identities suppressed.
 
-    Papers without a DOI/arXiv identity are retained independently. This is
-    important: the project explicitly forbids fuzzy deduplication, so an
-    identity-less record must never be merged by title or date.
+    Records are grouped by their ADR-0031 canonical identity (case-folded
+    DOI, figshare/Zenodo concept DOI via ``aliases``, version-less arXiv id,
+    PMID, OpenAlex id). Papers without any exact identifier are retained
+    independently: the project explicitly forbids fuzzy deduplication, so an
+    identity-less record must never be merged by title or date. The winning
+    record keeps its public ``identity_key`` and anchor unchanged.
     """
     winners: dict[str, tuple[tuple, str, int]] = {}
     raw_total = 0
@@ -94,7 +100,7 @@ def canonicalize_buckets(
             if not isinstance(paper, dict):
                 continue
             raw_total += 1
-            key = identity_key(paper)
+            key = _identity.canonical_key(paper, aliases) or identity_key(paper)
             if not key:
                 continue
             candidate = (_canonical_rank(bucket_date, paper, position),
@@ -109,7 +115,7 @@ def canonicalize_buckets(
         for position, paper in enumerate(buckets[bucket_date]):
             if not isinstance(paper, dict):
                 continue
-            key = identity_key(paper)
+            key = _identity.canonical_key(paper, aliases) or identity_key(paper)
             if key:
                 winner = winners[key]
                 if (bucket_date, position) != (winner[1], winner[2]):

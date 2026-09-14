@@ -67,7 +67,7 @@ from collections import Counter
 import yaml
 
 from fetchers import arxiv_fetcher, openalex_fetcher, pubmed_fetcher
-from pipeline import direction_router, llm_scorer, v2_schema as v2
+from pipeline import direction_router, doi_aliases, llm_scorer, v2_schema as v2
 
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -192,23 +192,22 @@ def _collect_source_terms(directions: dict) -> dict:
 # Dedup key
 # ============================================================================
 
-def _dedup_key(paper: dict) -> str:
-    doi = (paper.get("doi") or "").lower().strip()
-    if doi:
-        return f"doi:{doi}"
-    arxiv_id = (paper.get("arxiv_id") or "").strip()
-    if arxiv_id:
-        return f"arxiv:{arxiv_id}"
+def _dedup_key(paper: dict, aliases: dict | None = None) -> str:
+    """Canonical identity (ADR-0031) with a source-id fallback."""
+    key = v2.canonical_key(paper, aliases)
+    if key:
+        return key
     pid = paper.get("id") or ""
     return f"id:{pid}" if pid else ""
 
 
 def _corpus_identity_keys(data_root: pathlib.Path) -> set[str]:
-    """Load canonical DOI/arXiv identities from every persisted bucket."""
+    """Load canonical identities (ADR-0031) from every persisted bucket."""
+    aliases = doi_aliases.flat(doi_aliases.load(data_root / "doi_aliases.json"))
     keys: set[str] = set()
     for path in (data_root / "daily").glob("*.json"):
         papers, _meta = v2.load_existing_v2(path)
-        keys.update(k for k in (v2.identity_key(p) for p in papers) if k)
+        keys.update(k for k in (v2.canonical_key(p, aliases) for p in papers) if k)
     return keys
 
 
@@ -271,11 +270,23 @@ def _run_month(month_key: str, window_from: str, window_to: str,
 
     fetched_total = sum(by_source.values())
 
+    # ADR-0031: resolve Zenodo version DOIs before any dedup decision.
+    aliases: dict = {}
+    try:
+        aliases, alias_report = doi_aliases.resolve_zenodo(
+            (p.get("doi") for lst in fetched_lists for p in lst),
+            data_root / "doi_aliases.json",
+        )
+        if alias_report["looked_up"]:
+            log(f"  zenodo concept-DOI lookups: {alias_report}")
+    except Exception as e:  # pragma: no cover - defensive
+        log(f"  ! DOI alias resolution skipped: {e}")
+
     # Dedup across sources within this month + against dois_seen across months.
     keyed: dict[str, dict] = {}
     for lst in fetched_lists:
         for p in lst:
-            k = _dedup_key(p)
+            k = _dedup_key(p, aliases)
             if not k:
                 continue
             if k in dois_seen:
@@ -301,7 +312,7 @@ def _run_month(month_key: str, window_from: str, window_to: str,
     if routed:
         novel: list[dict] = []
         for p in routed:
-            k = v2.identity_key(p)
+            k = v2.canonical_key(p, aliases)
             if not k:
                 novel.append(p)
                 continue
@@ -358,11 +369,11 @@ def _run_month(month_key: str, window_from: str, window_to: str,
             target = daily_dir / f"{bucket_date}.json"
             existing_papers, _meta = v2.load_existing_v2(target)
             existing_keys = {
-                k for k in (v2.identity_key(p) for p in existing_papers) if k
+                k for k in (v2.canonical_key(p, aliases) for p in existing_papers) if k
             }
             added = 0
             for p in new_papers:
-                k = v2.identity_key(p)
+                k = v2.canonical_key(p, aliases)
                 if k and k in existing_keys:
                     continue  # first-seen wins
                 p_out = dict(p)

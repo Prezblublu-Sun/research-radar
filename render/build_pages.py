@@ -416,6 +416,19 @@ def _visual_registry_records(payload: object) -> dict[str, object]:
     return {}
 
 
+def _load_doi_aliases(data_dir) -> dict:
+    """ADR-0031: ``{version_doi: concept_doi}`` from data/doi_aliases.json."""
+    if not data_dir:
+        return {}
+    path = pathlib.Path(data_dir) / "doi_aliases.json"
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    zenodo = data.get("zenodo") if isinstance(data, dict) else None
+    return dict(zenodo) if isinstance(zenodo, dict) else {}
+
+
 def _load_visual_registry(data_dir: pathlib.Path) -> dict[str, dict]:
     """Load safe visual records keyed by the canonical paper identity.
 
@@ -1792,7 +1805,7 @@ def _build_search_index(docs_dir, data_dir, canonical_buckets=None,
         for jpath in _daily_json_paths(daily_dir):
             raw_buckets[jpath.stem], _meta = _load_papers_v2_or_v1(jpath)
         canonical_buckets, corpus_stats = corpus_view.canonicalize_buckets(
-            raw_buckets
+            raw_buckets, aliases=_load_doi_aliases(data_dir)
         )
 
     by_year: dict[str, list] = {}
@@ -2063,7 +2076,7 @@ def build(docs_dir, directions_cfg, manifest=None, touched_dates=None,
         meta_by_date[hist_date] = meta
 
     day_papers_full, corpus_stats = corpus_view.canonicalize_buckets(
-        raw_papers_by_date
+        raw_papers_by_date, aliases=_load_doi_aliases(data_dir)
     )
     visual_registry = _load_visual_registry(data_dir)
     if visual_registry:
