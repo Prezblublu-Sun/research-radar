@@ -27,7 +27,7 @@ def test_missing_api_key_uses_anonymous_request(monkeypatch):
     )
     assert oa.fetch([], ["x"], max_pages=1) == []
     assert "api_key" not in calls[0]
-    assert calls[0]["per-page"] == 100
+    assert calls[0]["per-page"] == oa.PER_PAGE
 
 
 def test_api_key_is_injected_and_default_page_size_is_100(monkeypatch):
@@ -39,7 +39,7 @@ def test_api_key_is_injected_and_default_page_size_is_100(monkeypatch):
     )
     oa.fetch([], ["x"], max_pages=1)
     assert calls[0]["api_key"] == "secret-test-key"
-    assert calls[0]["per-page"] == 100
+    assert calls[0]["per-page"] == oa.PER_PAGE
 
 
 def test_503_retries_then_succeeds(monkeypatch):

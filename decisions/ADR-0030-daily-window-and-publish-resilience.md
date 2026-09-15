@@ -90,6 +90,18 @@ schedules.
    (`HISTORICAL_MAX_PAGES`): the concept query alone holds ~4.2k works per
    month in every year 2018–2025, above the old 4,000 cap. Needed before the
    2022-12 .. 2026-05 OpenAlex re-backfill that ADR-0023 left pending.
+10. **OpenAlex budget handling (2026-09-14, after backfill run 34857448578).**
+    OpenAlex bills per call ($1 / 1,000 `search=` calls, $0.10 / 1,000
+    filter calls; anonymous $0.10/day, free key $1/day). The first backfill
+    month (2025-01: 11,314 works, 3,427 scored) consumed the anonymous
+    budget and month two failed with `Retry-After` ≈ 8.8 h; the workflow's
+    commit step only ran on success, so the scored month was discarded.
+    Now: `PER_PAGE = 200` (API maximum, halves calls), `run_historical`
+    parks the month on `OpenAlexRateLimitError`, records `stopped_early`
+    and exits 0 with a warning, the workflow commits completed months even
+    after a failure, and the progress directory is keyed by date range so a
+    re-dispatch resumes. A free API key is required for multi-month
+    backfills (README).
 
 ## Consequences
 

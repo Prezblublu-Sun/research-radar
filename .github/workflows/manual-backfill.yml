@@ -72,11 +72,11 @@ jobs:
             --from-date "${{ inputs.from_date }}" \
             --to-date   "${{ inputs.to_date }}" \
             --sources   "${{ inputs.sources }}" \
-            --output-dir "data/historical/runs/${{ github.run_id }}-${{ github.run_attempt }}" \
+            --output-dir "data/historical/runs/${{ inputs.from_date }}_${{ inputs.to_date }}" \
             ${{ inputs.dry_run && '--dry-run' || '' }}
 
       - name: Candidate export
-        if: ${{ !inputs.dry_run }}
+        if: ${{ !cancelled() && !inputs.dry_run }}
         run: python -m pipeline.export_candidates
 
       - name: SCOPE.md boundary audit
@@ -87,7 +87,11 @@ jobs:
             --output "data/audit/scope_audit_backfill_$(date -u +%Y-%m-%dT%H-%M-%S).json"
 
       - name: Commit backfill results
-        if: ${{ !inputs.dry_run }}
+        # Also after a failed month: every completed month is already in
+        # data/daily and the progress file lets the next dispatch of the
+        # same range resume. The 2026-09-14 run lost 3,427 scored papers
+        # (~¥8 of DeepSeek) because this step only ran on success.
+        if: ${{ !cancelled() && !inputs.dry_run }}
         run: |
           git config user.name "research-radar-bot"
           git config user.email "actions@github.com"
@@ -110,5 +114,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: backfill-progress-${{ github.run_id }}
-          path: data/historical/runs/${{ github.run_id }}-${{ github.run_attempt }}/
+          path: data/historical/runs/${{ inputs.from_date }}_${{ inputs.to_date }}/
           retention-days: 14

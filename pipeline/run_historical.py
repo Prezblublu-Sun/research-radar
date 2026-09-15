@@ -242,15 +242,23 @@ def _run_month(month_key: str, window_from: str, window_to: str,
     if "openalex" in sources and (
         terms["openalex_keywords"] or terms["openalex_concepts"]
     ):
+        oa_stats: dict = {}
         try:
             r = openalex_fetcher.fetch(
                 concepts=terms["openalex_concepts"],
                 keywords=terms["openalex_keywords"],
                 from_date=window_from, to_date=window_to,
+                stats=oa_stats,
             )
             by_source["openalex"] = len(r)
             fetched_lists.append(r)
-            log(f"  openalex -> {len(r)} papers")
+            truncated = " (TRUNCATED at page cap)" if oa_stats.get("truncated") else ""
+            log(f"  openalex -> {len(r)} papers{truncated}")
+        except openalex_fetcher.OpenAlexRateLimitError:
+            # Daily budget exhausted (Retry-After of hours). Let run() park
+            # this month and stop; nothing about this month was written.
+            log("  ! openalex daily budget exhausted; deferring this month")
+            raise
         except Exception as e:
             log(f"  ! openalex fetch failed: {e}")
             raise RuntimeError(f"openalex fetch failed: {e}") from e
@@ -522,6 +530,7 @@ def run(from_date: str, to_date: str, dry_run: bool,
     _write_progress(progress_path, progress)
 
     completed = 0
+    stopped_early: dict | None = None
     for mk, ws, we in months:
         m_info = progress["months"].get(
             mk,
@@ -558,6 +567,29 @@ def run(from_date: str, to_date: str, dry_run: bool,
                 run_start_date=run_start_date,
                 log=log,
             )
+        except openalex_fetcher.OpenAlexRateLimitError as e:
+            # The OpenAlex daily budget ran out (anonymous: $0.10/day, i.e.
+            # ~100 search calls). Park this month as pending so a re-run of
+            # the same range resumes here, keep every completed month, and
+            # stop instead of burning the rest of the job on 429s.
+            progress["months"][mk] = {
+                **progress["months"][mk],
+                "status": "pending",
+                "deferred_reason": str(e),
+                "deferred_at": _now_iso(),
+            }
+            stopped_early = {"month": mk, "reason": str(e)}
+            progress["stopped_early"] = stopped_early
+            progress["dois_seen"] = sorted(dois_seen)
+            progress["last_updated_at"] = _now_iso()
+            _write_progress(progress_path, progress)
+            remaining = [m for m, _, _ in months
+                         if progress["months"].get(m, {}).get("status") != "complete"]
+            log(f"::warning::OpenAlex budget exhausted at {mk}: {e}. "
+                f"{completed} month(s) complete, {len(remaining)} remaining "
+                f"({remaining[0]}..{remaining[-1]}). Re-run the same range "
+                f"after the budget resets (midnight UTC) to resume.")
+            break
         except Exception as e:
             progress["months"][mk] = {
                 **progress["months"][mk],
@@ -582,6 +614,7 @@ def run(from_date: str, to_date: str, dry_run: bool,
     return {
         "months_total": len(months),
         "months_completed": completed,
+        "stopped_early": stopped_early,
         "progress_file": str(progress_path),
         "dry_run": dry_run,
         "sources": sorted(selected_sources),
