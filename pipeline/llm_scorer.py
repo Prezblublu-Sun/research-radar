@@ -181,14 +181,52 @@ Output JSON only."""
 _LLM_CONCURRENCY = int(os.environ.get("LLM_CONCURRENCY", "8"))
 
 
+class ScorerBudgetError(RuntimeError):
+    """Raised by callers that must stop when the DeepSeek balance is gone."""
+
+
+# Set to the provider's message the first time a call fails with HTTP 402
+# ("Insufficient Balance"). Every later paper in the process is then marked
+# scorer_failed without calling the API: on 2026-09-15 the balance ran out
+# during a backfill and 10,500 papers were written unscored over three days
+# before anyone noticed.
+_BUDGET_EXHAUSTED: str | None = None
+
+
+def budget_exhausted() -> str | None:
+    """The 402 message seen in this process, or None."""
+    return _BUDGET_EXHAUSTED
+
+
+def reset_budget_state() -> None:
+    global _BUDGET_EXHAUSTED
+    _BUDGET_EXHAUSTED = None
+
+
+def _is_budget_error(exc: BaseException) -> bool:
+    if getattr(exc, "status_code", None) == 402:
+        return True
+    text = str(exc).lower()
+    return "insufficient balance" in text or "error code: 402" in text
+
+
 def _score_one_paper(p: dict, direction_configs: dict) -> tuple[dict, dict]:
     """Score a single paper with ADR-0017 3-attempt retry. Returns
     (paper_with_llm_set, raw_dict). Mutates p["llm"] in place and also
     returns p so the caller can keep input ordering. This is the unit of
     work dispatched to the thread pool by :func:`score_batch`.
     """
+    global _BUDGET_EXHAUSTED
     direction = p.get("direction")
     focus = direction_configs.get(direction, {}).get("llm_prompt_focus", "")
+    if _BUDGET_EXHAUSTED:
+        p["llm"] = {
+            "priority": None,
+            "scorer_failed": True,
+            "scorer_failed_reason": f"skipped: {_BUDGET_EXHAUSTED}",
+            "scorer_failed_attempts": 0,
+        }
+        return p, {}
     result: dict | None = None
     last_exc: BaseException | None = None
     for attempt in range(1, _MAX_SCORE_ATTEMPTS + 1):
@@ -200,6 +238,10 @@ def _score_one_paper(p: dict, direction_configs: dict) -> tuple[dict, dict]:
             last_exc = e
             raw_text = getattr(e, "raw_content", None)
             _log_scoring_failure(p, raw_text, e)
+            if _is_budget_error(e):
+                # Retrying a 402 only burns time; stop the whole run's calls.
+                _BUDGET_EXHAUSTED = str(e)[:200]
+                break
     if result is not None:
         raw = {"_raw_model": result.pop("_raw_model", "")}
         p["llm"] = result

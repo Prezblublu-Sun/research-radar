@@ -153,6 +153,24 @@ def _preserve_run_info(document: str, existing_path: pathlib.Path) -> str:
     return document.replace("</main>", match.group(1) + "\n</main>", 1)
 
 
+def _flatten_text(value) -> str:
+    """Join scorer output of any shape (str / dict / list) into one string.
+
+    The 2026-09-15 Pages build died on a backfilled record whose
+    ``summary_zh`` held a nested dict: ``" ".join(dict.values())`` raised
+    TypeError and the site stayed stale for days.
+    """
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        return value
+    if isinstance(value, dict):
+        return " ".join(t for t in (_flatten_text(v) for v in value.values()) if t)
+    if isinstance(value, (list, tuple, set)):
+        return " ".join(t for t in (_flatten_text(v) for v in value) if t)
+    return str(value)
+
+
 def _public_identity_key(p: dict, bucket_date: str = "",
                          position: int | None = None) -> str:
     """Return a stable UI key without deduplicating identity-less records."""
@@ -1832,10 +1850,10 @@ def _build_search_index(docs_dir, data_dir, canonical_buckets=None,
             tags = llm.get("tags", []) or []
             authors = p.get("authors", []) or []
             deep_parts = [
-                p.get("abstract", "")[:500],
-                llm.get("relevance_to_user", ""),
-                llm.get("why_not_core", ""),
-                " ".join(s_zh.values()) if isinstance(s_zh, dict) else "",
+                _flatten_text(p.get("abstract", ""))[:500],
+                _flatten_text(llm.get("relevance_to_user", "")),
+                _flatten_text(llm.get("why_not_core", "")),
+                _flatten_text(s_zh),
                 " ".join(term_texts),
             ]
             identity, anchor = public_keys[id(p)]

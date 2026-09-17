@@ -215,6 +215,7 @@ Track major architectural decisions to avoid forgetting rationale.
 | 2026-09-14 | Writers stop rendering/committing `docs/`; 4,490 generated pages removed; `weekly.yml` retired; pytest runs in CI (ADR-0028 follow-up) | 1.4 GB of generated HTML was re-committed daily although Pages already builds from data; 30 test files had never run in CI |
 | 2026-09-14 | Backfill parks the month on OpenAlex budget exhaustion, commits completed months, resumes per date range; OpenAlex `per-page` 200; free API key required for backfills (ADR-0030 §10) | Run 34857448578 lost 3,427 scored papers when month 2 hit the anonymous $0.10/day budget |
 | 2026-09-14 | Canonical work identity for dedup decisions (ADR-0031, PR #23) | 230 identical-title groups in the 2026 shard: Zenodo version pairs, DOI-less OpenAlex arXiv copies, PMID repeats, figshare `.vN`, DOI case |
+| 2026-09-17 | Scorer stops on HTTP 402; backfill counts failures, persists only scored papers and parks the month; search index tolerates nested scorer output (ADR-0030 §11) | Backfill drained the DeepSeek balance on 09-15: 10,500 papers written unscored, site stale for three days, Pages build crashed on a nested `summary_zh` |
 |   |   |   |
 
 Add a row whenever making a substantive change.
