@@ -132,3 +132,20 @@ Crucially, the user clarified the two systems do not actually conflict:
 The two layers have non-overlapping responsibilities: lit-system = machine annotation of deep-parsed PDFs; Radar = human curation of the discovery feed. Both can co-exist without violating the original separation-of-concerns intent.
 
 SCOPE.md and CLAUDE.md are amended in the same commit as this ADR's Accepted promotion to reflect the new boundary.
+
+## Addendum 2026-09-17 — reading list page
+
+The library page listed marks as a bare title table. The user asked for a
+place to *browse and search the cards* they had classified by hand. Added
+`reading.html` + `radar-reading.js`: tabs per mark state (待阅读 / 已阅读 /
+有启发 / 忽略 / 仅笔记 / 全部) with counts, search over title / note /
+direction / date, sort by mark time, publication date or title, 20 cards per
+page, and a "copy as Markdown" export of the current view. Each card is the
+full public card, fetched from the day shard
+(`data/day/<date>/manifest.json` → `page-N.json`) and rendered by the shared
+`RadarCard` builder, then hydrated by `radar-ui.js` so marks and notes stay
+editable in place; a mark that no longer resolves to a shard record falls
+back to the metadata saved with the mark plus a search link. The page opts
+out of the daily-page priority / mark visibility filter
+(`main[data-rui-no-filter]`). Storage contract, keys and the no-write-back
+rule of this ADR are unchanged.
