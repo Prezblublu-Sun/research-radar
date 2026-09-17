@@ -102,6 +102,20 @@ schedules.
     after a failure, and the progress directory is keyed by date range so a
     re-dispatch resumes. A free API key is required for multi-month
     backfills (README).
+11. **DeepSeek balance exhaustion (2026-09-17).** The 2025-01..2026-05
+    backfill drained the DeepSeek account during month 2026-02; the last
+    four months (9,419 papers) and three daily runs (1,130) were written
+    unscored with HTTP 402, the backfill log still reported them as
+    "scored", the health gate correctly refused to publish, and the Pages
+    build separately crashed on a nested `summary_zh`. Now: `llm_scorer`
+    stops calling the API for the rest of the process after the first 402
+    (`budget_exhausted()`), `run_daily` raises the quality flag
+    `scorer_budget_exhausted`, `run_historical` reports `scorer_failed`
+    per month, persists only scored papers, keeps the unscored ones out of
+    `dois_seen`, and parks the month exactly like the OpenAlex budget case;
+    `_flatten_text` makes the search index tolerate any scorer output shape.
+    Unscored papers already in the corpus are recovered with
+    `manual-rescore.yml` (ADR-0017) after topping up.
 
 ## Consequences
 

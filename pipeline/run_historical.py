@@ -333,25 +333,39 @@ def _run_month(month_key: str, window_from: str, window_to: str,
 
     # Score (skipped in dry-run).
     scored_count = 0
+    scorer_failed_count = 0
     priority_counts = None
     scored_papers: list[dict] = []
+    budget_stop: str | None = None
     if not dry_run and routed:
+        llm_scorer.reset_budget_state()
         scored, _raw = llm_scorer.score_batch(routed, directions)
-        scored_count = len(scored)
+        budget_stop = llm_scorer.budget_exhausted()
         priority_counts = {"High": 0, "Medium": 0, "Low": 0, "Exclude": 0}
+        ok: list[dict] = []
         for p in scored:
             llm = p.get("llm") or {}
             if llm.get("scorer_failed") is True:
+                scorer_failed_count += 1
+                if budget_stop:
+                    # Not persisted: the re-run of this month scores it.
+                    continue
+                ok.append(p)
                 continue
             prio = llm.get("priority")
             if prio not in priority_counts:
                 prio = "Low"
             priority_counts[prio] += 1
-        scored_papers = scored
+            ok.append(p)
+        scored_count = len(scored) - scorer_failed_count
+        scored_papers = ok
 
     # Update dois_seen so adjacent months don't re-process the same paper.
-    for k in keyed:
-        dois_seen.add(k)
+    # When the balance ran out the unscored papers are not persisted, so
+    # they must stay unseen for the resumed run to pick them up.
+    if not budget_stop:
+        for k in keyed:
+            dois_seen.add(k)
 
     # ADR-0015 v2: bucket scored papers by paper["date"] into
     # data/daily/<bucket_date>.json, first-seen-wins merge against any prior
@@ -438,6 +452,7 @@ def _run_month(month_key: str, window_from: str, window_to: str,
         "skipped_existing": skipped_existing,
         "would_score": would_score,
         "scored": scored_count,
+        "scorer_failed": scorer_failed_count,
         "priority_counts": priority_counts,
         # v2 diagnostics
         "touched_buckets": touched_buckets,
@@ -450,11 +465,17 @@ def _run_month(month_key: str, window_from: str, window_to: str,
     else:
         total_added = sum(touched_buckets.values())
         log(f"  -> routed {after_routing}, {skipped_existing} already in "
-            f"corpus, scored {scored_count}; wrote {total_added} new "
-            f"paper(s) across {len(touched_buckets)} bucket(s)")
+            f"corpus, scored {scored_count}, {scorer_failed_count} failed; "
+            f"wrote {total_added} new paper(s) across "
+            f"{len(touched_buckets)} bucket(s)")
         if missing_date:
             log(f"     (skipped {missing_date} paper(s) with empty date)")
 
+    if budget_stop:
+        raise llm_scorer.ScorerBudgetError(
+            f"DeepSeek balance exhausted ({budget_stop}); {scored_count} "
+            f"scored paper(s) written, {scorer_failed_count} left unscored "
+            f"and not persisted")
     return counts
 
 
@@ -567,11 +588,13 @@ def run(from_date: str, to_date: str, dry_run: bool,
                 run_start_date=run_start_date,
                 log=log,
             )
-        except openalex_fetcher.OpenAlexRateLimitError as e:
-            # The OpenAlex daily budget ran out (anonymous: $0.10/day, i.e.
-            # ~100 search calls). Park this month as pending so a re-run of
-            # the same range resumes here, keep every completed month, and
-            # stop instead of burning the rest of the job on 429s.
+        except (openalex_fetcher.OpenAlexRateLimitError,
+                llm_scorer.ScorerBudgetError) as e:
+            # A budget ran out: the OpenAlex daily allowance (HTTP 429 with
+            # a Retry-After of hours) or the DeepSeek balance (HTTP 402).
+            # Park this month as pending so a re-run of the same range
+            # resumes here, keep every completed month, and stop instead of
+            # burning the rest of the job on failures.
             progress["months"][mk] = {
                 **progress["months"][mk],
                 "status": "pending",
@@ -585,7 +608,7 @@ def run(from_date: str, to_date: str, dry_run: bool,
             _write_progress(progress_path, progress)
             remaining = [m for m, _, _ in months
                          if progress["months"].get(m, {}).get("status") != "complete"]
-            log(f"::warning::OpenAlex budget exhausted at {mk}: {e}. "
+            log(f"::warning::Budget exhausted at {mk}: {e}. "
                 f"{completed} month(s) complete, {len(remaining)} remaining "
                 f"({remaining[0]}..{remaining[-1]}). Re-run the same range "
                 f"after the budget resets (midnight UTC) to resume.")

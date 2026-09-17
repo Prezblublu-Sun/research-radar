@@ -190,7 +190,12 @@ def run(days_back: int = 2, skip_zotero: bool = False, force: bool = False) -> d
         _print(f"     {d}: {n}")
 
     _print(f"LLM scoring {len(routed)} papers (prompt={prompt_path.name})")
+    llm_scorer.reset_budget_state()
     scored, raw_responses = llm_scorer.score_batch(routed, directions)
+    if llm_scorer.budget_exhausted():
+        _print("::warning::DeepSeek balance exhausted (HTTP 402); the rest of "
+               "this run is written unscored and needs manual-rescore after "
+               "topping up: " + str(llm_scorer.budget_exhausted()))
     n_boosted = direction_router.apply_crossover_boost(scored)
     _print(f"  -> crossover boost applied to {n_boosted} paper(s)")
     priority_counts = {"High": 0, "Medium": 0, "Low": 0, "Exclude": 0}
@@ -333,6 +338,8 @@ def run(days_back: int = 2, skip_zotero: bool = False, force: bool = False) -> d
         quality_flags.append("zero_high_medium")
     if scorer_failed:
         quality_flags.append("scorer_failed")
+    if llm_scorer.budget_exhausted():
+        quality_flags.append("scorer_budget_exhausted")
     # Per-source silent-zero detection: an attempted fetcher that returned 0
     # papers gets its own flag, so single-source outages don't get masked by
     # the other sources keeping fetched_total healthy.

@@ -140,5 +140,5 @@ def test_cli_exits_zero_after_a_parked_month(monkeypatch, tmp_path, quiet_pipeli
                     "--data-root", str(tmp_path), "--no-resume"])
     captured = capsys.readouterr().out
     assert code == 0
-    assert "::warning::OpenAlex budget exhausted" in captured
+    assert "::warning::Budget exhausted" in captured
     assert '"stopped_early"' in captured
