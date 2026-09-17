@@ -65,6 +65,14 @@
   function applyFilters() {
     var prios = priorityFilter();
     var marks = marksFilter();
+    // The reading list shows exactly what the user marked; the daily-page
+    // priority / mark filters must not hide anything there.
+    if (document.querySelector("main[data-rui-no-filter]")) {
+      document.querySelectorAll(".paper").forEach(function (card) {
+        card.dataset.hidden = "0";
+      });
+      return;
+    }
     document.querySelectorAll(".paper").forEach(function (card) {
       var d = card.dataset.direction || "";
       var pr = card.dataset.priority || "Low";

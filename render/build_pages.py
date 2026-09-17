@@ -810,6 +810,7 @@ def _site_nav(active: str = "") -> str:
         ("queue", "queue.html", "队列"),
         ("search", "search.html", "搜索"),
         ("library", "library.html", "资料库"),
+        ("reading", "reading.html", "阅读清单"),
         ("archive", "archive.html", "归档"),
     ]
     rendered = []
@@ -2012,6 +2013,50 @@ on the lit-system side. No automatic git write-back (D5.B is out of scope).</p>
     return _page_shell("Promote queue", "Pending lit-system hand-off", body)
 
 
+def _render_reading_page() -> str:
+    """ADR-0016 addendum: full cards for every locally marked paper.
+
+    The list is assembled in the browser (radar-reading.js) from the
+    ``radar:mark:*`` localStorage records and the day shards, so this shell
+    carries no paper data and stays valid across rebuilds.
+    """
+    return f"""<!doctype html><html lang="zh"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Research Radar — 阅读清单</title>
+{ASSET_HEAD}<script src="radar-reading.js" defer></script></head><body>
+{_site_nav("reading")}
+<main id="main-content" class="container" data-rui-no-filter="1">
+<div class="eyebrow">Local reading list</div>
+<h1>阅读清单</h1>
+<p class="subtitle">这个浏览器里手动标记过的论文：按状态分栏，可搜索标题与笔记，卡片上可直接改标记、写笔记。</p>
+<div class="queue-toolbar reading-toolbar" aria-label="阅读清单筛选">
+  <div class="segmented" id="reading-state">
+    <button type="button" data-state="to-read" class="is-active">待阅读</button>
+    <button type="button" data-state="read">已阅读</button>
+    <button type="button" data-state="interesting">有启发</button>
+    <button type="button" data-state="ignore">忽略</button>
+    <button type="button" data-state="note">仅笔记</button>
+    <button type="button" data-state="all">全部</button>
+  </div>
+  <label class="reading-search">搜索<input id="reading-query" type="search" autocomplete="off" placeholder="标题、笔记、方向、日期…"></label>
+  <label>排序<select id="reading-sort"><option value="marked">最近标记</option><option value="date">发表日期</option><option value="title">标题</option></select></label>
+  <button type="button" class="rui-btn rui-secondary" id="reading-copy">复制当前清单为 Markdown</button>
+</div>
+<div class="queue-status" id="reading-status" aria-live="polite">正在读取本地标记…</div>
+<div id="reading-results" class="paper-grid"></div>
+<nav class="queue-pagination" id="reading-pagination" aria-label="阅读清单分页" hidden>
+  <button type="button" class="queue-page-button" id="reading-prev">← 上一页</button>
+  <label class="queue-page-picker" for="reading-page">页码
+    <select id="reading-page" aria-label="选择页码"></select>
+  </label>
+  <span class="queue-page-total" id="reading-page-total">共 1 页</span>
+  <button type="button" class="queue-page-button" id="reading-next">下一页 →</button>
+</nav>
+<p class="reading-footnote">标记与笔记只保存在当前浏览器；在 <a href="library.html#marks">资料库</a> 可导出 JSON 备份。</p>
+</main>
+</body></html>"""
+
+
 def _render_library_page() -> str:
     body = """
 <div class="library-grid">
@@ -2019,6 +2064,7 @@ def _render_library_page() -> str:
     <div class="eyebrow">Local reading trail</div>
     <h2>我的标记与笔记</h2>
     <p>仅保存在当前浏览器。新标记会同时保存标题、日期和方向；旧记录保持兼容。</p>
+    <p><a class="rui-link-tool" href="reading.html">按标记状态浏览完整卡片 →</a></p>
     <button type="button" class="rui-btn" id="rui-export-marks">导出标记 JSON</button>
     <div id="rui-marks-list"></div>
   </section>
@@ -2049,7 +2095,7 @@ def _copy_static_assets(docs_dir: pathlib.Path) -> None:
     static_dir = pathlib.Path(__file__).resolve().parent / "static"
     for name in ("radar-ui.css", "radar-ui.js", "radar-card.js",
                  "radar-day.js", "radar-queue.js", "radar-search.js",
-                 "radar-search-worker.js"):
+                 "radar-search-worker.js", "radar-reading.js"):
         src = static_dir / name
         if src.exists():
             (docs_dir / name).write_text(
@@ -2214,6 +2260,9 @@ def build(docs_dir, directions_cfg, manifest=None, touched_dates=None,
     # ADR-0016 D4/D5: one library page; old URLs stay as redirects.
     (docs_dir / "library.html").write_text(
         _render_library_page(), encoding="utf-8"
+    )
+    (docs_dir / "reading.html").write_text(
+        _render_reading_page(), encoding="utf-8"
     )
     (docs_dir / "my-marks.html").write_text(
         _redirect_page("My marks", "library.html#marks"), encoding="utf-8")
