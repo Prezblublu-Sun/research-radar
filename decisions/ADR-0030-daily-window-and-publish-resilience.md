@@ -116,6 +116,18 @@ schedules.
     `_flatten_text` makes the search index tolerate any scorer output shape.
     Unscored papers already in the corpus are recovered with
     `manual-rescore.yml` (ADR-0017) after topping up.
+12. **Cost (2026-09-18).** The 20-paper rescore of 2026-09-17 cost ¥0.86 →
+    ¥0.043 per paper, ~19x the ¥0.0023 baseline the budget assumed. Two
+    causes: `deepseek-chat` now resolves to V4.1-Flash, which runs *thinking*
+    by default and bills the reasoning as output; and the runs (cron 03:17
+    UTC, actual starts 08:25-08:40 UTC) fell into DeepSeek's peak window
+    (01:00-04:00, 06:00-10:00 UTC Mon-Fri, double price). Now: thinking
+    disabled (`extra_body={"thinking": {"type": "disabled"}}`, env
+    `LLM_THINKING`), cron 12:17 UTC (off-peak even with a 5 h delay), and
+    every manifest records prompt / cache-hit / completion / reasoning
+    tokens with a list-price estimate so the next drift is visible the same
+    day. The 2025-01..2026-05 backfill (28.6k scored papers) ran under the
+    old settings and is the reason the balance vanished.
 
 ## Consequences
 

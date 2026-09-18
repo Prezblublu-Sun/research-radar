@@ -53,6 +53,13 @@ def _require_client() -> OpenAI:
     return client
 MODEL = os.environ.get("MODEL_NAME", "deepseek-v4-flash")
 TEMPERATURE = float(os.environ.get("LLM_TEMPERATURE", "0.2"))
+# DeepSeek V4.1-Flash runs "thinking" by default (effort high) and bills the
+# hidden reasoning as output tokens. Measured 2026-09-17: ¥0.043 per paper
+# with thinking on, against the ¥0.0023 baseline the project was budgeted
+# on. The scorer needs a JSON verdict, not a chain of thought, so thinking
+# is disabled unless LLM_THINKING=enabled is set for an experiment.
+THINKING = (os.environ.get("LLM_THINKING", "disabled").strip().lower()
+            or "disabled")
 
 ACTIVE_PROMPT_FILE = os.environ.get("SCORER_PROMPT_FILE", "scorer_v3.txt")
 
@@ -130,6 +137,46 @@ _STRICT_JSON_NUDGE = (
 )
 _MAX_SCORE_ATTEMPTS = 3
 
+_USAGE_KEYS = ("calls", "prompt_tokens", "cache_hit_tokens",
+               "cache_miss_tokens", "completion_tokens", "reasoning_tokens")
+
+
+def _usage_dict(usage) -> dict:
+    """Token accounting from one chat completion; every field optional."""
+    if usage is None:
+        return {}
+
+    def num(obj, name):
+        value = getattr(obj, name, None)
+        if value is None and isinstance(obj, dict):
+            value = obj.get(name)
+        try:
+            return int(value or 0)
+        except (TypeError, ValueError):
+            return 0
+
+    details = getattr(usage, "completion_tokens_details", None)
+    if details is None and isinstance(usage, dict):
+        details = usage.get("completion_tokens_details")
+    return {
+        "calls": 1,
+        "prompt_tokens": num(usage, "prompt_tokens"),
+        "cache_hit_tokens": num(usage, "prompt_cache_hit_tokens"),
+        "cache_miss_tokens": num(usage, "prompt_cache_miss_tokens"),
+        "completion_tokens": num(usage, "completion_tokens"),
+        "reasoning_tokens": num(details, "reasoning_tokens") if details is not None else 0,
+    }
+
+
+def summarize_usage(raws) -> dict:
+    """Sum the per-call ``_usage`` dicts returned by :func:`score_batch`."""
+    total = {key: 0 for key in _USAGE_KEYS}
+    for raw in raws or []:
+        usage = (raw or {}).get("_usage") if isinstance(raw, dict) else None
+        for key in _USAGE_KEYS:
+            total[key] += int((usage or {}).get(key) or 0)
+    return total
+
 
 def score(paper: dict, direction_focus: str,
           system_prompt_prefix: str = "") -> dict:
@@ -165,6 +212,7 @@ Output JSON only."""
         response_format={"type": "json_object"},
         temperature=TEMPERATURE,
         max_tokens=int(os.environ.get("LLM_MAX_TOKENS", "2000")),
+        extra_body={"thinking": {"type": THINKING}},
     )
     raw_content = resp.choices[0].message.content
     try:
@@ -175,6 +223,7 @@ Output JSON only."""
         e.raw_content = raw_content  # type: ignore[attr-defined]
         raise
     parsed["_raw_model"] = getattr(resp, "model", "")
+    parsed["_usage"] = _usage_dict(getattr(resp, "usage", None))
     return parsed
 
 
@@ -243,7 +292,8 @@ def _score_one_paper(p: dict, direction_configs: dict) -> tuple[dict, dict]:
                 _BUDGET_EXHAUSTED = str(e)[:200]
                 break
     if result is not None:
-        raw = {"_raw_model": result.pop("_raw_model", "")}
+        raw = {"_raw_model": result.pop("_raw_model", ""),
+               "_usage": result.pop("_usage", {})}
         p["llm"] = result
     else:
         # ADR-0017 §Decision 1: null + flag, never the silent "Low".

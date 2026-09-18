@@ -38,6 +38,11 @@ Quick reference:
 ## Required GitHub Variables
 
 - `MODEL_NAME` — `deepseek-v4-flash`
+- `LLM_THINKING` (optional) — `disabled` by default. DeepSeek V4.1-Flash
+  enables thinking by default and bills the hidden reasoning as output,
+  which multiplied the per-paper cost ~20x on 2026-09-17; the scorer only
+  needs a JSON verdict. Each manifest records token usage and a list-price
+  estimate under `llm`.
 - `OPENALEX_EMAIL` — Contact email retained for backward compatibility
 - `PUBMED_EMAIL` — Your email (NCBI required)
 - `ZOT_COL_BIOPRINTING`, `ZOT_COL_HIP`, `ZOT_COL_FEA`, `ZOT_COL_AM` — Zotero collection keys

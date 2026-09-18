@@ -192,6 +192,7 @@ def rescore_run(daily_dir: pathlib.Path, directions_cfg: dict,
     print(f"[{_ts()}] rescore: starting — {total_candidates} candidate papers "
           f"(resume={resume}, limit={limit})", flush=True)
 
+    usage_total: dict = {}
     for bp in sorted(daily_dir.glob("20*.json")):
         if limit is not None and processed >= limit:
             break
@@ -218,7 +219,12 @@ def rescore_run(daily_dir: pathlib.Path, directions_cfg: dict,
         # One concurrent batch per bucket. score_batch fans out across
         # LLM_CONCURRENCY workers, preserves input order, and applies
         # the ADR-0017 3-attempt retry per paper.
-        scorer.score_batch(candidates, directions_cfg)
+        result = scorer.score_batch(candidates, directions_cfg)
+        raws = result[1] if isinstance(result, tuple) and len(result) > 1 else []
+        summarize = getattr(scorer, "summarize_usage", None)
+        if summarize:
+            for key, value in summarize(raws).items():
+                usage_total[key] = usage_total.get(key, 0) + value
 
         for cp in candidates:
             new_llm = cp.get("llm", {}) or {}
@@ -237,7 +243,9 @@ def rescore_run(daily_dir: pathlib.Path, directions_cfg: dict,
 
         pct = 100.0 * processed / max(total_candidates, 1)
         print(f"[{_ts()}] rescore: {processed} / {total_candidates} "
-              f"({pct:.1f}%) — last bucket {last_bucket}", flush=True)
+              f"({pct:.1f}%) — last bucket {last_bucket}"
+              f" · completion tokens {usage_total.get('completion_tokens', 0)}"
+              f" (reasoning {usage_total.get('reasoning_tokens', 0)})", flush=True)
 
     elapsed = time.time() - started
     print(f"[{_ts()}] DONE — processed={processed} succeeded={succeeded} "
