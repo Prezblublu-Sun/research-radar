@@ -196,6 +196,12 @@ def run(days_back: int = 2, skip_zotero: bool = False, force: bool = False) -> d
         _print("::warning::DeepSeek balance exhausted (HTTP 402); the rest of "
                "this run is written unscored and needs manual-rescore after "
                "topping up: " + str(llm_scorer.budget_exhausted()))
+    usage = llm_scorer.summarize_usage(raw_responses)
+    if usage["calls"]:
+        _print(f"  -> LLM usage: {usage['calls']} calls, prompt {usage['prompt_tokens']} "
+               f"(cache hit {usage['cache_hit_tokens']}), completion "
+               f"{usage['completion_tokens']} (reasoning {usage['reasoning_tokens']}), "
+               f"thinking={llm_scorer.THINKING}")
     n_boosted = direction_router.apply_crossover_boost(scored)
     _print(f"  -> crossover boost applied to {n_boosted} paper(s)")
     priority_counts = {"High": 0, "Medium": 0, "Low": 0, "Exclude": 0}

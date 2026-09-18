@@ -157,7 +157,13 @@ Set a calendar reminder. Every 6 months:
 
 ### Cost baseline
 
-- DeepSeek-chat: ~¥0.0023 per paper scored
+- DeepSeek-chat: ~¥0.0023 per paper scored (May 2026 baseline, V3 era)
+- **2026-09-17 measured: ¥0.043 per paper** — `deepseek-chat` now resolves to
+  V4.1-Flash with thinking ON by default (reasoning billed as output), and
+  the runs landed in DeepSeek's peak window. Fixed 2026-09-18: thinking
+  disabled in the scorer (`LLM_THINKING`), daily cron moved to 12:17 UTC
+  (off-peak, half price); manifests now carry token usage + an estimate.
+  Expected after the fix: ≈¥0.003-0.005 per paper off-peak.
 - 4 directions x 200 candidates/day = ~¥0.46/day = ~¥14/month
 - OpenAlex/arxiv/PubMed/Zotero: free
 - GitHub Actions (public repo): free, unlimited
@@ -217,6 +223,7 @@ Track major architectural decisions to avoid forgetting rationale.
 | 2026-09-14 | Canonical work identity for dedup decisions (ADR-0031, PR #23) | 230 identical-title groups in the 2026 shard: Zenodo version pairs, DOI-less OpenAlex arXiv copies, PMID repeats, figshare `.vN`, DOI case |
 | 2026-09-17 | Scorer stops on HTTP 402; backfill counts failures, persists only scored papers and parks the month; search index tolerates nested scorer output (ADR-0030 §11) | Backfill drained the DeepSeek balance on 09-15: 10,500 papers written unscored, site stale for three days, Pages build crashed on a nested `summary_zh` |
 | 2026-09-17 | `reading.html`: full cards for locally marked papers, by state, searchable, Markdown export (ADR-0016 addendum) | The library page only listed titles; the user needed to browse and search what they had classified |
+| 2026-09-18 | Scorer thinking off (`LLM_THINKING`), daily cron 12:17 UTC (DeepSeek off-peak), token usage + cost estimate in manifests (ADR-0030 §12) | Measured ¥0.043/paper on 2026-09-17: V4.1-Flash thinking default + peak-hour runs, ~19x the budgeted baseline |
 |   |   |   |
 
 Add a row whenever making a substantive change.

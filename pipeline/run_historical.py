@@ -337,10 +337,12 @@ def _run_month(month_key: str, window_from: str, window_to: str,
     priority_counts = None
     scored_papers: list[dict] = []
     budget_stop: str | None = None
+    llm_usage: dict | None = None
     if not dry_run and routed:
         llm_scorer.reset_budget_state()
         scored, _raw = llm_scorer.score_batch(routed, directions)
         budget_stop = llm_scorer.budget_exhausted()
+        llm_usage = llm_scorer.summarize_usage(_raw)
         priority_counts = {"High": 0, "Medium": 0, "Low": 0, "Exclude": 0}
         ok: list[dict] = []
         for p in scored:
@@ -453,6 +455,7 @@ def _run_month(month_key: str, window_from: str, window_to: str,
         "would_score": would_score,
         "scored": scored_count,
         "scorer_failed": scorer_failed_count,
+        "llm_usage": llm_usage,
         "priority_counts": priority_counts,
         # v2 diagnostics
         "touched_buckets": touched_buckets,
@@ -468,6 +471,11 @@ def _run_month(month_key: str, window_from: str, window_to: str,
             f"corpus, scored {scored_count}, {scorer_failed_count} failed; "
             f"wrote {total_added} new paper(s) across "
             f"{len(touched_buckets)} bucket(s)")
+        if llm_usage and llm_usage.get("calls"):
+            log(f"     LLM usage: {llm_usage['calls']} calls, completion tokens "
+                f"{llm_usage['completion_tokens']} (reasoning "
+                f"{llm_usage['reasoning_tokens']}), cache hit "
+                f"{llm_usage['cache_hit_tokens']} / miss {llm_usage['cache_miss_tokens']}")
         if missing_date:
             log(f"     (skipped {missing_date} paper(s) with empty date)")
 

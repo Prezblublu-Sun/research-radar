@@ -38,6 +38,48 @@ def _pkg_version(name: str) -> str:
         return "unknown"
 
 
+# deepseek-flash list prices, USD per 1M tokens (api-docs.deepseek.com,
+# 2026-09). Peak = 01:00-04:00 and 06:00-10:00 UTC, Monday-Friday; off-peak
+# is half price. The estimate is indicative: it assumes the whole run was
+# billed in the window it started in.
+_FLASH_USD_PER_M = {
+    "peak": {"cache_hit": 0.006, "cache_miss": 0.30, "output": 1.20},
+    "off_peak": {"cache_hit": 0.003, "cache_miss": 0.15, "output": 0.60},
+}
+
+
+def price_window(now: dt.datetime | None = None) -> str:
+    now = now or dt.datetime.now(dt.timezone.utc)
+    if now.weekday() < 5 and (1 <= now.hour < 4 or 6 <= now.hour < 10):
+        return "peak"
+    return "off_peak"
+
+
+def summarize_llm_usage(llm_responses, now: dt.datetime | None = None) -> dict:
+    """Aggregate per-call ``_usage`` dicts and estimate the bill."""
+    keys = ("calls", "prompt_tokens", "cache_hit_tokens",
+            "cache_miss_tokens", "completion_tokens", "reasoning_tokens")
+    total = {key: 0 for key in keys}
+    for r in llm_responses or []:
+        usage = r.get("_usage") if isinstance(r, dict) else None
+        for key in keys:
+            total[key] += int((usage or {}).get(key) or 0)
+    window = price_window(now)
+    prices = _FLASH_USD_PER_M[window]
+    hit = total["cache_hit_tokens"]
+    miss = total["cache_miss_tokens"]
+    if not hit and not miss:
+        miss = total["prompt_tokens"]  # provider gave no cache split
+    usd = (hit * prices["cache_hit"] + miss * prices["cache_miss"]
+           + total["completion_tokens"] * prices["output"]) / 1e6
+    return {
+        "usage": total,
+        "price_window": window,
+        "estimated_usd": round(usd, 4),
+        "estimated_usd_per_call": round(usd / total["calls"], 5) if total["calls"] else 0.0,
+    }
+
+
 def build_manifest(
     *,
     config_path: pathlib.Path,
@@ -71,6 +113,9 @@ def build_manifest(
             "model_snapshot_observed": snapshot,
             "base_url": os.environ.get("OPENAI_BASE_URL", ""),
             "temperature": float(os.environ.get("LLM_TEMPERATURE", "0.2")),
+            "thinking": (os.environ.get("LLM_THINKING", "disabled").strip().lower()
+                         or "disabled"),
+            **summarize_llm_usage(llm_responses),
         },
         "packages": {
             "arxiv":   _pkg_version("arxiv"),
