@@ -224,6 +224,7 @@ Track major architectural decisions to avoid forgetting rationale.
 | 2026-09-17 | Scorer stops on HTTP 402; backfill counts failures, persists only scored papers and parks the month; search index tolerates nested scorer output (ADR-0030 §11) | Backfill drained the DeepSeek balance on 09-15: 10,500 papers written unscored, site stale for three days, Pages build crashed on a nested `summary_zh` |
 | 2026-09-17 | `reading.html`: full cards for locally marked papers, by state, searchable, Markdown export (ADR-0016 addendum) | The library page only listed titles; the user needed to browse and search what they had classified |
 | 2026-09-18 | Scorer thinking off (`LLM_THINKING`), daily cron 12:17 UTC (DeepSeek off-peak), token usage + cost estimate in manifests (ADR-0030 §12) | Measured ¥0.043/paper on 2026-09-17: V4.1-Flash thinking default + peak-hour runs, ~19x the budgeted baseline |
+| 2026-09-18 | Workbench excludes papers the discovery log attributes to historical backfills and embeds at most 150 cards per run (ADR-0027 addendum) | After the backlog rescore the root page weighed 222 MB: the 2026-09-15 backfill day counted as one 10k-paper run |
 |   |   |   |
 
 Add a row whenever making a substantive change.
