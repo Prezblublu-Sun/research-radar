@@ -48,3 +48,18 @@ about conflicting source dates.
 
 The canonical view and new indexes are derived outputs. Reverting the renderer
 restores the prior pages without migrating or deleting paper records.
+
+## Addendum 2026-09-18 — workbench scope and size
+
+The workbench groups papers by `first_seen_at` date. A historical backfill
+that lands thousands of papers on one date therefore appears as a single
+giant "run": after the 2025-01..2026-05 backfill and the backlog rescore the
+root page embedded 10,539 cards and weighed 222 MB. Two rules now apply:
+
+1. Papers that `data/discovery_log/<run-date>.json` attributes to a
+   non-daily run (`run_type: historical_backfill`) are not part of that
+   day's workbench section; the section notes how many were skipped.
+2. At most `WORKBENCH_RUN_CARD_CAP` (150) cards are embedded per run, in
+   the existing High → Medium → Unscored → Low/Exclude order, with a note
+   pointing to the queue and day pages for the rest. The counts badge and
+   the day/queue pages are unaffected.

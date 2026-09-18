@@ -1301,21 +1301,66 @@ def _recent_valid_runs(data_dir: pathlib.Path, limit: int = 7) -> list[tuple[str
     return runs
 
 
+# Upper bound on cards embedded per run section of the workbench. A normal
+# daily run routes 100-250 papers (~20 KB of HTML each); on 2026-09-18 the
+# root page reached 222 MB because a historical backfill had landed 10k
+# papers on one first-seen date. High/Medium sort first, so the cap only
+# ever trims Low/Exclude/unscored cards; the counts badge still reports the
+# whole run and the day/queue pages carry everything.
+WORKBENCH_RUN_CARD_CAP = 150
+
+
+def _backfill_identity_keys(data_dir, run_dates) -> set[str]:
+    """Identity keys the discovery log attributes to non-daily runs.
+
+    ``run_historical`` writes ``run_type: historical_backfill`` rows into
+    ``data/discovery_log/<run-start-date>.json``; those papers were not
+    "discovered today" and must not inflate the workbench.
+    """
+    keys: set[str] = set()
+    if not data_dir:
+        return keys
+    log_dir = pathlib.Path(data_dir) / "discovery_log"
+    for run_date in run_dates:
+        path = log_dir / f"{run_date}.json"
+        try:
+            entries = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        if not isinstance(entries, list):
+            continue
+        for entry in entries:
+            if not isinstance(entry, dict):
+                continue
+            if (entry.get("run_type") or "daily") != "daily":
+                key = str(entry.get("doi_or_arxiv_id") or "")
+                if key:
+                    keys.add(key)
+    return keys
+
+
 def _render_workbench(recent_runs: list[tuple[str, dict]],
                       buckets: dict[str, list[dict]], directions_cfg: dict,
                       corpus_stats: corpus_view.CorpusStats,
-                      visual_registry: dict[str, dict] | None = None) -> str:
+                      visual_registry: dict[str, dict] | None = None,
+                      data_dir=None) -> str:
     """Root workbench: papers first seen in the seven latest valid runs."""
     run_dates = [date for date, _manifest in recent_runs]
     public_keys = _public_keys_for_buckets(buckets)
     papers_by_run: dict[str, list[tuple[str, dict]]] = {
         date: [] for date in run_dates
     }
+    backfill_keys = _backfill_identity_keys(data_dir, run_dates)
+    backfilled_by_run: dict[str, int] = {date: 0 for date in run_dates}
     for bucket_date, papers in buckets.items():
         for paper in papers:
             first_seen = (paper.get("first_seen_at") or "")[:10]
-            if first_seen in papers_by_run:
-                papers_by_run[first_seen].append((bucket_date, paper))
+            if first_seen not in papers_by_run:
+                continue
+            if backfill_keys and corpus_view.identity_key(paper) in backfill_keys:
+                backfilled_by_run[first_seen] += 1
+                continue
+            papers_by_run[first_seen].append((bucket_date, paper))
 
     priority_order = {"High": 0, "Medium": 1, "Unscored": 2,
                       "Low": 3, "Exclude": 4}
@@ -1331,11 +1376,12 @@ def _render_workbench(recent_runs: list[tuple[str, dict]],
                 dp[0], dp[1].get("title", ""),
             ),
         )
-        actionable = [dp for dp in dated
+        embedded = dated[:WORKBENCH_RUN_CARD_CAP]
+        actionable = [dp for dp in embedded
                       if (dp[1].get("llm") or {}).get("priority")
                       in {"High", "Medium"}]
-        unscored = [dp for dp in dated if _display_priority(dp[1]) == "Unscored"]
-        lower = [dp for dp in dated
+        unscored = [dp for dp in embedded if _display_priority(dp[1]) == "Unscored"]
+        lower = [dp for dp in embedded
                  if dp not in actionable and dp not in unscored]
 
         def cards(items):
@@ -1379,12 +1425,24 @@ def _render_workbench(recent_runs: list[tuple[str, dict]],
             )
         empty = '<p class="empty-state">本次运行没有 High 或 Medium 论文。</p>' \
             if not actionable else ""
+        notes = []
+        if len(dated) > len(embedded):
+            notes.append(
+                f"本次运行共 {len(dated)} 篇，首页只内嵌优先级最高的 "
+                f"{len(embedded)} 篇；其余请到队列页或对应发表日期页查看。"
+            )
+        skipped = backfilled_by_run.get(run_date, 0)
+        if skipped:
+            notes.append(f"另有 {skipped} 篇由历史回填入库，不计入本次运行。")
+        note_html = (
+            '<div class="run-note">' + " ".join(_esc(n) for n in notes) + "</div>"
+        ) if notes else ""
         sections.append(
             '<section class="run-section">'
             f'<div class="run-section__head"><div><div class="eyebrow">{_esc(status)}</div>'
             f'<h2>{_esc(run_date)} 新发现</h2></div>'
             f'<div class="run-section__counts">{counts}</div></div>'
-            f'{warning}{empty}{cards(actionable)}{unscored_html}{lower_html}</section>'
+            f'{warning}{note_html}{empty}{cards(actionable)}{unscored_html}{lower_html}</section>'
         )
 
     latest = recent_runs[0][1] if recent_runs else {}
@@ -2224,7 +2282,7 @@ def build(docs_dir, directions_cfg, manifest=None, touched_dates=None,
     (docs_dir / "index.html").write_text(
         _clean_html(_render_workbench(
             recent_runs, day_papers_full, directions_cfg, corpus_stats,
-            visual_registry,
+            visual_registry, data_dir=data_dir,
         )),
         encoding="utf-8",
     )
