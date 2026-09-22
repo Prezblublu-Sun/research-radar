@@ -476,7 +476,7 @@ def _load_visual_registry(data_dir: pathlib.Path) -> dict[str, dict]:
 
 
 def _card_tools(p: dict, identity_key: str | None = None) -> str:
-    """ADR-0016 D4 (mark + note) and D5 (promote) per-card controls.
+    """ADR-0016 D4 (mark + note) and D5 (mail) per-card controls.
 
     Rendered statically; all behaviour is wired client-side by
     render/static/radar-ui.js reading the card's `data-identity-key`.
@@ -496,7 +496,7 @@ def _card_tools(p: dict, identity_key: str | None = None) -> str:
   <div class="rui-card-tools">
     <span class="rui-mark-group"><b>标记：</b> {radios}</span>
     <button type="button" class="rui-note-btn">笔记</button>
-    <button type="button" class="rui-promote-btn">发送到 lit-system</button>
+    <button type="button" class="rui-mail-btn">发送到邮箱</button>
     <div class="rui-note-wrap">
       <textarea class="rui-note-ta" placeholder="私人笔记（失焦自动保存，仅限当前浏览器）"></textarea>
     </div>
@@ -1031,7 +1031,6 @@ def _nav_row() -> str:
             '<a href="high-priority.html">⭐ High-priority (all dates)</a>'
             '<a href="medium-priority.html">Medium-priority (all dates)</a>'
             '<a href="my-marks.html">🔖 My marks</a>'
-            '<a href="my-promotes.html">➜ Promote queue</a>'
             '<a href="search.html">🔍 Search</a>'
             '<a href="status.html">📊 Status</a>'
             "</div>")
@@ -2057,20 +2056,6 @@ to hand them elsewhere.</p>
     return _page_shell("My marks", "localStorage-backed reading trail", body)
 
 
-def _render_my_promotes_page() -> str:
-    """ADR-0016 D5.A: the localStorage promote queue + copy-out (no git write)."""
-    body = """
-<p style="color:#666;font-size:13px">Papers you queued with "Send to
-lit-system". This is the D5.A manual hand-off: copy the JSON and paste-import it
-on the lit-system side. No automatic git write-back (D5.B is out of scope).</p>
-<p>
-  <button type="button" class="rui-btn" id="rui-copy-promotes">Copy all to clipboard as JSON</button>
-  <button type="button" class="rui-btn rui-secondary" id="rui-clear-promotes">Clear queue</button>
-</p>
-<div id="rui-promote-list"></div>"""
-    return _page_shell("Promote queue", "Pending lit-system hand-off", body)
-
-
 def _render_reading_page() -> str:
     """ADR-0016 addendum: full cards for every locally marked paper.
 
@@ -2126,16 +2111,15 @@ def _render_library_page() -> str:
     <button type="button" class="rui-btn" id="rui-export-marks">导出标记 JSON</button>
     <div id="rui-marks-list"></div>
   </section>
-  <section id="promote" class="library-panel">
-    <div class="eyebrow">lit-system hand-off</div>
-    <h2>待导入队列</h2>
-    <p>复制 JSON 后在 lit-system 侧手动导入；不会从浏览器直接写回 Git。</p>
-    <button type="button" class="rui-btn" id="rui-copy-promotes">复制全部 JSON</button>
-    <button type="button" class="rui-btn rui-secondary" id="rui-clear-promotes">清空队列</button>
-    <div id="rui-promote-list"></div>
+  <section id="mail" class="library-panel">
+    <div class="eyebrow">Mail hand-off</div>
+    <h2>把卡片发到邮箱</h2>
+    <p>每张卡片上的“发送到邮箱”按钮会用本机邮件客户端起草一封邮件，
+    内容包含标题、来源、原文链接、雷达卡片地址、相关性与中文摘要，
+    正文过长的部分会同时复制到剪贴板。站点是静态页面，不会代为发信。</p>
   </section>
 </div>"""
-    return _page_shell("资料库", "浏览器本地的阅读标记、笔记与交接队列",
+    return _page_shell("资料库", "浏览器本地的阅读标记与笔记",
                        body, active="library")
 
 
@@ -2324,8 +2308,10 @@ def build(docs_dir, directions_cfg, manifest=None, touched_dates=None,
     )
     (docs_dir / "my-marks.html").write_text(
         _redirect_page("My marks", "library.html#marks"), encoding="utf-8")
+    # The lit-system promote queue was replaced by the per-card mail button
+    # (ADR-0016 addendum 2026-09-22); the old URL keeps working.
     (docs_dir / "my-promotes.html").write_text(
-        _redirect_page("Promote queue", "library.html#promote"),
+        _redirect_page("Promote queue", "library.html"),
         encoding="utf-8")
     _copy_static_assets(docs_dir)
 

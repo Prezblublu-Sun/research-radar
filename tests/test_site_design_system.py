@@ -96,7 +96,7 @@ def test_lazy_daily_loader_preserves_hash_and_local_card_state_contracts():
     assert "scrollIntoView" in DAY_JS
     assert "blurActiveEditor" in DAY_JS
     assert "innerHTML" not in DAY_JS
-    for token in ("rui-mark-radio", "rui-note-ta", "rui-promote-btn"):
+    for token in ("rui-mark-radio", "rui-note-ta", "rui-mail-btn"):
         assert token in CARD_JS
 
 

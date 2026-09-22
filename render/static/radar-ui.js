@@ -5,16 +5,14 @@
  * feature-detects its anchor elements and no-ops when they are absent:
  *
  *   - daily pages:      direction tabs + priority filter (D3) + per-card
- *                       reading marks/notes (D4) + promote button (D5)
+ *                       reading marks/notes (D4) + mail button (D5)
  *   - high/medium pages: same per-card controls (cards reused verbatim)
  *   - my-marks.html:    export-all-marks + listing
- *   - my-promotes.html: queue listing + copy-to-clipboard
  *
  * localStorage keys (ADR-0016 §3):
  *   radar:filter:priority   -> ["High","Medium",...]            (D3)
  *   radar:filter:marks      -> ["to-read","read",...,"none"]    (D4)
  *   radar:mark:<idkey>      -> { state, at, note }              (D4)
- *   radar:promote-queue     -> [{identity_key,title,date,...}]  (D5)
  *
  * All state is single-browser and ephemeral by design (ADR-0016 §2 D4
  * limitations the user accepted). No sync, no write-back.
@@ -153,6 +151,150 @@
     return record;
   }
 
+  // ---- D5: mail one card to the owner (ADR-0016 addendum 2026-09-22) ----
+  //
+  // The site is a static GitHub Pages artifact with no backend, so nothing
+  // here can actually send mail: the button composes the message and hands
+  // it to the browser's registered mail client via a `mailto:` URL. The
+  // address is assembled at run time rather than written out as a literal,
+  // which keeps it out of the page source for naive address scrapers (the
+  // rendered page is public either way).
+  var MAIL_LOCAL = "sun1139156053";
+  var MAIL_DOMAIN = "163.com";
+  // Conservative ceiling for the whole mailto: URL. Windows' shell handler
+  // historically truncates above ~2000 characters, and one CJK character
+  // costs nine after percent-encoding, so the body is filled section by
+  // section until the budget runs out. The untruncated text always goes to
+  // the clipboard as well, so nothing is silently lost.
+  var MAIL_URL_BUDGET = 1800;
+
+  function mailAddress() {
+    return MAIL_LOCAL + "@" + MAIL_DOMAIN;
+  }
+
+  function cardText(card, selector) {
+    var node = card.querySelector(selector);
+    return node ? node.textContent.replace(/\s+/g, " ").trim() : "";
+  }
+
+  function cardLink(card) {
+    var link = card.querySelector(".doi a");
+    return link && link.href ? link.href : "";
+  }
+
+  function dayPageUrl(card) {
+    var date = card.dataset.date || "";
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !card.id) return "";
+    try {
+      return new URL(date + ".html#" + encodeURIComponent(card.id),
+        window.location.href).href;
+    } catch (error) {
+      return "";
+    }
+  }
+
+  function mailSections(card, idkey) {
+    var head = [];
+    var title = card.dataset.title || cardText(card, ".paper-title");
+    head.push("标题：" + title);
+    var meta = [
+      cardText(card, ".priority"), cardText(card, ".direction-pill"),
+      card.dataset.date || ""
+    ].filter(Boolean).join(" · ");
+    if (meta) head.push("等级/方向/日期：" + meta);
+    var authors = cardText(card, ".authors");
+    if (authors) head.push("作者：" + authors);
+    var venue = cardText(card, ".venue");
+    if (venue) head.push("来源：" + venue);
+    var link = cardLink(card);
+    if (link) head.push("原文：" + link);
+    var page = dayPageUrl(card);
+    if (page) head.push("雷达卡片：" + page);
+    if (idkey) head.push("身份键：" + idkey);
+
+    var sections = [];
+    var record = idkey ? markRecord(idkey) : null;
+    if (record && record.note) sections.push("我的笔记：" + record.note);
+    var relevance = cardText(card, ".relevance");
+    if (relevance) sections.push(relevance);
+    var summary = cardText(card, ".summary");
+    if (summary) sections.push("中文摘要：" + summary);
+    var boundary = cardText(card, ".why-not-core");
+    if (boundary) sections.push(boundary);
+    return { subject: "[Radar] " + title, head: head.join("\n"), sections: sections };
+  }
+
+  function mailtoUrl(subject, body) {
+    return "mailto:" + mailAddress() + "?subject=" +
+      encodeURIComponent(subject) + "&body=" + encodeURIComponent(body);
+  }
+
+  var MAIL_TRUNCATED_NOTE = "\n\n（其余内容已复制到剪贴板，可直接粘贴。）";
+
+  function sendCardByMail(card, idkey, button) {
+    var parts = mailSections(card, idkey);
+    var full = [parts.head].concat(parts.sections).join("\n\n");
+
+    // Fill the mailto body up to the budget, head first. The truncation note
+    // is appended after the loop, so reserve its encoded length up front or
+    // the finished URL overshoots the budget by ~180 characters.
+    //
+    // A section that does not fit whole is cut down rather than dropped: one
+    // Chinese paragraph costs ~1,000 characters once percent-encoded, so
+    // dropping it would leave the mail with nothing but the title and links.
+    // The reader gets the opening of the relevance note in the mail and the
+    // untruncated text from the clipboard.
+    var reserve = encodeURIComponent(MAIL_TRUNCATED_NOTE).length;
+
+    function fits(candidate) {
+      return mailtoUrl(parts.subject, candidate).length + reserve <= MAIL_URL_BUDGET;
+    }
+
+    var body = parts.head;
+    for (var index = 0; index < parts.sections.length; index += 1) {
+      var section = parts.sections[index];
+      if (fits(body + "\n\n" + section)) {
+        body = body + "\n\n" + section;
+        continue;
+      }
+      var shortened = section;
+      while (shortened.length > 24) {
+        shortened = shortened.slice(0, Math.floor(shortened.length * 0.8));
+        if (fits(body + "\n\n" + shortened + "…")) {
+          body = body + "\n\n" + shortened + "…";
+          break;
+        }
+      }
+      break;
+    }
+    var truncated = body.length < full.length;
+    if (truncated) body += MAIL_TRUNCATED_NOTE;
+
+    var anchor = document.createElement("a");
+    anchor.href = mailtoUrl(parts.subject, body);
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+
+    function flash(message) {
+      button.textContent = message;
+      button.classList.add("rui-mailed");
+      setTimeout(function () {
+        button.textContent = "发送到邮箱";
+        button.classList.remove("rui-mailed");
+      }, 2500);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(full).then(function () {
+        flash(truncated ? "✓ 已打开邮件（全文已复制）" : "✓ 已打开邮件");
+      }, function () {
+        flash("✓ 已打开邮件");
+      });
+    } else {
+      flash("✓ 已打开邮件");
+    }
+  }
+
   // ---- D4 + D5: per-card controls (also hydrates lazy queue cards) ----
   function hydrateCard(card) {
     if (card.dataset.ruiReady === "1") return;
@@ -222,31 +364,12 @@
       });
     }
 
-    // D5 promote — append to localStorage queue, dedup on identity_key
-    var pBtn = card.querySelector(".rui-promote-btn");
-    if (pBtn) {
-      var queued = (lsGet("radar:promote-queue", []) || []).some(function (q) {
-        return q && q.identity_key === idk;
-      });
-      if (queued) {
-        pBtn.textContent = "✓ 已加入";
-        pBtn.classList.add("rui-queued");
-      }
-      pBtn.addEventListener("click", function () {
-        var q = lsGet("radar:promote-queue", []);
-        if (!Array.isArray(q)) q = [];
-        if (q.some(function (x) { return x && x.identity_key === idk; })) return;
-        q.push({
-          identity_key: idk,
-          title: card.dataset.title || "",
-          date: card.dataset.date || "",
-          direction: card.dataset.direction || "",
-          priority: card.dataset.priority || "",
-          queued_at: new Date().toISOString()
-        });
-        lsSet("radar:promote-queue", q);
-        pBtn.textContent = "✓ 已加入";
-        pBtn.classList.add("rui-queued");
+    // D5 mail — hand this card to the owner's mail client (ADR-0016
+    // addendum 2026-09-22, replaces the lit-system promote queue).
+    var mBtn = card.querySelector(".rui-mail-btn");
+    if (mBtn) {
+      mBtn.addEventListener("click", function () {
+        sendCardByMail(card, idk, mBtn);
       });
     }
   }
@@ -318,48 +441,4 @@
     }
   }
 
-  // ---- my-promotes.html: queue listing + copy / clear ----
-  var copyBtn = document.getElementById("rui-copy-promotes");
-  if (copyBtn) {
-    var qEl = document.getElementById("rui-promote-list");
-    function renderQueue() {
-      var q = lsGet("radar:promote-queue", []);
-      if (!Array.isArray(q)) q = [];
-      if (!qEl) return;
-      if (!q.length) {
-        qEl.innerHTML = "<p>待导入队列为空。</p>";
-        return;
-      }
-      var rows = q.map(function (x) {
-        return "<tr><td>" + esc(x.date) + "</td><td>" + esc(x.priority) +
-          "</td><td><code>" + esc(x.identity_key) + "</code></td><td>" +
-          esc(x.title) + "</td></tr>";
-      });
-      qEl.innerHTML =
-        '<div class="table-scroll"><table class="rui-table"><thead><tr><th>日期</th><th>等级</th>' +
-        "<th>身份键</th><th>标题</th></tr></thead><tbody>" +
-        rows.join("") + "</tbody></table></div>";
-    }
-    renderQueue();
-    copyBtn.addEventListener("click", function () {
-      var q = lsGet("radar:promote-queue", []);
-      navigator.clipboard.writeText(JSON.stringify(q, null, 2)).then(
-        function () {
-          copyBtn.textContent = "✓ 已复制";
-          setTimeout(function () {
-            copyBtn.textContent = "复制全部 JSON";
-          }, 1500);
-        }
-      );
-    });
-    var clearBtn = document.getElementById("rui-clear-promotes");
-    if (clearBtn) {
-      clearBtn.addEventListener("click", function () {
-        if (confirm("确定清空待导入队列？此操作无法撤销。")) {
-          lsSet("radar:promote-queue", []);
-          renderQueue();
-        }
-      });
-    }
-  }
 })();
