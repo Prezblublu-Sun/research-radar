@@ -177,3 +177,15 @@ URL budget and the untruncated text is copied to the clipboard on every
 click, which keeps a long card recoverable. The recipient address is
 assembled at run time instead of appearing as a literal in the bundle; the
 deployed page is public either way, so this only defeats naive scrapers.
+
+**Correction, same day.** The first cut fired the `mailto:` from a synthetic
+anchor click and then flashed "✓ 已打开邮件". On a machine with no handler
+registered for the scheme — the normal state for a webmail-only setup — the
+click does nothing and the page has no way to find out, so the button was
+reporting a success that never happened; the reader only saw the clipboard
+half work. The button now opens a panel under the card instead: the full text
+sits in a selected read-only textarea, a copy is attempted and its real
+outcome is reported either way, the `mailto:` is offered as a link the reader
+chooses to click, and a line explains that a dead link means no default mail
+client. A second click on the button closes the panel. Nothing in the flow
+claims an outcome the page cannot observe.

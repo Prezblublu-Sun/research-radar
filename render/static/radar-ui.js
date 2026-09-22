@@ -168,6 +168,13 @@
   // the clipboard as well, so nothing is silently lost.
   var MAIL_URL_BUDGET = 1800;
 
+  function node(tag, className, value) {
+    var el = document.createElement(tag);
+    if (className) el.className = className;
+    if (value != null) el.textContent = String(value);
+    return el;
+  }
+
   function mailAddress() {
     return MAIL_LOCAL + "@" + MAIL_DOMAIN;
   }
@@ -229,11 +236,9 @@
       encodeURIComponent(subject) + "&body=" + encodeURIComponent(body);
   }
 
-  var MAIL_TRUNCATED_NOTE = "\n\n（其余内容已复制到剪贴板，可直接粘贴。）";
+  var MAIL_TRUNCATED_NOTE = "\n\n（完整内容见本页文本框，可直接复制粘贴。）";
 
-  function sendCardByMail(card, idkey, button) {
-    var parts = mailSections(card, idkey);
-    var full = [parts.head].concat(parts.sections).join("\n\n");
+  function mailtoBody(parts) {
 
     // Fill the mailto body up to the budget, head first. The truncation note
     // is appended after the loop, so reserve its encoded length up front or
@@ -250,6 +255,7 @@
       return mailtoUrl(parts.subject, candidate).length + reserve <= MAIL_URL_BUDGET;
     }
 
+    var full = [parts.head].concat(parts.sections).join("\n\n");
     var body = parts.head;
     for (var index = 0; index < parts.sections.length; index += 1) {
       var section = parts.sections[index];
@@ -267,32 +273,80 @@
       }
       break;
     }
-    var truncated = body.length < full.length;
-    if (truncated) body += MAIL_TRUNCATED_NOTE;
+    return body.length < full.length ? body + MAIL_TRUNCATED_NOTE : body;
+  }
 
-    var anchor = document.createElement("a");
-    anchor.href = mailtoUrl(parts.subject, body);
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
+  // A static page cannot send mail. `mailto:` only works when the machine has
+  // a mail client registered for the scheme, which a webmail-only setup does
+  // not — and the page has no way to detect that, so claiming "mail opened"
+  // was a lie (reported 2026-09-22: the button appeared to only copy). The
+  // button now opens a panel that always works: the full text sits in a
+  // selected textarea, a copy is attempted, and the `mailto:` link is offered
+  // as a real link the reader can choose to click.
+  function buildMailPanel(card, idkey) {
+    var parts = mailSections(card, idkey);
+    var full = [parts.head].concat(parts.sections).join("\n\n");
 
-    function flash(message) {
-      button.textContent = message;
-      button.classList.add("rui-mailed");
-      setTimeout(function () {
-        button.textContent = "发送到邮箱";
-        button.classList.remove("rui-mailed");
-      }, 2500);
-    }
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(full).then(function () {
-        flash(truncated ? "✓ 已打开邮件（全文已复制）" : "✓ 已打开邮件");
+    var panel = node("div", "rui-mail-wrap");
+    var status = node("div", "rui-mail-status",
+      "收件人 " + mailAddress() + " · 正在复制正文…");
+    panel.appendChild(status);
+
+    var area = document.createElement("textarea");
+    area.className = "rui-mail-ta";
+    area.readOnly = true;
+    area.value = "收件人：" + mailAddress() + "\n主题：" + parts.subject +
+      "\n\n" + full;
+    panel.appendChild(area);
+
+    var actions = node("div", "rui-mail-actions");
+    var copy = node("button", "rui-btn rui-mail-copy", "复制全文");
+    copy.type = "button";
+    actions.appendChild(copy);
+    var open = node("a", "rui-btn rui-secondary rui-mail-open", "用邮件客户端打开");
+    open.href = mailtoUrl(parts.subject, mailtoBody(parts));
+    actions.appendChild(open);
+    var close = node("button", "rui-btn rui-secondary rui-mail-close", "收起");
+    close.type = "button";
+    actions.appendChild(close);
+    panel.appendChild(actions);
+
+    panel.appendChild(node("div", "rui-mail-note",
+      "点“用邮件客户端打开”没有反应，说明本机没有注册默认邮件客户端；" +
+      "直接复制上面的正文，粘贴到网页版邮箱即可。"));
+
+    function copyAll() {
+      if (!navigator.clipboard || !navigator.clipboard.writeText) {
+        status.textContent = "收件人 " + mailAddress() +
+          " · 浏览器不允许自动复制，请在文本框里全选复制。";
+        return;
+      }
+      navigator.clipboard.writeText(area.value).then(function () {
+        status.textContent = "收件人 " + mailAddress() + " · ✓ 正文已复制，可直接粘贴";
       }, function () {
-        flash("✓ 已打开邮件");
+        status.textContent = "收件人 " + mailAddress() +
+          " · 自动复制被拒绝，请在文本框里全选复制。";
       });
-    } else {
-      flash("✓ 已打开邮件");
     }
+    copy.addEventListener("click", copyAll);
+    close.addEventListener("click", function () {
+      panel.remove();
+    });
+    copyAll();
+    return panel;
+  }
+
+  function offerCardByMail(card, idkey) {
+    var existing = card.querySelector(".rui-mail-wrap");
+    if (existing) {
+      existing.remove();
+      return;
+    }
+    var panel = buildMailPanel(card, idkey);
+    var tools = card.querySelector(".rui-card-tools");
+    (tools || card).appendChild(panel);
+    var area = panel.querySelector(".rui-mail-ta");
+    if (area) area.select();
   }
 
   // ---- D4 + D5: per-card controls (also hydrates lazy queue cards) ----
@@ -369,7 +423,7 @@
     var mBtn = card.querySelector(".rui-mail-btn");
     if (mBtn) {
       mBtn.addEventListener("click", function () {
-        sendCardByMail(card, idk, mBtn);
+        offerCardByMail(card, idk);
       });
     }
   }
