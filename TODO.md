@@ -226,6 +226,7 @@ Track major architectural decisions to avoid forgetting rationale.
 | 2026-09-18 | Scorer thinking off (`LLM_THINKING`), daily cron 12:17 UTC (DeepSeek off-peak), token usage + cost estimate in manifests (ADR-0030 §12) | Measured ¥0.043/paper on 2026-09-17: V4.1-Flash thinking default + peak-hour runs, ~19x the budgeted baseline |
 | 2026-09-18 | Workbench excludes papers the discovery log attributes to historical backfills and embeds at most 150 cards per run (ADR-0027 addendum) | After the backlog rescore the root page weighed 222 MB: the 2026-09-15 backfill day counted as one 10k-paper run |
 | 2026-09-22 | Per-card button mails the card (`mailto:`) instead of queueing it for lit-system; promote queue and its library panel removed (ADR-0016 addendum) | User asked for it: the browser-side lit-system hand-off was never used, mailing a card is what the triage loop actually needs |
+| 2026-09-22 | The mail button opens a copy/`mailto:` panel instead of claiming it opened a mail client (ADR-0016 addendum correction) | User reported the button only appeared to copy: with no `mailto:` handler registered nothing opens and the page cannot detect it, so the success message was false |
 |   |   |   |
 
 Add a row whenever making a substantive change.
