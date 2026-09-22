@@ -441,6 +441,151 @@
 
   hydrateCards(document);
 
+  // ---- library.html: hand the marks over to the repository (ADR-0032) ----
+  //
+  // The site is a static artifact and holds no credential, so the browser
+  // cannot write to the repository. It packages the marks instead and opens a
+  // pre-filled issue that the reader submits with their own GitHub session;
+  // .github/workflows/marks-sync.yml validates the body and commits it. The
+  // payload is always shown in a textarea as well, because a long one does
+  // not fit in a URL and because nothing here should depend on a step the
+  // page cannot verify.
+  var SYNC_URL_BUDGET = 6000;
+
+  function allMarkRecords() {
+    var out = {};
+    var total = 0;
+    try { total = localStorage.length; } catch (error) { total = 0; }
+    for (var index = 0; index < total; index += 1) {
+      var key = localStorage.key(index);
+      if (!key || key.indexOf("radar:mark:") !== 0) continue;
+      var record = lsGet(key, null);
+      if (!record || typeof record !== "object") continue;
+      var state = typeof record.state === "string" ? record.state : "";
+      var note = typeof record.note === "string" ? record.note : "";
+      if (!state && !note) continue;
+      out[key.slice("radar:mark:".length)] = {
+        state: state,
+        at: typeof record.at === "string" ? record.at : "",
+        note: note,
+        title: typeof record.title === "string" ? record.title : "",
+        date: typeof record.date === "string" ? record.date : "",
+        direction: typeof record.direction === "string" ? record.direction : "",
+        priority: typeof record.priority === "string" ? record.priority : ""
+      };
+    }
+    return out;
+  }
+
+  function deviceId() {
+    var stored = lsGet("radar:device", null);
+    if (typeof stored === "string" && /^[a-z0-9][a-z0-9_-]{2,31}$/.test(stored)) {
+      return stored;
+    }
+    var random = "";
+    for (var index = 0; index < 8; index += 1) {
+      random += Math.floor(Math.random() * 16).toString(16);
+    }
+    var fresh = "dev-" + random;
+    lsSet("radar:device", fresh);
+    return fresh;
+  }
+
+  function repoSlug() {
+    // Published at <owner>.github.io/<repo>/; a local preview has no target.
+    var match = /^([a-z0-9-]+)\.github\.io$/i.exec(window.location.hostname);
+    var segment = window.location.pathname.split("/").filter(Boolean)[0];
+    return match && segment ? match[1] + "/" + segment : "";
+  }
+
+  function syncBody(payload) {
+    return "```json\n" + JSON.stringify(payload, null, 1) + "\n```\n";
+  }
+
+  var syncBtn = document.getElementById("rui-sync-marks");
+  if (syncBtn) {
+    syncBtn.addEventListener("click", function () {
+      var host = document.getElementById("rui-sync-panel");
+      if (!host) return;
+      if (host.firstChild) {
+        host.replaceChildren();
+        return;
+      }
+      var device = deviceId();
+      var marks = allMarkRecords();
+      var count = Object.keys(marks).length;
+      var payload = {
+        schema_version: 1,
+        device: device,
+        updated_at: new Date().toISOString().replace(/\.\d+Z$/, "Z"),
+        marks: marks
+      };
+      var body = syncBody(payload);
+
+      var status = node("div", "rui-mail-status",
+        "设备 " + device + " · " + count + " 条标记 · 正在复制…");
+      host.appendChild(status);
+
+      var area = document.createElement("textarea");
+      area.className = "rui-mail-ta";
+      area.readOnly = true;
+      area.value = body;
+      host.appendChild(area);
+
+      var actions = node("div", "rui-mail-actions");
+      var copy = node("button", "rui-btn", "复制内容");
+      copy.type = "button";
+      actions.appendChild(copy);
+
+      var slug = repoSlug();
+      var title = "marks sync " + device;
+      var base = slug ? "https://github.com/" + slug + "/issues/new" : "";
+      var withBody = base + "?labels=marks-sync&title=" +
+        encodeURIComponent(title) + "&body=" + encodeURIComponent(body);
+      var withoutBody = base + "?labels=marks-sync&title=" +
+        encodeURIComponent(title) + "&body=" +
+        encodeURIComponent("把上一步复制的内容粘贴到这里，然后提交。\n\n");
+      var fits = withBody.length <= SYNC_URL_BUDGET;
+
+      if (base) {
+        var open = node("a", "rui-btn rui-secondary",
+          fits ? "打开 GitHub 提交页（已预填）" : "打开 GitHub 提交页（需粘贴）");
+        open.href = fits ? withBody : withoutBody;
+        open.target = "_blank";
+        open.rel = "noopener noreferrer";
+        actions.appendChild(open);
+      }
+      var close = node("button", "rui-btn rui-secondary", "收起");
+      close.type = "button";
+      actions.appendChild(close);
+      host.appendChild(actions);
+
+      host.appendChild(node("div", "rui-mail-note", base
+        ? "提交后由 marks-sync 工作流校验并写入 data/marks/，" +
+          "只接受仓库所有者本人开的 issue；完成后它会回帖并关闭该 issue。"
+        : "本地预览没有对应的仓库地址；复制内容后到已发布的站点或直接在 GitHub 上新建 issue 提交。"));
+
+      function copyAll() {
+        if (!navigator.clipboard || !navigator.clipboard.writeText) {
+          status.textContent = "设备 " + device + " · " + count +
+            " 条标记 · 浏览器不允许自动复制，请在文本框里全选复制。";
+          return;
+        }
+        navigator.clipboard.writeText(area.value).then(function () {
+          status.textContent = "设备 " + device + " · " + count +
+            " 条标记 · ✓ 已复制" + (fits ? "（提交页也已预填）" : "，请粘贴到提交页");
+        }, function () {
+          status.textContent = "设备 " + device + " · " + count +
+            " 条标记 · 自动复制被拒绝，请在文本框里全选复制。";
+        });
+      }
+      copy.addEventListener("click", copyAll);
+      close.addEventListener("click", function () { host.replaceChildren(); });
+      copyAll();
+      area.select();
+    });
+  }
+
   // ---- my-marks.html: export-all + listing ----
   var exportBtn = document.getElementById("rui-export-marks");
   if (exportBtn) {

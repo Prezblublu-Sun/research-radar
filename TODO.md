@@ -227,6 +227,7 @@ Track major architectural decisions to avoid forgetting rationale.
 | 2026-09-18 | Workbench excludes papers the discovery log attributes to historical backfills and embeds at most 150 cards per run (ADR-0027 addendum) | After the backlog rescore the root page weighed 222 MB: the 2026-09-15 backfill day counted as one 10k-paper run |
 | 2026-09-22 | Per-card button mails the card (`mailto:`) instead of queueing it for lit-system; promote queue and its library panel removed (ADR-0016 addendum) | User asked for it: the browser-side lit-system hand-off was never used, mailing a card is what the triage loop actually needs |
 | 2026-09-22 | The mail button opens a copy/`mailto:` panel instead of claiming it opened a mail client (ADR-0016 addendum correction) | User reported the button only appeared to copy: with no `mailto:` handler registered nothing opens and the page cannot detect it, so the success message was false |
+| 2026-09-22 | Reading marks sync to `data/marks/` through an owner-only, validated `marks-sync` issue; supersedes ADR-0016's "no sync" (ADR-0032) | A server job cannot read browser-only state, and the marks are meant to seed a human-curated library; the issue route needs no credential in the page |
 |   |   |   |
 
 Add a row whenever making a substantive change.

@@ -2111,6 +2111,15 @@ def _render_library_page() -> str:
     <button type="button" class="rui-btn" id="rui-export-marks">导出标记 JSON</button>
     <div id="rui-marks-list"></div>
   </section>
+  <section id="sync" class="library-panel">
+    <div class="eyebrow">Marks hand-off</div>
+    <h2>同步标记到仓库</h2>
+    <p>把这个浏览器里的标记与笔记打包成一条 <code>marks-sync</code> issue 提交，
+    工作流校验后写入 <code>data/marks/</code>，从此有 git 历史、可跨设备合并，
+    也是后续人工筛选文献库的数据来源。页面不持有任何令牌，提交用的是你自己的 GitHub 登录。</p>
+    <button type="button" class="rui-btn" id="rui-sync-marks">打包并提交标记</button>
+    <div id="rui-sync-panel"></div>
+  </section>
   <section id="mail" class="library-panel">
     <div class="eyebrow">Mail hand-off</div>
     <h2>把卡片发到邮箱</h2>
