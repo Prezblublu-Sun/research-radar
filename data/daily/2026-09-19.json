@@ -3729,30 +3729,3426 @@
       "schema_version": "v2",
       "scorer_version": "v3",
       "first_seen_at": "2026-09-21T18:16:53Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2609.23252v1",
+      "doi": "",
+      "arxiv_id": "2609.23252v1",
+      "title": "Robot World Models Are Not Invariant to How the Actions Are Written",
+      "abstract": "A robot policy is trained with one of two action parameterizations: absolute joint targets, or deltas relative to the current state. The choice is a live engineering decision in robot learning, and a world model conditioned on actions inherits it silently. We show the inheritance is catastrophic. A latent dynamics model trained on one parameterization and handed the identical commanded trajectory written in the other collapses: retrieval degrades by 2.6-13.4x across three robot datasets and two morphologies, goal-conditioned action selection falls from 53% to 15%, and on PushT the two beliefs about the same future are near-orthogonal (cos = 0.067, worst case -0.377), so the predictor does not degrade gracefully, it answers a different question. This is not a distribution-shift artifact in the usual sense: the two encodings are mutually reconstructible at R^2 = 0.996 given the joint input, so no information is lost, and we give the test that separates a valid re-parameterization from a lossy summary or a sensor swap. The test rejected three of the four axes we proposed. The defect lives in the action channel, which the invariance literature for visual models does not examine: work there concerns crops, jitter and camera pose, while the parameterization of the commands goes unaudited. The repair is averaging over the two encodings, and where it goes matters. Averaging the objective restores task performance by itself; averaging the outputs, safe for probabilities by concavity, is not available for direction-valued prediction, where the normalized mean can score below every member of the orbit. What objective-averaging leaves behind is the tail: worst-case agreement stays at 0.78, a disagreement penalty closes it to 0.995, and over a latent rollout it is the difference between a worst case that erodes and one that holds. On PushT, averaging alone does not repair the axis.",
+      "authors": [
+        "Ahmed Karim",
+        "Leon Chlon"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-09-19",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2609.23252v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.RO",
+        "cs.LG"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "world model",
+          "latent dynamics"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该文研究机器人世界模型对动作参数化方式的不变性，属于纯RL/世界模型方法，未涉及工程仿真、FEA或植入物设计，仅提供方法论背景。",
+        "why_not_core": "It studies action-parameterization invariance in robot world models with no connection to engineering simulation, surrogate modeling, FEA data, or biomechanics design optimization.",
+        "validation_kind": "numerical_benchmark",
+        "flags": {
+          "has_experimental_validation": true,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "world model",
+          "robot learning",
+          "action parameterization",
+          "invariance",
+          "latent dynamics"
+        ],
+        "summary_zh": {
+          "motivation": "机器人策略中动作参数化选择会影响世界模型，但该影响未被审计。",
+          "method": "训练潜动力学模型，在绝对关节目标与相对增量两种动作编码间交叉测试，并提出区分有效重参数化与有损表示的检验。",
+          "result": "跨数据集检索性能下降2.6-13.4倍，目标条件动作选择从53%降至15%，目标平均可部分修复但尾部一致性仍差。",
+          "validation": "在三个机器人数据集和两种形态上进行数值基准测试。"
+        },
+        "summary_en": {
+          "motivation": "The choice between absolute joint targets and state-relative deltas is a routine engineering decision in robot learning, yet its effect on action-conditioned world models remains unaudited.",
+          "method": "A latent dynamics model is trained under one action parameterization and evaluated with the identical commanded trajectory expressed in the other, alongside a test distinguishing valid re-parameterizations from lossy summaries.",
+          "result": "Retrieval degrades by 2.6-13.4x across datasets, goal-conditioned action selection drops from 53% to 15%, and objective averaging only partially repairs the tail behavior.",
+          "validation": "Numerical benchmarking on three robot datasets and two morphologies, including PushT."
+        },
+        "key_terms": [
+          {
+            "en": "world model",
+            "zh": "世界模型"
+          },
+          {
+            "en": "action parameterization",
+            "zh": "动作参数化"
+          },
+          {
+            "en": "latent dynamics model",
+            "zh": "潜动力学模型"
+          },
+          {
+            "en": "invariance",
+            "zh": "不变性"
+          },
+          {
+            "en": "goal-conditioned action selection",
+            "zh": "目标条件动作选择"
+          },
+          {
+            "en": "re-parameterization",
+            "zh": "重参数化"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-09-22T17:04:18Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2609.23242v1",
+      "doi": "",
+      "arxiv_id": "2609.23242v1",
+      "title": "Proximal Residual Value Functions for Consistent Planning and Real-Time Execution",
+      "abstract": "We study two-timescale decision systems in which a planning layer periodically supplies a continuation-value function to a real-time optimizer that allocates arriving resources, with inventory placement as our motivating application. We propose an end-to-end reinforcement learning (RL) method for learning this function using \\emph{proximal residual value functions}, which combine a strictly convex potential of post-decision inventory with a learned convex residual. This general form yields a well-posed optimization layer that supports end-to-end differentiation while preserving an explicit convex objective for real-time execution. We characterize the necessary and sufficient conditions under which a smooth value function yields decisions that are consistent across the planning and execution timescales. In an offline simulation using historical inventory arrival and demand patterns from a large e-commerce retailer, learned proximal residual value functions reduce total routing and transfer cost relative to a historical-production-system proxy by 5.0%.",
+      "authors": [
+        "Harrison Waldon",
+        "Carson Eisenach",
+        "Akhil Bagaria",
+        "Daniel Russo",
+        "Dominique Perrault-Joncas",
+        "Alisha Zachariah",
+        "Dean Foster"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-09-19",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2609.23242v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.LG"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "reinforcement learning + simulation"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该论文提出用于库存规划的两时间尺度强化学习方法，与工程仿真、FEA或生物医学设计无直接关联，仅提供通用RL方法论参考。",
+        "why_not_core": "This paper does not involve engineering simulation, FEA/FEM data, physics simulators, or design optimization; it applies RL to inventory routing with no biomechanics or implant context.",
+        "validation_kind": "simulation_case",
+        "flags": {
+          "has_experimental_validation": true,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "reinforcement learning",
+          "value function",
+          "inventory optimization",
+          "two-timescale decision",
+          "no engineering simulation"
+        ],
+        "summary_zh": {
+          "motivation": "解决规划层与实时执行层时间尺度不一致导致的决策不协调问题。",
+          "method": "提出近端残差价值函数，结合凸势能与学习凸残差，实现端到端可微优化。",
+          "result": "在电商库存数据仿真中，总路由与转运成本较历史系统降低5.0%。",
+          "validation": "基于大型电商历史库存到达与需求模式的离线仿真验证。"
+        },
+        "summary_en": {
+          "motivation": "To address decision inconsistency arising from mismatched planning and execution timescales in two-timescale resource allocation systems.",
+          "method": "The authors propose proximal residual value functions that combine a strictly convex potential of post-decision inventory with a learned convex residual, enabling end-to-end differentiable optimization.",
+          "result": "In an offline simulation using historical e-commerce inventory data, the learned value functions reduced total routing and transfer cost by 5.0% compared to a production-system proxy.",
+          "validation": "Validated through an offline simulation case study using historical inventory arrival and demand patterns from a large e-commerce retailer."
+        },
+        "key_terms": [
+          {
+            "en": "reinforcement learning",
+            "zh": "强化学习"
+          },
+          {
+            "en": "value function",
+            "zh": "价值函数"
+          },
+          {
+            "en": "two-timescale decision system",
+            "zh": "两时间尺度决策系统"
+          },
+          {
+            "en": "convex optimization",
+            "zh": "凸优化"
+          },
+          {
+            "en": "inventory routing",
+            "zh": "库存路径规划"
+          },
+          {
+            "en": "end-to-end differentiation",
+            "zh": "端到端微分"
+          },
+          {
+            "en": "offline simulation",
+            "zh": "离线仿真"
+          }
+        ],
+        "touches_engineering_simulation": false
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-09-22T17:04:18Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2609.23184v1",
+      "doi": "",
+      "arxiv_id": "2609.23184v1",
+      "title": "CausalWM: Causal Chain-of-Thought Reasoning for Embodied World Model",
+      "abstract": "Embodied world models learn to predict future physical dynamics from visual observations and control signals, where physical knowledge is implicitly entangled within latent representations. We introduce CausalWM, a 16B embodied world model that performs explicit causal chain-of-thought reasoning before future video prediction. CausalWM organizes useful variables into a reasoning trajectory, allowing the model to progressively capture causal dependencies underlying physical evolution. To train CausalWM, we collect 31K hours embodied data and develop a three-stage paradigm consisting of large-scale video pre-training, causal CoT mid-training, and multi-objective RL post-training. Despite using only a limited set of supervised CoT variables, CausalWM exhibits emergent in-context learning capabilities, enabling contextual visual feature guidance and efficient few-step generation. CausalWM achieves state-of-the-art performance across language-conditioned, action-conditioned, single-view and multi-view benchmarks, including Top-1 performance on TriWorldBench leaderboard.",
+      "authors": [
+        "Ziming Xu",
+        "Shuang Liang",
+        "Ruobing Han",
+        "Ziqiao Xi",
+        "Mingxing Rao",
+        "Kun Zhou",
+        "Zijun Zhang",
+        "Yuchen Yan",
+        "Yufan Wei",
+        "Junbo Huang",
+        "Yifei Shao",
+        "Fang Nan",
+        "Biwei Huang"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-09-19",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2609.23184v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.CV"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "world model"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该论文是具身世界模型的因果推理方法，与工程仿真、FEA代理模型或植入物力学无直接关联，仅提供世界模型方法论背景。",
+        "why_not_core": "This paper does not connect world models to engineering simulation, FEA/FEM data, or physics-based design optimization; it targets embodied video prediction benchmarks rather than surrogate modeling for implant biomechanics.",
+        "validation_kind": "numerical_benchmark",
+        "flags": {
+          "has_experimental_validation": true,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "world_model",
+          "embodied_ai",
+          "causal_reasoning",
+          "reinforcement_learning",
+          "video_prediction"
+        ],
+        "summary_zh": {
+          "motivation": "具身世界模型中物理知识隐含在潜表示里，缺乏显式因果推理。",
+          "method": "提出16B模型CausalWM，先做因果链式思维推理再预测未来视频，采用三阶段训练。",
+          "result": "在语言/动作条件及多视角基准上达到最优，TriWorldBench排名第一。",
+          "validation": "在多个具身视频预测基准上进行数值评测。"
+        },
+        "summary_en": {
+          "motivation": "Embodied world models entangle physical knowledge implicitly in latent representations, lacking explicit causal reasoning.",
+          "method": "CausalWM is a 16B model that performs causal chain-of-thought reasoning before future video prediction, trained via video pre-training, causal CoT mid-training, and multi-objective RL post-training.",
+          "result": "It achieves state-of-the-art performance across language-conditioned, action-conditioned, single-view, and multi-view benchmarks, ranking Top-1 on TriWorldBench.",
+          "validation": "Numerical evaluation on multiple embodied video prediction benchmarks."
+        },
+        "key_terms": [
+          {
+            "en": "world model",
+            "zh": "世界模型"
+          },
+          {
+            "en": "chain-of-thought",
+            "zh": "思维链"
+          },
+          {
+            "en": "embodied AI",
+            "zh": "具身智能"
+          },
+          {
+            "en": "reinforcement learning",
+            "zh": "强化学习"
+          },
+          {
+            "en": "video prediction",
+            "zh": "视频预测"
+          },
+          {
+            "en": "causal reasoning",
+            "zh": "因果推理"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-09-22T17:04:18Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2609.23157v1",
+      "doi": "",
+      "arxiv_id": "2609.23157v1",
+      "title": "Orientation-Aware Control and Trajectory Design for Aerial RIS-Assisted Wireless Communications",
+      "abstract": "Aerial Reconfigurable Intelligent Surfaces (ARISs) can enhance wireless connectivity in obstructed environments by combining reconfigurable metasurfaces with aerial mobility. However, in practical deployments, the Reconfigurable Intelligent Surface (RIS) is rigidly mounted on a multi-rotor Unmanned Aerial Vehicle (UAV), which creates coupled position-orientation dynamics that directly affect communication quality. Since RIS performance is highly sensitive to orientation, point-mass or orientation-invariant models may lead to optimistic performance estimates. This paper proposes an orientation-aware ARIS framework that explicitly accounts for UAV dynamics, actuation limits, and orientation-dependent channels. The proposed approach combines a communications-guided reference trajectory planner with a Nonlinear Model Predictive Control for dynamically feasible trajectory tracking and favorable RIS orientation, while employing lightweight beamforming and RIS phase-shift updates. Simulations show that accounting for orientation improves user throughput by 13.77%, while the proposed joint communication updates improve network throughput by 28% over phase-shift-only optimization and by at least a factor of 2.5 over beamforming-only optimization. These results highlight the importance of orientation-aware modeling and joint communication-control design in ARIS-assisted wireless systems.",
+      "authors": [
+        "Abdoul Karim A. H. Saliah",
+        "Hajar El Hammouti",
+        "Daniel Bonilla Licea",
+        "Giuseppe Silano"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-09-19",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2609.23157v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.NI",
+        "cs.RO"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "model predictive control"
+        ]
+      },
+      "llm": {
+        "priority": "Exclude",
+        "relevance_level": "Peripheral",
+        "read_action": "Ignore",
+        "relevance_to_user": "该论文研究无人机载可重构智能表面的通信控制，与用户的生物打印、髋关节植入物、FEA代理模型和生物医学增材制造方向无关。",
+        "why_not_core": "This paper addresses wireless communication trajectory planning and RIS beamforming for aerial networks, with no connection to engineering simulation surrogates, FEA/FEM data, implant biomechanics, or biomedical design optimization.",
+        "validation_kind": "simulation_case",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "aerial RIS",
+          "UAV control",
+          "NMPC",
+          "wireless communications",
+          "trajectory optimization"
+        ],
+        "summary_zh": {
+          "motivation": "无人机载可重构智能表面因刚性安装导致位置与姿态耦合，影响通信质量。",
+          "method": "提出姿态感知框架，结合通信引导轨迹规划与非线性模型预测控制，并联合波束成形和相移更新。",
+          "result": "仿真显示姿态感知提升用户吞吐量13.77%，联合优化比仅相移和仅波束成形分别提升28%和至少2.5倍。",
+          "validation": "基于通信场景的数值仿真验证。"
+        },
+        "summary_en": {
+          "motivation": "Rigid mounting of reconfigurable intelligent surfaces on multi-rotor UAVs couples position and orientation dynamics, degrading communication performance in ways point-mass models overlook.",
+          "method": "An orientation-aware framework integrates a communications-guided reference trajectory planner with nonlinear model predictive control for feasible tracking and favorable RIS orientation, alongside lightweight beamforming and phase-shift updates.",
+          "result": "Simulations indicate that orientation awareness raises user throughput by 13.77%, while joint communication updates improve network throughput by 28% over phase-shift-only and at least 2.5 times over beamforming-only optimization.",
+          "validation": "Numerical simulations of an aerial RIS-assisted wireless communication scenario."
+        },
+        "key_terms": [
+          {
+            "en": "aerial reconfigurable intelligent surface",
+            "zh": "空中可重构智能表面"
+          },
+          {
+            "en": "nonlinear model predictive control",
+            "zh": "非线性模型预测控制"
+          },
+          {
+            "en": "trajectory planning",
+            "zh": "轨迹规划"
+          },
+          {
+            "en": "beamforming",
+            "zh": "波束成形"
+          },
+          {
+            "en": "phase-shift optimization",
+            "zh": "相移优化"
+          },
+          {
+            "en": "UAV dynamics",
+            "zh": "无人机动力学"
+          },
+          {
+            "en": "orientation-aware control",
+            "zh": "姿态感知控制"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-09-22T17:04:18Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2609.23127v1",
+      "doi": "",
+      "arxiv_id": "2609.23127v1",
+      "title": "Provably Efficient Reinforcement Learning in Continuous-Time Episodic MDPs with Poisson Decision Epochs",
+      "abstract": "Many real-world reinforcement learning (RL) problems evolve in continuous time, where decisions occur at irregular, event-driven intervals rather than at fixed discrete steps. We study episodic continuous-time Markov Decision Processes (MDPs) in which decision epochs are governed by a homogeneous Poisson process and the reward and transition dynamics vary smoothly over time. We consider both a fixed number of jumps per episode and a fixed time budget with a random number of Poisson decision epochs. Under a Lipschitz continuity assumption in time, we exploit local smoothness through discretization and extend both UCRL (Auer and Ortner 2006) and Q-learning (Jin et al. 2018) to this setting, proving $\\widetilde{O}(T^{2/3})$ regret bounds for both model-based and model-free algorithms. Finally, we establish matching $\\widetildeΩ(T^{2/3})$ minimax lower bounds, showing that the rate is optimal up to logarithmic factors. These results provide the first tight regret guarantees for Lipschitz-smooth continuous-time episodic MDPs with Poisson decision epochs.",
+      "authors": [
+        "Kenny Guo",
+        "Valentio Iverson",
+        "Sahan Wijetunga",
+        "William Chang"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-09-19",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2609.23127v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.LG"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "reinforcement learning + model-based"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该文是纯连续时间RL理论分析，未涉及工程仿真、代理模型或FEA，与用户方向仅方法论层面弱相关。",
+        "why_not_core": "This paper provides regret bounds for continuous-time MDPs with Poisson decision epochs but contains no engineering simulation, no surrogate/FEA data, no physics simulator, and no design optimization tie-in.",
+        "validation_kind": "theoretical",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "reinforcement learning",
+          "continuous-time MDP",
+          "regret bounds",
+          "theory",
+          "no engineering simulation"
+        ],
+        "summary_zh": {
+          "motivation": "现实RL问题常在连续时间中事件驱动地决策，而现有理论多假设离散固定步。",
+          "method": "在Poisson决策时刻与时间Lipschitz假设下，通过离散化将UCRL与Q-learning扩展到连续时间情景MDP。",
+          "result": "证明两类算法均达到Õ(T^{2/3})遗憾，并给出匹配的极小极大下界，说明该速率最优。",
+          "validation": "仅理论证明与下界分析，无实验或仿真验证。"
+        },
+        "summary_en": {
+          "motivation": "Real-world reinforcement learning often unfolds in continuous time with event-driven decision points, whereas most theory assumes fixed discrete steps.",
+          "method": "Under Poisson decision epochs and a time-Lipschitz smoothness assumption, the authors discretize the problem and extend UCRL and Q-learning to continuous-time episodic MDPs.",
+          "result": "Both model-based and model-free algorithms achieve Õ(T^{2/3}) regret, and matching minimax lower bounds establish the optimality of this rate up to logarithmic factors.",
+          "validation": "The work is validated purely through theoretical regret analysis and lower-bound proofs, without empirical or simulation experiments."
+        },
+        "key_terms": [
+          {
+            "en": "continuous-time MDP",
+            "zh": "连续时间马尔可夫决策过程"
+          },
+          {
+            "en": "Poisson decision epochs",
+            "zh": "泊松决策时刻"
+          },
+          {
+            "en": "regret bound",
+            "zh": "遗憾界"
+          },
+          {
+            "en": "UCRL",
+            "zh": "上置信界强化学习"
+          },
+          {
+            "en": "Q-learning",
+            "zh": "Q学习"
+          },
+          {
+            "en": "minimax lower bound",
+            "zh": "极小极大下界"
+          },
+          {
+            "en": "Lipschitz continuity",
+            "zh": "Lipschitz连续性"
+          },
+          {
+            "en": "episodic MDP",
+            "zh": "情景式MDP"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-09-22T17:04:18Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2609.23118v1",
+      "doi": "",
+      "arxiv_id": "2609.23118v1",
+      "title": "Verti-WM: A Physics-Aided Exteroceptive World Model for Off-Road Reinforcement Learning",
+      "abstract": "Reinforcement learning for off-road navigation requires extensive vehicle-terrain interaction data, which are costly to collect in high-fidelity simulation. World models offer a promising alternative by replacing simulator roll-outs during policy optimization. However, an off-road world model must condition state transitions on exteroceptive terrain information, which proprioception alone does not provide. This challenge is further amplified by the need to model both rigid and deformable terrain, where data-driven and physics-based approaches offer complementary strengths. We propose Verti-WM, a physics-aided exteroceptive world model that recurrently fuses a frozen Transformer for rigid terrain and a neuro-symbolic terramechanics model for deformable terrain. Elevation and semantic observations queried from a supplied map at each predicted pose condition fusion, enabling six-degree-of-freedom rollouts for policy optimization without further simulator access. Verti-WM reduces prediction error by 34.6% and 21.7% over data-driven and physics-based baselines, respectively. Policies trained entirely within Verti-WM achieve comparable task success rates while reducing computation time by 23.6X relative to direct training in the high-fidelity simulator. We further validate Verti-WM using real-world data, enabling policy optimization within learned real-world kinodynamics and achieving a 80% success rate on the Verti-4-Wheeler platform, compared with 40% for direct sim-to-real transfer.",
+      "authors": [
+        "Chenhui Pan",
+        "Tong Xu",
+        "Xuesu Xiao"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-09-19",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2609.23118v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.RO"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "world model",
+          "reinforcement learning + world model",
+          "reinforcement learning + simulation",
+          "world model + physics",
+          "world model + simulation"
+        ]
+      },
+      "llm": {
+        "priority": "Medium",
+        "relevance_level": "Transferable",
+        "read_action": "Save for project",
+        "relevance_to_user": "该论文将物理辅助世界模型用于越野RL，其神经符号地形力学与仿真替代思路可迁移至FEA代理建模与植入物设计优化。",
+        "why_not_core": "It addresses off-road vehicle-terrain RL with no FEA, implant mechanics, or biomedical context, so it does not directly support FE-based implant design.",
+        "validation_kind": "simulation_case",
+        "flags": {
+          "has_experimental_validation": true,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "world_model",
+          "model-based_rl",
+          "engineering_simulation",
+          "terramechanics",
+          "surrogate_modeling",
+          "sim-to-real"
+        ],
+        "summary_zh": {
+          "motivation": "越野导航RL需大量高保真仿真交互数据，采集成本高。",
+          "method": "提出物理辅助外部感知世界模型，递归融合冻结Transformer与神经符号地形力学模型。",
+          "result": "预测误差较数据驱动和物理基线分别降低34.6%和21.7%，训练计算时间减少23.6倍。",
+          "validation": "在仿真中验证并利用真实世界数据实现80%任务成功率。"
+        },
+        "summary_en": {
+          "motivation": "Reinforcement learning for off-road navigation is bottlenecked by the high cost of collecting vehicle-terrain interaction data in high-fidelity simulation.",
+          "method": "Verti-WM recurrently fuses a frozen Transformer for rigid terrain with a neuro-symbolic terramechanics model for deformable terrain, conditioned on elevation and semantic map queries at each predicted pose.",
+          "result": "The model lowers prediction error by 34.6% and 21.7% over data-driven and physics-based baselines and cuts policy optimization computation by 23.6x while matching task success.",
+          "validation": "It is evaluated in simulation against baselines and further validated with real-world data on a four-wheeled platform, achieving an 80% success rate."
+        },
+        "key_terms": [
+          {
+            "en": "world model",
+            "zh": "世界模型"
+          },
+          {
+            "en": "model-based reinforcement learning",
+            "zh": "基于模型的强化学习"
+          },
+          {
+            "en": "terramechanics",
+            "zh": "地形力学"
+          },
+          {
+            "en": "exteroceptive sensing",
+            "zh": "外部感知"
+          },
+          {
+            "en": "surrogate model",
+            "zh": "代理模型"
+          },
+          {
+            "en": "sim-to-real transfer",
+            "zh": "仿真到现实迁移"
+          },
+          {
+            "en": "neuro-symbolic model",
+            "zh": "神经符号模型"
+          },
+          {
+            "en": "policy optimization",
+            "zh": "策略优化"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-09-22T17:04:18Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2609.23071v1",
+      "doi": "",
+      "arxiv_id": "2609.23071v1",
+      "title": "Tutoring Large Language Models to be Domain-adaptive, Precise and Safe",
+      "abstract": "This thesis proposes a framework for \"responsible intelligence\" to address AI's critical challenges in safety, ethics, and cultural sensitivity. It advances three core areas: First, it improves domain adaptation in specialized fields using active learning and graph-based knowledge to reduce hallucinations. Second, it enhances ethical rigor via a novel decoding-time alignment mechanism that proactively blocks harmful text generation in real-time. Finally, it ensures cultural and multilingual safety through language-specific steering that respects diverse linguistic and social norms. Ultimately, this work provides a blueprint for building next-generation AI that is contextually knowledgeable, ethically sound, and culturally adaptable.",
+      "authors": [
+        "Somnath Banerjee"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-09-19",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2609.23071v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.AI",
+        "cs.CE",
+        "cs.CL"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "fea_surrogate"
+      ],
+      "direction": "fea_surrogate",
+      "direction_name": "FEA & Surrogate Modelling",
+      "routing_matches": {
+        "fea_surrogate": [
+          "active learning"
+        ]
+      },
+      "llm": {
+        "priority": "Exclude",
+        "relevance_level": "Peripheral",
+        "read_action": "Ignore",
+        "relevance_to_user": "该论文研究大语言模型的领域适应、伦理对齐与多语言安全，与FEA代理建模、仿真采样效率或植入物力学设计无直接关联。",
+        "why_not_core": "This paper does not address surrogate modelling, FEA sampling efficiency, constraint handling, uncertainty quantification, or implant/biomechanics design; it focuses on LLM alignment and safety.",
+        "validation_kind": "none",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "LLM alignment",
+          "domain adaptation",
+          "AI safety",
+          "active learning"
+        ],
+        "summary_zh": {
+          "motivation": "解决大语言模型在安全、伦理与文化敏感性方面的关键挑战。",
+          "method": "结合主动学习与图知识提升领域适应，并采用解码时对齐与语言特定引导。",
+          "result": "提出一个兼顾领域知识、伦理安全与多语言文化的负责任智能框架。",
+          "validation": "论文为综述性框架提案，未报告具体实验验证。"
+        },
+        "summary_en": {
+          "motivation": "To address critical challenges of large language models in safety, ethics, and cultural sensitivity.",
+          "method": "The thesis combines active learning and graph-based knowledge for domain adaptation with decoding-time alignment and language-specific steering.",
+          "result": "It proposes a blueprint for responsible intelligence that is contextually knowledgeable, ethically sound, and culturally adaptable.",
+          "validation": "As a thesis framework proposal, it does not report empirical validation."
+        },
+        "key_terms": [
+          {
+            "en": "large language model",
+            "zh": "大语言模型"
+          },
+          {
+            "en": "domain adaptation",
+            "zh": "领域适应"
+          },
+          {
+            "en": "decoding-time alignment",
+            "zh": "解码时对齐"
+          },
+          {
+            "en": "active learning",
+            "zh": "主动学习"
+          },
+          {
+            "en": "AI safety",
+            "zh": "人工智能安全"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-09-22T17:04:18Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2609.23037v1",
+      "doi": "",
+      "arxiv_id": "2609.23037v1",
+      "title": "Fast and Robust Temporal Logic Planning via ADMM-based Trajectory Optimization",
+      "abstract": "We present a fast numerical method for safe continuous-time motion planning under Temporal Logic (TL) specifications. The method generates smooth continuous trajectories that remain collision-free while robustly satisfying temporal and logical task requirements. A central component of our method is the formulation of nonconvex safety and logic constraints as unions of convex sets where associated discrete decisions are encoded in a joint feasibility graph. This graph representation allows Euclidean projection onto the feasible set and proximal robustness maximization to be reformulated as shortest- and widest-path problems, respectively. Building on this structure, we develop a nonconvex splitting method based on the Alternating Direction Method of Multipliers (ADMM), which decouples smooth spatio-temporal trajectory optimization from nonsmooth discrete constraint handling within the optimization. The resulting algorithm exhibits reliable convergence across benchmarks and scales to large-scale motion-planning problems, providing a 4.7x average speedup over the state of the art on discrete and continuous-time logic problems.",
+      "authors": [
+        "Lukas Pries",
+        "Joris Verhagen",
+        "Jon Arrizabalaga",
+        "Jana Tumova",
+        "Markus Ryll",
+        "Zachary Manchester"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-09-19",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2609.23037v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.RO",
+        "cs.FL"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "trajectory optimization"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该论文研究基于ADMM的时序逻辑运动规划，属于机器人规划方法，与用户的RL/世界模型方向仅在优化算法层面有微弱关联，不涉及工程仿真或FEA代理模型。",
+        "why_not_core": "This paper addresses robot motion planning under temporal logic constraints using ADMM, with no model-based RL, world models, FEA/surrogate modeling, or biomedical implant mechanics.",
+        "validation_kind": "numerical_benchmark",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "trajectory_optimization",
+          "ADMM",
+          "temporal_logic",
+          "motion_planning",
+          "no_engineering_simulation"
+        ],
+        "summary_zh": {
+          "motivation": "在连续时间运动规划中快速且鲁棒地满足时序逻辑任务约束。",
+          "method": "将非凸安全与逻辑约束表示为凸集并集，构建可行性图，用ADMM解耦轨迹优化与离散约束处理。",
+          "result": "算法收敛可靠，在离散与连续时间逻辑问题上平均加速4.7倍。",
+          "validation": "在标准运动规划基准上进行数值对比实验。"
+        },
+        "summary_en": {
+          "motivation": "To enable fast and robust continuous-time motion planning that satisfies temporal logic task specifications.",
+          "method": "Nonconvex safety and logic constraints are encoded as unions of convex sets in a feasibility graph, and an ADMM-based splitting scheme decouples smooth trajectory optimization from discrete constraint handling.",
+          "result": "The algorithm achieves reliable convergence and an average 4.7x speedup over state-of-the-art methods on discrete and continuous-time logic problems.",
+          "validation": "Numerical benchmarking against existing planners on standard motion-planning problems."
+        },
+        "key_terms": [
+          {
+            "en": "temporal logic planning",
+            "zh": "时序逻辑规划"
+          },
+          {
+            "en": "ADMM",
+            "zh": "交替方向乘子法"
+          },
+          {
+            "en": "trajectory optimization",
+            "zh": "轨迹优化"
+          },
+          {
+            "en": "nonconvex splitting",
+            "zh": "非凸分裂方法"
+          },
+          {
+            "en": "feasibility graph",
+            "zh": "可行性图"
+          },
+          {
+            "en": "motion planning",
+            "zh": "运动规划"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-09-22T17:04:18Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2609.23023v1",
+      "doi": "",
+      "arxiv_id": "2609.23023v1",
+      "title": "PINNForge: Execution-Grounded Evolutionary Design of Physics-Informed Neural Networks for PDE Solving via Large Language Models",
+      "abstract": "Physics-informed neural networks (PINNs) require coordinated choices over network representation, sampling, loss construction, and optimization, while effective configurations often vary substantially across partial differential equations (PDEs). Existing automated PINN design methods can search candidate configurations, but information revealed during actual training is still used mainly for evaluation rather than to improve subsequent design, leading to repeated trial-and-error and inefficient use of training budget. We propose PINNsForge, an LLM-driven evolutionary framework for execution-feedback-based automated PINN design. PINNsForge generates diverse candidate configurations from PDE-related prior knowledge, evaluates them through actual training, and feeds high-performing designs together with accumulated execution evidence back to the LLM. Guided by observed optimization behavior, the LLM then refines, recombines, and explores coupled PINN design components, forming a continual cycle of generation, execution, feedback, and evolution. Unlike one-shot search or evaluation-only feedback, PINNsForge progressively converts training experience into improved design decisions for the target PDE. Across 25 PDE benchmarks, PINNsForge achieves the lowest mean MSE on 24 tasks compared with RoPINN, PINNsFormer, and PINNsAgent. Ablation studies further confirm the importance of the PDE knowledge base, execution feedback, and evolutionary search: removing these components increases the mean MSE to 3.74$\\times$, 12.10$\\times$, and 10.10$\\times$ that of the full PINNsForge, respectively.",
+      "authors": [
+        "Mingyang Yu",
+        "Xu Yang",
+        "Jun Zhang",
+        "Xiaolong Wang",
+        "Jing Xu",
+        "Keqian Li"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-09-19",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2609.23023v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.AI"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "fea_surrogate"
+      ],
+      "direction": "fea_surrogate",
+      "direction_name": "FEA & Surrogate Modelling",
+      "routing_matches": {
+        "fea_surrogate": [
+          "PINN"
+        ]
+      },
+      "llm": {
+        "priority": "Medium",
+        "relevance_level": "Transferable",
+        "read_action": "Save for project",
+        "relevance_to_user": "该论文提出LLM驱动的进化式PINN自动设计框架，可迁移到生物力学FEA代理建模中的PINN超参搜索与采样效率优化。",
+        "why_not_core": "The paper only benchmarks on abstract PDEs with no FEA validation, no biomedical or implant mechanics context, and no uncertainty quantification or constrained optimization.",
+        "validation_kind": "numerical_benchmark",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "PINN",
+          "LLM-driven design",
+          "evolutionary search",
+          "PDE solving",
+          "automated architecture search"
+        ],
+        "summary_zh": {
+          "motivation": "现有PINN自动设计方法未充分利用训练过程中的执行信息，导致重复试错和算力浪费。",
+          "method": "用大语言模型驱动进化循环，将训练执行反馈用于生成、重组和探索耦合的PINN设计组件。",
+          "result": "在25个PDE基准上24项取得最低MSE，消融显示移除知识库、执行反馈或进化搜索使误差增至3.74至12.10倍。",
+          "validation": "在25个标准PDE基准上与RoPINN、PINNsFormer、PINNsAgent对比并做消融实验。"
+        },
+        "summary_en": {
+          "motivation": "Automated PINN design methods underuse information revealed during training, causing repeated trial-and-error and inefficient budget allocation.",
+          "method": "An LLM-driven evolutionary framework iteratively generates, executes, and feeds back PINN configurations, letting the LLM refine coupled design components based on observed optimization behavior.",
+          "result": "PINNsForge attains the lowest mean MSE on 24 of 25 PDE benchmarks, and ablations show removing the knowledge base, execution feedback, or evolutionary search inflates error by 3.74x, 12.10x, and 10.10x.",
+          "validation": "Benchmarked against RoPINN, PINNsFormer, and PINNsAgent on 25 PDE tasks with component-wise ablation studies."
+        },
+        "key_terms": [
+          {
+            "en": "physics-informed neural network",
+            "zh": "物理信息神经网络"
+          },
+          {
+            "en": "large language model",
+            "zh": "大语言模型"
+          },
+          {
+            "en": "evolutionary search",
+            "zh": "进化搜索"
+          },
+          {
+            "en": "execution feedback",
+            "zh": "执行反馈"
+          },
+          {
+            "en": "partial differential equation",
+            "zh": "偏微分方程"
+          },
+          {
+            "en": "automated design",
+            "zh": "自动设计"
+          },
+          {
+            "en": "surrogate modeling",
+            "zh": "代理建模"
+          },
+          {
+            "en": "mean squared error",
+            "zh": "均方误差"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-09-22T17:04:18Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2609.22992v1",
+      "doi": "",
+      "arxiv_id": "2609.22992v1",
+      "title": "From Local Atomic Motifs to Thermodynamic State: An Interpretable Physics-Informed Framework for Cu-Zr Metallic Glasses",
+      "abstract": "Machine-learning models that relate local atomic structure to the thermodynamic state of metallic glasses typically assess physical consistency after training rather than enforcing it during learning. Here, we develop a multi-task physics-informed neural network (PINN) that predicts temperature directly from Voronoi-motif population histograms while incorporating autograd-derived gradient constraints representing physically motivated relationships between structural motifs, quench rate, and temperature. The model simultaneously classifies each configuration as liquid, supercooled/transition, or glass through an auxiliary classification head. The classification task achieves 96.6% test accuracy with a macro-F1 score of 0.95, while the regression head yields a mean absolute error of 23.4 K on a trajectory-disjoint held-out test set. Five-fold trajectory-grouped cross-validation, deep-ensemble predictions, and Monte Carlo dropout are used to assess model robustness and predictive uncertainty. Sensitivity analyses demonstrate that physics constraints can be incorporated over a broad range of loss weights without compromising predictive accuracy, while substantially improving compliance with the prescribed physical trends. Benchmarking against conventional machine-learning regressors further demonstrates competitive predictive performance. SHAP analysis across the cross-validation ensemble identifies the coupled near-icosahedral motif family, particularly the full icosahedral motif and its single-atom-perturbed counterpart, as the dominant structural fingerprints of the glassy state. These results demonstrate that physically motivated constraints can be embedded directly into motif-based structure-property models, providing a pathway from post-hoc interpretability toward physically constrained machine learning for metallic glasses.",
+      "authors": [
+        "Prashil S. Joshi"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-09-19",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2609.22992v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cond-mat.mtrl-sci"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "fea_surrogate"
+      ],
+      "direction": "fea_surrogate",
+      "direction_name": "FEA & Surrogate Modelling",
+      "routing_matches": {
+        "fea_surrogate": [
+          "physics-informed neural network",
+          "PINN"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Transferable",
+        "read_action": "Skim only",
+        "relevance_to_user": "该文将物理约束嵌入PINN并做不确定性量化，方法可迁移至FEA代理建模，但应用对象为金属玻璃原子尺度，与植入物/生物力学无关。",
+        "why_not_core": "No FEA surrogate for solid mechanics, no implant or biomedical context, no expensive simulation sampling or design-constraint optimization; it is atomistic structure-property learning.",
+        "validation_kind": "numerical_benchmark",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": true,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "PINN",
+          "uncertainty_quantification",
+          "multi-task_learning",
+          "materials_informatics",
+          "interpretability"
+        ],
+        "summary_zh": {
+          "motivation": "现有金属玻璃结构-热力学态机器学习模型多在训练后检验物理一致性，而非在学习中施加约束。",
+          "method": "构建多任务PINN，从Voronoi基元直方图预测温度并分类状态，用自动微分梯度约束嵌入物理关系。",
+          "result": "分类测试准确率96.6%、宏F1为0.95，回归MAE为23.4 K，SHAP识别二十面体基元为玻璃态主导指纹。",
+          "validation": "采用轨迹分组五折交叉验证、深度集成与蒙特卡洛dropout评估稳健性和预测不确定性。"
+        },
+        "summary_en": {
+          "motivation": "Existing machine-learning models linking local atomic structure to metallic-glass thermodynamic state usually verify physical consistency only after training rather than enforcing it during learning.",
+          "method": "A multi-task physics-informed neural network predicts temperature from Voronoi-motif population histograms while autograd-derived gradient constraints encode relationships among structural motifs, quench rate, and temperature, with an auxiliary classification head.",
+          "result": "The classifier reaches 96.6% test accuracy and 0.95 macro-F1, the regression head attains 23.4 K MAE, and SHAP identifies the coupled near-icosahedral motif family as the dominant glassy-state fingerprint.",
+          "validation": "Robustness and predictive uncertainty are assessed via trajectory-grouped five-fold cross-validation, deep ensembles, and Monte Carlo dropout, with benchmarking against conventional regressors."
+        },
+        "key_terms": [
+          {
+            "en": "physics-informed neural network",
+            "zh": "物理信息神经网络"
+          },
+          {
+            "en": "uncertainty quantification",
+            "zh": "不确定性量化"
+          },
+          {
+            "en": "multi-task learning",
+            "zh": "多任务学习"
+          },
+          {
+            "en": "Voronoi motif",
+            "zh": "Voronoi基元"
+          },
+          {
+            "en": "metallic glass",
+            "zh": "金属玻璃"
+          },
+          {
+            "en": "Monte Carlo dropout",
+            "zh": "蒙特卡洛dropout"
+          },
+          {
+            "en": "deep ensemble",
+            "zh": "深度集成"
+          },
+          {
+            "en": "SHAP interpretability",
+            "zh": "SHAP可解释性"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-09-22T17:04:18Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2609.22984v1",
+      "doi": "",
+      "arxiv_id": "2609.22984v1",
+      "title": "LPINNs: First-Layer Gated Localization for Physics-Informed Neural Networks",
+      "abstract": "Physics-informed neural networks (PINNs) use one shared representation over the computational domain, which can become difficult to optimize on long domains and for high-order operators. We study a minimal alternative: multiply the first hidden activation of an otherwise unchanged dense PINN by input-dependent localization functions, giving first-layer units receptive fields without partitioning the domain or adding interface losses. We screen 13 families of localization functions, in up to three parameterizations each, on a nonlinear harmonic oscillator (HO), a heat equation on a long spatial interval, and a manufactured four-dimensional (4D) fourth-order problem, with ten paired seeds throughout. Three configurations give large reductions in solution error at matched budgets: (i) Fixed Gaussian localization functions on the $2π$ HO domain cut mean solution RMSE from $4.8369\\times10^{-1}$ to $8.83\\times10^{-3}$ at 3k epochs. (ii) The inverse-quadratic family with learnable centers and widths cuts it from $2.896\\times10^{-1}$ to $3.06\\times10^{-2}$ on the $8π$ heat domain at 10k epochs. (iii) Fixed bump localization functions cut it from $1.75947\\times10^{1}$ to $2.260\\times10^{-1}$ on the $4π$ 4D domain at 10k epochs. Every paired seed improves in these three comparisons. The screen also shows that the mechanism is not a free win: on HO only 2 of 13 families beat the baseline, and 10 of the remaining 11 are 9 to 23 times worse; on 4D four families are non-finite and five are more than three orders of magnitude worse than the baseline. The inverse-quadratic family is the only one that beats the baseline on all three equations. Overall, these results show that first-layer localization can provide measurable improvements to baseline PINNs on long-domain and high-order problems.",
+      "authors": [
+        "Lakshay Chawla",
+        "Hardik Jain"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-09-19",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2609.22984v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.LG",
+        "cs.CE",
+        "cs.NE"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "fea_surrogate"
+      ],
+      "direction": "fea_surrogate",
+      "direction_name": "FEA & Surrogate Modelling",
+      "routing_matches": {
+        "fea_surrogate": [
+          "PINN"
+        ]
+      },
+      "llm": {
+        "priority": "Medium",
+        "relevance_level": "Transferable",
+        "read_action": "Save for project",
+        "relevance_to_user": "该文提出改进PINN在长域与高阶算子上的训练方法，属于FEA代理建模中PINN方法的前沿改进，可迁移至植入物力学仿真。",
+        "why_not_core": "The paper only benchmarks PINNs on canonical PDEs (harmonic oscillator, heat, 4D biharmonic) with no FEA validation, no biomedical or implant mechanics context, and no uncertainty quantification or constrained optimization.",
+        "validation_kind": "numerical_benchmark",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "PINN",
+          "localization",
+          "long-domain PDE",
+          "high-order operators",
+          "surrogate modelling"
+        ],
+        "summary_zh": {
+          "motivation": "PINN在长域和高阶算子问题上优化困难，共享表示缺乏局部感受野。",
+          "method": "将PINN首层隐藏激活乘以输入相关的局部化函数，赋予首层单元感受野，无需分区或界面损失。",
+          "result": "筛选13类局部化函数，三种配置在匹配预算下大幅降低RMSE，逆二次族在三类方程上均优于基线。",
+          "validation": "在谐振子、长区间热方程和4D四阶问题上用10组配对随机种子进行数值基准测试。"
+        },
+        "summary_en": {
+          "motivation": "Standard PINNs share a single global representation, which hampers optimization on long domains and high-order operators.",
+          "method": "The first hidden activation of an otherwise unchanged dense PINN is multiplied by input-dependent localization functions, endowing first-layer units with receptive fields without domain partitioning or interface losses.",
+          "result": "Screening 13 localization families shows three configurations yield large error reductions at matched budgets, with the inverse-quadratic family uniquely outperforming the baseline on all three equations.",
+          "validation": "Numerical benchmarks on a nonlinear harmonic oscillator, a long-interval heat equation, and a manufactured 4D fourth-order problem using ten paired seeds."
+        },
+        "key_terms": [
+          {
+            "en": "physics-informed neural network",
+            "zh": "物理信息神经网络"
+          },
+          {
+            "en": "localization function",
+            "zh": "局部化函数"
+          },
+          {
+            "en": "receptive field",
+            "zh": "感受野"
+          },
+          {
+            "en": "long-domain PDE",
+            "zh": "长域偏微分方程"
+          },
+          {
+            "en": "high-order operator",
+            "zh": "高阶算子"
+          },
+          {
+            "en": "surrogate modelling",
+            "zh": "代理建模"
+          },
+          {
+            "en": "RMSE",
+            "zh": "均方根误差"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-09-22T17:04:18Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2609.22967v1",
+      "doi": "",
+      "arxiv_id": "2609.22967v1",
+      "title": "General Collaborative Intelligence: Architecting Cognition for Resilient Multi-Agent Ecosystems",
+      "abstract": "Multi-agent unmanned systems are moving from isolated, ego-centric sensing toward collaborative intelligence, in which distributed agents exchange compact features to overcome a local observation trap that no single agent can escape: occlusions, finite sensor range, and environmental degradation. The field has matured across architectural, communication, embodied, resilience, and trust dimensions, yet existing surveys examine these dimensions in isolation and rarely expose their dependencies. This review offers a unified synthesis through two complementary lenses. The first is a five-dimensional taxonomy spanning collaboration stage, communication paradigm, fusion architecture, learning strategy, and application domain. The second is three cognitive synergy conditions, Semantic Disambiguation, Pragmatic Information Exchange, and Proactive Informational Foraging, that turn cognitive synergy into operational criteria. Across these lenses we survey collaboration architectures and topologies, neural-communication co-design that treats the channel as a differentiable pipeline component, embodied action-perception loops via multi-agent reinforcement learning, and resilience mechanisms for synchronization, uncertainty quantification, and label-efficient learning. We then map these advances onto four operational domains, V2X, unmanned aerial, industrial logistics, and smart cities, and onto the safety-privacy-utility triad. To counter benchmark saturation and evaluation fragmentation, we propose GCI-Bench, a five-pillar scoring protocol with a maturity model that makes the trade-offs of collaborative methods comparable across studies. A critical reflection on reproducibility, the sim-to-real gulf, and conditions under which collaboration degrades performance identifies open challenges and charts directions toward general collaborative intelligence under real-world uncertainty.",
+      "authors": [
+        "Lei Zhang",
+        "Chun Ye",
+        "Le Yang",
+        "Zhaozhong Wang",
+        "Deng-Ping Fan",
+        "Hang Dai",
+        "Binglu Wang"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-09-19",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2609.22967v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.CV",
+        "cs.AI",
+        "cs.RO"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "fea_surrogate"
+      ],
+      "direction": "fea_surrogate",
+      "direction_name": "FEA & Surrogate Modelling",
+      "routing_matches": {
+        "fea_surrogate": [
+          "uncertainty quantification"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "这是一篇多智能体协同综述，与FEA代理建模和植入物力学无直接关系，仅其不确定性量化与协同优化讨论可作背景参考。",
+        "why_not_core": "This is a multi-agent systems survey with no FEA surrogate, no expensive simulation sampling, no implant or biomechanics application, and no solid-mechanics validation.",
+        "validation_kind": "none",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": true
+        },
+        "tags": [
+          "multi-agent systems",
+          "survey",
+          "uncertainty quantification",
+          "collaborative intelligence",
+          "benchmark protocol"
+        ],
+        "summary_zh": {
+          "motivation": "多智能体系统研究分散，缺乏统一框架来比较协同方法的权衡。",
+          "method": "提出五维分类法与三项认知协同条件，并设计GCI-Bench五支柱评分协议。",
+          "result": "梳理了通信、融合、强化学习与韧性机制，映射到V2X、无人机、物流与智慧城市四类场景。",
+          "validation": "综述性综合，无实验或数值验证。"
+        },
+        "summary_en": {
+          "motivation": "Research on multi-agent unmanned systems is fragmented across isolated dimensions, lacking a unified framework to compare collaborative methods.",
+          "method": "The review proposes a five-dimensional taxonomy, three cognitive synergy conditions, and a five-pillar GCI-Bench scoring protocol with a maturity model.",
+          "result": "It synthesizes collaboration architectures, neural-communication co-design, embodied multi-agent reinforcement learning, and resilience mechanisms across four operational domains.",
+          "validation": "As a survey, it offers no experimental or numerical validation."
+        },
+        "key_terms": [
+          {
+            "en": "multi-agent systems",
+            "zh": "多智能体系统"
+          },
+          {
+            "en": "collaborative intelligence",
+            "zh": "协同智能"
+          },
+          {
+            "en": "uncertainty quantification",
+            "zh": "不确定性量化"
+          },
+          {
+            "en": "neural communication",
+            "zh": "神经通信"
+          },
+          {
+            "en": "multi-agent reinforcement learning",
+            "zh": "多智能体强化学习"
+          },
+          {
+            "en": "benchmark protocol",
+            "zh": "基准协议"
+          },
+          {
+            "en": "sim-to-real",
+            "zh": "仿真到现实迁移"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-09-22T17:04:18Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2609.22879v1",
+      "doi": "",
+      "arxiv_id": "2609.22879v1",
+      "title": "Prioritized Rollouts for Efficient World Model-based Vision-Language-Action Policy Optimization",
+      "abstract": "Vision-Language-Action (VLA) models have emerged as a powerful paradigm for embodied intelligence, but fine-tuning them with reinforcement learning (RL) remains constrained by the cost of real-world robot interaction. Model-based reinforcement learning (MBRL) reduces this cost by using a learned world model to generate rollouts for policy optimization. However, it becomes computationally expensive as VLA policies and world models scale. Existing methods typically treat states equally, overlooking substantial differences in their utility for policy improvement. In this paper, we show that policy uncertainty helps identify states with greater potential for policy improvement. The policy exhibits high uncertainty at only a small subset of states, often during decision-sensitive stages where small action differences can alter task outcomes, suggesting that policy improvements at these states could be particularly valuable. Building on these findings, we introduce U-GROW, a lightweight, plug-and-play sampling layer that directs more model rollouts to these informative states. By modifying only the branched-start distribution, U-GROW can be integrated into existing MBRL pipelines without changing the policy optimization objective. Experiments in both simulated and real-world manipulation tasks demonstrate the efficiency and effectiveness of U-GROW, supporting the use of policy uncertainty to guide experience generation.",
+      "authors": [
+        "Yifei Sheng",
+        "Haoxiang Ren",
+        "Zhilong Zhang",
+        "Haonan Wang",
+        "Runjie Xu",
+        "Yihao Sun",
+        "Nan Tang",
+        "Zhichao Wu",
+        "Lei Yuan",
+        "Haoxin Lin",
+        "Yang Yu"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-09-19",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2609.22879v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.LG"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "world model",
+          "model-based reinforcement learning",
+          "reinforcement learning + world model",
+          "reinforcement learning + model-based"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该论文研究VLA策略的模型基强化学习采样优化，与工程仿真、FEA或生物力学设计无直接关联，仅提供通用MBRL方法论参考。",
+        "why_not_core": "This paper does not connect world models to engineering simulation, FEA/FEM data, or physics-based design optimization; it targets robotic manipulation policy learning with no biomechanics or implant context.",
+        "validation_kind": "simulation_case",
+        "flags": {
+          "has_experimental_validation": true,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "model-based RL",
+          "world models",
+          "vision-language-action",
+          "robotic manipulation",
+          "no engineering simulation"
+        ],
+        "summary_zh": {
+          "motivation": "降低VLA策略强化学习微调中真实机器人交互的高昂成本。",
+          "method": "提出U-GROW采样层，利用策略不确定性将模型rollout导向信息量大的状态。",
+          "result": "在仿真和真实操作任务中提升了MBRL策略优化的效率与效果。",
+          "validation": "在仿真和真实机器人操作任务上进行实验验证。"
+        },
+        "summary_en": {
+          "motivation": "Fine-tuning vision-language-action policies with reinforcement learning is bottlenecked by the expense of real-world robot interaction.",
+          "method": "The authors propose U-GROW, a plug-and-play sampling layer that reallocates model rollouts toward states where policy uncertainty is high by modifying only the branched-start distribution.",
+          "result": "Experiments show improved efficiency and effectiveness of world-model-based policy optimization in both simulated and real manipulation tasks.",
+          "validation": "The approach is validated through simulated and real-world robotic manipulation experiments."
+        },
+        "key_terms": [
+          {
+            "en": "model-based reinforcement learning",
+            "zh": "模型基强化学习"
+          },
+          {
+            "en": "world model",
+            "zh": "世界模型"
+          },
+          {
+            "en": "vision-language-action",
+            "zh": "视觉-语言-动作"
+          },
+          {
+            "en": "policy uncertainty",
+            "zh": "策略不确定性"
+          },
+          {
+            "en": "rollout sampling",
+            "zh": "轨迹采样"
+          },
+          {
+            "en": "robotic manipulation",
+            "zh": "机器人操作"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-09-22T17:04:18Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2609.22858v1",
+      "doi": "",
+      "arxiv_id": "2609.22858v1",
+      "title": "PileBelief: Persistent Physical State for Interaction-Driven World Modeling",
+      "abstract": "World models allow robots to anticipate action consequences before execution. This capability is especially valuable in excavation, where each scoop reshapes the terrain and affects subsequent actions. Local observations, however, cannot fully reveal the underlying support and material conditions. We present PileBelief, an interaction-driven persistent world model for partially observed excavation that retains physical evidence beyond the visible surface. It combines an observation-conditioned physical prior with world-addressed deformation memory and physical-response memory. Action-aligned reads and gated residual corrections refine terrain-change and outcome predictions. With deployment weights fixed, completed interactions update measured belief, while hypothetical actions advance a separate imagined state. Compared with a current-observation-only baseline, PileBelief reduces five-step joint prediction error by 10.8% and offline action-selection regret by 65.5%. Experiments on Newton/MPM and real excavation datasets further demonstrate improved terrain-change and bucket-volume prediction. Our method enables multi-step prediction and candidate-action ranking from local observations, even when the underlying soil state is unknown. These results identify persistent physical belief as a useful representation for world models of environments that robots continually reshape.",
+      "authors": [
+        "Hongyi Lin",
+        "Song Zhang",
+        "Haiquan Liu",
+        "Yang Liu",
+        "Jinhua Zhao",
+        "Xiaobo Qu"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-09-19",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2609.22858v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.RO"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "world model"
+        ]
+      },
+      "llm": {
+        "priority": "Medium",
+        "relevance_level": "Transferable",
+        "read_action": "Save for project",
+        "relevance_to_user": "该论文提出面向挖掘任务的持久物理世界模型，其物理先验+记忆+残差修正的架构可迁移到FEA代理建模与设计优化中的多步状态预测。",
+        "why_not_core": "It does not involve FEA/FEM surrogate modeling, implant biomechanics, or any biomedical design optimization; the physics is MPM terrain simulation for excavation robotics.",
+        "validation_kind": "simulation_case",
+        "flags": {
+          "has_experimental_validation": true,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "world_model",
+          "model-based RL",
+          "engineering_simulation",
+          "physics_simulation",
+          "persistent_state",
+          "MPM"
+        ],
+        "summary_zh": {
+          "motivation": "挖掘中局部观测无法揭示土壤支撑与材料状态，需持久物理信念。",
+          "method": "结合观测条件物理先验、形变与响应记忆及门控残差修正的世界模型。",
+          "result": "五步联合预测误差降10.8%，离线动作选择后悔降65.5%。",
+          "validation": "在Newton/MPM仿真与真实挖掘数据集上验证。"
+        },
+        "summary_en": {
+          "motivation": "Local observations in excavation cannot reveal underlying soil support and material conditions, motivating a persistent physical belief representation.",
+          "method": "The model couples an observation-conditioned physical prior with world-addressed deformation and response memories, refined by action-aligned reads and gated residual corrections.",
+          "result": "It lowers five-step joint prediction error by 10.8% and offline action-selection regret by 65.5% versus an observation-only baseline.",
+          "validation": "Evaluated on Newton/MPM simulation and real excavation datasets for terrain-change and bucket-volume prediction."
+        },
+        "key_terms": [
+          {
+            "en": "world model",
+            "zh": "世界模型"
+          },
+          {
+            "en": "model-based reinforcement learning",
+            "zh": "基于模型的强化学习"
+          },
+          {
+            "en": "persistent physical state",
+            "zh": "持久物理状态"
+          },
+          {
+            "en": "material point method",
+            "zh": "物质点法"
+          },
+          {
+            "en": "terrain deformation",
+            "zh": "地形形变"
+          },
+          {
+            "en": "action-selection regret",
+            "zh": "动作选择后悔"
+          },
+          {
+            "en": "physics prior",
+            "zh": "物理先验"
+          },
+          {
+            "en": "excavation robotics",
+            "zh": "挖掘机器人"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-09-22T17:04:18Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2609.22828v1",
+      "doi": "",
+      "arxiv_id": "2609.22828v1",
+      "title": "Data-Driven MPC with Adaptively Sampled Non-Expert Demonstrations: Performance Guarantees and Sample Complexity",
+      "abstract": "We study data-driven policy construction for dynamical systems using trajectories generated by surrogate finite-horizon Model Predictive Control (MPC), with the goal of approximating an infinite-horizon optimal control policy. We interpret these trajectories as non-expert demonstrations and propose a memory-based, nonparametric policy that constructs a Lipschitz-regularized upper envelope of the finite- horizon surrogate value function, which serves as an explicit upper bound on the value of the resulting policy, thereby providing a computable performance certificate while bypassing explicit optimization at runtime. We establish relative optimality guarantees with respect to the infinite-horizon optimal value function and derive sufficient MPC horizon conditions, together with sample complexity bounds, for achieving a prescribed relative error. Numerical experiments on a rocket landing task validate the theoretical predictions and demonstrate near-optimal performance.",
+      "authors": [
+        "Shijie Pan",
+        "Agustin Castellano",
+        "Enrique Mallada"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-09-19",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2609.22828v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "math.OC"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "model predictive control"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该文研究数据驱动MPC的理论保证与样本复杂度，未涉及工程仿真代理模型或FEA数据，与用户方向仅方法层面弱相关。",
+        "why_not_core": "This paper provides theoretical MPC performance guarantees and sample complexity bounds but does not use FEA/FEM data, surrogate models for engineering simulation, or any biomechanics/implant design context.",
+        "validation_kind": "simulation_case",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "model_predictive_control",
+          "data_driven_control",
+          "sample_complexity",
+          "reinforcement_learning",
+          "no_engineering_simulation"
+        ],
+        "summary_zh": {
+          "motivation": "用有限时域MPC轨迹近似无限时域最优控制策略。",
+          "method": "提出基于记忆的非参数策略，构造Lipschitz正则化上包络并给出性能证书。",
+          "result": "建立相对最优性保证与样本复杂度界，火箭着陆实验验证理论。",
+          "validation": "数值仿真实验验证理论预测。"
+        },
+        "summary_en": {
+          "motivation": "Aims to approximate infinite-horizon optimal control policies using trajectories produced by surrogate finite-horizon MPC.",
+          "method": "Proposes a memory-based nonparametric policy that builds a Lipschitz-regularized upper envelope of the surrogate value function, yielding a computable performance certificate without runtime optimization.",
+          "result": "Derives relative optimality guarantees, sufficient MPC horizon conditions, and sample complexity bounds for a prescribed relative error.",
+          "validation": "Numerical experiments on a rocket landing task confirm the theoretical predictions and near-optimal performance."
+        },
+        "key_terms": [
+          {
+            "en": "model predictive control",
+            "zh": "模型预测控制"
+          },
+          {
+            "en": "sample complexity",
+            "zh": "样本复杂度"
+          },
+          {
+            "en": "data-driven control",
+            "zh": "数据驱动控制"
+          },
+          {
+            "en": "performance guarantee",
+            "zh": "性能保证"
+          },
+          {
+            "en": "value function approximation",
+            "zh": "值函数近似"
+          },
+          {
+            "en": "nonparametric policy",
+            "zh": "非参数策略"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-09-22T17:04:18Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2609.22816v1",
+      "doi": "",
+      "arxiv_id": "2609.22816v1",
+      "title": "FIRM-WM: State-factorized factual-interventional recurrent modeling for reward-free visual planning",
+      "abstract": "Reward-free latent world models can learn from offline videos and solve new image--goal tasks by optimizing actions through predicted latent futures. This setting places two demands on the planning state: its coordinates must be comparable with a goal image. Moreover, its dynamics must retain velocity, motion trend, contact, and other history--dependent information beyond those goal coordinates. Offline training creates a second mismatch: each recorded trajectory reveals one factual future, whereas a sampling--based planner compares many actions that were not taken from the same state. We introduce FIRM-WM (Factual--Interventional Recurrent World Model), a compact pixel world model designed around these two gaps. Its recurrent state separates a typed, goal--comparable configuration from a 128-dimensional dynamic fiber used for prediction but excluded from the terminal goal cost. Broad factual trajectories provide state coverage, while common--reset intervention branches provide observed outcomes for alternative action sequences. Before executing each branch, we reset the environment and restore the same recorded values exposed by the environment's state--setting interface. Under matched CEM planning and three independent full-pipeline seeds, FIRM-WM reaches 99.0$\\pm$1.0% on TwoRoom, 92.7$\\pm$2.1% on Reacher, and 88.0$\\pm$3.0% on OGBench-Cube, compared with 89.0%, 88.0%, and 70.0% for LeWM. The deployed model uses 2.98--3.42M parameters and records 2.13--11.60$\\times$ lower planning time on these tasks.",
+      "authors": [
+        "Yilun Wu",
+        "Yunjian Zhang",
+        "Aobo Li",
+        "Mujiangshan Wang",
+        "Haitao Wu",
+        "Aqiang Zhang"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-09-19",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2609.22816v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.LG"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "world model"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该论文提出无奖励视觉世界模型用于图像目标规划，属于纯RL/世界模型方法，未涉及工程仿真、FEA或植入物力学，仅可作为世界模型方法论背景参考。",
+        "why_not_core": "This paper does not connect world models to engineering simulation, FEA/FEM data, physics simulators, or design optimization; it evaluates only on visual control benchmarks (TwoRoom, Reacher, OGBench-Cube) with no biomechanics or implant context.",
+        "validation_kind": "simulation_case",
+        "flags": {
+          "has_experimental_validation": true,
+          "has_uncertainty_quantification": true,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "world_model",
+          "model-based_rl",
+          "visual_planning",
+          "reward-free",
+          "no_engineering_simulation"
+        ],
+        "summary_zh": {
+          "motivation": "无奖励潜在世界模型需兼顾目标可比性与历史动态信息，且离线训练与采样规划存在事实-干预不匹配。",
+          "method": "提出FIRM-WM，将循环状态分解为目标可比构型与128维动态纤维，并用共同重置干预分支提供反事实动作结果。",
+          "result": "在TwoRoom、Reacher、OGBench-Cube上分别达99.0%、92.7%、88.0%，参数量约3M且规划时间显著降低。",
+          "validation": "在三个视觉控制基准上以匹配CEM规划与三个随机种子进行仿真验证。"
+        },
+        "summary_en": {
+          "motivation": "Reward-free latent world models must reconcile goal-comparable state coordinates with history-dependent dynamics while addressing the mismatch between single factual offline trajectories and multi-action sampling-based planning.",
+          "method": "FIRM-WM factorizes the recurrent state into a typed goal-comparable configuration and a 128-dimensional dynamic fiber excluded from terminal cost, and augments factual trajectories with common-reset intervention branches that restore recorded environment states.",
+          "result": "Under matched CEM planning across three seeds, FIRM-WM achieves 99.0%, 92.7%, and 88.0% on TwoRoom, Reacher, and OGBench-Cube with roughly 3M parameters and substantially lower planning time than LeWM.",
+          "validation": "The approach is validated through simulation-case experiments on three visual control benchmarks with matched planning budgets and multiple seeds."
+        },
+        "key_terms": [
+          {
+            "en": "world model",
+            "zh": "世界模型"
+          },
+          {
+            "en": "model-based reinforcement learning",
+            "zh": "基于模型的强化学习"
+          },
+          {
+            "en": "visual planning",
+            "zh": "视觉规划"
+          },
+          {
+            "en": "reward-free learning",
+            "zh": "无奖励学习"
+          },
+          {
+            "en": "latent dynamics",
+            "zh": "潜在动力学"
+          },
+          {
+            "en": "cross-entropy method",
+            "zh": "交叉熵方法"
+          },
+          {
+            "en": "interventional branch",
+            "zh": "干预分支"
+          },
+          {
+            "en": "state factorization",
+            "zh": "状态分解"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-09-22T17:04:18Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2609.22801v1",
+      "doi": "",
+      "arxiv_id": "2609.22801v1",
+      "title": "Hypersensitivity and Turnpikes in Optimal Control of Inverted Pendulum: A Dynamical Systems Perspective",
+      "abstract": "The hypersensitivity and turnpike phenomena in the optimal control of an inverted pendulum are investigated from a dynamical-systems perspective. We show that, for a fixed terminal time and a fixed terminal state optimal control problem, (1) the hypersensitivity originates from the fractal structure of the set of initial adjoint variables in the associated Hamiltonian dynamics, (2) the turnpike arises from slow dynamics in the vicinity of a degenerate center manifold, and (3) the escape channels are formed by normally hyperbolic invariant manifolds (NHIMs). As a consequence, small perturbations in the initial adjoint variables lead to qualitatively distinct extremal trajectories, resulting in severe numerical instability in trajectory optimization. Both the fractal structure and the invariant sets are characterized numerically and analytically.",
+      "authors": [
+        "Mai Bando",
+        "Yuzuru Sato"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-09-19",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2609.22801v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "nlin.CD",
+        "math.DS",
+        "math.OC"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "trajectory optimization"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该文研究倒立摆最优控制的动力学现象，与用户的有限元代理建模、植入物力学或生物3D打印方向无直接关联，仅提供最优控制数值不稳定性的背景知识。",
+        "why_not_core": "This paper contains no model-based RL, no world models, no surrogate modeling, no FEA/FEM data, and no engineering simulation or design optimization tie-in; it is a pure dynamical-systems analysis of optimal control for a toy inverted pendulum problem.",
+        "validation_kind": "numerical_benchmark",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "optimal_control",
+          "dynamical_systems",
+          "inverted_pendulum",
+          "trajectory_optimization",
+          "numerical_instability"
+        ],
+        "summary_zh": {
+          "motivation": "探究倒立摆最优控制中敏感性与收费公路现象的动力学根源。",
+          "method": "从哈密顿动力学出发，分析初始伴随变量集合的分形结构、退化中心流形与不变流形。",
+          "result": "揭示敏感性源于分形结构，收费公路源于慢流形，逃逸通道由NHIM构成。",
+          "validation": "通过数值与解析方法刻画分形结构和不变集。"
+        },
+        "summary_en": {
+          "motivation": "To explain the hypersensitivity and turnpike phenomena observed in optimal control of an inverted pendulum from a dynamical-systems viewpoint.",
+          "method": "The Hamiltonian dynamics of the fixed-terminal-time, fixed-terminal-state optimal control problem are analyzed, focusing on the fractal structure of initial adjoint variables, a degenerate center manifold, and normally hyperbolic invariant manifolds.",
+          "result": "Hypersensitivity is traced to the fractal set of initial adjoint variables, the turnpike effect to slow dynamics near a degenerate center manifold, and escape channels to NHIMs, causing severe numerical instability in trajectory optimization.",
+          "validation": "The fractal structure and invariant sets are characterized through both numerical experiments and analytical arguments."
+        },
+        "key_terms": [
+          {
+            "en": "optimal control",
+            "zh": "最优控制"
+          },
+          {
+            "en": "inverted pendulum",
+            "zh": "倒立摆"
+          },
+          {
+            "en": "turnpike phenomenon",
+            "zh": "收费公路现象"
+          },
+          {
+            "en": "hypersensitivity",
+            "zh": "敏感性"
+          },
+          {
+            "en": "Hamiltonian dynamics",
+            "zh": "哈密顿动力学"
+          },
+          {
+            "en": "normally hyperbolic invariant manifold",
+            "zh": "法向双曲不变流形"
+          },
+          {
+            "en": "center manifold",
+            "zh": "中心流形"
+          },
+          {
+            "en": "trajectory optimization",
+            "zh": "轨迹优化"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-09-22T17:04:18Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2609.22798v1",
+      "doi": "",
+      "arxiv_id": "2609.22798v1",
+      "title": "Expert-Play Contouring Control: Faster-than-Demonstration Planning from Slow Expert and Fast Play",
+      "abstract": "Expert demonstrations often specify what a robot should do, but not how fast it can do it. Imitation Learning (IL) inherits demonstration timing, while directly accelerating the learned motion can fail when faster execution changes the robot-object dynamics. We study faster-than-demonstration execution as a dynamics-aware control problem and introduce Expert-Play Contouring Control (EPCC), which combines slow expert demonstrations with fast, non-expert play. Expert demonstrations train a latent trajectory generator whose predictions are reparameterized into a time-independent contour of successful task progression, while play trains a world model (WM) of fast-action outcomes. At deployment, our proposed planner uses the WM to optimize actions that makes maximize progress along the expert-derived contour while penalizing deviation from the intended task evolution. Averaged across three visuomotor manipulation tasks, EPCC achieves a $2.0\\times$ the throughput of the IL baseline, including $2.2\\times$ that of the throughput of the strongest acceleration baseline on a task with interaction-sensitive object dynamics. Our analysis shows that the gains concentrate where faster execution changes robot-object evolution. Together, our results highlight a simple yet effective principle: demonstrations provide task intent, while play data provides the dynamic coverage needed to execute that intent faster.",
+      "authors": [
+        "Seunghoon Cho",
+        "Wonsuhk Jung",
+        "Sundhar Vinodh Sangeetha",
+        "Shreyas Kousik"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-09-19",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2609.22798v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.RO"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "world model"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该论文将世界模型与模仿学习结合用于机器人加速操作，属于纯机器人学习方法，未涉及工程仿真、FEA或生物力学设计，仅方法层面可作参考。",
+        "why_not_core": "This paper does not connect world models to engineering simulation, FEA/FEM surrogate modeling, or implant/biomechanics design; it is a pure robot manipulation RL/IL method with no physics-simulator or design-optimization tie-in.",
+        "validation_kind": "simulation_case",
+        "flags": {
+          "has_experimental_validation": true,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "world_model",
+          "imitation_learning",
+          "robot_manipulation",
+          "model-based_RL",
+          "no_engineering_simulation"
+        ],
+        "summary_zh": {
+          "motivation": "模仿学习继承了演示的速度，直接加速会改变机器人-物体动力学。",
+          "method": "结合慢速专家演示与快速非专家试玩，用世界模型规划沿任务轮廓的加速动作。",
+          "result": "在三项视觉运动操作任务上吞吐量达模仿学习基线的2.0倍。",
+          "validation": "在三个机器人操作仿真任务中与基线对比验证。"
+        },
+        "summary_en": {
+          "motivation": "Imitation learning inherits the timing of demonstrations, yet accelerating learned motions can alter robot-object dynamics.",
+          "method": "The approach trains a latent trajectory generator from slow expert demonstrations and a world model from fast non-expert play, then plans actions that maximize progress along a time-independent task contour.",
+          "result": "Across three visuomotor manipulation tasks, the method achieves twice the throughput of the imitation learning baseline.",
+          "validation": "Evaluated on three simulated visuomotor manipulation tasks against imitation learning and acceleration baselines."
+        },
+        "key_terms": [
+          {
+            "en": "world model",
+            "zh": "世界模型"
+          },
+          {
+            "en": "imitation learning",
+            "zh": "模仿学习"
+          },
+          {
+            "en": "model-based reinforcement learning",
+            "zh": "基于模型的强化学习"
+          },
+          {
+            "en": "contour control",
+            "zh": "轮廓控制"
+          },
+          {
+            "en": "visuomotor manipulation",
+            "zh": "视觉运动操作"
+          },
+          {
+            "en": "trajectory reparameterization",
+            "zh": "轨迹重参数化"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-09-22T17:04:18Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2609.22701v1",
+      "doi": "",
+      "arxiv_id": "2609.22701v1",
+      "title": "Autonomous Model Lifecycle Management for Digital Twin-Based Manufacturing Control",
+      "abstract": "Manufacturing AI systems must autonomously adapt to continuous distributional shift from raw-material variability, ambient changes, and equipment aging, under strict safeguard and operator-trust requirements where model failures risk physical damage. This paper presents a closed-loop Cyber-Physical System (CPS) for autonomous model lifecycle management in automotive manufacturing, deployed since 2023. The system manages product-specialized model pairs: a sequence-to-sequence physics model (LPP) serving as a digital twin, and a deep Reinforcement Learning (RL) control policy (LCP) trained against it. Per retraining cycle, multiple model variants spanning architecture families and RL algorithms compete; only the best-scoring candidate advances. A Conductor orchestrator autonomously manages plant-wide model inventories with dependency-aware retraining and Proportional-Integral-Derivative (PID) fallback. Reflecting the principle of Human-Centric Intelligence, the LCP composite score embeds an operator-trust gate penalizing policies deviating from established practice; without it, 23% of policies are rejected by operators despite passing accuracy thresholds. Across multiple facilities, LCP-controlled processes achieve process stability improvements of 28-45% over uncontrolled baselines with zero safety incidents.",
+      "authors": [
+        " Zhengyang",
+        " Gu",
+        "Thomas Cook",
+        "Fredaljohn Rohrbaugh",
+        "Joseph E. Hernandez",
+        "Chris Couch"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-09-19",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2609.22701v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.LG"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "ai_bioprinting"
+      ],
+      "direction": "ai_bioprinting",
+      "direction_name": "AI for Bioprinting",
+      "routing_matches": {
+        "ai_bioprinting": [
+          "digital twin"
+        ]
+      },
+      "llm": {
+        "priority": "Medium",
+        "relevance_level": "Transferable",
+        "read_action": "Save for project",
+        "relevance_to_user": "该论文提出面向数字孪生的自主模型生命周期管理闭环CPS，其模型竞争、依赖感知重训练与人在回路信任门控机制可迁移至生物打印的在线质量监控与自主决策流程。",
+        "why_not_core": "The paper is deployed in automotive manufacturing with no bioprinting workflow, no bioink or cell-laden construct context, and no biological or biomedical validation.",
+        "validation_kind": "simulation_case",
+        "flags": {
+          "has_experimental_validation": true,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "digital_twin",
+          "reinforcement_learning",
+          "model_lifecycle_management",
+          "closed_loop_control",
+          "human_in_the_loop",
+          "post_printing"
+        ],
+        "summary_zh": {
+          "motivation": "制造AI需在原料波动与设备老化下自主适应，且模型失效可能造成物理损伤。",
+          "method": "构建闭环CPS，用序列到序列物理模型作数字孪生，深度强化学习策略在其上训练，多候选模型竞争并由Conductor编排重训练与PID回退。",
+          "result": "多工厂部署使过程稳定性提升28-45%，零安全事故；无操作员信任门控时23%策略被拒。",
+          "validation": "基于2023年起实际部署的汽车制造产线数据进行验证。"
+        },
+        "summary_en": {
+          "motivation": "Manufacturing AI systems must autonomously adapt to continuous distributional shifts while respecting safety and operator-trust constraints.",
+          "method": "A closed-loop CPS pairs a sequence-to-sequence physics digital twin with a deep RL control policy, using a Conductor orchestrator for dependency-aware retraining, model competition, and PID fallback.",
+          "result": "Deployed across multiple facilities, the system improved process stability by 28-45% with zero safety incidents, and an operator-trust gate rejected 23% of otherwise accurate policies.",
+          "validation": "Validated through multi-year industrial deployment data from automotive manufacturing facilities."
+        },
+        "key_terms": [
+          {
+            "en": "digital twin",
+            "zh": "数字孪生"
+          },
+          {
+            "en": "reinforcement learning",
+            "zh": "强化学习"
+          },
+          {
+            "en": "model lifecycle management",
+            "zh": "模型生命周期管理"
+          },
+          {
+            "en": "cyber-physical system",
+            "zh": "信息物理系统"
+          },
+          {
+            "en": "distributional shift",
+            "zh": "分布漂移"
+          },
+          {
+            "en": "human-in-the-loop",
+            "zh": "人在回路"
+          },
+          {
+            "en": "closed-loop control",
+            "zh": "闭环控制"
+          },
+          {
+            "en": "operator trust",
+            "zh": "操作员信任"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-09-22T17:04:18Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2609.22691v1",
+      "doi": "",
+      "arxiv_id": "2609.22691v1",
+      "title": "Generative Embodied Multiple Behavior Control Systems for Human-like Agents",
+      "abstract": "An enduring and richly elaborated dichotomy in cognitive neuroscience is that of human behavior control mechanisms, divided into habitual versus goal-directed. While existing human-like agent frameworks primarily focus on modeling goal- directed behavior, habitual behavior has been largely overlooked, though it plays a crucial role in human daily life. In this paper, we address this gap by studying multiple behavior control systems that jointly model goal-directed and habitual behaviors. We propose a human behavior control mechanism-inspired framework which the Habitual Controller retrieves cue-triggered behaviors from personal- ized habit memory, while the Goal-directed Controller employs a context-aware world model to predict action consequences and estimate their values. The Arbiter dynamically balances the influence of both systems according to individual differ- ences and momentary internal states. To reconstruct diverse human-level behavior instructions in 3D environments, we further develop a keyframe-guided 3D mo- tion generation module. Through extensive evaluation methods, human studies, and ablations studies, experimental results demonstrate that human-likeness per- formance is significantly improved by our approach. The efficacy of our approach indicates the benefits of leveraging habitual behavior and multiple behavior con- trol system coordination for believable embodied human-like agents.",
+      "authors": [
+        "Chongyu Bao",
+        "Haokai Yang",
+        "Yuhan Wang",
+        "Zhaochong An",
+        "Kunpeng Liu",
+        "Xiaolan Liu"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-09-19",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2609.22691v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.AI"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "world model"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该论文研究类人智能体的习惯性与目标导向行为控制，属于纯强化学习/世界模型方法，未涉及工程仿真或FEA，与用户方向关联较弱。",
+        "why_not_core": "This paper builds a world model for human-like agent behavior control in 3D environments but does not connect model-based RL to engineering simulation, FEA/FEM data, surrogate modeling, or implant/biomechanics design optimization.",
+        "validation_kind": "simulation_case",
+        "flags": {
+          "has_experimental_validation": true,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "world_model",
+          "model-based_rl",
+          "embodied_agent",
+          "behavior_control",
+          "no_engineering_simulation"
+        ],
+        "summary_zh": {
+          "motivation": "现有类人智能体多建模目标导向行为，忽视习惯性行为。",
+          "method": "提出习惯控制器与目标导向控制器加仲裁器的多行为控制框架，并用关键帧引导3D动作生成。",
+          "result": "实验与人类研究显示类人表现显著提升。",
+          "validation": "通过广泛评估、人类研究和消融实验验证。"
+        },
+        "summary_en": {
+          "motivation": "Existing human-like agent frameworks predominantly model goal-directed behavior while neglecting habitual behavior, which is central to daily human activity.",
+          "method": "The authors propose a behavior-control-inspired architecture combining a habit-memory-based controller, a context-aware world model for goal-directed action valuation, and an arbiter, together with keyframe-guided 3D motion generation.",
+          "result": "Experimental evaluations, human studies, and ablations indicate that jointly modeling habitual and goal-directed control improves human-likeness.",
+          "validation": "The approach is validated through extensive evaluations, human perceptual studies, and ablation experiments in 3D environments."
+        },
+        "key_terms": [
+          {
+            "en": "world model",
+            "zh": "世界模型"
+          },
+          {
+            "en": "model-based reinforcement learning",
+            "zh": "基于模型的强化学习"
+          },
+          {
+            "en": "embodied agent",
+            "zh": "具身智能体"
+          },
+          {
+            "en": "habitual behavior",
+            "zh": "习惯性行为"
+          },
+          {
+            "en": "goal-directed behavior",
+            "zh": "目标导向行为"
+          },
+          {
+            "en": "motion generation",
+            "zh": "动作生成"
+          },
+          {
+            "en": "behavior control",
+            "zh": "行为控制"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-09-22T17:04:18Z"
+    },
+    {
+      "source": "openalex",
+      "id": "https://openalex.org/W7119079372",
+      "doi": "10.19139/soic-2310-5070-4538",
+      "pmid": "",
+      "arxiv_id": "",
+      "title": "Integrated variable selection with hyperparameter-tuned random forest for modeling exchange rate volatility in Iraq",
+      "abstract": "This study proposes an integrated random forest framework to forecast exchange rate volatility in Iraq. Traditional econometric models often struggle with the high dimensionality and multicollinearity of macro‑financial indicators, which leads to overfitting and weak out‑of‑sample performance. To address these challenges, the paper develops an integrated sparrow search algorithm–random forest (ISSA‑RF) that jointly performs variable selection and hyperparameter tuning. In the first stage, a binary sparrow search algorithm (SSA) selects a parsimonious subset of relevant monetary variables, balancing prediction error and model complexity. In the second stage, a continuous SSA optimizes key random forest hyperparameters, including the number of trees, maximum depth, and node‑splitting thresholds. The empirical application uses monthly data from the central bank of Iraq and international sources covering 2004–2024, with a split between training (2004–2020) and testing (2021–2024) samples. Forecasting performance is evaluated using mean absolute error, root mean squared error, coefficient of determination, and directional accuracy, and ISSA‑RF is benchmarked against random search, Bayesian optimization, cross‑validation, grid search, and SSA‑tuned random forests without variable selection. The integrated approach selects six economically meaningful predictors, capturing domestic monetary conditions, foreign exchange interventions, and global monetary and inflation factors. Across both training and testing sets, ISSA‑RF consistently delivers the lowest forecast errors, the highest explanatory power, and the strongest directional accuracy, indicating substantial gains in both fit and generalization relative to all competing models. These results suggest that combining metaheuristic‑based variable selection with hyperparameter tuning can significantly enhance exchange rate volatility forecasting, providing policymakers and market participants with more reliable tools for risk management and macro‑financial surveillance in Iraq.",
+      "authors": [
+        "Abdulrahman Mohammed Ahmed",
+        "Aws F.A. Jwejatee",
+        "Zakariya Yahya Algamal"
+      ],
+      "first_author_affiliation": "University of Mosul",
+      "corresponding_authors": [],
+      "venue": "Statistics, Optimization & Information Computing (University of Cambridge)",
+      "year": 2026,
+      "date": "2026-09-19",
+      "date_precision": "day",
+      "url": "https://doi.org/10.19139/soic-2310-5070-4538",
+      "cited_by_count": 0,
+      "concepts": [
+        "Psychology",
+        "Data collection",
+        "Reading (process)",
+        "Sample (material)",
+        "Social psychology",
+        "Humanities"
+      ],
+      "categories": [],
+      "raw_type": "article",
+      "directions": [
+        "fea_surrogate"
+      ],
+      "direction": "fea_surrogate",
+      "direction_name": "FEA & Surrogate Modelling",
+      "routing_matches": {
+        "fea_surrogate": [
+          "Bayesian optimization"
+        ]
+      },
+      "llm": {
+        "priority": "Exclude",
+        "relevance_level": "Peripheral",
+        "read_action": "Ignore",
+        "relevance_to_user": "该论文将元启发式变量选择与随机森林超参数调优用于伊拉克汇率波动预测，与FEA代理建模、生物力学或植入物设计无直接关联。",
+        "why_not_core": "This paper contains no FEA, no surrogate modeling of PDEs, no uncertainty quantification, and no biomedical or implant mechanics context; it is purely a financial time-series forecasting application.",
+        "validation_kind": "numerical_benchmark",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "random forest",
+          "hyperparameter tuning",
+          "sparrow search algorithm",
+          "exchange rate forecasting",
+          "financial time series"
+        ],
+        "summary_zh": {
+          "motivation": "传统计量模型难以处理宏观金融指标的高维共线性，导致过拟合与样本外表现差。",
+          "method": "提出ISSA-RF框架，用二元麻雀搜索做变量选择，再用连续麻雀搜索优化随机森林超参数。",
+          "result": "在伊拉克2004–2024年月度数据上，ISSA-RF的预测误差最低、解释力与方向准确率最高。",
+          "validation": "以MAE、RMSE、R²和方向准确率在训练集与测试集上对比多种调参基线。"
+        },
+        "summary_en": {
+          "motivation": "Traditional econometric models struggle with high dimensionality and multicollinearity in macro-financial indicators, causing overfitting and poor out-of-sample forecasts.",
+          "method": "An integrated sparrow search algorithm-random forest framework jointly performs binary variable selection and continuous hyperparameter tuning of the random forest.",
+          "result": "On Iraqi monthly data from 2004 to 2024, the integrated approach achieved the lowest forecast errors and highest explanatory and directional accuracy across training and testing sets.",
+          "validation": "Performance was benchmarked against random search, Bayesian optimization, cross-validation, grid search, and SSA-tuned random forests using MAE, RMSE, R², and directional accuracy."
+        },
+        "key_terms": [
+          {
+            "en": "random forest",
+            "zh": "随机森林"
+          },
+          {
+            "en": "sparrow search algorithm",
+            "zh": "麻雀搜索算法"
+          },
+          {
+            "en": "hyperparameter tuning",
+            "zh": "超参数调优"
+          },
+          {
+            "en": "variable selection",
+            "zh": "变量选择"
+          },
+          {
+            "en": "exchange rate volatility",
+            "zh": "汇率波动"
+          },
+          {
+            "en": "metaheuristic optimization",
+            "zh": "元启发式优化"
+          },
+          {
+            "en": "out-of-sample forecasting",
+            "zh": "样本外预测"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-09-22T17:04:18Z"
+    },
+    {
+      "source": "openalex",
+      "id": "https://openalex.org/W7213866768",
+      "doi": "10.3390/fluids11090238",
+      "pmid": "",
+      "arxiv_id": "",
+      "title": "Solutions of the Newtonian Plane Couette Flow with Dynamic Wall Slip Using Machine Learning Methods",
+      "abstract": "This study presents a comparative investigation of Physics-Informed Neural Networks (PINNs) and data-driven Deep Operator Networks (DeepONets) for predicting the evolution of plane Newtonian Couette flow with dynamic wall slip. First, a PINN framework is employed to solve flow for selected physical parameters. Subsequently, we develop a data-driven DeepONet, trained on high-fidelity numerical data, to learn the continuous solution operator across a broad range of slip boundary conditions and upper wall velocities. PINN achieves a relative L2 error of 0.083% for the specific case considered. On the other hand, DeepONet shows a mean relative error of 0.340% on the standard test set and performs well when tested with a deterministic harmonic forcing outside the GRF-based forcing distribution used for training. While PINN gives accuracy for a specific configuration, the trained DeepONet can be reused for different boundary forcings and slip parameters without needing to be retrained. The compatibility of physics-based and data-driven models is highlighted. The results also demonstrate that DeepONet is a very effective surrogate model for quick parametric studies and the real-time prediction of fluid dynamics.",
+      "authors": [
+        "G. Foutsitzi",
+        "Nikolaos Antoniadis",
+        "Georgios C. Georgiou"
+      ],
+      "first_author_affiliation": "Department of Informatics and Telecommunications, University of Ioannina, GR-47100 Arta, Greece",
+      "corresponding_authors": [
+        {
+          "name": "Georgios C. Georgiou",
+          "affiliation": "Department of Mathematics and Statistics, University of Cyprus, P.O. Box 20537, Nicosia 1678, Cyprus"
+        }
+      ],
+      "venue": "Fluids",
+      "year": 2026,
+      "date": "2026-09-19",
+      "date_precision": "day",
+      "url": "https://doi.org/10.3390/fluids11090238",
+      "cited_by_count": 0,
+      "concepts": [
+        "Couette flow",
+        "Artificial neural network",
+        "Slip (aerodynamics)",
+        "Approximation error",
+        "Parametric statistics",
+        "Computer science",
+        "Forcing (mathematics)",
+        "Operator (biology)",
+        "Newtonian fluid",
+        "Boundary value problem",
+        "Algorithm",
+        "Boundary (topology)",
+        "Mathematics",
+        "Mechanics",
+        "Artificial intelligence",
+        "Flow (mathematics)"
+      ],
+      "categories": [],
+      "raw_type": "article",
+      "directions": [
+        "fea_surrogate"
+      ],
+      "direction": "fea_surrogate",
+      "direction_name": "FEA & Surrogate Modelling",
+      "routing_matches": {
+        "fea_surrogate": [
+          "PINN",
+          "DeepONet"
+        ]
+      },
+      "llm": {
+        "priority": "Medium",
+        "relevance_level": "Transferable",
+        "read_action": "Skim only",
+        "relevance_to_user": "该文用PINN与DeepONet求解带滑移的库埃特流，属于FEA代理建模方法，可迁移到植入物力学设计但无生物医学验证。",
+        "why_not_core": "This paper addresses fluid dynamics (plane Couette flow) with no solid mechanics, no implant/biomechanics context, no FEA validation, and no uncertainty quantification.",
+        "validation_kind": "numerical_benchmark",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "PINN",
+          "DeepONet",
+          "surrogate_model",
+          "operator_learning",
+          "fluid_dynamics"
+        ],
+        "summary_zh": {
+          "motivation": "探索物理驱动与数据驱动方法在带滑移边界流动中的适用性。",
+          "method": "分别用PINN求解特定参数流场，并用高保真数据训练DeepONet学习解算子。",
+          "result": "PINN相对L2误差0.083%，DeepONet平均误差0.340%且可泛化到新边界条件。",
+          "validation": "基于高保真数值数据的标准测试集与分布外谐波强迫测试。"
+        },
+        "summary_en": {
+          "motivation": "To compare physics-informed and data-driven approaches for predicting plane Couette flow with dynamic wall slip.",
+          "method": "A PINN is trained for a specific configuration, while a data-driven DeepONet is trained on high-fidelity numerical data to learn the solution operator across slip conditions and wall velocities.",
+          "result": "The PINN attains 0.083% relative L2 error, whereas the DeepONet achieves 0.340% mean relative error and generalizes to out-of-distribution harmonic forcing.",
+          "validation": "Numerical benchmarks against high-fidelity simulation data, including standard and out-of-distribution test cases."
+        },
+        "key_terms": [
+          {
+            "en": "Physics-Informed Neural Network",
+            "zh": "物理信息神经网络"
+          },
+          {
+            "en": "Deep Operator Network",
+            "zh": "深度算子网络"
+          },
+          {
+            "en": "surrogate model",
+            "zh": "代理模型"
+          },
+          {
+            "en": "wall slip",
+            "zh": "壁面滑移"
+          },
+          {
+            "en": "Couette flow",
+            "zh": "库埃特流"
+          },
+          {
+            "en": "operator learning",
+            "zh": "算子学习"
+          },
+          {
+            "en": "parametric study",
+            "zh": "参数化研究"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-09-22T17:04:18Z"
+    },
+    {
+      "source": "openalex",
+      "id": "https://openalex.org/W7213875564",
+      "doi": "10.3390/bioengineering13091088",
+      "pmid": "",
+      "arxiv_id": "",
+      "title": "3D-Printed and Biofabricated Scaffolds for Osteoporotic Bone Defect Repair: Mechanical Adaptation, Redox Control, Senescence Modulation and Osteoimmunomodulation",
+      "abstract": "Fragility fracture and osteoporotic bone loss represent an increasing global burden in ageing populations: the Global Burden of Disease Study 2021 estimated 172.79 million new fractures, 453.31 million prevalent cases, and 25.18 million years lived with disability in 2021, yet the resulting defects are still managed with grafts and scaffolds validated in healthy bone. Osteoporotic bone is not merely rarefied normal bone but a distinct regenerative microenvironment, in which we propose that oxidative stress, cellular senescence, and loss of osteogenesis-coupled type-H vasculature act as a mutually reinforcing triad, superimposed on an adipogenically biassed progenitor pool, blunted osteocyte mechanotransduction and immunosenescence. Additive manufacturing and biofabrication permit patient-specific geometry and spatial and temporal programming of mechanical and biological cues. This review appraises four interdependent design axes—mechanical adaptation through functionally graded, trabecular-mimetic architectures; redox regulation; senescence modulation; and osteoimmunomodulation coupled to vascularisation—distinguishing study type, disease specificity and author-proposed hypotheses. The most direct clinical signal is mechanical: in a retrospective cohort of 163 lumbar interbody fusion levels, printed porous titanium was associated with subsidence in 5.5% of levels versus 24.4% for solid titanium. By contrast, almost all redox, senescence and immunomodulatory scaffold evidence remains preclinical: osteoporosis-specific evidence relies heavily on ovariectomised rodents, and much of the rest comes from non-osteoporotic models. Within the searches described, we identified no completed clinical evaluation with reported results of a multifunctional scaffold in an osteoporosis-defined cohort. As the authors’ proposed conceptual framework rather than an established result, we suggest that these axes be engaged sequentially rather than additively, and that timing, dose and spatial distribution may matter more than the number of bioactivities.",
+      "authors": [
+        "Sedeek Mosaid",
+        "Yousif Jihad",
+        "Nuala Pepper",
+        "Mohamed Elnemr",
+        "Ashok Marudanayagam",
+        "Paul YF Lee"
+      ],
+      "first_author_affiliation": "Orthopaedic Surgery Department, United Lincolnshire Hospitals NHS Trust, Lincoln LN2 5QY, UK",
+      "corresponding_authors": [
+        {
+          "name": "Sedeek Mosaid",
+          "affiliation": "Orthopaedic Surgery Department, United Lincolnshire Hospitals NHS Trust, Lincoln LN2 5QY, UK"
+        }
+      ],
+      "venue": "Bioengineering",
+      "year": 2026,
+      "date": "2026-09-19",
+      "date_precision": "day",
+      "url": "https://doi.org/10.3390/bioengineering13091088",
+      "cited_by_count": 0,
+      "concepts": [
+        "Senescence",
+        "Chemistry",
+        "Osteoporosis",
+        "Oxidative stress",
+        "Scaffold",
+        "Bone remodeling",
+        "Mechanotransduction",
+        "Osteocyte",
+        "Bone disease",
+        "Cell biology",
+        "Nonunion",
+        "Pentosidine",
+        "Progenitor cell",
+        "Mesenchymal stem cell",
+        "Cancer research",
+        "Medicine",
+        "Stem cell",
+        "Bone healing",
+        "Reduction (mathematics)"
+      ],
+      "categories": [],
+      "raw_type": "article",
+      "directions": [
+        "ai_bioprinting",
+        "am_biomedical"
+      ],
+      "direction": "ai_bioprinting",
+      "direction_name": "AI for Bioprinting",
+      "routing_matches": {
+        "ai_bioprinting": [
+          "biofabrication"
+        ],
+        "am_biomedical": [
+          "porous titanium"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该综述讨论骨质疏松骨缺损的3D打印支架设计，属于生物制造背景，但未涉及AI/ML与打印流程的集成。",
+        "why_not_core": "This review does not integrate AI/ML into any bioprinting workflow stage, nor does it present computational models, surrogate methods, or autonomous decision-making for printing.",
+        "validation_kind": "clinical",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": true
+        },
+        "tags": [
+          "bioprinting",
+          "bone_scaffold",
+          "osteoporosis",
+          "review",
+          "post-printing"
+        ],
+        "summary_zh": {
+          "motivation": "骨质疏松骨缺损修复缺乏针对病变微环境的支架设计指导。",
+          "method": "综述增材制造与生物制造支架的力学适配、氧化还原、衰老和骨免疫调控四条设计轴。",
+          "result": "力学证据较直接，而氧化还原、衰老和免疫调控证据多停留在临床前阶段。",
+          "validation": "基于文献综述与一项163例腰椎融合回顾性队列数据。"
+        },
+        "summary_en": {
+          "motivation": "Osteoporotic bone defects remain managed with scaffolds validated in healthy bone, despite a distinct degenerative microenvironment.",
+          "method": "This review appraises four interdependent scaffold design axes: mechanical adaptation, redox regulation, senescence modulation, and osteoimmunomodulation coupled to vascularisation.",
+          "result": "Mechanical adaptation shows the strongest clinical signal, whereas redox, senescence, and immunomodulatory evidence remains largely preclinical.",
+          "validation": "Evidence is synthesised from a literature review and a retrospective cohort of 163 lumbar interbody fusion levels."
+        },
+        "key_terms": [
+          {
+            "en": "biofabrication",
+            "zh": "生物制造"
+          },
+          {
+            "en": "osteoporotic bone defect",
+            "zh": "骨质疏松骨缺损"
+          },
+          {
+            "en": "functionally graded scaffold",
+            "zh": "功能梯度支架"
+          },
+          {
+            "en": "osteoimmunomodulation",
+            "zh": "骨免疫调控"
+          },
+          {
+            "en": "cellular senescence",
+            "zh": "细胞衰老"
+          },
+          {
+            "en": "redox regulation",
+            "zh": "氧化还原调控"
+          },
+          {
+            "en": "mechanotransduction",
+            "zh": "力转导"
+          },
+          {
+            "en": "additive manufacturing",
+            "zh": "增材制造"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-09-22T17:04:18Z"
+    },
+    {
+      "source": "openalex",
+      "id": "https://openalex.org/W7213880168",
+      "doi": "10.3390/systems14091172",
+      "pmid": "",
+      "arxiv_id": "",
+      "title": "Resilience Metric and Enhancement for Adversarial Operational Loop Networks via Reinforcement Learning",
+      "abstract": "Resilience optimization in adversarial Multi-Agent Mission Systems (MAMSs) requires a decision mechanism whose objective is explicitly aligned with the resilience metric, not merely resilience measurement. This paper proposes a net-effectiveness-based evaluation–optimization framework for bilateral temporal adversarial operational-loop networks (BTAR), turning resilience evaluation into a reusable world model and reward source for decision-making. We model bilateral confrontation as a heterogeneous temporal network and quantify resilience through the integral of net effectiveness, which captures temporal and adversarial dynamics beyond static topological indicators. We then formulate resilience enhancement as a fixed-dimensional, size-agnostic, cost-aware Markov decision process and solve it with a hierarchically decoupled reinforcement learning architecture: an upper-level PPO policy learns when and for which chains to trigger selective replanning, while a lower-level greedy routine selects concrete replacement nodes. In this way, the optimization objective remains aligned with the evaluation metric through a metric-aligned reward. Experiments on a reproducible multi-scale, multi-style scenario pool show that the learned policy improves Rtotal from 0.3673 to 1.1696, reaching 96.8% of an idealized oracle benchmark (1.2082), while slightly outperforming the always-replan rule (1.1482) with a lower trigger rate. Under nonzero replanning cost, retraining yields a cost-aware policy whose trigger rate drops to 21.2% and whose cost-adjusted resilience at the target cost setting increases by +0.15, surpassing the greedy oracle benchmark in the high-cost regime. These results show that coupling net-effectiveness evaluation with hierarchical RL yields a deployable, size-agnostic, and cost-aware resilience optimizer.",
+      "authors": [
+        "Jidong Sun",
+        "Xiaobo Li",
+        "Zhi Hong Zhu",
+        "Wei Li",
+        "Tao Wang",
+        "Zhijie Huang",
+        "Jie Zhang"
+      ],
+      "first_author_affiliation": "College of Systems Engineering, National University of Defense Technology, Changsha 410073, China",
+      "corresponding_authors": [],
+      "venue": "Systems",
+      "year": 2026,
+      "date": "2026-09-19",
+      "date_precision": "day",
+      "url": "https://doi.org/10.3390/systems14091172",
+      "cited_by_count": 0,
+      "concepts": [
+        "Reinforcement learning",
+        "Resilience (materials science)",
+        "Computer science",
+        "Benchmark (surveying)",
+        "Oracle",
+        "Metric (unit)",
+        "Markov decision process",
+        "Process (computing)",
+        "Adversarial system",
+        "Mathematical optimization",
+        "Performance metric",
+        "Artificial intelligence",
+        "Block (permutation group theory)",
+        "Time horizon",
+        "Markov process"
+      ],
+      "categories": [],
+      "raw_type": "article",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "world model",
+          "reinforcement learning + world model"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该论文将强化学习用于对抗性任务网络的韧性优化，与工程仿真/FEA代理模型无直接关联，仅提供RL方法论背景。",
+        "why_not_core": "This paper does not involve engineering simulation, FEA/FEM data, surrogate modeling, or physics simulators; it applies hierarchical RL to abstract adversarial network resilience with no biomechanics or implant design context.",
+        "validation_kind": "simulation_case",
+        "flags": {
+          "has_experimental_validation": true,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "reinforcement_learning",
+          "world_model",
+          "network_resilience",
+          "no_engineering_simulation"
+        ],
+        "summary_zh": {
+          "motivation": "对抗性多智能体任务系统需要与韧性指标对齐的决策机制，而非仅测量韧性。",
+          "method": "将双边对抗建模为异质时序网络，用净效能积分量化韧性，并构建成本感知MDP，采用分层PPO与贪心替换求解。",
+          "result": "学习策略将Rtotal从0.3673提升至1.1696，达理想oracle的96.8%，成本感知策略触发率降至21.2%。",
+          "validation": "在多尺度、多风格的可复现场景池中进行仿真实验验证。"
+        },
+        "summary_en": {
+          "motivation": "Resilience optimization in adversarial multi-agent mission systems requires a decision mechanism whose objective is explicitly aligned with the resilience metric rather than mere measurement.",
+          "method": "The paper models bilateral confrontation as a heterogeneous temporal network, quantifies resilience via the integral of net effectiveness, and formulates enhancement as a cost-aware MDP solved by a hierarchically decoupled RL architecture with an upper-level PPO policy and a lower-level greedy replacement routine.",
+          "result": "The learned policy raises total resilience from 0.3673 to 1.1696, achieving 96.8% of an idealized oracle, and a cost-aware retrained policy reduces trigger rate to 21.2% while improving cost-adjusted resilience by +0.15.",
+          "validation": "Validation is conducted through simulation experiments on a reproducible multi-scale, multi-style scenario pool."
+        },
+        "key_terms": [
+          {
+            "en": "reinforcement learning",
+            "zh": "强化学习"
+          },
+          {
+            "en": "world model",
+            "zh": "世界模型"
+          },
+          {
+            "en": "resilience metric",
+            "zh": "韧性指标"
+          },
+          {
+            "en": "Markov decision process",
+            "zh": "马尔可夫决策过程"
+          },
+          {
+            "en": "multi-agent system",
+            "zh": "多智能体系统"
+          },
+          {
+            "en": "net effectiveness",
+            "zh": "净效能"
+          },
+          {
+            "en": "hierarchical policy",
+            "zh": "分层策略"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-09-22T17:04:18Z"
+    },
+    {
+      "source": "openalex",
+      "id": "https://openalex.org/W7213887017",
+      "doi": "10.3390/en19184442",
+      "pmid": "",
+      "arxiv_id": "",
+      "title": "Fixed-Responsibility Partitioning for Day-Ahead Bidding and Real-Time Delivery of Virtual Power Plants in Energy and Reserve Markets",
+      "abstract": "When a virtual power plant (VPP) participates in energy and reserve markets, day-ahead bids, reserve commitments, and real-time delivery share the same internal resource constraints, while aggregate models cannot readily trace internal responsibility allocation or identify local shortfalls. This study develops a fixed-responsibility partitioning framework for day-ahead bidding and real-time delivery. Fixed membership mappings are screened under a unified budget; resource-type-specific reserve certificates and sustained-delivery constraints are embedded in a finite-support Wasserstein distributionally robust optimization (WDRO) model; and hierarchical model predictive control executes the market commitments. The 365-day evaluation retains three non-dominated candidates, K∈{6,7,8}, whose mean operational-fitness objective values are reduced by 25.5%–43.1% relative to the corresponding independent spectral-clustering baselines. In a common 30-day ablation study, detailed partition responsibilities increase mean daily adjusted operating profit by CNY 6442–8162 and reduce settlement deviation by 1.19–1.23 MW relative to two equivalent-responsibility rules. Here, adjusted operating profit is profit net of balancing-correction cost, settlement deviation is the schedule–settlement difference, and partition tracking error is the deviation between partition targets and aggregated resource response. The directions of these effects remain consistent across two independent 10-day windows, and hierarchical real-time coordination further reduces settlement deviation and partition tracking error. Public-aggregate-data replays show that the profit and deviation effects of WDRO relative to sample average approximation (SAA) vary with market settings and node-downscaled inputs. As an engineering extension, bounded contracted-capability factors, defined as multipliers on market-committable capability, increase mean daily adjusted operating profit by 6.00% in the 2024 holdout set, and attribution analysis indicates that most of this gain is associated with the average contracted-capability factor and released fast-response headroom. Under the tested settings, fixed-responsibility partitioning enables the continuous transfer of resource-type-specific day-ahead responsibilities into real-time resource control and makes the trade-offs among profit, delivery quality, and execution cost explicit.",
+      "authors": [
+        "Zhongjian Liu",
+        "Ruixin Qian",
+        "Xianing Jin",
+        "Bingliang Shan",
+        "Qingxi Li",
+        "Yapeng Dai",
+        "Xin Zou"
+      ],
+      "first_author_affiliation": "Beijing Key Laboratory of Low-Carbon and Flexible Urban Power Supply Technology and Equipment, Beijing 102209, China",
+      "corresponding_authors": [],
+      "venue": "Energies",
+      "year": 2026,
+      "date": "2026-09-19",
+      "date_precision": "day",
+      "url": "https://doi.org/10.3390/en19184442",
+      "cited_by_count": 0,
+      "concepts": [
+        "Bidding",
+        "Standard deviation",
+        "Partition (number theory)",
+        "Profit (economics)",
+        "Econometrics",
+        "Bounded function",
+        "Computer science",
+        "Virtual power plant",
+        "Economics",
+        "Mathematical optimization",
+        "Energy market",
+        "Operations research",
+        "Market power",
+        "Electricity market"
+      ],
+      "categories": [],
+      "raw_type": "article",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "model predictive control"
+        ]
+      },
+      "llm": {
+        "priority": "Exclude",
+        "relevance_level": "Peripheral",
+        "read_action": "Ignore",
+        "relevance_to_user": "该论文研究虚拟电厂在电力市场中的调度优化，与用户的生物打印、髋关节植入物、FEA代理模型和生物医学增材制造方向无关。",
+        "why_not_core": "This paper addresses power-market bidding and MPC for virtual power plants with no connection to biomechanics, implant design, FEA surrogates, bioprinting, or biomedical AM.",
+        "validation_kind": "simulation_case",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": true,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "energy_markets",
+          "model_predictive_control",
+          "distributionally_robust_optimization",
+          "virtual_power_plant",
+          "no_engineering_simulation_tie_in"
+        ],
+        "summary_zh": {
+          "motivation": "虚拟电厂参与多市场时内部资源责任难以追溯，聚合模型无法定位局部缺口。",
+          "method": "提出固定责任分区框架，结合WDRO与分层模型预测控制进行日前投标和实时交付。",
+          "result": "365天评估中目标值较基线降低25.5%–43.1%，日利润提升并降低结算偏差。",
+          "validation": "基于365天仿真、30天消融及公开聚合数据回放进行数值验证。"
+        },
+        "summary_en": {
+          "motivation": "Virtual power plants face difficulty tracing internal resource responsibility and local shortfalls when aggregate models serve day-ahead bidding and real-time delivery simultaneously.",
+          "method": "A fixed-responsibility partitioning framework integrates resource-type-specific reserve certificates, finite-support Wasserstein distributionally robust optimization, and hierarchical model predictive control.",
+          "result": "The 365-day evaluation reduces the mean operational-fitness objective by 25.5%–43.1% versus spectral-clustering baselines and improves daily adjusted operating profit while lowering settlement deviation.",
+          "validation": "Numerical validation uses a 365-day simulation, a 30-day ablation, two independent 10-day windows, and public-aggregate-data replays."
+        },
+        "key_terms": [
+          {
+            "en": "virtual power plant",
+            "zh": "虚拟电厂"
+          },
+          {
+            "en": "model predictive control",
+            "zh": "模型预测控制"
+          },
+          {
+            "en": "distributionally robust optimization",
+            "zh": "分布鲁棒优化"
+          },
+          {
+            "en": "day-ahead bidding",
+            "zh": "日前投标"
+          },
+          {
+            "en": "reserve market",
+            "zh": "备用市场"
+          },
+          {
+            "en": "settlement deviation",
+            "zh": "结算偏差"
+          },
+          {
+            "en": "spectral clustering",
+            "zh": "谱聚类"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-09-22T17:04:18Z"
+    },
+    {
+      "source": "openalex",
+      "id": "https://openalex.org/W7213891396",
+      "doi": "10.1186/s12939-026-02996-8",
+      "pmid": "",
+      "arxiv_id": "",
+      "title": "Improving maternal and child healthcare through professional training in quilombola communities, Brazil: a controlled interrupted time-series study",
+      "abstract": "Despite Brazil’s upper-middle-income status, maternal and child health indicators remain below expectations, with wide disparities across population groups. Quilombola communities, in particular, face persistent barriers to healthcare access and utilization. Training frontline primary healthcare workers on the rights of women and children offers a cost-effective, scalable strategy to improve outcomes during the critical first 1,000 days of life. This study evaluated a community-based intervention to enhance healthcare professionals’ knowledge of maternal and child health rights in a quilombola community in Maranhão, Brazil. A quasi-experimental, controlled interrupted time series design compared two municipalities: Alcântara (intervention) and Guimarães (control). An active learning, rights-focused educational program was delivered. Ten maternal and child health indicators were analysed using monthly SISAB data (2014–2023), with Prais–Winsten regression and ARIMA models. Twelve months post-intervention, Alcântara showed increased antenatal visits by community health agents (Xreg = 64.92; 95% CI: 34.33–95.51; p < 0.001), complementary breastfeeding (Xreg = 10.62; 95% CI: 5.01–16.23; p < 0.001), and full vaccination coverage in children under two (Xreg = 30.33; 95% CI: 8.61–52.04; p = 0.006). A reduction in health education activities for pregnant women was also observed (Xreg = − 3.25; 95% CI: −5.94 to − 0.56; p = 0.01). All indicators declined in the control municipality. A low-cost, rights-based educational intervention using active learning improved key maternal and child health indicators in a socioeconomically vulnerable quilombola population. These findings support the role of rights-focused training for community health workers in advancing health equity.",
+      "authors": [
+        "Francenilde Silva de Sousa",
+        "Elisa Miranda Costa",
+        "Isabelle Aguiar Prado",
+        "Rosângela Fernandes Lucena Batista",
+        "Zeni Carvalho Lamy",
+        "Andrew Amos Channon",
+        "Érika Bárbara Abreu Fonseca Thomaz"
+      ],
+      "first_author_affiliation": "Universidade Estadual do Norte do Paraná (State University of Northern Paraná), Jacarezinho, Paraná, Brazil",
+      "corresponding_authors": [
+        {
+          "name": "Francenilde Silva de Sousa",
+          "affiliation": "Universidade Estadual do Norte do Paraná (State University of Northern Paraná), Jacarezinho, Paraná, Brazil"
+        },
+        {
+          "name": "Érika Bárbara Abreu Fonseca Thomaz",
+          "affiliation": "Universidade Federal do Maranhão (Federal University of Maranhão), São Luís, Maranhão, Brazil"
+        }
+      ],
+      "venue": "International Journal for Equity in Health",
+      "year": 2026,
+      "date": "2026-09-19",
+      "date_precision": "day",
+      "url": "https://doi.org/10.1186/s12939-026-02996-8",
+      "cited_by_count": 0,
+      "concepts": [
+        "Medicine",
+        "Nursing",
+        "Health care",
+        "Public health",
+        "Health promotion",
+        "Community health",
+        "Health services research",
+        "Health policy",
+        "Health education",
+        "Breastfeeding",
+        "Population",
+        "Intervention (counseling)",
+        "Program evaluation",
+        "Social policy",
+        "Population health",
+        "Prenatal care",
+        "Environmental health",
+        "Family medicine",
+        "Health indicator",
+        "Child health",
+        "Reproductive health"
+      ],
+      "categories": [],
+      "raw_type": "article",
+      "directions": [
+        "fea_surrogate"
+      ],
+      "direction": "fea_surrogate",
+      "direction_name": "FEA & Surrogate Modelling",
+      "routing_matches": {
+        "fea_surrogate": [
+          "active learning"
+        ]
+      },
+      "llm": {
+        "priority": "Exclude",
+        "relevance_level": "Peripheral",
+        "read_action": "Ignore",
+        "relevance_to_user": "这是一项关于巴西社区母婴健康培训的公共卫生干预研究，与FEA代理建模、生物力学仿真或植入物设计完全无关。",
+        "why_not_core": "This paper contains no simulation, surrogate modeling, FEA, uncertainty quantification, or biomechanics content; it is a public health policy evaluation using interrupted time-series regression.",
+        "validation_kind": "clinical",
+        "flags": {
+          "has_experimental_validation": true,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "public health",
+          "maternal health",
+          "interrupted time series",
+          "health equity",
+          "off-topic"
+        ],
+        "summary_zh": {
+          "motivation": "评估针对巴西Quilombola社区医护人员的权利培训能否改善母婴健康指标。",
+          "method": "采用对照中断时间序列设计，比较干预市与对照市，使用Prais–Winsten回归和ARIMA模型分析月度数据。",
+          "result": "干预市产前访视、补充母乳喂养和疫苗接种覆盖率显著提升，而对照市所有指标下降。",
+          "validation": "基于2014–2023年SISAB月度临床与公共卫生数据。"
+        },
+        "summary_en": {
+          "motivation": "The study aimed to determine whether rights-based training for frontline health workers could improve maternal and child health outcomes in an underserved Quilombola population.",
+          "method": "A quasi-experimental controlled interrupted time-series design compared an intervention municipality with a control municipality, analyzing ten monthly health indicators using Prais–Winsten regression and ARIMA models.",
+          "result": "The intervention municipality showed significant increases in antenatal visits, complementary breastfeeding, and vaccination coverage, while all indicators declined in the control municipality.",
+          "validation": "Validation relied on monthly SISAB public health records from 2014 to 2023 across two municipalities."
+        },
+        "key_terms": [
+          {
+            "en": "interrupted time series",
+            "zh": "中断时间序列"
+          },
+          {
+            "en": "maternal and child health",
+            "zh": "母婴健康"
+          },
+          {
+            "en": "Quilombola communities",
+            "zh": "Quilombola社区"
+          },
+          {
+            "en": "health equity",
+            "zh": "健康公平"
+          },
+          {
+            "en": "ARIMA",
+            "zh": "ARIMA模型"
+          },
+          {
+            "en": "primary healthcare",
+            "zh": "初级卫生保健"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-09-22T17:04:18Z"
+    },
+    {
+      "source": "openalex",
+      "id": "https://openalex.org/W7213907562",
+      "doi": "10.3390/machines14091081",
+      "pmid": "",
+      "arxiv_id": "",
+      "title": "LiDAR-Aided Human–Machine Shared Control Optimization for Unknown Complex Environments via Model Predictive Control and Deep Reinforcement Learning",
+      "abstract": "Intelligent navigation of mobile robots in unknown environments has become a key enabling technology for service and logistics applications. However, in unstructured scenarios, perception noise and environmental uncertainty can significantly degrade system performance, making it a major challenge to balance safety and efficiency. In this work, we propose a Human–Machine Shared Control method with Model Predictive Control constraints (HMSC). HMSC establishes a confidence-driven human–machine shared control mechanism that maximizes collaborative efficiency by dynamically assessing the reliability of agent decisions to regulate control weights. Simultaneously, the method introduces a composite confidence evaluation model which, by fusing epistemic uncertainty with geometric feasibility from lightweight LiDAR measurements, achieves a robust quantification of policy risk. To ensure safe execution, we develop a multi-trajectory prediction mechanism which, after validating kinematic constraints, minimally intervenes to safely adjust control commands. We conducted Gazebo-based simulation experiments on obstacle avoidance and target navigation using a LiDAR-equipped mobile robot model and validated the rationality of the confidence model. The results demonstrate that the proposed shared control strategy, which combines confidence assessment with deterministic safety boundaries, significantly improves the success rate and robustness of the system in uncertain environments.",
+      "authors": [
+        "Zhiao Cheng",
+        "Qianqian Zhang",
+        "Zerui Li"
+      ],
+      "first_author_affiliation": "School of Artificial Intelligence, Anhui University, Hefei 230601, China",
+      "corresponding_authors": [],
+      "venue": "Machines",
+      "year": 2026,
+      "date": "2026-09-19",
+      "date_precision": "day",
+      "url": "https://doi.org/10.3390/machines14091081",
+      "cited_by_count": 0,
+      "concepts": [
+        "Model predictive control",
+        "Computer science",
+        "Robustness (evolution)",
+        "Obstacle avoidance",
+        "Reliability (semiconductor)",
+        "Mobile robot",
+        "Reinforcement learning",
+        "Control (management)",
+        "Kinematics",
+        "Collision avoidance",
+        "Artificial intelligence",
+        "Obstacle",
+        "Robot",
+        "Mobile service",
+        "Control engineering",
+        "Key (lock)",
+        "Control system"
+      ],
+      "categories": [],
+      "raw_type": "article",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "model predictive control",
+          "reinforcement learning + simulation"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该论文将MPC与深度强化学习结合用于移动机器人共享控制，属于通用机器人导航方法，未涉及工程仿真代理模型或FEA数据，与用户方向关联较弱。",
+        "why_not_core": "This paper does not connect model-based RL or world models to engineering simulation, FEA/FEM surrogates, or design optimization; it targets mobile robot navigation in Gazebo with no biomechanics or implant context.",
+        "validation_kind": "simulation_case",
+        "flags": {
+          "has_experimental_validation": true,
+          "has_uncertainty_quantification": true,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "reinforcement_learning",
+          "model_predictive_control",
+          "shared_control",
+          "mobile_robot_navigation",
+          "uncertainty_quantification",
+          "engineering_simulation"
+        ],
+        "summary_zh": {
+          "motivation": "未知环境下移动机器人导航需兼顾安全与效率，感知噪声和环境不确定性会降低系统性能。",
+          "method": "提出融合LiDAR几何可行性与认知不确定性的置信度驱动人机共享控制，结合MPC约束与多轨迹预测进行最小干预。",
+          "result": "Gazebo仿真表明该策略在不确定环境下显著提升避障与目标导航的成功率和鲁棒性。",
+          "validation": "基于Gazebo的移动机器人仿真实验，验证置信度模型合理性。"
+        },
+        "summary_en": {
+          "motivation": "Safe and efficient navigation of mobile robots in unstructured unknown environments is hindered by perception noise and environmental uncertainty.",
+          "method": "The authors propose a confidence-driven human-machine shared control framework that fuses epistemic uncertainty with LiDAR-based geometric feasibility and uses MPC constraints with multi-trajectory prediction for minimal safe intervention.",
+          "result": "Gazebo simulations show that the shared control strategy improves success rate and robustness for obstacle avoidance and target navigation under uncertainty.",
+          "validation": "Validation is performed through Gazebo-based simulation experiments with a LiDAR-equipped mobile robot model."
+        },
+        "key_terms": [
+          {
+            "en": "deep reinforcement learning",
+            "zh": "深度强化学习"
+          },
+          {
+            "en": "model predictive control",
+            "zh": "模型预测控制"
+          },
+          {
+            "en": "human-machine shared control",
+            "zh": "人机共享控制"
+          },
+          {
+            "en": "epistemic uncertainty",
+            "zh": "认知不确定性"
+          },
+          {
+            "en": "LiDAR",
+            "zh": "激光雷达"
+          },
+          {
+            "en": "mobile robot navigation",
+            "zh": "移动机器人导航"
+          },
+          {
+            "en": "trajectory prediction",
+            "zh": "轨迹预测"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-09-22T17:04:18Z"
+    },
+    {
+      "source": "openalex",
+      "id": "https://openalex.org/W7213921912",
+      "doi": "10.3390/ma19183992",
+      "pmid": "",
+      "arxiv_id": "",
+      "title": "Numerical Analysis of the Effects of TPMS Topology and Relative Density on Heat Sink Cooling Performance",
+      "abstract": "The trend toward high power density in compact electronic devices has intensified the demand for enhanced thermal management. Triply periodic minimal surface (TPMS) structures are attractive for heat sink (HS) applications owing to their high surface area, interconnected flow pathways, and compact design. This study presents a computational fluid dynamics investigation of porous TPMS heat sinks with gyroid, diamond, and I-WP topologies using COMSOL Multiphysics version 5.1. The effects of geometry, network morphology (sheet and solid), and relative density (RD = 15%, 30%, and 45%) were evaluated through temperature and velocity fields, pressure drop, average Nusselt number, and Darcy friction factor. The results demonstrate that, relative to the I-WP structure, the gyroid and diamond structures achieved 10.9–12.4% and 2.9–4.7% higher average Nusselt numbers, respectively. Porous gyroid structures reduced the maximum temperature by 2.2 [K] compared with the solid counterpart due to their highly interconnected pore network. At an inlet velocity of 0.3 [m/s], the average Nusselt number increased from 11 to 43 as the relative density increased from 15% to 45%, accompanied by a pressure drop increase from 1.9 to 4 [Pa]. These findings demonstrate that porous gyroid TPMS heat sinks with optimized relative density provide an effective solution for advanced thermal management in electronics.",
+      "authors": [
+        "Welteji Iticha",
+        "Tomasz Stręk"
+      ],
+      "first_author_affiliation": "Institute of Applied Mechanics, Poznan University of Technology, Jana Pawla II 24, 61-139 Poznan, Poland",
+      "corresponding_authors": [],
+      "venue": "Materials",
+      "year": 2026,
+      "date": "2026-09-19",
+      "date_precision": "day",
+      "url": "https://doi.org/10.3390/ma19183992",
+      "cited_by_count": 0,
+      "concepts": [
+        "Nusselt number",
+        "Heat sink",
+        "Materials science",
+        "Gyroid",
+        "Multiphysics",
+        "Pressure drop",
+        "Mechanics",
+        "Relative density",
+        "Heat transfer",
+        "Power density",
+        "Porosity",
+        "Thermodynamics",
+        "Fluid dynamics",
+        "Thermal",
+        "Porous medium",
+        "Topology (electrical circuits)",
+        "Compressibility"
+      ],
+      "categories": [],
+      "raw_type": "article",
+      "directions": [
+        "am_biomedical"
+      ],
+      "direction": "am_biomedical",
+      "direction_name": "AM Biomedical Materials",
+      "routing_matches": {
+        "am_biomedical": [
+          "TPMS",
+          "gyroid"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该论文研究TPMS结构用于电子散热器，与用户关注的LPBF生物医学植入物多孔结构、应力遮挡和力学测试无直接关联。",
+        "why_not_core": "This paper studies TPMS heat sinks for electronics thermal management via CFD, with no LPBF fabrication, no mechanical testing, no fatigue, no osseointegration, and no bone-implant or stress-shielding context.",
+        "validation_kind": "simulation_case",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "TPMS",
+          "heat sink",
+          "CFD",
+          "porous structure",
+          "relative density"
+        ],
+        "summary_zh": {
+          "motivation": "高功率密度电子器件对紧凑高效散热结构的需求日益增长。",
+          "method": "用COMSOL对gyroid、diamond和I-WP三种TPMS散热器进行CFD模拟，考察拓扑、片状/实体形态和相对密度的影响。",
+          "result": "gyroid和diamond的努塞尔数分别比I-WP高10.9–12.4%和2.9–4.7%，gyroid多孔结构使最高温度降低2.2 K。",
+          "validation": "仅基于COMSOL数值模拟，无实验验证。"
+        },
+        "summary_en": {
+          "motivation": "The increasing power density of compact electronics drives demand for efficient and compact thermal management structures.",
+          "method": "Computational fluid dynamics simulations in COMSOL were performed on gyroid, diamond, and I-WP TPMS heat sinks, examining topology, sheet/solid morphology, and relative density effects on thermal and hydraulic performance.",
+          "result": "Gyroid and diamond topologies yielded 10.9–12.4% and 2.9–4.7% higher average Nusselt numbers than I-WP, while the porous gyroid reduced peak temperature by 2.2 K relative to its solid counterpart.",
+          "validation": "Validation is limited to numerical CFD simulation without experimental or mechanical testing."
+        },
+        "key_terms": [
+          {
+            "en": "triply periodic minimal surface",
+            "zh": "三周期极小曲面"
+          },
+          {
+            "en": "heat sink",
+            "zh": "散热器"
+          },
+          {
+            "en": "relative density",
+            "zh": "相对密度"
+          },
+          {
+            "en": "Nusselt number",
+            "zh": "努塞尔数"
+          },
+          {
+            "en": "pressure drop",
+            "zh": "压降"
+          },
+          {
+            "en": "computational fluid dynamics",
+            "zh": "计算流体力学"
+          },
+          {
+            "en": "gyroid",
+            "zh": "螺旋面结构"
+          },
+          {
+            "en": "porous structure",
+            "zh": "多孔结构"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-09-22T17:04:18Z"
+    },
+    {
+      "source": "openalex",
+      "id": "https://openalex.org/W7213929908",
+      "doi": "10.3390/math14183401",
+      "pmid": "",
+      "arxiv_id": "",
+      "title": "A Recentered-Domain Yau–Yau Filter with Reduced-Order FKE Propagation for Nonlinear State Estimation",
+      "abstract": "Nonlinear filtering can be formulated as the propagation and update of conditional probability densities, but direct numerical propagation of the associated Forward Kolmogorov equation (FKE) over a large fixed domain is computationally expensive. This paper proposes a Recentered-Domain Yau–Yau Filter (RD-YYF) with reduced-order FKE propagation for nonlinear state estimation. The method solves the FKE on a fixed-size local computational window centered at the latest state estimate, thereby concentrating numerical resolution near the dominant posterior density. In the offline stage, physics-informed neural networks (PINNs) generate FKE solution snapshots, principal component analysis constructs a low-dimensional representation of density evolution, and a lightweight residual surrogate maps initial-condition coefficients and the domain center to terminal-solution coefficients. In the online stage, the pretrained surrogate performs per-timestep density prediction within the recentered window, followed by observation update and state estimation. Numerical experiments on two geometrically constrained target-tracking models show that RD-YYF achieves lower tracking errors than the extended Kalman filter and particle filter under matched online evaluation conditions. A fixed-domain ablation further shows that recentering improves density approximation in high-probability regions and reduces offline PINN training epochs. These results indicate that recentered-domain reduced-order FKE propagation is a practical computational strategy for nonlinear density-based filtering.",
+      "authors": [
+        "Lei Ma",
+        "Yuzhong Hu",
+        "Xiaoming John Zhang"
+      ],
+      "first_author_affiliation": "Academy of Mathematics and Systems Science, Chinese Academy of Sciences, Beijing 100190, China",
+      "corresponding_authors": [],
+      "venue": "Mathematics",
+      "year": 2026,
+      "date": "2026-09-19",
+      "date_precision": "day",
+      "url": "https://doi.org/10.3390/math14183401",
+      "cited_by_count": 0,
+      "concepts": [
+        "Nonlinear system",
+        "Particle filter",
+        "Filter (signal processing)",
+        "Algorithm",
+        "Residual",
+        "Computer science",
+        "Mathematics",
+        "Kalman filter",
+        "Artificial neural network",
+        "Domain (mathematical analysis)",
+        "Tracking (education)",
+        "Representation (politics)",
+        "State (computer science)",
+        "Computational complexity theory",
+        "Time domain",
+        "Propagation of uncertainty",
+        "Computer simulation",
+        "Extended Kalman filter",
+        "Applied mathematics",
+        "Filtering problem",
+        "Frequency domain",
+        "Conditional expectation"
+      ],
+      "categories": [],
+      "raw_type": "article",
+      "directions": [
+        "fea_surrogate"
+      ],
+      "direction": "fea_surrogate",
+      "direction_name": "FEA & Surrogate Modelling",
+      "routing_matches": {
+        "fea_surrogate": [
+          "PINN"
+        ]
+      },
+      "llm": {
+        "priority": "Medium",
+        "relevance_level": "Transferable",
+        "read_action": "Save for project",
+        "relevance_to_user": "该文用PINN与降阶代理加速FKE密度传播，属于代理建模与降阶思路，可迁移到FEA代理与不确定性传播，但未涉及生物力学或植入物设计。",
+        "why_not_core": "No FEA validation, no biomedical or implant mechanics context, and no surrogate applied to solid-mechanics or patient-specific design problems.",
+        "validation_kind": "numerical_benchmark",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": true,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "surrogate_model",
+          "PINN",
+          "reduced_order_model",
+          "nonlinear_filtering",
+          "uncertainty_propagation"
+        ],
+        "summary_zh": {
+          "motivation": "直接在大域上数值传播FKE计算代价过高，需要高效的非线性状态估计方法。",
+          "method": "在最新估计处设固定窗口求解FKE，用PINN生成快照、PCA降维并训练残差代理在线预测密度。",
+          "result": "在几何约束目标跟踪中跟踪误差低于EKF与粒子滤波，重定心提升高概率区密度近似并减少训练轮数。",
+          "validation": "两个几何约束目标跟踪模型的数值实验与固定域消融对比。"
+        },
+        "summary_en": {
+          "motivation": "Direct numerical propagation of the Forward Kolmogorov equation over a large fixed domain is computationally prohibitive for nonlinear state estimation.",
+          "method": "The FKE is solved on a fixed-size window recentered at the latest estimate, with PINN-generated snapshots compressed by PCA and a lightweight residual surrogate predicting terminal density coefficients online.",
+          "result": "The recentered reduced-order filter attains lower tracking errors than the extended Kalman and particle filters, while recentering improves density approximation in high-probability regions and cuts offline training epochs.",
+          "validation": "Numerical experiments on two geometrically constrained target-tracking models plus a fixed-domain ablation study."
+        },
+        "key_terms": [
+          {
+            "en": "Forward Kolmogorov equation",
+            "zh": "前向柯尔莫哥洛夫方程"
+          },
+          {
+            "en": "physics-informed neural network",
+            "zh": "物理信息神经网络"
+          },
+          {
+            "en": "reduced-order model",
+            "zh": "降阶模型"
+          },
+          {
+            "en": "principal component analysis",
+            "zh": "主成分分析"
+          },
+          {
+            "en": "surrogate model",
+            "zh": "代理模型"
+          },
+          {
+            "en": "nonlinear state estimation",
+            "zh": "非线性状态估计"
+          },
+          {
+            "en": "uncertainty propagation",
+            "zh": "不确定性传播"
+          },
+          {
+            "en": "particle filter",
+            "zh": "粒子滤波"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-09-22T17:04:18Z"
+    },
+    {
+      "source": "openalex",
+      "id": "https://openalex.org/W7213935555",
+      "doi": "10.3390/electronics15184289",
+      "pmid": "",
+      "arxiv_id": "",
+      "title": "Stable Offline Reinforcement Learning for Switched Reluctance Motor Drives via Multi-Demonstrator Policy Distillation",
+      "abstract": "Finite-control-set model predictive control provides excellent torque–speed regulation for switched reluctance motor drives but requires an online combinatorial search at every control instant, making low-cost embedded implementation challenging. This article investigates whether offline reinforcement learning can distill policies from multiple classical controllers into a single feedforward policy requiring neither online optimization nor controller gain tuning. A replay buffer is populated with trajectories generated by three demonstrators—hysteresis current control, proportional–integral control with pulse-width modulation, and finite-control-set model predictive control—using a finite-element model of a four-phase 8/6 switched reluctance machine parameterized from measurements of the physical drive. An implicit Q-learning agent then learns a control policy without evaluating actions outside the offline dataset. The central finding is that demonstration diversity governs the stability of offline reinforcement learning on this problem: policies trained from a single demonstrator experience early mode collapse in all fifteen runs, whereas two- or three-demonstrator datasets converge stably in all fifteen. Behavior cloning trained on the identical buffer, split, architecture, and deployed controller provides the reference point for interpreting this result. It matches the offline RL policy on torque quality and improves on its speed regulation, exhibiting none of the seed-to-seed fragility seen at no load while requiring roughly 8% more switching transitions. The stability requirement therefore appears to be a property of the advantage-weighted offline RL objective rather than the control task, and the measured benefit of that objective on this problem is confined to switching effort. We report this rather than claim a broader advantage. The characterization of the distilled controller shows that it generalizes to operating points that are not included in the training dataset, gains nothing systematic beyond approximately 60% of the replay buffer, remains insensitive to ±20% perturbations of all reward weights, and degrades gracefully under measurement noise while the current mask enforces the peak-current constraint throughout. A deployment analysis shows that the 18,432 multiply–accumulate policy meets a 50μs control period in its existing form at a measured cost of about 2% in torque ripple. All the results are simulation-based on a finite-element model parameterized from a physical machine.",
+      "authors": [
+        "Franklin Sánchez",
+        "María Isabel Milanés‐Montero",
+        "Enrique Romero‐Cadaval"
+      ],
+      "first_author_affiliation": "Departamento de Eléctrica, Electrónica y Telecomunicaciones, Universidad de las Fuerzas Armadas ESPE, Sangolquí 171103, Ecuador",
+      "corresponding_authors": [],
+      "venue": "Electronics",
+      "year": 2026,
+      "date": "2026-09-19",
+      "date_precision": "day",
+      "url": "https://doi.org/10.3390/electronics15184289",
+      "cited_by_count": 0,
+      "concepts": [
+        "Reinforcement learning",
+        "Computer science",
+        "Switched reluctance motor",
+        "Offline learning",
+        "Controller (irrigation)",
+        "Control theory (sociology)",
+        "Parameterized complexity",
+        "Feed forward",
+        "Stability (learning theory)",
+        "Model predictive control",
+        "Control (management)",
+        "Torque",
+        "Online and offline",
+        "Control engineering",
+        "Overshoot (microwave communication)"
+      ],
+      "categories": [],
+      "raw_type": "article",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "model predictive control",
+          "reinforcement learning + simulation"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该文将离线强化学习用于开关磁阻电机控制，仅以有限元模型作为仿真环境，未涉及植入物力学或FEA代理建模，与用户方向关联较弱。",
+        "why_not_core": "This paper applies offline RL to motor drive control using a finite-element motor model as the simulator; it does not develop FEA surrogates, neural operators, or address implant biomechanics/stress shielding.",
+        "validation_kind": "simulation_case",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "offline_rl",
+          "finite_element_model",
+          "motor_control",
+          "policy_distillation",
+          "engineering_simulation"
+        ],
+        "summary_zh": {
+          "motivation": "有限控制集模型预测控制在线搜索计算量大，难以低成本嵌入式实现。",
+          "method": "用三种经典控制器生成离线轨迹，以隐式Q学习蒸馏单一前馈策略，并与行为克隆对比。",
+          "result": "多演示数据保证收敛稳定，策略可泛化且对奖励权重不敏感，但优势主要限于开关次数。",
+          "validation": "基于参数化有限元电机模型的仿真验证，无实物实验。"
+        },
+        "summary_en": {
+          "motivation": "Finite-control-set model predictive control offers strong torque-speed regulation for switched reluctance motors but demands prohibitive online combinatorial search for low-cost embedded deployment.",
+          "method": "An implicit Q-learning agent is trained on an offline replay buffer of trajectories from three classical controllers, with behavior cloning as a reference, using a finite-element motor model parameterized from measurements.",
+          "result": "Demonstration diversity governs offline RL stability, with multi-demonstrator datasets converging in all runs while single-demonstrator training collapses; the distilled policy generalizes and tolerates reward-weight perturbations but mainly reduces switching effort.",
+          "validation": "All results are simulation-based on a finite-element model parameterized from a physical machine, with no hardware experiments."
+        },
+        "key_terms": [
+          {
+            "en": "offline reinforcement learning",
+            "zh": "离线强化学习"
+          },
+          {
+            "en": "switched reluctance motor",
+            "zh": "开关磁阻电机"
+          },
+          {
+            "en": "finite-element model",
+            "zh": "有限元模型"
+          },
+          {
+            "en": "policy distillation",
+            "zh": "策略蒸馏"
+          },
+          {
+            "en": "implicit Q-learning",
+            "zh": "隐式Q学习"
+          },
+          {
+            "en": "behavior cloning",
+            "zh": "行为克隆"
+          },
+          {
+            "en": "model predictive control",
+            "zh": "模型预测控制"
+          },
+          {
+            "en": "replay buffer",
+            "zh": "经验回放缓冲区"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-09-22T17:04:18Z"
+    },
+    {
+      "source": "openalex",
+      "id": "https://openalex.org/W7213945062",
+      "doi": "10.25629/hc.2026.09.28",
+      "pmid": "",
+      "arxiv_id": "",
+      "title": "ОРГАНИЗАЦИОННО-ПЕДАГОГИЧЕСКИЕ УСЛОВИЯ ПОДГОТОВКИ СОТРУДНИКОВ ПОДРАЗДЕЛЕНИЙ ПО ВОПРОСАМ МИГРАЦИИ МВД РОССИИ В УСЛОВИЯХ ТРАНСФОРМАЦИИ ГОСУДАРСТВЕННОЙ МИГРАЦИОННОЙ ПОЛИТИКИ",
+      "abstract": "В статье рассматриваются организационно-педагогические условия повышения профессиональной подготовки сотрудников подразделений по вопросам миграции МВД России в условиях современных вызовов, которые связанны с масштабными миграционными потоками и динамичными изменениями законодательства. Актуальность исследования обусловлена возрастающей нагрузкой на миграционные подразделения, а также дефицитом системной профессиональной подготовки. В работе показано, что целенаправленная подготовка сотрудников для вышеуказанных подразделений в системе высшего образования МВД России осуществляется только в двух образовательных организациях, что не покрывает кадровую потребность территориальных органов МВД. На основе анализа научных публикаций и нормативных правовых актов обнаружены характерные проблемы в профессиональной деятельности сотрудников миграционных подразделений. Эмпирическая часть проведена в Управлении по вопросам миграции Главного управления МВД России по Санкт-Петербургу и Ленинградской области с участием 105 сотрудников. Выбор данного подразделения в качестве эмпирической базы не случаен. На территории этих двух субъектов РФ присутствует высокая интенсивность миграционных потоков, что делает их своего рода «полигоном», где наиболее остро проявляются все системные противоречия современной миграционной политики. Для выявления ключевых дефицитов в профессиональной подготовке сотрудников нами были использованы два метода: анализ правоприменительной практики и экспертные интервью. На основе полученных эмпирических данных нами была разработана и обоснована педагогическая программа повышения профессиональной подготовленности, включающая три взаимосвязанных структурных блока: организационный, управленческий и педагогический. В ходе апробации программы было установлено, что ключевыми факторами, обеспечивающими её эффективность, стали системность профессионального самообразования и дифференцированный подход, учитывающий уровень индивидуальной подготовки сотрудников. Кроме того, существенное значение имеет широкое использование активных форм обучения – деловых игр, разбора конкретных служебных ситуаций и тренинговых занятий – в системе служебной подготовки. The article examines the organizational and pedagogical conditions for enhancing the professional training of officers serving in the migration affairs units of the Ministry of Internal Affairs of Russia in the context of contemporary challenges associated with large-scale migration flows and dynamic legislative changes. The relevance of the study is determined by the increasing workload on migration units, coupled with a persistent deficit in systematic professional training. The analysis demonstrates that targeted training for officers of these units within the higher education system of the Ministry of Internal Affairs is currently provided by only two educational institutions, which is insufficient to meet the staffing needs of territorial bodies. A review of scholarly publications and regulatory legal acts has revealed a set of characteristic problems in the professional activities of migration unit officers. The empirical phase of the research was conducted at the Migration Affairs Directorate of the Main Directorate of the Ministry of Internal Affairs for St. Petersburg and the Leningrad Region, with the participation of 105 officers. The selection of this particular unit as the empirical base was determined by the consistently high intensity of migration flows in these two constituent entities of the Russian Federation, making the region a kind of testing ground where all systemic contradictions of contemporary migration policy manifest themselves most acutely. To identify the key deficiencies in the professional training of officers, two methods were employed: an analysis of law enforcement practice and expert interviews. On the basis of the empirical data obtained, a pedagogical program for enhancing professional preparedness was developed and substantiated, comprising three interrelated structural components: organizational, managerial, and pedagogical. During the program's implementation, it was found that the key factors ensuring its effectiveness were the systematic nature of professional self-education and a differentiated approach that takes into account the individual level of preparedness of officers. Furthermore, substantial importance attaches to the extensive use of active learning methods-business games, analysis of specific service situations, and training sessions-within the in-service training system.",
+      "authors": [
+        "О.Ю. Щербак",
+        "Ekaterina Dushkina"
+      ],
+      "first_author_affiliation": "Санкт-Петербургский университет Министерства внутренних дел Российской Федерации",
+      "corresponding_authors": [],
+      "venue": "Человеческий капитал.",
+      "year": 2026,
+      "date": "2026-09-19",
+      "date_precision": "day",
+      "url": "https://doi.org/10.25629/hc.2026.09.28",
+      "cited_by_count": 0,
+      "concepts": [
+        "Public relations",
+        "Work (physics)",
+        "Training (meteorology)"
+      ],
+      "categories": [],
+      "raw_type": "article",
+      "directions": [
+        "fea_surrogate"
+      ],
+      "direction": "fea_surrogate",
+      "direction_name": "FEA & Surrogate Modelling",
+      "routing_matches": {
+        "fea_surrogate": [
+          "active learning"
+        ]
+      },
+      "llm": {
+        "priority": "Exclude",
+        "relevance_level": "Peripheral",
+        "read_action": "Ignore",
+        "relevance_to_user": "该论文研究俄罗斯内务部移民部门人员的组织与教学培训，与FEA、代理模型、生物力学或植入物设计完全无关。",
+        "why_not_core": "This paper contains no computational mechanics, no surrogate modelling, no FEA, no uncertainty quantification, and no biomedical or implant-related content whatsoever.",
+        "validation_kind": "none",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "pedagogy",
+          "migration policy",
+          "professional training",
+          "public administration"
+        ],
+        "summary_zh": {
+          "motivation": "移民流量增大与立法变化使移民部门人员培训不足问题凸显。",
+          "method": "通过文献法规分析与105名员工的专家访谈开展实证研究。",
+          "result": "提出含组织、管理、教学三模块的培训方案并验证其有效性。",
+          "validation": "基于执法实践分析与专家访谈的实证验证。"
+        },
+        "summary_en": {
+          "motivation": "Growing migration flows and shifting legislation have exposed deficiencies in the systematic professional training of migration-affairs officers.",
+          "method": "The study combines a review of scholarly and regulatory documents with expert interviews involving 105 officers in St. Petersburg and Leningrad Oblast.",
+          "result": "A three-block pedagogical programme covering organizational, managerial, and instructional components was developed and shown to improve training outcomes.",
+          "validation": "Empirical validation relied on analysis of law-enforcement practice and expert interviews rather than quantitative modelling."
+        },
+        "key_terms": [
+          {
+            "en": "professional training",
+            "zh": "职业培训"
+          },
+          {
+            "en": "migration policy",
+            "zh": "移民政策"
+          },
+          {
+            "en": "organizational-pedagogical conditions",
+            "zh": "组织教学条件"
+          },
+          {
+            "en": "expert interview",
+            "zh": "专家访谈"
+          },
+          {
+            "en": "curriculum design",
+            "zh": "课程设计"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-09-22T17:04:18Z"
     }
   ],
   "counts": {
-    "fetched_total": 30,
+    "fetched_total": 61,
     "by_source": {
-      "openalex": 30
+      "openalex": 41,
+      "arxiv": 20
     },
-    "after_dedup": 30,
-    "after_routing": 30,
+    "after_dedup": 61,
+    "after_routing": 61,
     "by_direction": {
-      "fea_surrogate": 17,
-      "am_biomedical": 3,
-      "rl_world_model": 8,
-      "ai_bioprinting": 1,
+      "fea_surrogate": 27,
+      "am_biomedical": 4,
+      "rl_world_model": 26,
+      "ai_bioprinting": 3,
       "hip_implant": 1
     },
     "routed_by_source": {
-      "openalex": 30
+      "openalex": 41,
+      "arxiv": 20
     },
-    "scored": 30,
+    "scored": 61,
     "priority_counts": {
-      "Low": 13,
-      "Exclude": 9,
-      "Medium": 5,
+      "Low": 31,
+      "Exclude": 15,
+      "Medium": 12,
       "High": 3
     }
   }
