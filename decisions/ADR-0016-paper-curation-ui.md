@@ -149,3 +149,31 @@ back to the metadata saved with the mark plus a search link. The page opts
 out of the daily-page priority / mark visibility filter
 (`main[data-rui-no-filter]`). Storage contract, keys and the no-write-back
 rule of this ADR are unchanged.
+
+## Addendum 2026-09-22 — D5 becomes a mail hand-off
+
+D5 shipped as a browser-side "发送到 lit-system" queue: the button appended
+the card's identity to `radar:promote-queue`, and the library page offered a
+copy-as-JSON / clear pair for a manual paste-import on the lit-system side.
+The user never adopted that loop and asked for the button to mail the card
+instead.
+
+Removed: the promote button, the `radar:promote-queue` writer and reader, and
+the library panel around it. Existing `radar:promote-queue` values are left
+untouched in the browsers that hold them; nothing reads them any more.
+`my-promotes.html` still exists and now redirects to `library.html`. The
+pipeline-level hand-off `data/exports/candidates.jsonl`
+(`pipeline/export_candidates.py`, SCOPE.md) is a separate contract and is
+unchanged.
+
+Added: a per-card "发送到邮箱" button. The site is a static Pages artifact
+with no backend, so the button cannot send mail itself — it composes a
+message from the card's own DOM (title, level/direction/date, authors,
+venue, original link, absolute radar-card URL, identity key, the reader's own
+note, relevance, Chinese summary, scope boundary) and hands it to the
+browser's mail client through a `mailto:` URL. Percent-encoded CJK costs nine
+characters each, so the body is filled section by section up to a 1,800-char
+URL budget and the untruncated text is copied to the clipboard on every
+click, which keeps a long card recoverable. The recipient address is
+assembled at run time instead of appearing as a literal in the bundle; the
+deployed page is public either way, so this only defeats naive scrapers.

@@ -471,9 +471,9 @@
     var noteButton = element("button", "rui-note-btn", "笔记");
     noteButton.type = "button";
     tools.appendChild(noteButton);
-    var promoteButton = element("button", "rui-promote-btn", "发送到 lit-system");
-    promoteButton.type = "button";
-    tools.appendChild(promoteButton);
+    var mailButton = element("button", "rui-mail-btn", "发送到邮箱");
+    mailButton.type = "button";
+    tools.appendChild(mailButton);
 
     var noteWrap = element("div", "rui-note-wrap");
     var textarea = element("textarea", "rui-note-ta");

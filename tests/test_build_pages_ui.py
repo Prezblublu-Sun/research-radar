@@ -11,7 +11,7 @@ exercised here. These tests assert the *markup contract* the JS depends on:
   D2  high-priority.html / medium-priority.html exist and are single-priority
   D3  each daily shell has static filters; card priorities live in day shards
   D4  public card records and the shared renderer preserve mark/note identity
-  D5  the shared renderer preserves promote-to-lit-system controls
+  D5  the shared renderer preserves the per-card mail control
 
 Run with:
     pytest tests/test_build_pages_ui.py
@@ -329,14 +329,16 @@ def test_d4_every_card_has_mark_and_note_controls_with_identity_key(built):
 
 # ---------------------------------------------------------------- D5
 
-def test_d5_every_card_has_promote_button_with_identity_key(built):
+def test_d5_every_card_has_mail_button(built):
     card_js = (built / "radar-card.js").read_text(encoding="utf-8")
-    assert "rui-promote-btn" in card_js
-    assert "发送到 lit-system" in card_js
+    assert "rui-mail-btn" in card_js
+    assert "发送到邮箱" in card_js
+    assert "lit-system" not in card_js
     day_js = (built / "radar-day.js").read_text(encoding="utf-8")
     assert "RadarUI.hydrate" in day_js
-    promo_pg = (built / "library.html").read_text(encoding="utf-8")
-    assert 'id="rui-copy-promotes"' in promo_pg
+    library = (built / "library.html").read_text(encoding="utf-8")
+    assert 'id="rui-copy-promotes"' not in library
+    assert "lit-system" not in library
 
 
 # ---------------------------------------------------------------- assets
@@ -350,7 +352,7 @@ def test_static_bundle_copied_into_docs(built):
     assert (built / "radar-search.js").exists()
     assert (built / "radar-search-worker.js").exists()
     js = (built / "radar-ui.js").read_text(encoding="utf-8")
-    assert "radar:promote-queue" in js
+    assert "radar:promote-queue" not in js
     assert "radar:mark:" in js
 
 
