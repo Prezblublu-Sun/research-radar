@@ -48,6 +48,11 @@ candidates; lit-system owns everything past that.
   (NOTE 2026-05-19: client-side marks+notes on the Radar browse surface
   are permitted per ADR-0016. They are a human-curation aid distinct from
   lit-system's automatic machine annotation of PDFs.)
+  (NOTE 2026-09-22: ADR-0032 lets those marks reach `data/marks/` through a
+  validated, owner-only `marks-sync` issue, so a digest job can read them and
+  a curated library can be built on them. Still no credential in the page and
+  no continuous sync; the payload is a trust boundary, see
+  `pipeline/marks_store.py`.)
 
 If a feature touches any of the above, it belongs in lit-system — reject
 or redirect.

@@ -94,7 +94,10 @@ These are explicitly out of scope and belong to other systems (primarily lit-sys
 ### Allowed (added 2026-05-19 by ADR-0016, see decisions/ADR-0016-paper-curation-ui.md)
 - Client-side reading marks and notes on the Radar browse surface
   (to-read / read / interesting / ignore, plus free-text notes per paper).
-  Persisted in localStorage only; no server-side state; no sync.
+  Written in localStorage; since ADR-0032 the reader may also hand them to
+  the repository through a validated `marks-sync` issue, which commits them
+  to `data/marks/` for history, cross-device merge and the daily digest.
+  The page still holds no credential and there is no continuous sync.
 - Cross-corpus priority navigation pages (high-priority.html etc).
 - Open-license visual previews on browse cards, joined from a sidecar registry
   and isolated from scored corpus records (ADR-0029).
