@@ -19,7 +19,7 @@
   --c-priority-x-bg: #f9fafb;
   --c-mark-toread: #b7791f;
   --c-mark-read: #2d6e49;
-  --c-mark-int: #3457a8;
+  --c-mark-tag: #3457a8;   /* ADR-0034: was --c-mark-int, the 有启发 state */
   --c-mark-ignore: #667085;
   --space-xs: 4px;
   --space-sm: 8px;
@@ -174,14 +174,13 @@ details.summary-en > summary { cursor: pointer; color: var(--c-brand); font-size
 /* Reading tools */
 .paper[data-mark="to-read"] { border-left-color: var(--c-mark-toread); }
 .paper[data-mark="read"] { border-left-color: var(--c-mark-read); }
-.paper[data-mark="interesting"] { border-left-color: var(--c-mark-int); }
 .paper[data-mark="ignore"] { border-left-color: var(--c-mark-ignore); opacity: .78; }
 .rui-card-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 7px 10px; margin-top: 9px; padding-top: 8px; border-top: 1px dashed var(--c-card-border); color: var(--c-text-meta); font-size: 13px; }
 .rui-mark-group { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .rui-mark-group label { display: inline-flex; align-items: center; gap: 3px; cursor: pointer; }
 .m-to-read { color: #815716; } .m-read { color: var(--c-mark-read); }
-.m-interesting { color: var(--c-mark-int); } .m-ignore { color: var(--c-mark-ignore); }
-.rui-note-btn, .rui-mail-btn, .rui-btn { min-height: 36px; padding: 6px 12px; border: 1px solid var(--c-card-border); border-radius: 7px; background: #fff; color: var(--c-text-secondary); cursor: pointer; }
+.m-ignore { color: var(--c-mark-ignore); }
+.rui-note-btn, .rui-tag-btn, .rui-mail-btn, .rui-btn { min-height: 36px; padding: 6px 12px; border: 1px solid var(--c-card-border); border-radius: 7px; background: #fff; color: var(--c-text-secondary); cursor: pointer; }
 .rui-btn { border-color: var(--c-brand); background: var(--c-brand); color: #fff; font-weight: 650; }
 .rui-btn:hover { background: var(--c-brand-hover); }
 .rui-secondary { border-color: var(--c-card-border); background: #fff; color: var(--c-text-secondary); }
@@ -193,6 +192,27 @@ details.summary-en > summary { cursor: pointer; color: var(--c-brand); font-size
 .rui-mail-actions .rui-btn { text-decoration: none; display: inline-flex; align-items: center; }
 .rui-mail-note { margin-top: 6px; font-size: 12px; color: var(--c-text-meta); }
 .rui-note-wrap { display: none; width: 100%; }
+
+/* Tags (ADR-0034). The chip row is always visible so a card shows what it
+   is tagged with; the remove buttons and the add form appear only while the
+   标签 panel is open. */
+.rui-tag-wrap { flex-basis: 100%; }
+.rui-tag-row { display: flex; flex-wrap: wrap; gap: 5px; }
+.rui-tag { display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; border: 1px solid #c3cee6; border-radius: 999px; background: #eef2fa; color: var(--c-mark-tag); font-size: 12px; font-weight: 600; }
+.rui-tag-x { display: none; padding: 0 2px; border: 0; background: none; color: var(--c-mark-tag); font-size: 14px; line-height: 1; cursor: pointer; }
+.rui-tag-empty { display: none; color: var(--c-text-meta); font-size: 12px; }
+.rui-tag-add { display: none; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 7px; }
+.rui-tag-wrap[data-open="1"] .rui-tag-x,
+.rui-tag-wrap[data-open="1"] .rui-tag-empty { display: inline; }
+.rui-tag-wrap[data-open="1"] .rui-tag-add { display: flex; }
+.rui-tag-input { min-width: 150px; min-height: 32px; padding: 4px 9px; border: 1px solid #aeb7c2; border-radius: 7px; font-size: 13px; }
+.rui-tag-quick, .rui-tag-go { min-height: 32px; padding: 4px 11px; border: 1px solid var(--c-card-border); border-radius: 7px; background: #fff; color: var(--c-text-secondary); font-size: 13px; cursor: pointer; }
+.rui-tag-quick { border-color: #c3cee6; background: #eef2fa; color: var(--c-mark-tag); font-weight: 600; }
+
+/* The tag half of the shared mark filter, built in the browser. */
+.rui-tagf { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.rui-tagf-chip { padding: 3px 10px; border: 1px solid var(--c-card-border); border-radius: 999px; background: #fff; color: var(--c-text-secondary); font-size: 12.5px; cursor: pointer; }
+.rui-tagf-chip[data-on="1"] { border-color: var(--c-mark-tag); background: #eef2fa; color: var(--c-mark-tag); font-weight: 650; }
 .rui-note-ta { width: 100%; min-height: 90px; padding: 10px 12px; border: 1px solid #aeb7c2; border-radius: 7px; resize: vertical; }
 
 /* Archive and month/day navigation */
@@ -325,8 +345,8 @@ footer.run-info { margin-top: 38px; padding-top: 16px; border-top: 1px solid var
 .reading-stamp__state { padding: 2px 8px; border-radius: 999px; background: #eef0f3; font-weight: 600; }
 .reading-stamp__state.m-to-read { background: #FAEEDA; color: #633806; }
 .reading-stamp__state.m-read { background: #EAF3DE; color: #27500A; }
-.reading-stamp__state.m-interesting { background: #E6EEFA; color: #1F3C88; }
 .reading-stamp__state.m-ignore { background: #ECECEC; color: #555; }
+.reading-stamp__tag { padding: 2px 8px; border-radius: 999px; background: #EEF2FA; color: var(--c-mark-tag); font-weight: 600; }
 .reading-note { margin: 4px 0 8px; padding: 8px 10px; border-left: 3px solid var(--c-brand); background: #fafaf6; font-size: 13px; white-space: pre-wrap; }
 .reading-footnote { margin-top: 18px; font-size: 12px; color: var(--c-text-meta); }
 

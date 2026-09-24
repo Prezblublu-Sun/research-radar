@@ -150,11 +150,12 @@ def test_the_newest_mark_wins_across_devices(tmp_path):
     ms.write_device(tmp_path, ms.validate_payload(_payload(
         device="dev-desktop1",
         **{"doi:10.1/x": {"state": "read", "at": "2026-09-22T00:00:00Z"},
-           "doi:10.1/y": {"state": "interesting", "at": "2026-09-22T00:00:00Z"}})))
+           "doi:10.1/y": {"state": "read", "tags": ["有启发"],
+                          "at": "2026-09-22T00:00:00Z"}})))
     merged = ms.load_all(tmp_path)
     assert merged["doi:10.1/x"]["state"] == "read"
     assert merged["doi:10.1/x"]["device"] == "dev-desktop1"
-    assert merged["doi:10.1/y"]["state"] == "interesting"
+    assert merged["doi:10.1/y"]["tags"] == ["有启发"]
 
 
 def test_a_corrupt_device_file_does_not_break_the_merge(tmp_path):
@@ -335,9 +336,10 @@ def test_the_browser_keeps_and_ships_the_tombstone_but_never_shows_it():
     reading = (REPO_ROOT / "render" / "static" / "radar-reading.js").read_text(encoding="utf-8")
     # Clearing writes a record instead of deleting the key...
     assert 'localStorage.removeItem("radar:mark:" + idk)' not in UI_JS
-    assert "var cleared = mergeMeta(" in UI_JS
+    assert 'updateMark(idk, card, function (record) { record.state = ""; });' in UI_JS
     # ...the sync payload carries it...
-    assert "if (!state && !note && !at) continue;" in UI_JS
+    assert "if (!state && !note && !tags.length && !at) continue;" in UI_JS
     # ...and neither the reading list nor the library listing renders it.
-    assert "if (!mark.state && !mark.note) continue;" in reading
-    assert "!parsed.state && !parsed.note) continue;" in UI_JS
+    # A record with only tags is not a tombstone: it still says something.
+    assert "if (!mark.state && !mark.note && !mark.tags.length) continue;" in reading
+    assert "!parsed.note && !tagsOf(parsed).length) continue;" in UI_JS

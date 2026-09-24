@@ -53,6 +53,11 @@ candidates; lit-system owns everything past that.
   a curated library can be built on them. Still no credential in the page and
   no continuous sync; the payload is a trust boundary, see
   `pipeline/marks_store.py`.)
+  (NOTE 2026-09-24: ADR-0034 splits a mark into one `state` — 待读/已读/忽略,
+  mutually exclusive — plus any number of free-text `tags`. 有启发 is now a
+  tag. One filter rule (`markFilterFn` in radar-ui.js) serves the daily
+  pages, the queue and the reading list; do not add a fourth per-page
+  filter.)
 
 If a feature touches any of the above, it belongs in lit-system — reject
 or redirect.

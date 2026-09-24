@@ -46,7 +46,7 @@ def test_the_promote_control_is_gone_everywhere():
 
 
 def test_mail_button_styling_replaced_the_queued_styling():
-    assert ".rui-note-btn, .rui-mail-btn, .rui-btn {" in UI_CSS
+    assert ".rui-note-btn, .rui-tag-btn, .rui-mail-btn, .rui-btn {" in UI_CSS
     assert ".rui-mail-btn.rui-mailed" in UI_CSS
     assert "rui-queued" not in UI_CSS
 
