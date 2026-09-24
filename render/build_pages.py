@@ -1768,7 +1768,7 @@ def _render_queue_page() -> str:
   <label>方向<select id="queue-direction"><option value="">全部方向</option></select></label>
   <label>年份<select id="queue-year"><option value="">全部年份</option></select></label>
   <label>相关性<select id="queue-relevance"><option value="">全部</option><option>Direct</option><option>Transferable</option><option>Peripheral</option></select></label>
-  <label class="queue-toggle"><input type="checkbox" id="queue-hide-ignored"> 隐藏已忽略</label>
+  <label>忽略<select id="queue-ignored"><option value="">全部</option><option value="exclude">已忽略以外</option><option value="only">只看已忽略</option></select></label>
 </div>
 <div class="queue-status" id="queue-status" aria-live="polite">正在加载队列…</div>
 <div id="queue-results" class="paper-grid"></div>

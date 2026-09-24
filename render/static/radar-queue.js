@@ -4,10 +4,12 @@
 
   var PAGE_SIZE = 20;
   var manifest = null;
-  var HIDE_IGNORED_KEY = "radar:filter:queue-hide-ignored";
+  var IGNORED_KEY = "radar:filter:queue-ignored";
+  var IGNORED_MODES = ["", "exclude", "only"];
   var state = {
     priority: "High", direction: "", year: "", relevance: "",
-    hideIgnored: false,
+    // "" all · "exclude" everything but 忽略 · "only" just the 忽略 pile
+    ignored: "",
     records: [], loadedYears: {}, cursor: 0, page: 1,
     loading: false, generation: 0
   };
@@ -22,22 +24,30 @@
   var directionSelect = document.getElementById("queue-direction");
   var yearSelect = document.getElementById("queue-year");
   var relevanceSelect = document.getElementById("queue-relevance");
-  var hideIgnoredBox = document.getElementById("queue-hide-ignored");
+  var ignoredSelect = document.getElementById("queue-ignored");
   if (!results || !status || !pagination || !previous || !pageSelect ||
       !pageTotal || !next || !directionSelect || !yearSelect ||
       !relevanceSelect) return;
 
-  function rememberedHideIgnored() {
+  function normaliseMode(value) {
+    return IGNORED_MODES.indexOf(value) >= 0 ? value : "";
+  }
+
+  function rememberedIgnoredMode() {
     try {
-      return window.localStorage.getItem(HIDE_IGNORED_KEY) === "1";
+      var stored = window.localStorage.getItem(IGNORED_KEY);
+      if (stored !== null) return normaliseMode(stored);
+      // The first cut of this filter was a checkbox; honour its preference.
+      return window.localStorage.getItem("radar:filter:queue-hide-ignored") === "1"
+        ? "exclude" : "";
     } catch (error) {
-      return false;
+      return "";
     }
   }
 
-  function rememberHideIgnored(value) {
+  function rememberIgnoredMode(value) {
     try {
-      window.localStorage.setItem(HIDE_IGNORED_KEY, value ? "1" : "0");
+      window.localStorage.setItem(IGNORED_KEY, value);
     } catch (error) {
       /* private mode / quota — the URL still carries the choice */
     }
@@ -71,7 +81,10 @@
   function filteredRecords() {
     return state.records.filter(function (record) {
       if (!matchesFacets(record)) return false;
-      return !(state.hideIgnored && markStateOf(record) === "ignore");
+      var ignored = markStateOf(record) === "ignore";
+      if (state.ignored === "exclude") return !ignored;
+      if (state.ignored === "only") return ignored;
+      return true;
     });
   }
 
@@ -79,7 +92,7 @@
   // nothing about them. Count the ones we have actually loaded and correct
   // both the displayed total and how far ahead the loader has to read.
   function hiddenIgnoredCount() {
-    if (!state.hideIgnored) return 0;
+    if (state.ignored !== "exclude") return 0;
     var hidden = 0;
     for (var index = 0; index < state.records.length; index += 1) {
       var record = state.records[index];
@@ -111,7 +124,26 @@
     return Number((facets.relevance || {})[state.relevance] || 0);
   }
 
+  // "Only ignored" is defined entirely by local marks, so the facet counts
+  // cannot describe it. The marks do record each paper's publication date,
+  // which is what names the year shard, so this view loads the few shards it
+  // needs instead of the whole priority.
+  function yearsHoldingIgnoredMarks() {
+    var api = window.RadarUI;
+    if (!api || !api.ignoredYears) return yearsForPriority();
+    var available = yearsForPriority();
+    var wanted = api.ignoredYears();
+    // A mark with no usable date would otherwise be invisible; widen rather
+    // than silently drop it.
+    if (wanted.indexOf("") >= 0) return available;
+    return available.filter(function (year) {
+      return wanted.indexOf(year) >= 0;
+    });
+  }
+
   function knownFilteredTotal() {
+    // Local marks decide this view, so there is no server-side count to use.
+    if (state.ignored === "only") return null;
     var years = state.year ? [state.year] : yearsForPriority();
     var total = 0;
     for (var index = 0; index < years.length; index += 1) {
@@ -174,10 +206,12 @@
 
     var count = pageCountFor(total);
     var hidden = hiddenIgnoredCount();
+    var note = "";
+    if (state.ignored === "only") note = " · 只看已忽略";
+    else if (hidden) note = " · 已隐藏 " + hidden + " 篇忽略";
     status.textContent = state.priority + "：当前筛选 " + total +
       " 篇 · 第 " + (total ? state.page : 0) + " / " + count +
-      " 页 · 每页 " + PAGE_SIZE + " 篇" +
-      (hidden ? " · 已隐藏 " + hidden + " 篇忽略" : "");
+      " 页 · 每页 " + PAGE_SIZE + " 篇" + note;
     renderPagination(total);
     syncUrl();
   }
@@ -267,7 +301,23 @@
     return step();
   }
 
+  function loadYears(years, generation) {
+    return years.reduce(function (chain, year) {
+      return chain.then(function () {
+        if (generation !== state.generation) return;
+        return loadYear(year, generation);
+      });
+    }, Promise.resolve());
+  }
+
   function ensureDataForView(generation) {
+    if (state.ignored === "only") {
+      var wanted = yearsHoldingIgnoredMarks();
+      if (state.year) {
+        wanted = wanted.filter(function (year) { return year === state.year; });
+      }
+      return loadYears(wanted, generation);
+    }
     if (state.year) return loadYear(state.year, generation);
     var total = knownFilteredTotal();
     if (total == null) return loadAllYears(generation);
@@ -283,8 +333,9 @@
     else params.delete("year");
     if (state.relevance) params.set("relevance", state.relevance);
     else params.delete("relevance");
-    if (state.hideIgnored) params.set("hide_ignored", "1");
-    else params.delete("hide_ignored");
+    if (state.ignored) params.set("ignored", state.ignored);
+    else params.delete("ignored");
+    params.delete("hide_ignored");
     if (state.page > 1) params.set("page", String(state.page));
     else params.delete("page");
     history.replaceState(null, "", "?" + params.toString());
@@ -343,9 +394,10 @@
       state.direction = params.get("direction") || "";
       state.year = params.get("year") || "";
       state.relevance = params.get("relevance") || "";
-      state.hideIgnored = params.has("hide_ignored")
-        ? params.get("hide_ignored") === "1"
-        : rememberedHideIgnored();
+      state.ignored = params.has("ignored")
+        ? normaliseMode(params.get("ignored"))
+        : (params.get("hide_ignored") === "1" ? "exclude"
+                                              : rememberedIgnoredMode());
       if (state.direction && !(manifest.directions || {})[state.direction]) {
         state.direction = "";
       }
@@ -363,7 +415,7 @@
       });
       directionSelect.value = state.direction;
       relevanceSelect.value = state.relevance;
-      if (hideIgnoredBox) hideIgnoredBox.checked = state.hideIgnored;
+      if (ignoredSelect) ignoredSelect.value = state.ignored;
 
       function populateYears() {
         yearSelect.replaceChildren(element("option", "", "全部年份"));
@@ -404,22 +456,21 @@
         state.relevance = relevanceSelect.value;
         loadView(1, false);
       });
-      if (hideIgnoredBox) {
-        hideIgnoredBox.addEventListener("change", function () {
-          state.hideIgnored = hideIgnoredBox.checked;
-          rememberHideIgnored(state.hideIgnored);
+      if (ignoredSelect) {
+        ignoredSelect.addEventListener("change", function () {
+          state.ignored = normaliseMode(ignoredSelect.value);
+          rememberIgnoredMode(state.ignored);
           loadView(1, false);
         });
       }
-      // Marking a card 忽略 while the filter is on should make it leave the
-      // list straight away, not at the next page turn.
-      document.addEventListener("radar:mark-changed", function (event) {
-        if (!state.hideIgnored || state.loading) return;
-        var detail = event.detail || {};
-        var onThisPage = state.records.some(function (record) {
-          return record.identity_key === detail.identity_key;
-        });
-        if (onThisPage) loadView(state.page, false);
+      // While either ignore view is active a mark change moves a card into
+      // or out of the list, so refresh instead of waiting for a page turn.
+      // In "only" mode the newly ignored paper may live in a year that is
+      // not loaded yet, which is why this reloads the view rather than
+      // re-rendering what is already in memory.
+      document.addEventListener("radar:mark-changed", function () {
+        if (!state.ignored || state.loading) return;
+        loadView(state.page, false);
       });
       previous.addEventListener("click", function () {
         if (!state.loading && state.page > 1) loadView(state.page - 1, false);

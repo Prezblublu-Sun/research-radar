@@ -454,7 +454,29 @@
   document.addEventListener("radar:content-ready", function (event) {
     hydrateCards(event.detail && event.detail.root);
   });
-  window.RadarUI = { hydrate: hydrateCards, markState: markState };
+  // Years of every 忽略 mark, so the queue can load just those shards for
+  // its "only ignored" view instead of the whole priority.
+  function ignoredYears() {
+    var years = [];
+    var total = 0;
+    try { total = localStorage.length; } catch (error) { total = 0; }
+    for (var index = 0; index < total; index += 1) {
+      var key = localStorage.key(index);
+      if (!key || key.indexOf("radar:mark:") !== 0) continue;
+      var record = lsGet(key, null);
+      if (!record || record.state !== "ignore") continue;
+      var year = typeof record.date === "string" ? record.date.slice(0, 4) : "";
+      if (!/^\d{4}$/.test(year)) year = "";
+      if (years.indexOf(year) === -1) years.push(year);
+    }
+    return years;
+  }
+
+  window.RadarUI = {
+    hydrate: hydrateCards,
+    markState: markState,
+    ignoredYears: ignoredYears
+  };
 
   hydrateCards(document);
 
