@@ -114,3 +114,49 @@ the payload, committed `data/marks/dev-e2etest1.json`, commented and closed.
 That run also showed the trigger firing twice, because creating an issue with
 a label emits both `opened` and `labeled`; the workflow now listens for
 `opened` only.
+
+## Addendum 2026-09-24 — the digest (implemented)
+
+This ADR's first motivation was "a daily digest of the papers they marked
+待阅读". `scripts/marks_digest.py` plus `.github/workflows/marks-digest.yml`
+are that job, and the delivery question it had left open is settled the same
+way the sync settled the credential question: use GitHub's own notifications
+rather than a mail server.
+
+**One standing issue**, labelled `marks-digest` and assigned to the owner:
+
+* its **body** is rewritten every run with the whole current 待阅读 list.
+  Editing an issue body sends no notification, so the live list is free.
+* a **comment** is posted only when papers appeared since the last run.
+  A comment does notify, and that notification — GitHub → the owner's
+  registered address → their 163 inbox — is the mail that was asked for.
+* nothing new means no comment, no mail, and a silent run.
+
+No SMTP server, no mail credential, nothing in the repository that could
+leak an address that is not already the owner's GitHub account.
+
+**"New" is a set difference, not a timestamp.** `data/digest/to-read.json`
+remembers the identity keys that were 待阅读 at the last run; the next run
+reports `current − previous`. A timestamp watermark would have re-reported
+any paper whose note was edited, because ADR-0034 moves `at` on every write.
+The state is bounded by the list itself and self-prunes: a paper that leaves
+待阅读 and comes back is reported again, which is right.
+
+The watermark is committed **after** the comment is posted. If the job dies
+in between, the next run repeats a paper — the failure worth having, against
+one that silently swallows it.
+
+Papers that *left* the list are deliberately never named in a comment. A
+silent run still advances the watermark, so the departures a comment could
+report are an arbitrary slice of the ones since the last run: an accurate
+number that reads as a wrong one.
+
+Mark fields are browser-supplied free text that passed only a length check
+at the ADR-0032 boundary, so `marks_digest.py` escapes everything it
+interpolates into Markdown and percent-encodes link targets (a DOI with
+unbalanced parentheses would otherwise end the link early). Nothing from a
+mark reaches a shell: the workflow passes `--body-file`, never a string.
+
+`pages.yml` ignores `data/digest/**` for the same reason it ignores
+`data/marks/**` — remove both when a published page starts rendering them.
+
