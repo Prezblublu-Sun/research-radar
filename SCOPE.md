@@ -99,6 +99,9 @@ These are explicitly out of scope and belong to other systems (primarily lit-sys
   the repository through a validated `marks-sync` issue, which commits them
   to `data/marks/` for history, cross-device merge and the daily digest.
   The page holds no credential unless the reader stores one (ADR-0033).
+  A scheduled job turns those marks into a 待阅读 digest delivered as a
+  GitHub issue notification (ADR-0032 addendum) — no mail server, and no
+  reading of paper content beyond what the mark itself stored.
 - Cross-corpus priority navigation pages (high-priority.html etc).
 - Open-license visual previews on browse cards, joined from a sidecar registry
   and isolated from scored corpus records (ADR-0029).

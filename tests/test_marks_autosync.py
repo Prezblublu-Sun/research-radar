@@ -162,6 +162,9 @@ def test_the_status_chip_exists_and_is_dismissable():
 def test_a_marks_only_commit_does_not_rebuild_the_whole_site():
     pages = yaml.safe_load(
         (REPO_ROOT / ".github/workflows/pages.yml").read_text(encoding="utf-8"))
-    assert pages[True]["push"]["paths-ignore"] == ["data/marks/**"]
+    # The digest watermark (ADR-0032 §digest) is ignored for the same
+    # reason; both are state no published page renders.
+    assert pages[True]["push"]["paths-ignore"] == ["data/marks/**",
+                                                   "data/digest/**"]
     raw = (REPO_ROOT / ".github/workflows/pages.yml").read_text(encoding="utf-8")
     assert "REMOVE this" in raw  # the condition for undoing it is written down
