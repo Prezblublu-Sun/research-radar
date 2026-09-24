@@ -57,6 +57,20 @@
     return lsGet("radar:mark:" + idkey, null);
   }
 
+  function markState(idkey) {
+    var record = markRecord(idkey);
+    return record && typeof record.state === "string" ? record.state : "";
+  }
+
+  // Every mark write goes through here so listeners (the queue's "hide
+  // ignored" filter, and anything added later) never have to re-derive the
+  // storage rules or poll localStorage.
+  function announceMarkChange(idkey) {
+    document.dispatchEvent(new CustomEvent("radar:mark-changed", {
+      detail: { identity_key: idkey, state: markState(idkey) }
+    }));
+  }
+
   // ---- combined visibility: direction AND priority AND mark ----
   var dirFilter = "all";
 
@@ -384,6 +398,7 @@
         }
         delete card.dataset.mark; // back to the neutral .paper stripe
         applyFilters();
+        announceMarkChange(idk);
       });
       r.addEventListener("change", function () {
         var cur = mergeMeta(markRecord(idk) ||
@@ -394,6 +409,7 @@
         lsSet("radar:mark:" + idk, cur);
         card.dataset.mark = r.value;
         applyFilters();
+        announceMarkChange(idk);
       });
     });
 
@@ -415,6 +431,7 @@
         cur.note = ta.value;
         if (!cur.at) cur.at = new Date().toISOString();
         lsSet("radar:mark:" + idk, cur);
+        announceMarkChange(idk);
       });
     }
 
@@ -437,7 +454,7 @@
   document.addEventListener("radar:content-ready", function (event) {
     hydrateCards(event.detail && event.detail.root);
   });
-  window.RadarUI = { hydrate: hydrateCards };
+  window.RadarUI = { hydrate: hydrateCards, markState: markState };
 
   hydrateCards(document);
 
