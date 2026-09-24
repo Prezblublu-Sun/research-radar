@@ -254,12 +254,16 @@ def test_the_sync_serialises_with_the_other_writers_and_pushes_with_retry():
 # browser side
 # ---------------------------------------------------------------------------
 
-def test_the_page_packages_marks_without_holding_any_credential():
+def test_the_issue_hand_off_needs_no_credential():
+    # ADR-0032's route must keep working on its own. ADR-0033 later added an
+    # OPTIONAL token for automatic sync, so the invariant is no longer "the
+    # bundle mentions no token" but "this route never consults one".
     assert "rui-sync-marks" in UI_JS and "rui-sync-panel" in UI_JS
     assert "labels=marks-sync" in UI_JS
     assert "issues/new" in UI_JS
-    for forbidden in ("token", "Authorization", "api.github.com"):
-        assert forbidden not in UI_JS, forbidden
+    handoff = UI_JS.split("var syncBtn = document.getElementById")[1]                    .split("// ---- library.html: the automatic-sync settings")[0]
+    for forbidden in ("syncToken", "Authorization", "api.github.com"):
+        assert forbidden not in handoff, forbidden
 
 
 def test_the_device_id_matches_what_the_validator_accepts():
