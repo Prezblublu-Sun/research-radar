@@ -9,13 +9,24 @@
  *   - high/medium pages: same per-card controls (cards reused verbatim)
  *   - my-marks.html:    export-all-marks + listing
  *
- * localStorage keys (ADR-0016 §3):
+ * localStorage keys (ADR-0016 §3, ADR-0032, ADR-0034):
  *   radar:filter:priority   -> ["High","Medium",...]            (D3)
- *   radar:filter:marks      -> ["to-read","read",...,"none"]    (D4)
- *   radar:mark:<idkey>      -> { state, at, note }              (D4)
+ *   radar:filter:marks      -> ["to-read","read","ignore","none"]
+ *   radar:filter:tags       -> ["有启发", ...]                   (ADR-0034)
+ *   radar:mark:<idkey>      -> { state, tags, at, note, ...meta }
+ *   radar:marks-schema      -> the shape version this browser migrated to
+ *   radar:device            -> this browser's name in data/marks/
+ *   radar:gh-token          -> optional fine-grained token (ADR-0033)
  *
- * All state is single-browser and ephemeral by design (ADR-0016 §2 D4
- * limitations the user accepted). No sync, no write-back.
+ * A mark is one `state` (待读 / 已读 / 忽略, mutually exclusive) plus any
+ * number of free-text `tags` — ADR-0034; 有启发 used to be a state. One
+ * rule, markFilterFn(), decides visibility for the daily pages, the queue
+ * and the reading list, so the three surfaces cannot drift apart.
+ *
+ * Marks are no longer ephemeral: ADR-0032 hands them to `data/marks/` and
+ * ADR-0033 does it automatically when a token is stored. `at` therefore
+ * decides merges across devices, which is why every write stamps it and the
+ * one-time migration does not.
  */
 (function () {
   "use strict";
@@ -43,16 +54,157 @@
   }
 
   var PRIORITY_DEFAULT = ["High", "Medium", "Unscored"];
-  var MARKS_DEFAULT = ["to-read", "read", "interesting", "ignore", "none"];
+
+  // ADR-0034. A paper's *state* says where it sits in the triage flow and
+  // only one can hold at a time; its *tags* are judgements about it and any
+  // number can hold at once. "有启发" used to be a state, which made "read,
+  // and worth something" impossible to say and left 待读 unfilterable
+  // outside the daily pages.
+  var MARK_STATES = ["to-read", "read", "ignore"];
+  var STATE_LABELS = {
+    "to-read": "待阅读", "read": "已阅读", "ignore": "忽略", "none": "未标记"
+  };
+  var MARKS_DEFAULT = MARK_STATES.concat(["none"]);  // "none" = 未标记
+  var INSPIRING_TAG = "有启发";
+  var TAGS_KEY = "radar:filter:tags";
+  // Mirrors the caps in pipeline/marks_store.py, which rejects a payload
+  // that breaks them — better to clamp here than to have the sync bounce.
+  var MAX_TAGS = 24;
+  var MAX_TAG = 40;
+
+  function normTags(value) {
+    if (!Array.isArray(value)) return [];
+    var out = [];
+    for (var index = 0; index < value.length && out.length < MAX_TAGS; index += 1) {
+      if (typeof value[index] !== "string") continue;
+      var tag = value[index].replace(/\s+/g, " ").trim().slice(0, MAX_TAG);
+      if (tag && out.indexOf(tag) < 0) out.push(tag);
+    }
+    // Sorted so two browsers that added the same tags in a different order
+    // produce the same file and stop churning the sync commits.
+    return out.sort();
+  }
+
+  function tagsOf(record) {
+    return record ? normTags(record.tags) : [];
+  }
+
+  // ADR-0034 migration. `at` is deliberately left alone: bumping it would
+  // make this browser win every merge against a device holding newer marks,
+  // silently reverting work done elsewhere. The server-side validator maps
+  // the retired state too, so a tab that never reloads still syncs correctly.
+  var SCHEMA_KEY = "radar:marks-schema";
+  var SCHEMA_NOW = 2;
+
+  function migrateMarks() {
+    var done = 0;
+    try {
+      done = parseInt(localStorage.getItem(SCHEMA_KEY) || "0", 10) || 0;
+    } catch (error) {
+      return;  // no storage at all: nothing to migrate
+    }
+    if (done >= SCHEMA_NOW) return;
+
+    var keys = [];
+    try {
+      for (var index = 0; index < localStorage.length; index += 1) {
+        var key = localStorage.key(index);
+        if (key && key.indexOf("radar:mark:") === 0) keys.push(key);
+      }
+    } catch (error) {
+      return;
+    }
+    keys.forEach(function (key) {
+      var record = lsGet(key, null);
+      if (!record || typeof record !== "object") return;
+      var tags = tagsOf(record);
+      if (record.state === "interesting") {
+        record.state = "read";
+        if (tags.indexOf(INSPIRING_TAG) < 0) tags.push(INSPIRING_TAG);
+      }
+      record.tags = normTags(tags);
+      lsSet(key, record);
+    });
+
+    // The saved filter names states, so it moves with them.
+    var marks = lsGet("radar:filter:marks", null);
+    if (Array.isArray(marks) && marks.indexOf("interesting") >= 0) {
+      marks = marks.filter(function (state) { return state !== "interesting"; });
+      if (marks.indexOf("read") < 0) marks.push("read");
+      lsSet("radar:filter:marks", marks);
+    }
+    // The queue's three-way 忽略 select is now part of the same filter.
+    var legacy = null;
+    try {
+      legacy = localStorage.getItem("radar:filter:queue-ignored");
+      localStorage.removeItem("radar:filter:queue-ignored");
+      localStorage.removeItem("radar:filter:queue-hide-ignored");
+    } catch (error) {
+      legacy = null;
+    }
+    if (legacy === "only") {
+      lsSet("radar:filter:marks", ["ignore"]);
+    } else if (legacy === "exclude") {
+      lsSet("radar:filter:marks", ["to-read", "read", "none"]);
+    }
+
+    try {
+      localStorage.setItem(SCHEMA_KEY, String(SCHEMA_NOW));
+    } catch (error) {
+      /* quota — the migration is idempotent and will simply run again */
+    }
+  }
+  migrateMarks();
 
   function priorityFilter() {
     var v = lsGet("radar:filter:priority", PRIORITY_DEFAULT);
     return Array.isArray(v) ? v : PRIORITY_DEFAULT.slice();
   }
   function marksFilter() {
-    var v = lsGet("radar:filter:marks", MARKS_DEFAULT);
-    return Array.isArray(v) ? v : MARKS_DEFAULT.slice();
+    var v = lsGet("radar:filter:marks", null);
+    if (!Array.isArray(v)) return MARKS_DEFAULT.slice();
+    var known = v.filter(function (state) {
+      return MARKS_DEFAULT.indexOf(state) >= 0;
+    });
+    // A tab that predates ADR-0034 can still write the retired state; it
+    // must not end up hiding every 已读 paper.
+    if (v.indexOf("interesting") >= 0 && known.indexOf("read") < 0) {
+      known.push("read");
+    }
+    return known;
   }
+  function tagFilter() {
+    return normTags(lsGet(TAGS_KEY, []));
+  }
+  function setTagFilter(tags) {
+    lsSet(TAGS_KEY, normTags(tags));
+  }
+  // True when the filter excludes unmarked papers, so only marked ones can
+  // appear. The queue uses it to load a handful of year shards instead of a
+  // whole priority.
+  function marksOnly() {
+    return marksFilter().indexOf("none") < 0;
+  }
+
+  // The one rule for "does the mark filter show this paper". Built once per
+  // pass so a 150-card queue does not re-read localStorage 300 times, and
+  // shared with the queue so the two surfaces cannot drift apart. States are
+  // OR'd; a selected tag narrows further (a paper needs any one of them).
+  function markFilterFn() {
+    var states = marksFilter();
+    var wanted = tagFilter();
+    return function (record) {
+      var state = record && record.state ? record.state : "none";
+      if (states.indexOf(state) < 0) return false;
+      if (!wanted.length) return true;
+      var have = tagsOf(record);
+      for (var index = 0; index < wanted.length; index += 1) {
+        if (have.indexOf(wanted[index]) >= 0) return true;
+      }
+      return false;
+    };
+  }
+
   function markRecord(idkey) {
     return lsGet("radar:mark:" + idkey, null);
   }
@@ -60,6 +212,42 @@
   function markState(idkey) {
     var record = markRecord(idkey);
     return record && typeof record.state === "string" ? record.state : "";
+  }
+
+  function markTags(idkey) {
+    return tagsOf(markRecord(idkey));
+  }
+
+  function eachMarkRecord(visit) {
+    var total = 0;
+    try { total = localStorage.length; } catch (error) { total = 0; }
+    for (var index = 0; index < total; index += 1) {
+      var key = localStorage.key(index);
+      if (!key || key.indexOf("radar:mark:") !== 0) continue;
+      var record = lsGet(key, null);
+      if (record && typeof record === "object") {
+        visit(record, key.slice("radar:mark:".length));
+      }
+    }
+  }
+
+  // Every tag in use with how often, newest vocabulary first. Feeds both the
+  // filter chips and the per-card autocomplete: tags are free text, so the
+  // only defence against "有启发" and "有启发 " becoming two tags is showing
+  // the reader what already exists.
+  function allTags() {
+    var counts = {};
+    eachMarkRecord(function (record) {
+      tagsOf(record).forEach(function (tag) {
+        counts[tag] = (counts[tag] || 0) + 1;
+      });
+    });
+    return Object.keys(counts).sort(function (a, b) {
+      if (counts[b] !== counts[a]) return counts[b] - counts[a];
+      return a < b ? -1 : (a > b ? 1 : 0);
+    }).map(function (tag) {
+      return { tag: tag, count: counts[tag] };
+    });
   }
 
   // Every mark write goes through here so listeners (the queue's "hide
@@ -76,7 +264,11 @@
 
   function applyFilters() {
     var prios = priorityFilter();
-    var marks = marksFilter();
+    var visible = markFilterFn();
+    // The priority bar only exists on the daily pages. The queue picks its
+    // own priority and has no such control, so honouring the stored value
+    // there would hide cards with nothing on screen to explain it.
+    var gradeBar = document.getElementById("rui-priority-filter");
     // The reading list shows exactly what the user marked; the daily-page
     // priority / mark filters must not hide anything there.
     if (document.querySelector("main[data-rui-no-filter]")) {
@@ -89,11 +281,9 @@
       var d = card.dataset.direction || "";
       var pr = card.dataset.priority || "Low";
       var idk = card.dataset.identityKey || "";
-      var rec = idk ? markRecord(idk) : null;
-      var state = rec && rec.state ? rec.state : "none";
       var dirOk = dirFilter === "all" || dirFilter === d;
-      var prOk = prios.indexOf(pr) >= 0;
-      var mkOk = marks.indexOf(state) >= 0;
+      var prOk = !gradeBar || prios.indexOf(pr) >= 0;
+      var mkOk = visible(idk ? markRecord(idk) : null);
       card.dataset.hidden = dirOk && prOk && mkOk ? "0" : "1";
     });
   }
@@ -145,8 +335,49 @@
     cb.addEventListener("change", function () {
       lsSet("radar:filter:marks", collect(markCbs));
       applyFilters();
+      announceFilterChange();
     });
   });
+
+  // Tags only exist in this browser, so the tag half of the filter bar has
+  // to be built here rather than rendered into the page by build_pages.
+  function renderTagFilter() {
+    var bar = document.getElementById("rui-marks-filter");
+    if (!bar) return;
+    var host = bar.querySelector(".rui-tagf");
+    if (!host) {
+      host = node("span", "rui-tagf");
+      bar.appendChild(host);
+    }
+    host.textContent = "";
+    var known = allTags();
+    if (!known.length) return;  // nothing tagged yet: no row at all
+    host.appendChild(node("b", "", "标签："));
+    var active = tagFilter();
+    known.forEach(function (entry) {
+      var chip = node("button", "rui-tagf-chip", entry.tag + " " + entry.count);
+      chip.type = "button";
+      chip.setAttribute("aria-pressed", active.indexOf(entry.tag) >= 0 ? "true" : "false");
+      if (active.indexOf(entry.tag) >= 0) chip.dataset.on = "1";
+      chip.addEventListener("click", function () {
+        var next = tagFilter();
+        var at = next.indexOf(entry.tag);
+        if (at >= 0) next.splice(at, 1);
+        else next.push(entry.tag);
+        setTagFilter(next);
+        renderTagFilter();
+        applyFilters();
+        announceFilterChange();
+      });
+      host.appendChild(chip);
+    });
+  }
+
+  // The queue paginates server-side, so it cannot just re-run applyFilters:
+  // it has to reload the view. One event, so every surface stays in step.
+  function announceFilterChange() {
+    document.dispatchEvent(new CustomEvent("radar:filter-changed"));
+  }
 
   function cardMeta(card) {
     return {
@@ -155,6 +386,25 @@
       direction: card.dataset.direction || "",
       priority: card.dataset.priority || ""
     };
+  }
+
+  // Every mark write goes through here: it merges the card's metadata, keeps
+  // the record's shape honest, stamps the time (last write wins at merge, so
+  // *every* change has to move `at`), and tells the page. Four callers —
+  // the radios, the clear, the note and the tags — used to each do their own
+  // slightly different version of this.
+  function updateMark(idkey, card, change) {
+    var record = mergeMeta(markRecord(idkey) ||
+      { state: "", at: "", note: "", tags: [] }, card);
+    if (typeof record.note !== "string") record.note = "";
+    record.tags = normTags(record.tags);
+    change(record);
+    record.tags = normTags(record.tags);
+    record.at = new Date().toISOString();
+    lsSet("radar:mark:" + idkey, record);
+    applyFilters();
+    announceMarkChange(idkey);
+    return record;
   }
 
   function mergeMeta(record, card) {
@@ -363,6 +613,103 @@
     if (area) area.select();
   }
 
+  // One datalist for the whole page: free-text tags only stay a vocabulary
+  // if the reader can see what they already used.
+  function refreshTagDatalist() {
+    var list = document.getElementById("rui-tags-known");
+    if (!list) {
+      list = document.createElement("datalist");
+      list.id = "rui-tags-known";
+      document.body.appendChild(list);
+    }
+    list.textContent = "";
+    allTags().forEach(function (entry) {
+      var option = document.createElement("option");
+      option.value = entry.tag;
+      list.appendChild(option);
+    });
+  }
+
+  // The chip row is always rendered; CSS shows the remove buttons and the
+  // add form only while the card's 标签 panel is open, so a closed card just
+  // shows what it is tagged with.
+  function renderTagEditor(card, idkey) {
+    var wrap = card.querySelector(".rui-tag-wrap");
+    if (!wrap) return;
+    var current = markTags(idkey);
+    wrap.textContent = "";
+
+    function rerender(focusInput) {
+      renderTagEditor(card, idkey);
+      renderTagFilter();
+      refreshTagDatalist();
+      if (!focusInput) return;
+      var next = card.querySelector(".rui-tag-input");
+      if (next) next.focus();
+    }
+
+    function write(change) {
+      updateMark(idkey, card, change);
+      rerender(true);
+    }
+
+    var row = node("div", "rui-tag-row");
+    current.forEach(function (tag) {
+      var chip = node("span", "rui-tag", tag);
+      var drop = node("button", "rui-tag-x", "×");
+      drop.type = "button";
+      drop.title = "移除标签 " + tag;
+      drop.setAttribute("aria-label", "移除标签 " + tag);
+      drop.addEventListener("click", function () {
+        write(function (record) {
+          record.tags = record.tags.filter(function (t) { return t !== tag; });
+        });
+      });
+      chip.appendChild(drop);
+      row.appendChild(chip);
+    });
+    if (!current.length) row.appendChild(node("span", "rui-tag-empty", "还没有标签"));
+    wrap.appendChild(row);
+
+    var form = node("div", "rui-tag-add");
+    if (current.indexOf(INSPIRING_TAG) < 0) {
+      // The one tag that used to be a state keeps a one-click path.
+      var quick = node("button", "rui-tag-quick", "+ " + INSPIRING_TAG);
+      quick.type = "button";
+      quick.addEventListener("click", function () {
+        write(function (record) { record.tags = record.tags.concat([INSPIRING_TAG]); });
+      });
+      form.appendChild(quick);
+    }
+    var input = document.createElement("input");
+    input.className = "rui-tag-input";
+    input.type = "text";
+    input.maxLength = MAX_TAG;
+    input.placeholder = "新标签，回车添加";
+    input.setAttribute("list", "rui-tags-known");
+    form.appendChild(input);
+    var go = node("button", "rui-tag-go", "添加");
+    go.type = "button";
+    form.appendChild(go);
+
+    function submit() {
+      var clean = normTags([input.value]);
+      if (!clean.length) return;
+      if (current.indexOf(clean[0]) >= 0) {  // already there: just clear
+        input.value = "";
+        return;
+      }
+      write(function (record) { record.tags = record.tags.concat(clean); });
+    }
+    go.addEventListener("click", submit);
+    input.addEventListener("keydown", function (event) {
+      if (event.key !== "Enter") return;
+      event.preventDefault();
+      submit();
+    });
+    wrap.appendChild(form);
+  }
+
   // ---- D4 + D5: per-card controls (also hydrates lazy queue cards) ----
   function hydrateCard(card) {
     if (card.dataset.ruiReady === "1") return;
@@ -390,26 +737,13 @@
         r.checked = false;
         // Keep a record with an empty state rather than deleting the key: it
         // is the tombstone that lets the clear beat a stale mark held by
-        // another device at merge time. A note the reader wrote survives.
-        var cleared = mergeMeta(prior || { state: "", at: "", note: "" }, card);
-        cleared.state = "";
-        cleared.at = new Date().toISOString();
-        if (typeof cleared.note !== "string") cleared.note = "";
-        lsSet("radar:mark:" + idk, cleared);
+        // another device at merge time. A note and the tags survive.
+        updateMark(idk, card, function (record) { record.state = ""; });
         delete card.dataset.mark; // back to the neutral .paper stripe
-        applyFilters();
-        announceMarkChange(idk);
       });
       r.addEventListener("change", function () {
-        var cur = mergeMeta(markRecord(idk) ||
-          { state: "", at: "", note: "" }, card);
-        cur.state = r.value;
-        cur.at = new Date().toISOString();
-        if (typeof cur.note !== "string") cur.note = "";
-        lsSet("radar:mark:" + idk, cur);
+        updateMark(idk, card, function (record) { record.state = r.value; });
         card.dataset.mark = r.value;
-        applyFilters();
-        announceMarkChange(idk);
       });
     });
 
@@ -426,12 +760,22 @@
     }
     if (ta) {
       ta.addEventListener("blur", function () {
-        var cur = mergeMeta(markRecord(idk) ||
-          { state: "", at: "", note: "" }, card);
-        cur.note = ta.value;
-        if (!cur.at) cur.at = new Date().toISOString();
-        lsSet("radar:mark:" + idk, cur);
-        announceMarkChange(idk);
+        if (ta.value === (markRecord(idk) || {}).note) return;  // untouched
+        updateMark(idk, card, function (record) { record.note = ta.value; });
+      });
+    }
+
+    // D4 tags — free-form judgements, any number per paper (ADR-0034).
+    renderTagEditor(card, idk);
+    var tagBtn = card.querySelector(".rui-tag-btn");
+    var tagWrap = card.querySelector(".rui-tag-wrap");
+    if (tagBtn && tagWrap) {
+      tagBtn.addEventListener("click", function () {
+        var open = tagWrap.dataset.open === "1";
+        tagWrap.dataset.open = open ? "0" : "1";
+        if (open) return;
+        var input = tagWrap.querySelector(".rui-tag-input");
+        if (input) input.focus();
       });
     }
 
@@ -454,28 +798,35 @@
   document.addEventListener("radar:content-ready", function (event) {
     hydrateCards(event.detail && event.detail.root);
   });
-  // Years of every 忽略 mark, so the queue can load just those shards for
-  // its "only ignored" view instead of the whole priority.
-  function ignoredYears() {
+  // Years holding a mark the current filter would show. A mark records the
+  // paper's publication date, which is what names its year shard, so when
+  // the filter excludes unmarked papers the queue can load those few shards
+  // instead of the whole priority.
+  function markedYears() {
+    var visible = markFilterFn();
     var years = [];
-    var total = 0;
-    try { total = localStorage.length; } catch (error) { total = 0; }
-    for (var index = 0; index < total; index += 1) {
-      var key = localStorage.key(index);
-      if (!key || key.indexOf("radar:mark:") !== 0) continue;
-      var record = lsGet(key, null);
-      if (!record || record.state !== "ignore") continue;
+    eachMarkRecord(function (record) {
+      if (!visible(record)) return;
       var year = typeof record.date === "string" ? record.date.slice(0, 4) : "";
       if (!/^\d{4}$/.test(year)) year = "";
       if (years.indexOf(year) === -1) years.push(year);
-    }
+    });
     return years;
   }
 
+  renderTagFilter();
+  refreshTagDatalist();
+
   window.RadarUI = {
     hydrate: hydrateCards,
+    markRecord: markRecord,
     markState: markState,
-    ignoredYears: ignoredYears
+    markTags: markTags,
+    allTags: allTags,
+    markFilter: markFilterFn,
+    marksOnly: marksOnly,
+    markedYears: markedYears,
+    stateLabel: function (state) { return STATE_LABELS[state] || state; }
   };
 
   hydrateCards(document);
@@ -503,11 +854,13 @@
       var state = typeof record.state === "string" ? record.state : "";
       var note = typeof record.note === "string" ? record.note : "";
       var at = typeof record.at === "string" ? record.at : "";
-      // A tombstone (no state, no note, but a timestamp) has to travel too.
-      if (!state && !note && !at) continue;
+      var tags = tagsOf(record);
+      // A tombstone (nothing left but a timestamp) has to travel too.
+      if (!state && !note && !tags.length && !at) continue;
       out[key.slice("radar:mark:".length)] = {
         state: state,
-        at: typeof record.at === "string" ? record.at : "",
+        tags: tags,
+        at: at,
         note: note,
         title: typeof record.title === "string" ? record.title : "",
         date: typeof record.date === "string" ? record.date : "",
@@ -909,8 +1262,8 @@
             parsed = localStorage.getItem(k);
           }
           // Skip tombstones: a cleared mark is not part of the reading trail.
-          if (parsed && typeof parsed === "object" &&
-              !parsed.state && !parsed.note) continue;
+          if (parsed && typeof parsed === "object" && !parsed.state &&
+              !parsed.note && !tagsOf(parsed).length) continue;
           out[k] = parsed;
         }
       }

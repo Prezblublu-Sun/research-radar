@@ -14,7 +14,8 @@ On-disk shape, one file per browser at ``data/marks/<device>.json``::
       "updated_at": "2026-09-22T12:00:00Z",
       "marks": {
         "<identity_key>": {
-          "state": "to-read" | "read" | "interesting" | "ignore" | "",
+          "state": "to-read" | "read" | "ignore" | "",
+          "tags": ["有启发", "方法可借鉴"],
           "at": "2026-09-22T11:00:00Z",
           "note": "free text",
           "title": "...", "date": "...",
@@ -22,6 +23,12 @@ On-disk shape, one file per browser at ``data/marks/<device>.json``::
         }
       }
     }
+
+``state`` says where a paper sits in the triage flow and only one can hold
+at a time; ``tags`` are free-form judgements and any number may hold at once
+(ADR-0034). ``tags`` is optional — a payload from an older bundle simply has
+none — and the retired ``interesting`` state is normalised to
+``read`` + the ``有启发`` tag on the way in.
 
 Payloads arrive pasted into a public GitHub issue, so :func:`validate_payload`
 is deliberately strict and size-capped: it is a trust boundary, not a
@@ -38,7 +45,14 @@ import re
 
 SCHEMA_VERSION = 1
 
-STATES = {"to-read", "read", "interesting", "ignore", ""}
+# ADR-0034: one state says where a paper sits in the triage flow; anything
+# that is a judgement about it is a tag. "interesting" used to be a state,
+# which made "read AND worth something" impossible to say.
+STATES = {"to-read", "read", "ignore", ""}
+INSPIRING_TAG = "有启发"
+# Browsers that predate ADR-0034 still send the old state; map rather than
+# reject, so an un-updated tab cannot lose a mark.
+LEGACY_STATES = {"interesting": ("read", INSPIRING_TAG)}
 
 # A device name becomes a filename, so it may not travel outside data/marks/.
 DEVICE_RE = re.compile(r"^[a-z0-9][a-z0-9_-]{2,31}$")
@@ -50,10 +64,34 @@ ISO_RE = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$")
 MAX_MARKS = 5000
 MAX_NOTE = 4000
 MAX_FIELD = 500
+MAX_TAGS = 24
+MAX_TAG = 40
 
 
 class MarksPayloadError(ValueError):
     """The pasted payload is not a well-formed marks file."""
+
+
+def _clean_tags(value) -> list[str]:
+    """Normalise a tag list: strings only, trimmed, deduplicated, sorted.
+
+    Sorted so two browsers that added the same tags in a different order
+    still produce byte-identical files and stop churning the commit log.
+    """
+    if value is None:
+        return []
+    if not isinstance(value, list):
+        raise MarksPayloadError("tags must be a list")
+    if len(value) > MAX_TAGS:
+        raise MarksPayloadError(f"{len(value)} tags exceeds the {MAX_TAGS} cap")
+    seen = []
+    for item in value:
+        if not isinstance(item, str):
+            raise MarksPayloadError("a tag must be a string")
+        tag = " ".join(item.split())[:MAX_TAG]
+        if tag and tag not in seen:
+            seen.append(tag)
+    return sorted(seen)
 
 
 def _clean(value, limit: int) -> str:
@@ -104,20 +142,26 @@ def validate_payload(data) -> dict:
         if not isinstance(value, dict):
             raise MarksPayloadError(f"mark {key!r} must be an object")
         state = _clean(value.get("state"), 32)
+        tags = _clean_tags(value.get("tags"))
+        if state in LEGACY_STATES:
+            state, implied = LEGACY_STATES[state]
+            if implied not in tags:
+                tags = sorted(tags + [implied])
         if state not in STATES:
             raise MarksPayloadError(f"mark {key!r} has unknown state {state!r}")
         at = _clean(value.get("at"), 40)
         if at and not ISO_RE.match(at):
             raise MarksPayloadError(f"mark {key!r} has a non-ISO timestamp {at!r}")
         note = _clean(value.get("note"), MAX_NOTE)
-        if not state and not note and not at:
-            continue  # no state, no note, no timestamp: nothing at all
+        if not state and not note and not tags and not at:
+            continue  # no state, no tags, no note, no time: nothing at all
         # `state: ""` with a timestamp is a tombstone: the reader cleared the
         # mark. It has to survive the round trip, because another device's
         # file may still hold the old mark and the merge needs something
         # newer to beat it with. load_all() drops tombstones after merging.
         marks[key] = {
             "state": state,
+            "tags": tags,
             "at": at,
             "note": note,
             "title": _clean(value.get("title"), MAX_FIELD),
@@ -178,8 +222,9 @@ def write_device(data_root: pathlib.Path, payload: dict) -> pathlib.Path:
 
 
 def is_tombstone(mark: dict) -> bool:
-    """A cleared mark: no state and no note left, only the time it happened."""
-    return not mark.get("state") and not mark.get("note")
+    """A cleared mark: nothing left but the time it was cleared."""
+    return (not mark.get("state") and not mark.get("note")
+            and not mark.get("tags"))
 
 
 def load_all(data_root: pathlib.Path) -> dict[str, dict]:
@@ -211,9 +256,27 @@ def load_all(data_root: pathlib.Path) -> dict[str, dict]:
     return {key: mark for key, mark in merged.items() if not is_tombstone(mark)}
 
 
+def _newest_first(pairs: list[tuple[str, dict]]) -> list[tuple[str, dict]]:
+    pairs.sort(key=lambda item: (item[1].get("at", ""), item[0]), reverse=True)
+    return pairs
+
+
 def by_state(marks: dict[str, dict], state: str) -> list[tuple[str, dict]]:
     """Identity/mark pairs in one state, newest mark first."""
-    chosen = [(key, mark) for key, mark in marks.items()
-              if mark.get("state") == state]
-    chosen.sort(key=lambda item: (item[1].get("at", ""), item[0]), reverse=True)
-    return chosen
+    return _newest_first([(key, mark) for key, mark in marks.items()
+                          if mark.get("state") == state])
+
+
+def by_tag(marks: dict[str, dict], tag: str) -> list[tuple[str, dict]]:
+    """Identity/mark pairs carrying one tag, newest mark first."""
+    return _newest_first([(key, mark) for key, mark in marks.items()
+                          if tag in (mark.get("tags") or [])])
+
+
+def tag_counts(marks: dict[str, dict]) -> dict[str, int]:
+    """How often each tag is used, for a filter list or the curated library."""
+    counts: dict[str, int] = {}
+    for mark in marks.values():
+        for tag in mark.get("tags") or []:
+            counts[tag] = counts.get(tag, 0) + 1
+    return dict(sorted(counts.items(), key=lambda kv: (-kv[1], kv[0])))

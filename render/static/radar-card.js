@@ -453,9 +453,10 @@
     var tools = element("div", "rui-card-tools");
     var group = element("span", "rui-mark-group");
     group.appendChild(element("b", "", "标记："));
+    // ADR-0034: three mutually exclusive states. 有启发 moved to the tag
+    // panel below, where it can coexist with 已阅读.
     [
-      ["to-read", "待阅读"], ["read", "已阅读"],
-      ["interesting", "有启发"], ["ignore", "忽略"]
+      ["to-read", "待阅读"], ["read", "已阅读"], ["ignore", "忽略"]
     ].forEach(function (item) {
       var label = element("label", "m-" + item[0]);
       var radio = element("input", "rui-mark-radio");
@@ -471,6 +472,9 @@
     var noteButton = element("button", "rui-note-btn", "笔记");
     noteButton.type = "button";
     tools.appendChild(noteButton);
+    var tagButton = element("button", "rui-tag-btn", "标签");
+    tagButton.type = "button";
+    tools.appendChild(tagButton);
     var mailButton = element("button", "rui-mail-btn", "发送到邮箱");
     mailButton.type = "button";
     tools.appendChild(mailButton);
@@ -480,6 +484,8 @@
     textarea.placeholder = "私人笔记（失焦自动保存，仅限当前浏览器）";
     noteWrap.appendChild(textarea);
     tools.appendChild(noteWrap);
+    // Filled in by radar-ui.js on hydration; it owns the tag vocabulary.
+    tools.appendChild(element("div", "rui-tag-wrap"));
     return tools;
   }
 

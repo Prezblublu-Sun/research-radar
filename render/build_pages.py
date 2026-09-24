@@ -483,9 +483,10 @@ def _card_tools(p: dict, identity_key: str | None = None) -> str:
     """
     idkey = identity_key or _identity_key(p)
     name = f"rui-mark-{_anchor_id(idkey)}"
+    # ADR-0034: state is where the paper sits in the flow, one at a time.
+    # 有启发 is now a tag, editable in the panel the 标签 button opens.
     states = [
-        ("to-read", "待阅读"), ("read", "已阅读"),
-        ("interesting", "有启发"), ("ignore", "忽略"),
+        ("to-read", "待阅读"), ("read", "已阅读"), ("ignore", "忽略"),
     ]
     radios = "".join(
         f'<label class="m-{val}"><input type="radio" class="rui-mark-radio" '
@@ -496,10 +497,12 @@ def _card_tools(p: dict, identity_key: str | None = None) -> str:
   <div class="rui-card-tools">
     <span class="rui-mark-group"><b>标记：</b> {radios}</span>
     <button type="button" class="rui-note-btn">笔记</button>
+    <button type="button" class="rui-tag-btn">标签</button>
     <button type="button" class="rui-mail-btn">发送到邮箱</button>
     <div class="rui-note-wrap">
       <textarea class="rui-note-ta" placeholder="私人笔记（失焦自动保存，仅限当前浏览器）"></textarea>
     </div>
+    <div class="rui-tag-wrap"></div>
   </div>"""
 
 
@@ -734,11 +737,15 @@ def _priority_filter_bar() -> str:
 
 
 def _marks_filter_bar() -> str:
-    """ADR-0016 D4: client-side "filter to my marks" checkboxes."""
+    """ADR-0016 D4 / ADR-0034: the one mark filter, shared by every surface.
+
+    The state boxes are static because the vocabulary is fixed. The tag chips
+    are appended client-side by radar-ui.js, because tags only exist in the
+    reader's browser and the builder cannot know them.
+    """
     opts = [
         ("to-read", "待阅读"), ("read", "已阅读"),
-        ("interesting", "有启发"), ("ignore", "忽略"),
-        ("none", "未标记"),
+        ("ignore", "忽略"), ("none", "未标记"),
     ]
     boxes = "".join(
         f'<label><input type="checkbox" class="rui-mf-cb" '
@@ -861,7 +868,7 @@ DESIGN_TOKENS = """
 --c-brand:#1B4D7E;--c-accent:#E89C3A;--c-bg:#FAFAF7;--c-card-bg:#FFFFFF;--c-card-border:#ECEAE3;
 --c-text-primary:#1F2937;--c-text-secondary:#4B5563;--c-text-meta:#8B8980;--c-text-muted:#B5B3AA;
 --c-priority-h:#C8362A;--c-priority-m:#E89C3A;--c-priority-l:#A0A0A0;--c-priority-x:#D5D5D5;
---c-mark-toread:#E8B538;--c-mark-read:#5B8C5A;--c-mark-int:#4A6FB5;--c-mark-ignore:#999999;
+--c-mark-toread:#E8B538;--c-mark-read:#5B8C5A;--c-mark-tag:#4A6FB5;--c-mark-ignore:#999999;
 --space-xs:4px;--space-sm:8px;--space-md:12px;--space-lg:20px;--space-xl:32px;
 --radius-sm:4px;--radius-md:8px;--radius-lg:12px;
 --text-xs:11px;--text-sm:13px;--text-md:14px;--text-lg:16px;--text-xl:22px;--text-h1:28px;
@@ -1768,8 +1775,8 @@ def _render_queue_page() -> str:
   <label>方向<select id="queue-direction"><option value="">全部方向</option></select></label>
   <label>年份<select id="queue-year"><option value="">全部年份</option></select></label>
   <label>相关性<select id="queue-relevance"><option value="">全部</option><option>Direct</option><option>Transferable</option><option>Peripheral</option></select></label>
-  <label>忽略<select id="queue-ignored"><option value="">全部</option><option value="exclude">已忽略以外</option><option value="only">只看已忽略</option></select></label>
 </div>
+{_marks_filter_bar()}
 <div class="queue-status" id="queue-status" aria-live="polite">正在加载队列…</div>
 <div id="queue-results" class="paper-grid"></div>
 <nav class="queue-pagination" id="queue-pagination" aria-label="论文队列分页" hidden>
@@ -2072,17 +2079,17 @@ def _render_reading_page() -> str:
 <main id="main-content" class="container" data-rui-no-filter="1">
 <div class="eyebrow">Local reading list</div>
 <h1>阅读清单</h1>
-<p class="subtitle">这个浏览器里手动标记过的论文：按状态分栏，可搜索标题与笔记，卡片上可直接改标记、写笔记。</p>
+<p class="subtitle">这个浏览器里手动标记过的论文：按状态分栏，可按标签筛选，可搜索标题与笔记，卡片上可直接改标记、加标签、写笔记。</p>
 <div class="queue-toolbar reading-toolbar" aria-label="阅读清单筛选">
   <div class="segmented" id="reading-state">
     <button type="button" data-state="to-read" class="is-active">待阅读</button>
     <button type="button" data-state="read">已阅读</button>
-    <button type="button" data-state="interesting">有启发</button>
     <button type="button" data-state="ignore">忽略</button>
     <button type="button" data-state="note">仅笔记</button>
     <button type="button" data-state="all">全部</button>
   </div>
-  <label class="reading-search">搜索<input id="reading-query" type="search" autocomplete="off" placeholder="标题、笔记、方向、日期…"></label>
+  <label class="reading-search">搜索<input id="reading-query" type="search" autocomplete="off" placeholder="标题、笔记、标签、方向、日期…"></label>
+  <label>标签<select id="reading-tag"><option value="">全部标签</option></select></label>
   <label>排序<select id="reading-sort"><option value="marked">最近标记</option><option value="date">发表日期</option><option value="title">标题</option></select></label>
   <button type="button" class="rui-btn rui-secondary" id="reading-copy">复制当前清单为 Markdown</button>
 </div>

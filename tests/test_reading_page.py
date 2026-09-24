@@ -26,7 +26,7 @@ def test_reading_page_shell_has_the_controls_and_bundle():
         '<script src="radar-card.js" defer></script>',
         'data-rui-no-filter="1"',
         'id="reading-state"', 'data-state="to-read"', 'data-state="read"',
-        'data-state="interesting"', 'data-state="ignore"', 'data-state="note"',
+        'data-state="ignore"', 'data-state="note"', 'id="reading-tag"',
         'data-state="all"',
         'id="reading-query"', 'id="reading-sort"', 'id="reading-copy"',
         'id="reading-status"', 'id="reading-results" class="paper-grid"',

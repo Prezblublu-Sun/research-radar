@@ -315,7 +315,7 @@ def test_d4_every_card_has_mark_and_note_controls_with_identity_key(built):
     assert all(record["identity_key"].startswith("doi:10.1/")
                for record in page["papers"])
     card_js = (built / "radar-card.js").read_text(encoding="utf-8")
-    for token in ("rui-mark-radio", "to-read", "read", "interesting",
+    for token in ("rui-mark-radio", "to-read", "read", "rui-tag-wrap",
                   "ignore", "rui-note-btn", "rui-note-ta"):
         assert token in card_js
     # daily-page "filter to my marks" bar present

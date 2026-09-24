@@ -25,6 +25,7 @@
   var pageSelect = document.getElementById("reading-page");
   var pageTotal = document.getElementById("reading-page-total");
   var copyButton = document.getElementById("reading-copy");
+  var tagSelect = document.getElementById("reading-tag");
   if (!results || !status || !tabsWrap || !queryInput || !sortSelect ||
       !pagination || !previous || !next || !pageSelect || !pageTotal) return;
   if (!window.RadarCard || !window.RadarCard.buildCard) {
@@ -32,13 +33,14 @@
     return;
   }
 
+  // ADR-0034: 有启发 left this row and became a tag, which the 标签 picker
+  // filters on — so a paper can be 已阅读 *and* 有启发 at the same time.
   var STATE_LABELS = {
-    "to-read": "待阅读", "read": "已阅读",
-    "interesting": "有启发", "ignore": "忽略"
+    "to-read": "待阅读", "read": "已阅读", "ignore": "忽略"
   };
-  var TABS = ["to-read", "read", "interesting", "ignore", "note", "all"];
+  var TABS = ["to-read", "read", "ignore", "note", "all"];
 
-  var view = { tab: "to-read", query: "", sort: "marked", page: 1 };
+  var view = { tab: "to-read", query: "", tag: "", sort: "marked", page: 1 };
   var generation = 0;
   var manifestCache = {};
   var pageCache = {};
@@ -62,6 +64,16 @@
 
   // ---- marks --------------------------------------------------------------
 
+  function normTags(value) {
+    if (!Array.isArray(value)) return [];
+    var out = [];
+    for (var index = 0; index < value.length; index += 1) {
+      var tag = typeof value[index] === "string" ? value[index].trim() : "";
+      if (tag && out.indexOf(tag) < 0) out.push(tag);
+    }
+    return out.sort();
+  }
+
   function collectMarks() {
     var out = [];
     var count = 0;
@@ -74,6 +86,7 @@
       var mark = {
         idkey: key.slice("radar:mark:".length),
         state: typeof record.state === "string" ? record.state : "",
+        tags: normTags(record.tags),
         at: typeof record.at === "string" ? record.at : "",
         note: typeof record.note === "string" ? record.note : "",
         title: typeof record.title === "string" ? record.title : "",
@@ -83,7 +96,7 @@
       };
       // A cleared mark is kept in storage as a tombstone so the sync can
       // propagate the deletion; it is not part of the reading trail.
-      if (!mark.state && !mark.note) continue;
+      if (!mark.state && !mark.note && !mark.tags.length) continue;
       out.push(mark);
     }
     return out;
@@ -95,10 +108,28 @@
     return mark.state === tab;
   }
 
+  function hasTag(mark, tag) {
+    return !tag || mark.tags.indexOf(tag) >= 0;
+  }
+
+  // Every tag in use, commonest first, for the picker.
+  function knownTags(all) {
+    var counts = {};
+    all.forEach(function (mark) {
+      mark.tags.forEach(function (tag) {
+        counts[tag] = (counts[tag] || 0) + 1;
+      });
+    });
+    return Object.keys(counts).sort(function (a, b) {
+      if (counts[b] !== counts[a]) return counts[b] - counts[a];
+      return a < b ? -1 : (a > b ? 1 : 0);
+    }).map(function (tag) { return { tag: tag, count: counts[tag] }; });
+  }
+
   function matchesQuery(mark, query) {
     if (!query) return true;
-    var haystack = [mark.title, mark.note, mark.direction, mark.date, mark.idkey]
-      .join(" ").toLowerCase();
+    var haystack = [mark.title, mark.note, mark.tags.join(" "),
+      mark.direction, mark.date, mark.idkey].join(" ").toLowerCase();
     return query.split(/\s+/).every(function (term) {
       return term === "" || haystack.indexOf(term) >= 0;
     });
@@ -119,7 +150,8 @@
   function visibleMarks(all) {
     var query = view.query.trim().toLowerCase();
     return sortMarks(all.filter(function (mark) {
-      return inTab(mark, view.tab) && matchesQuery(mark, query);
+      return inTab(mark, view.tab) && hasTag(mark, view.tag) &&
+        matchesQuery(mark, query);
     }));
   }
 
@@ -220,6 +252,9 @@
     var stamp = element("div", "reading-stamp");
     stamp.appendChild(element("span", "reading-stamp__state m-" + (mark.state || "note"),
       STATE_LABELS[mark.state] || "仅笔记"));
+    mark.tags.forEach(function (tag) {
+      stamp.appendChild(element("span", "reading-stamp__tag", tag));
+    });
     if (mark.at) {
       stamp.appendChild(element("span", "reading-stamp__at", "标记于 " + mark.at.slice(0, 10)));
     }
@@ -251,11 +286,40 @@
     });
   }
 
+  // The picker is rebuilt from the marks themselves, so a tag that was just
+  // added to a card appears without a reload and one that was removed from
+  // the last paper holding it disappears.
+  function updateTagPicker(all) {
+    if (!tagSelect) return;
+    var known = knownTags(all);
+    if (view.tag && !known.some(function (e) { return e.tag === view.tag; })) {
+      view.tag = "";  // the last paper with this tag lost it
+    }
+    tagSelect.textContent = "";
+    var any = document.createElement("option");
+    any.value = "";
+    any.textContent = "全部标签";
+    tagSelect.appendChild(any);
+    known.forEach(function (entry) {
+      var option = document.createElement("option");
+      option.value = entry.tag;
+      option.textContent = entry.tag + " (" + entry.count + ")";
+      tagSelect.appendChild(option);
+    });
+    tagSelect.value = view.tag;
+    tagSelect.disabled = known.length === 0;
+  }
+
   function updateTabs(all) {
+    updateTagPicker(all);
     TABS.forEach(function (tab) {
       var button = tabsWrap.querySelector('[data-state="' + tab + '"]');
       if (!button) return;
-      var count = all.filter(function (mark) { return inTab(mark, tab); }).length;
+      // Counted inside the chosen tag, so the numbers match what a click
+      // actually shows.
+      var count = all.filter(function (mark) {
+        return inTab(mark, tab) && hasTag(mark, view.tag);
+      }).length;
       var label = button.dataset.label || button.textContent;
       button.dataset.label = label;
       button.textContent = label + " (" + count + ")";
@@ -348,6 +412,14 @@
     render();
   });
 
+  if (tagSelect) {
+    tagSelect.addEventListener("change", function () {
+      view.tag = tagSelect.value;
+      view.page = 1;
+      render();
+    });
+  }
+
   var timer = null;
   queryInput.addEventListener("input", function () {
     clearTimeout(timer);
@@ -395,6 +467,11 @@
     if (button) setTimeout(function () { updateTabs(collectMarks()); }, 0);
   });
 
+  // radar-ui.js fires this for every mark write, tags included.
+  document.addEventListener("radar:mark-changed", function () {
+    setTimeout(function () { updateTabs(collectMarks()); }, 0);
+  });
+
   if (copyButton) {
     copyButton.addEventListener("click", function () {
       var list = visibleMarks(collectMarks());
@@ -406,6 +483,7 @@
         var head = "- " + (link ? "[" + (mark.title || mark.idkey) + "](" + link + ")" :
           (mark.title || mark.idkey));
         var tail = [mark.date, STATE_LABELS[mark.state] || "仅笔记"]
+          .concat(mark.tags.map(function (tag) { return "#" + tag; }))
           .filter(Boolean).join(" · ");
         return head + " — " + tail + (mark.note ? "\n  笔记：" + mark.note.replace(/\n/g, " ") : "");
       });

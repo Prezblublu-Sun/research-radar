@@ -4,12 +4,8 @@
 
   var PAGE_SIZE = 20;
   var manifest = null;
-  var IGNORED_KEY = "radar:filter:queue-ignored";
-  var IGNORED_MODES = ["", "exclude", "only"];
   var state = {
     priority: "High", direction: "", year: "", relevance: "",
-    // "" all · "exclude" everything but 忽略 · "only" just the 忽略 pile
-    ignored: "",
     records: [], loadedYears: {}, cursor: 0, page: 1,
     loading: false, generation: 0
   };
@@ -24,33 +20,38 @@
   var directionSelect = document.getElementById("queue-direction");
   var yearSelect = document.getElementById("queue-year");
   var relevanceSelect = document.getElementById("queue-relevance");
-  var ignoredSelect = document.getElementById("queue-ignored");
   if (!results || !status || !pagination || !previous || !pageSelect ||
       !pageTotal || !next || !directionSelect || !yearSelect ||
       !relevanceSelect) return;
 
-  function normaliseMode(value) {
-    return IGNORED_MODES.indexOf(value) >= 0 ? value : "";
+  // The mark filter is owned by radar-ui.js and shared with the daily pages
+  // (ADR-0034): one bar, one rule, three surfaces. If the bundle failed to
+  // load the queue still works, it just shows everything.
+  function markFilterFn() {
+    var api = window.RadarUI;
+    if (!api || !api.markFilter || !api.markRecord) {
+      return function () { return true; };
+    }
+    var visible = api.markFilter();
+    return function (record) {
+      return visible(api.markRecord(record.identity_key));
+    };
   }
 
-  function rememberedIgnoredMode() {
-    try {
-      var stored = window.localStorage.getItem(IGNORED_KEY);
-      if (stored !== null) return normaliseMode(stored);
-      // The first cut of this filter was a checkbox; honour its preference.
-      return window.localStorage.getItem("radar:filter:queue-hide-ignored") === "1"
-        ? "exclude" : "";
-    } catch (error) {
-      return "";
-    }
+  // True when the filter excludes unmarked papers: only marked ones can show.
+  function marksOnly() {
+    var api = window.RadarUI;
+    return Boolean(api && api.marksOnly && api.marksOnly());
   }
 
-  function rememberIgnoredMode(value) {
-    try {
-      window.localStorage.setItem(IGNORED_KEY, value);
-    } catch (error) {
-      /* private mode / quota — the URL still carries the choice */
-    }
+  // Whether the filter can hide anything at all. With everything ticked and
+  // no tag chosen there is nothing to refresh, so a mark change costs nothing.
+  function filtersMarks() {
+    var api = window.RadarUI;
+    if (!api || !api.markFilter) return false;
+    var visible = api.markFilter();
+    return !(visible(null) && visible({ state: "to-read" }) &&
+             visible({ state: "read" }) && visible({ state: "ignore" }));
   }
 
   function element(tag, className, text) {
@@ -66,12 +67,6 @@
     return Object.keys(info.years || {}).sort().reverse();
   }
 
-  function markStateOf(record) {
-    var api = window.RadarUI;
-    if (!api || !api.markState || !record || !record.identity_key) return "";
-    return api.markState(record.identity_key);
-  }
-
   function matchesFacets(record) {
     return (!state.direction || record.direction === state.direction) &&
       (!state.relevance || record.relevance_level === state.relevance) &&
@@ -79,24 +74,23 @@
   }
 
   function filteredRecords() {
+    var visible = markFilterFn();
     return state.records.filter(function (record) {
       if (!matchesFacets(record)) return false;
-      var ignored = markStateOf(record) === "ignore";
-      if (state.ignored === "exclude") return !ignored;
-      if (state.ignored === "only") return ignored;
-      return true;
+      return visible(record);
     });
   }
 
-  // Ignored papers are marked locally, so the server-side facet counts know
-  // nothing about them. Count the ones we have actually loaded and correct
+  // Marks live in this browser, so the server-side facet counts know nothing
+  // about them. Count the loaded records the mark filter hides and correct
   // both the displayed total and how far ahead the loader has to read.
-  function hiddenIgnoredCount() {
-    if (state.ignored !== "exclude") return 0;
+  function hiddenByMarks() {
+    if (marksOnly()) return 0;  // the total is unknowable, not merely off
+    var visible = markFilterFn();
     var hidden = 0;
     for (var index = 0; index < state.records.length; index += 1) {
       var record = state.records[index];
-      if (matchesFacets(record) && markStateOf(record) === "ignore") hidden += 1;
+      if (matchesFacets(record) && !visible(record)) hidden += 1;
     }
     return hidden;
   }
@@ -124,15 +118,15 @@
     return Number((facets.relevance || {})[state.relevance] || 0);
   }
 
-  // "Only ignored" is defined entirely by local marks, so the facet counts
-  // cannot describe it. The marks do record each paper's publication date,
-  // which is what names the year shard, so this view loads the few shards it
-  // needs instead of the whole priority.
-  function yearsHoldingIgnoredMarks() {
+  // A marks-only view is defined entirely by local marks, so the facet
+  // counts cannot describe it. The marks do record each paper's publication
+  // date, which is what names the year shard, so this view loads the few
+  // shards it needs instead of the whole priority.
+  function yearsHoldingMarks() {
     var api = window.RadarUI;
-    if (!api || !api.ignoredYears) return yearsForPriority();
+    if (!api || !api.markedYears) return yearsForPriority();
     var available = yearsForPriority();
-    var wanted = api.ignoredYears();
+    var wanted = api.markedYears();
     // A mark with no usable date would otherwise be invisible; widen rather
     // than silently drop it.
     if (wanted.indexOf("") >= 0) return available;
@@ -143,7 +137,7 @@
 
   function knownFilteredTotal() {
     // Local marks decide this view, so there is no server-side count to use.
-    if (state.ignored === "only") return null;
+    if (marksOnly()) return null;
     var years = state.year ? [state.year] : yearsForPriority();
     var total = 0;
     for (var index = 0; index < years.length; index += 1) {
@@ -151,7 +145,7 @@
       if (count == null) return null;
       total += count;
     }
-    return Math.max(0, total - hiddenIgnoredCount());
+    return Math.max(0, total - hiddenByMarks());
   }
 
   function pageCountFor(total) {
@@ -205,10 +199,10 @@
     }
 
     var count = pageCountFor(total);
-    var hidden = hiddenIgnoredCount();
+    var hidden = hiddenByMarks();
     var note = "";
-    if (state.ignored === "only") note = " · 只看已忽略";
-    else if (hidden) note = " · 已隐藏 " + hidden + " 篇忽略";
+    if (marksOnly()) note = " · 只看已标记";
+    else if (hidden) note = " · 标记筛选已隐藏 " + hidden + " 篇";
     status.textContent = state.priority + "：当前筛选 " + total +
       " 篇 · 第 " + (total ? state.page : 0) + " / " + count +
       " 页 · 每页 " + PAGE_SIZE + " 篇" + note;
@@ -275,11 +269,9 @@
   function ensurePrefixForPage(generation, total) {
     function step() {
       // Recomputed each round: every newly loaded year can reveal more
-      // ignored papers, which the page needs replacements for.
-      var target = Math.min(
-        state.page * PAGE_SIZE + hiddenIgnoredCount(),
-        total + hiddenIgnoredCount()
-      );
+      // papers the mark filter hides, which the page needs replacements for.
+      var hidden = hiddenByMarks();
+      var target = Math.min(state.page * PAGE_SIZE + hidden, total + hidden);
       if (generation !== state.generation ||
           loadedPrefixMatchCount() >= target ||
           state.cursor >= yearsForPriority().length) {
@@ -311,8 +303,8 @@
   }
 
   function ensureDataForView(generation) {
-    if (state.ignored === "only") {
-      var wanted = yearsHoldingIgnoredMarks();
+    if (marksOnly()) {
+      var wanted = yearsHoldingMarks();
       if (state.year) {
         wanted = wanted.filter(function (year) { return year === state.year; });
       }
@@ -333,8 +325,9 @@
     else params.delete("year");
     if (state.relevance) params.set("relevance", state.relevance);
     else params.delete("relevance");
-    if (state.ignored) params.set("ignored", state.ignored);
-    else params.delete("ignored");
+    // The mark filter is a per-browser preference, not part of the link:
+    // sharing a queue URL should not impose your triage on the reader.
+    params.delete("ignored");
     params.delete("hide_ignored");
     if (state.page > 1) params.set("page", String(state.page));
     else params.delete("page");
@@ -394,10 +387,6 @@
       state.direction = params.get("direction") || "";
       state.year = params.get("year") || "";
       state.relevance = params.get("relevance") || "";
-      state.ignored = params.has("ignored")
-        ? normaliseMode(params.get("ignored"))
-        : (params.get("hide_ignored") === "1" ? "exclude"
-                                              : rememberedIgnoredMode());
       if (state.direction && !(manifest.directions || {})[state.direction]) {
         state.direction = "";
       }
@@ -415,7 +404,6 @@
       });
       directionSelect.value = state.direction;
       relevanceSelect.value = state.relevance;
-      if (ignoredSelect) ignoredSelect.value = state.ignored;
 
       function populateYears() {
         yearSelect.replaceChildren(element("option", "", "全部年份"));
@@ -456,20 +444,18 @@
         state.relevance = relevanceSelect.value;
         loadView(1, false);
       });
-      if (ignoredSelect) {
-        ignoredSelect.addEventListener("change", function () {
-          state.ignored = normaliseMode(ignoredSelect.value);
-          rememberIgnoredMode(state.ignored);
-          loadView(1, false);
-        });
-      }
-      // While either ignore view is active a mark change moves a card into
-      // or out of the list, so refresh instead of waiting for a page turn.
-      // In "only" mode the newly ignored paper may live in a year that is
-      // not loaded yet, which is why this reloads the view rather than
-      // re-rendering what is already in memory.
+      // Changing the shared filter re-cuts the whole queue, including
+      // which year shards have to be loaded, so start again from page 1.
+      document.addEventListener("radar:filter-changed", function () {
+        if (state.loading) return;
+        loadView(1, false);
+      });
+      // A mark change moves a card into or out of the list while a filter is
+      // active, so refresh instead of waiting for a page turn. The paper may
+      // live in a year that is not loaded yet, which is why this reloads the
+      // view rather than re-rendering what is already in memory.
       document.addEventListener("radar:mark-changed", function () {
-        if (!state.ignored || state.loading) return;
+        if (state.loading || !filtersMarks()) return;
         loadView(state.page, false);
       });
       previous.addEventListener("click", function () {
