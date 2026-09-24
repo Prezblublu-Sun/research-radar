@@ -115,7 +115,8 @@ def load_state(path: pathlib.Path) -> dict:
     if not isinstance(state, dict):
         return {"schema_version": STATE_VERSION, "keys": []}
     keys = state.get("keys")
-    state["keys"] = [k for k in keys if isinstance(k, str)] if isinstance(keys, list) else []
+    state["keys"] = sorted(k for k in keys if isinstance(k, str)) \
+        if isinstance(keys, list) else []
     return state
 
 
@@ -209,7 +210,12 @@ def main(argv: list[str] | None = None) -> int:
         # post: "no new papers" has to mean no file and therefore no mail.
         comment_path.unlink(missing_ok=True)
 
-    if not args.dry_run:
+    # Only when the membership actually changed. `updated_at` moves on every
+    # write, so rewriting unconditionally would commit a timestamp to main
+    # every single day for nothing — and would make the field meaningless,
+    # since what it should record is when the list last changed.
+    changed = digest["keys"] != state["keys"]
+    if not args.dry_run and changed:
         state_path.parent.mkdir(parents=True, exist_ok=True)
         state_path.write_text(json.dumps({
             "schema_version": STATE_VERSION,
