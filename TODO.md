@@ -229,6 +229,7 @@ Track major architectural decisions to avoid forgetting rationale.
 | 2026-09-22 | The mail button opens a copy/`mailto:` panel instead of claiming it opened a mail client (ADR-0016 addendum correction) | User reported the button only appeared to copy: with no `mailto:` handler registered nothing opens and the page cannot detect it, so the success message was false |
 | 2026-09-22 | Reading marks sync to `data/marks/` through an owner-only, validated `marks-sync` issue; supersedes ADR-0016's "no sync" (ADR-0032) | A server job cannot read browser-only state, and the marks are meant to seed a human-curated library; the issue route needs no credential in the page |
 | 2026-09-24 | Queue page can hide 忽略-marked papers; every mark write now emits `radar:mark-changed` | User asked for it; the event lets the queue drop a card the moment it is ignored instead of at the next page turn, and later features reuse the same hook |
+| 2026-09-24 | Marks sync automatically with an optional browser-held fine-grained token; a cleared mark becomes a tombstone (ADR-0033, ADR-0032 addendum) | User asked for one click rather than the three-step issue hand-off; without tombstones a clear on one device was undone by another |
 |   |   |   |
 
 Add a row whenever making a substantive change.

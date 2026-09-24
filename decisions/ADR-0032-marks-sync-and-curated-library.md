@@ -91,3 +91,26 @@ the body and commits it. No credential ever reaches the page.
 Delete the workflow and the library panel; `data/marks/` becomes inert data
 and the browser keeps working exactly as it did under ADR-0016. No corpus
 record is touched by this ADR.
+
+## Addendum 2026-09-24 — tombstones
+
+The first cut could not express "I cleared this mark". The browser deleted
+the localStorage key and `validate_payload` dropped any mark with neither
+state nor note, so a clear was an *absence* — and an absence loses a merge
+against a device that still holds the old mark. Clearing 忽略 on the laptop
+would have been undone by the desktop the next time the digest read
+`data/marks/`.
+
+A cleared mark is now a record with an empty state and a timestamp. It takes
+part in the merge like any other, and `load_all` drops tombstones only after
+the merge has finished, so a clear beats an older mark and a newer mark beats
+an older clear. The browser keeps the key rather than deleting it, and the
+reading list and the library listing both skip tombstones so nothing blank
+appears in the trail. Files written before this change still load: a missing
+key is simply a key nobody has an opinion about.
+
+Verified end to end on issue #35 before this addendum: the workflow validated
+the payload, committed `data/marks/dev-e2etest1.json`, commented and closed.
+That run also showed the trigger firing twice, because creating an issue with
+a label emits both `opened` and `labeled`; the workflow now listens for
+`opened` only.

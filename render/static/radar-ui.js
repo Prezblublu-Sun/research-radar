@@ -388,14 +388,14 @@
         // toggle off, so undo the default and unset explicitly.
         ev.preventDefault();
         r.checked = false;
-        if (prior && typeof prior.note === "string" && prior.note !== "") {
-          // Preserve a note the user wrote; only the mark state is cleared.
-          prior.state = "";
-          prior.at = new Date().toISOString();
-          lsSet("radar:mark:" + idk, prior);
-        } else {
-          localStorage.removeItem("radar:mark:" + idk);
-        }
+        // Keep a record with an empty state rather than deleting the key: it
+        // is the tombstone that lets the clear beat a stale mark held by
+        // another device at merge time. A note the reader wrote survives.
+        var cleared = mergeMeta(prior || { state: "", at: "", note: "" }, card);
+        cleared.state = "";
+        cleared.at = new Date().toISOString();
+        if (typeof cleared.note !== "string") cleared.note = "";
+        lsSet("radar:mark:" + idk, cleared);
         delete card.dataset.mark; // back to the neutral .paper stripe
         applyFilters();
         announceMarkChange(idk);
@@ -502,7 +502,9 @@
       if (!record || typeof record !== "object") continue;
       var state = typeof record.state === "string" ? record.state : "";
       var note = typeof record.note === "string" ? record.note : "";
-      if (!state && !note) continue;
+      var at = typeof record.at === "string" ? record.at : "";
+      // A tombstone (no state, no note, but a timestamp) has to travel too.
+      if (!state && !note && !at) continue;
       out[key.slice("radar:mark:".length)] = {
         state: state,
         at: typeof record.at === "string" ? record.at : "",
@@ -900,11 +902,16 @@
       for (var i = 0; i < localStorage.length; i++) {
         var k = localStorage.key(i);
         if (k && k.indexOf("radar:mark:") === 0) {
+          var parsed;
           try {
-            out[k] = JSON.parse(localStorage.getItem(k));
+            parsed = JSON.parse(localStorage.getItem(k));
           } catch (e) {
-            out[k] = localStorage.getItem(k);
+            parsed = localStorage.getItem(k);
           }
+          // Skip tombstones: a cleared mark is not part of the reading trail.
+          if (parsed && typeof parsed === "object" &&
+              !parsed.state && !parsed.note) continue;
+          out[k] = parsed;
         }
       }
       return out;

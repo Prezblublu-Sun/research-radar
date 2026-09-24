@@ -81,7 +81,9 @@
         direction: typeof record.direction === "string" ? record.direction : "",
         priority: typeof record.priority === "string" ? record.priority : ""
       };
-      if (!mark.state && !mark.note) continue; // nothing to show
+      // A cleared mark is kept in storage as a tombstone so the sync can
+      // propagate the deletion; it is not part of the reading trail.
+      if (!mark.state && !mark.note) continue;
       out.push(mark);
     }
     return out;
