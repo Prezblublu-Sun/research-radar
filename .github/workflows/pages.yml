@@ -3,6 +3,11 @@ name: deploy-research-radar-pages
 on:
   push:
     branches: [main]
+    # ADR-0033: the browser commits marks straight to main, and a full site
+    # rebuild per mark would be minutes of Actions for nothing. REMOVE this
+    # ignore when a published page starts rendering data/marks/.
+    paths-ignore:
+      - "data/marks/**"
   workflow_run:
     workflows:
       - daily-research-radar

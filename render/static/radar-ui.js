@@ -388,14 +388,14 @@
         // toggle off, so undo the default and unset explicitly.
         ev.preventDefault();
         r.checked = false;
-        if (prior && typeof prior.note === "string" && prior.note !== "") {
-          // Preserve a note the user wrote; only the mark state is cleared.
-          prior.state = "";
-          prior.at = new Date().toISOString();
-          lsSet("radar:mark:" + idk, prior);
-        } else {
-          localStorage.removeItem("radar:mark:" + idk);
-        }
+        // Keep a record with an empty state rather than deleting the key: it
+        // is the tombstone that lets the clear beat a stale mark held by
+        // another device at merge time. A note the reader wrote survives.
+        var cleared = mergeMeta(prior || { state: "", at: "", note: "" }, card);
+        cleared.state = "";
+        cleared.at = new Date().toISOString();
+        if (typeof cleared.note !== "string") cleared.note = "";
+        lsSet("radar:mark:" + idk, cleared);
         delete card.dataset.mark; // back to the neutral .paper stripe
         applyFilters();
         announceMarkChange(idk);
@@ -454,7 +454,29 @@
   document.addEventListener("radar:content-ready", function (event) {
     hydrateCards(event.detail && event.detail.root);
   });
-  window.RadarUI = { hydrate: hydrateCards, markState: markState };
+  // Years of every 忽略 mark, so the queue can load just those shards for
+  // its "only ignored" view instead of the whole priority.
+  function ignoredYears() {
+    var years = [];
+    var total = 0;
+    try { total = localStorage.length; } catch (error) { total = 0; }
+    for (var index = 0; index < total; index += 1) {
+      var key = localStorage.key(index);
+      if (!key || key.indexOf("radar:mark:") !== 0) continue;
+      var record = lsGet(key, null);
+      if (!record || record.state !== "ignore") continue;
+      var year = typeof record.date === "string" ? record.date.slice(0, 4) : "";
+      if (!/^\d{4}$/.test(year)) year = "";
+      if (years.indexOf(year) === -1) years.push(year);
+    }
+    return years;
+  }
+
+  window.RadarUI = {
+    hydrate: hydrateCards,
+    markState: markState,
+    ignoredYears: ignoredYears
+  };
 
   hydrateCards(document);
 
@@ -480,7 +502,9 @@
       if (!record || typeof record !== "object") continue;
       var state = typeof record.state === "string" ? record.state : "";
       var note = typeof record.note === "string" ? record.note : "";
-      if (!state && !note) continue;
+      var at = typeof record.at === "string" ? record.at : "";
+      // A tombstone (no state, no note, but a timestamp) has to travel too.
+      if (!state && !note && !at) continue;
       out[key.slice("radar:mark:".length)] = {
         state: state,
         at: typeof record.at === "string" ? record.at : "",
@@ -515,9 +539,206 @@
     return match && segment ? match[1] + "/" + segment : "";
   }
 
-  function syncBody(payload) {
-    return "```json\n" + JSON.stringify(payload, null, 1) + "\n```\n";
+  function currentPayload() {
+    return {
+      schema_version: 1,
+      device: deviceId(),
+      updated_at: new Date().toISOString().replace(/\.\d+Z$/, "Z"),
+      marks: allMarkRecords()
+    };
   }
+
+  // Byte-identical to what pipeline.marks_store.write_device produces
+  // (json.dumps sort_keys=True, indent=1), so the issue route and the direct
+  // write below cannot fight over formatting.
+  function payloadText(payload) {
+    var marks = {};
+    Object.keys(payload.marks).sort().forEach(function (key) {
+      var source = payload.marks[key];
+      var ordered = {};
+      Object.keys(source).sort().forEach(function (field) {
+        ordered[field] = source[field];
+      });
+      marks[key] = ordered;
+    });
+    return JSON.stringify({
+      device: payload.device,
+      marks: marks,
+      schema_version: payload.schema_version,
+      updated_at: payload.updated_at
+    }, null, 1);
+  }
+
+  function syncBody(payload) {
+    return "```json\n" + payloadText(payload) + "\n```\n";
+  }
+
+  // ---- ADR-0033: optional automatic sync with a browser-held token ----
+  //
+  // The reader may paste a fine-grained PAT (this repository only, Contents
+  // read+write). It is held in localStorage, so anyone who can reach this
+  // browser profile can write to the repository; the library page states
+  // that and offers a one-click "forget". Without a token nothing here runs
+  // and the issue hand-off above stays the only route.
+  var TOKEN_KEY = "radar:gh-token";
+  var SYNC_DEBOUNCE_MS = 4000;
+  var syncTimer = null;
+  var syncInFlight = false;
+  var syncQueued = false;
+  var lastSyncedSignature = null;
+
+  function syncToken() {
+    var value = lsGet(TOKEN_KEY, "");
+    return typeof value === "string" ? value.trim() : "";
+  }
+
+  function autoSyncReady() {
+    return Boolean(syncToken() && repoSlug());
+  }
+
+  function utf8ToBase64(text) {
+    var bytes = new TextEncoder().encode(text);
+    var binary = "";
+    for (var index = 0; index < bytes.length; index += 1) {
+      binary += String.fromCharCode(bytes[index]);
+    }
+    return btoa(binary);
+  }
+
+  function ghFetch(path, options) {
+    options = options || {};
+    var headers = {
+      "Accept": "application/vnd.github+json",
+      "X-GitHub-Api-Version": "2022-11-28",
+      "Authorization": "Bearer " + syncToken()
+    };
+    if (options.body) headers["Content-Type"] = "application/json";
+    return fetch("https://api.github.com" + path, {
+      method: options.method || "GET",
+      headers: headers,
+      body: options.body ? JSON.stringify(options.body) : undefined
+    });
+  }
+
+  function apiError(response) {
+    if (response.status === 401) return "令牌无效或已过期（401）";
+    if (response.status === 403) return "令牌没有这个仓库的写入权限（403）";
+    if (response.status === 404) return "找不到仓库或路径，令牌可能没有勾选这个仓库（404）";
+    if (response.status === 409) return "远端已被改动（409）";
+    if (response.status === 422) return "GitHub 拒绝了这次写入（422）";
+    return "HTTP " + response.status;
+  }
+
+  function putMarksFile(text, sha) {
+    var body = {
+      message: "marks: auto-sync from " + deviceId(),
+      content: utf8ToBase64(text),
+      branch: "main"
+    };
+    if (sha) body.sha = sha;
+    return ghFetch(
+      "/repos/" + repoSlug() + "/contents/data/marks/" + deviceId() + ".json",
+      { method: "PUT", body: body }
+    );
+  }
+
+  function readRemoteSha() {
+    return ghFetch("/repos/" + repoSlug() + "/contents/data/marks/" +
+      deviceId() + ".json?ref=main").then(function (response) {
+      if (response.status === 404) return null;          // first sync
+      if (!response.ok) throw new Error(apiError(response));
+      return response.json().then(function (data) { return data.sha || null; });
+    });
+  }
+
+  function pushMarks(force) {
+    if (!autoSyncReady()) return Promise.resolve({ skipped: true });
+    var payload = currentPayload();
+    var signature = JSON.stringify(payload.marks);
+    if (!force && signature === lastSyncedSignature) {
+      return Promise.resolve({ unchanged: true });
+    }
+    var text = payloadText(payload);
+    var count = Object.keys(payload.marks).length;
+
+    function attempt(retriesLeft) {
+      return readRemoteSha()
+        .then(function (sha) { return putMarksFile(text, sha); })
+        .then(function (response) {
+          if (response.status === 409 && retriesLeft > 0) {
+            // Another device wrote between our read and our write.
+            return attempt(retriesLeft - 1);
+          }
+          if (!response.ok) throw new Error(apiError(response));
+          lastSyncedSignature = signature;
+          return { ok: true, count: count };
+        });
+    }
+    return attempt(1);
+  }
+
+  function syncChip() {
+    var chip = document.getElementById("rui-sync-chip");
+    if (!chip) {
+      chip = node("div", "rui-sync-chip");
+      chip.id = "rui-sync-chip";
+      chip.addEventListener("click", function () { chip.hidden = true; });
+      document.body.appendChild(chip);
+    }
+    return chip;
+  }
+
+  function showSync(message, kind, sticky) {
+    var chip = syncChip();
+    chip.textContent = message;
+    chip.className = "rui-sync-chip rui-sync-chip--" + kind;
+    chip.hidden = false;
+    if (chip.timer) clearTimeout(chip.timer);
+    if (!sticky) {
+      chip.timer = setTimeout(function () { chip.hidden = true; }, 2500);
+    }
+  }
+
+  function runMarksPush(force) {
+    if (!autoSyncReady()) return Promise.resolve();
+    if (syncInFlight) {
+      syncQueued = true;
+      return Promise.resolve();
+    }
+    syncInFlight = true;
+    showSync("正在同步标记…", "busy", true);
+    return pushMarks(force).then(function (result) {
+      if (result.ok) showSync("✓ 已同步 " + result.count + " 条标记", "ok");
+      else if (result.unchanged) showSync("标记无变化", "ok");
+      else syncChip().hidden = true;
+    }, function (error) {
+      // A real HTTP answer, not a guess: say exactly what GitHub refused.
+      showSync("同步失败：" + error.message, "bad", true);
+    }).then(function () {
+      syncInFlight = false;
+      if (syncQueued) {
+        syncQueued = false;
+        return runMarksPush(false);
+      }
+    });
+  }
+
+  function scheduleMarksPush() {
+    if (!autoSyncReady()) return;
+    clearTimeout(syncTimer);
+    syncTimer = setTimeout(function () { runMarksPush(false); }, SYNC_DEBOUNCE_MS);
+  }
+
+  document.addEventListener("radar:mark-changed", scheduleMarksPush);
+  document.addEventListener("visibilitychange", function () {
+    // Leaving the page with a debounce still pending would lose the edit
+    // until the next visit; flush instead of waiting it out.
+    if (document.visibilityState === "hidden" && syncTimer) {
+      clearTimeout(syncTimer);
+      syncTimer = null;
+      runMarksPush(false);
+    }
+  });
 
   var syncBtn = document.getElementById("rui-sync-marks");
   if (syncBtn) {
@@ -603,6 +824,76 @@
     });
   }
 
+  // ---- library.html: the automatic-sync settings (ADR-0033) ----
+  var tokenInput = document.getElementById("rui-token-input");
+  if (tokenInput) {
+    var tokenStatus = document.getElementById("rui-token-status");
+    var saveBtn = document.getElementById("rui-token-save");
+    var forgetBtn = document.getElementById("rui-token-forget");
+    var nowBtn = document.getElementById("rui-token-now");
+
+    function renderTokenStatus(message, kind) {
+      tokenStatus.className = "rui-mail-status" + (kind ? " rui-token--" + kind : "");
+      if (message) {
+        tokenStatus.textContent = message;
+        return;
+      }
+      var token = syncToken();
+      if (!token) {
+        tokenStatus.textContent = "未启用：改动标记后需要手动走上面的 issue 流程。";
+      } else if (!repoSlug()) {
+        tokenStatus.textContent = "已保存令牌，但本地预览没有仓库地址，自动同步不会运行。";
+      } else {
+        tokenStatus.textContent = "已启用：设备 " + deviceId() + " · 令牌 …" +
+          token.slice(-4) + " · 改动后约 " + (SYNC_DEBOUNCE_MS / 1000) + " 秒自动提交。";
+      }
+    }
+
+    function updateButtons() {
+      var has = Boolean(syncToken());
+      forgetBtn.disabled = !has;
+      nowBtn.disabled = !has;
+    }
+
+    renderTokenStatus();
+    updateButtons();
+
+    saveBtn.addEventListener("click", function () {
+      var value = tokenInput.value.trim();
+      if (!value) {
+        renderTokenStatus("请先粘贴令牌。", "bad");
+        return;
+      }
+      lsSet(TOKEN_KEY, value);
+      tokenInput.value = "";
+      updateButtons();
+      if (!repoSlug()) {
+        renderTokenStatus("已保存，但本地预览没有仓库地址，无法验证。", "bad");
+        return;
+      }
+      // Verify by actually writing: a token that cannot push is not "saved".
+      renderTokenStatus("正在用一次真实提交验证令牌…");
+      runMarksPush(true).then(function () {
+        renderTokenStatus();
+      });
+    });
+
+    forgetBtn.addEventListener("click", function () {
+      if (!confirm("确定从这个浏览器删除令牌？自动同步会停止，已同步的数据不受影响。")) {
+        return;
+      }
+      try { localStorage.removeItem(TOKEN_KEY); } catch (error) { /* ignore */ }
+      lastSyncedSignature = null;
+      updateButtons();
+      renderTokenStatus("令牌已删除，自动同步已停止。", "ok");
+    });
+
+    nowBtn.addEventListener("click", function () {
+      renderTokenStatus("正在同步…");
+      runMarksPush(true).then(function () { renderTokenStatus(); });
+    });
+  }
+
   // ---- my-marks.html: export-all + listing ----
   var exportBtn = document.getElementById("rui-export-marks");
   if (exportBtn) {
@@ -611,11 +902,16 @@
       for (var i = 0; i < localStorage.length; i++) {
         var k = localStorage.key(i);
         if (k && k.indexOf("radar:mark:") === 0) {
+          var parsed;
           try {
-            out[k] = JSON.parse(localStorage.getItem(k));
+            parsed = JSON.parse(localStorage.getItem(k));
           } catch (e) {
-            out[k] = localStorage.getItem(k);
+            parsed = localStorage.getItem(k);
           }
+          // Skip tombstones: a cleared mark is not part of the reading trail.
+          if (parsed && typeof parsed === "object" &&
+              !parsed.state && !parsed.note) continue;
+          out[k] = parsed;
         }
       }
       return out;

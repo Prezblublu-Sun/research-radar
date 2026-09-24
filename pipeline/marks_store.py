@@ -110,8 +110,12 @@ def validate_payload(data) -> dict:
         if at and not ISO_RE.match(at):
             raise MarksPayloadError(f"mark {key!r} has a non-ISO timestamp {at!r}")
         note = _clean(value.get("note"), MAX_NOTE)
-        if not state and not note:
-            continue  # an empty mark carries no information
+        if not state and not note and not at:
+            continue  # no state, no note, no timestamp: nothing at all
+        # `state: ""` with a timestamp is a tombstone: the reader cleared the
+        # mark. It has to survive the round trip, because another device's
+        # file may still hold the old mark and the merge needs something
+        # newer to beat it with. load_all() drops tombstones after merging.
         marks[key] = {
             "state": state,
             "at": at,
@@ -173,12 +177,21 @@ def write_device(data_root: pathlib.Path, payload: dict) -> pathlib.Path:
     return path
 
 
+def is_tombstone(mark: dict) -> bool:
+    """A cleared mark: no state and no note left, only the time it happened."""
+    return not mark.get("state") and not mark.get("note")
+
+
 def load_all(data_root: pathlib.Path) -> dict[str, dict]:
     """Merge every device file into one identity -> mark mapping.
 
     Newest ``at`` wins; a tie falls back to the device name so the result is
     deterministic no matter what order the files are read in. Each returned
     mark carries the ``device`` it came from.
+
+    Tombstones take part in the merge and are then dropped, so clearing a
+    mark on one device removes it everywhere instead of being resurrected by
+    a device that has not synced since.
     """
     merged: dict[str, dict] = {}
     marks_dir = pathlib.Path(data_root) / "marks"
@@ -195,7 +208,7 @@ def load_all(data_root: pathlib.Path) -> dict[str, dict]:
             if current is None or (mark.get("at", ""), device) > (
                     current.get("at", ""), current.get("device", "")):
                 merged[key] = {**mark, "device": device}
-    return merged
+    return {key: mark for key, mark in merged.items() if not is_tombstone(mark)}
 
 
 def by_state(marks: dict[str, dict], state: str) -> list[tuple[str, dict]]:

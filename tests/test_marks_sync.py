@@ -254,12 +254,16 @@ def test_the_sync_serialises_with_the_other_writers_and_pushes_with_retry():
 # browser side
 # ---------------------------------------------------------------------------
 
-def test_the_page_packages_marks_without_holding_any_credential():
+def test_the_issue_hand_off_needs_no_credential():
+    # ADR-0032's route must keep working on its own. ADR-0033 later added an
+    # OPTIONAL token for automatic sync, so the invariant is no longer "the
+    # bundle mentions no token" but "this route never consults one".
     assert "rui-sync-marks" in UI_JS and "rui-sync-panel" in UI_JS
     assert "labels=marks-sync" in UI_JS
     assert "issues/new" in UI_JS
-    for forbidden in ("token", "Authorization", "api.github.com"):
-        assert forbidden not in UI_JS, forbidden
+    handoff = UI_JS.split("var syncBtn = document.getElementById")[1]                    .split("// ---- library.html: the automatic-sync settings")[0]
+    for forbidden in ("syncToken", "Authorization", "api.github.com"):
+        assert forbidden not in handoff, forbidden
 
 
 def test_the_device_id_matches_what_the_validator_accepts():
@@ -284,3 +288,56 @@ def test_the_library_page_offers_the_sync():
     assert 'id="rui-sync-marks"' in library
     assert 'id="rui-sync-panel"' in library
     assert "data/marks/" in library
+
+
+# ---------------------------------------------------------------------------
+# tombstones: clearing a mark has to cross devices (ADR-0032 addendum)
+# ---------------------------------------------------------------------------
+
+def test_a_cleared_mark_survives_validation_as_a_tombstone():
+    out = ms.validate_payload(_payload(**{
+        "doi:10.1/cleared": {"state": "", "note": "", "at": "2026-09-24T00:00:00Z"},
+        "doi:10.1/nothing": {"state": "", "note": "", "at": ""},
+    }))
+    assert "doi:10.1/cleared" in out["marks"]     # the tombstone travels
+    assert "doi:10.1/nothing" not in out["marks"]  # genuinely empty is dropped
+    assert ms.is_tombstone(out["marks"]["doi:10.1/cleared"])
+
+
+def test_clearing_on_one_device_does_not_get_resurrected_by_another(tmp_path):
+    ms.write_device(tmp_path, ms.validate_payload(_payload(
+        device="dev-laptop01",
+        **{"doi:10.1/x": {"state": "ignore", "at": "2026-09-20T00:00:00Z"}})))
+    ms.write_device(tmp_path, ms.validate_payload(_payload(
+        device="dev-desktop1",
+        **{"doi:10.1/x": {"state": "", "note": "", "at": "2026-09-24T00:00:00Z"}})))
+    assert "doi:10.1/x" not in ms.load_all(tmp_path)
+
+
+def test_an_older_clear_does_not_beat_a_newer_mark(tmp_path):
+    ms.write_device(tmp_path, ms.validate_payload(_payload(
+        device="dev-laptop01",
+        **{"doi:10.1/x": {"state": "", "note": "", "at": "2026-09-20T00:00:00Z"}})))
+    ms.write_device(tmp_path, ms.validate_payload(_payload(
+        device="dev-desktop1",
+        **{"doi:10.1/x": {"state": "to-read", "at": "2026-09-24T00:00:00Z"}})))
+    assert ms.load_all(tmp_path)["doi:10.1/x"]["state"] == "to-read"
+
+
+def test_a_cleared_mark_keeps_a_note_the_reader_wrote():
+    out = ms.validate_payload(_payload(**{
+        "doi:10.1/x": {"state": "", "note": "还想再看看", "at": "2026-09-24T00:00:00Z"}}))
+    assert out["marks"]["doi:10.1/x"]["note"] == "还想再看看"
+    assert not ms.is_tombstone(out["marks"]["doi:10.1/x"])  # a note is content
+
+
+def test_the_browser_keeps_and_ships_the_tombstone_but_never_shows_it():
+    reading = (REPO_ROOT / "render" / "static" / "radar-reading.js").read_text(encoding="utf-8")
+    # Clearing writes a record instead of deleting the key...
+    assert 'localStorage.removeItem("radar:mark:" + idk)' not in UI_JS
+    assert "var cleared = mergeMeta(" in UI_JS
+    # ...the sync payload carries it...
+    assert "if (!state && !note && !at) continue;" in UI_JS
+    # ...and neither the reading list nor the library listing renders it.
+    assert "if (!mark.state && !mark.note) continue;" in reading
+    assert "!parsed.state && !parsed.note) continue;" in UI_JS

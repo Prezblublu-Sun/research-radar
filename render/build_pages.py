@@ -1768,7 +1768,7 @@ def _render_queue_page() -> str:
   <label>方向<select id="queue-direction"><option value="">全部方向</option></select></label>
   <label>年份<select id="queue-year"><option value="">全部年份</option></select></label>
   <label>相关性<select id="queue-relevance"><option value="">全部</option><option>Direct</option><option>Transferable</option><option>Peripheral</option></select></label>
-  <label class="queue-toggle"><input type="checkbox" id="queue-hide-ignored"> 隐藏已忽略</label>
+  <label>忽略<select id="queue-ignored"><option value="">全部</option><option value="exclude">已忽略以外</option><option value="only">只看已忽略</option></select></label>
 </div>
 <div class="queue-status" id="queue-status" aria-live="polite">正在加载队列…</div>
 <div id="queue-results" class="paper-grid"></div>
@@ -2120,6 +2120,22 @@ def _render_library_page() -> str:
     也是后续人工筛选文献库的数据来源。页面不持有任何令牌，提交用的是你自己的 GitHub 登录。</p>
     <button type="button" class="rui-btn" id="rui-sync-marks">打包并提交标记</button>
     <div id="rui-sync-panel"></div>
+  </section>
+  <section id="autosync" class="library-panel">
+    <div class="eyebrow">Automatic sync</div>
+    <h2>自动同步（可选）</h2>
+    <p>填入一个 GitHub 细粒度令牌后，改动标记几秒后会自动提交到仓库，不用再走上面的 issue 流程。
+    令牌请<b>只勾选这一个仓库</b>、权限<b>只给 Contents 读写</b>，并设一个到期日。</p>
+    <p class="rui-warn">令牌保存在这个浏览器的 localStorage 里：能接触到这个浏览器配置的人就能写你的仓库。
+    不想留就用下面的“忘记令牌”删掉，随时可以重新填。</p>
+    <p><input type="password" id="rui-token-input" class="rui-token-input"
+       autocomplete="off" spellcheck="false" placeholder="github_pat_..."></p>
+    <p>
+      <button type="button" class="rui-btn" id="rui-token-save">保存并验证</button>
+      <button type="button" class="rui-btn rui-secondary" id="rui-token-now">立即同步</button>
+      <button type="button" class="rui-btn rui-secondary" id="rui-token-forget">忘记令牌</button>
+    </p>
+    <div id="rui-token-status" class="rui-mail-status"></div>
   </section>
   <section id="mail" class="library-panel">
     <div class="eyebrow">Mail hand-off</div>
