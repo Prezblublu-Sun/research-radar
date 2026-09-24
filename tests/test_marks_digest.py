@@ -125,6 +125,27 @@ def test_a_paper_leaving_the_list_mails_nothing_and_is_not_named(tmp_path):
     assert "当前待阅读共 2 篇" in comment
 
 
+def test_an_idle_run_leaves_the_watermark_alone(tmp_path):
+    # Otherwise `updated_at` alone makes the file differ and the workflow
+    # commits to main every day for nothing.
+    _device(tmp_path, "dev-laptop01", {"doi:10.1/a": _mark()})
+    _run(tmp_path)
+    state = tmp_path / "digest" / "to-read.json"
+    before = state.read_text(encoding="utf-8")
+    _run(tmp_path)
+    assert state.read_text(encoding="utf-8") == before
+    # ...and a real change still moves it.
+    _device(tmp_path, "dev-laptop01", {"doi:10.1/a": _mark(), "doi:10.1/b": _mark()})
+    _run(tmp_path)
+    assert state.read_text(encoding="utf-8") != before
+
+
+def test_no_marks_at_all_writes_no_state_file(tmp_path):
+    (tmp_path / "marks").mkdir()
+    _run(tmp_path)
+    assert not (tmp_path / "digest" / "to-read.json").exists()
+
+
 def test_a_dry_run_reports_without_consuming_the_papers(tmp_path):
     _device(tmp_path, "dev-laptop01", {"doi:10.1/a": _mark()})
     _, comment = _run(tmp_path, dry_run=True)
