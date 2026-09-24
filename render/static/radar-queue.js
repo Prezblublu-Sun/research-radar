@@ -4,8 +4,10 @@
 
   var PAGE_SIZE = 20;
   var manifest = null;
+  var HIDE_IGNORED_KEY = "radar:filter:queue-hide-ignored";
   var state = {
     priority: "High", direction: "", year: "", relevance: "",
+    hideIgnored: false,
     records: [], loadedYears: {}, cursor: 0, page: 1,
     loading: false, generation: 0
   };
@@ -20,9 +22,26 @@
   var directionSelect = document.getElementById("queue-direction");
   var yearSelect = document.getElementById("queue-year");
   var relevanceSelect = document.getElementById("queue-relevance");
+  var hideIgnoredBox = document.getElementById("queue-hide-ignored");
   if (!results || !status || !pagination || !previous || !pageSelect ||
       !pageTotal || !next || !directionSelect || !yearSelect ||
       !relevanceSelect) return;
+
+  function rememberedHideIgnored() {
+    try {
+      return window.localStorage.getItem(HIDE_IGNORED_KEY) === "1";
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function rememberHideIgnored(value) {
+    try {
+      window.localStorage.setItem(HIDE_IGNORED_KEY, value ? "1" : "0");
+    } catch (error) {
+      /* private mode / quota — the URL still carries the choice */
+    }
+  }
 
   function element(tag, className, text) {
     var node = document.createElement(tag);
@@ -37,12 +56,36 @@
     return Object.keys(info.years || {}).sort().reverse();
   }
 
+  function markStateOf(record) {
+    var api = window.RadarUI;
+    if (!api || !api.markState || !record || !record.identity_key) return "";
+    return api.markState(record.identity_key);
+  }
+
+  function matchesFacets(record) {
+    return (!state.direction || record.direction === state.direction) &&
+      (!state.relevance || record.relevance_level === state.relevance) &&
+      (!state.year || record.date.slice(0, 4) === state.year);
+  }
+
   function filteredRecords() {
     return state.records.filter(function (record) {
-      return (!state.direction || record.direction === state.direction) &&
-        (!state.relevance || record.relevance_level === state.relevance) &&
-        (!state.year || record.date.slice(0, 4) === state.year);
+      if (!matchesFacets(record)) return false;
+      return !(state.hideIgnored && markStateOf(record) === "ignore");
     });
+  }
+
+  // Ignored papers are marked locally, so the server-side facet counts know
+  // nothing about them. Count the ones we have actually loaded and correct
+  // both the displayed total and how far ahead the loader has to read.
+  function hiddenIgnoredCount() {
+    if (!state.hideIgnored) return 0;
+    var hidden = 0;
+    for (var index = 0; index < state.records.length; index += 1) {
+      var record = state.records[index];
+      if (matchesFacets(record) && markStateOf(record) === "ignore") hidden += 1;
+    }
+    return hidden;
   }
 
   function priorityInfo() {
@@ -76,7 +119,7 @@
       if (count == null) return null;
       total += count;
     }
-    return total;
+    return Math.max(0, total - hiddenIgnoredCount());
   }
 
   function pageCountFor(total) {
@@ -130,9 +173,11 @@
     }
 
     var count = pageCountFor(total);
+    var hidden = hiddenIgnoredCount();
     status.textContent = state.priority + "：当前筛选 " + total +
       " 篇 · 第 " + (total ? state.page : 0) + " / " + count +
-      " 页 · 每页 " + PAGE_SIZE + " 篇";
+      " 页 · 每页 " + PAGE_SIZE + " 篇" +
+      (hidden ? " · 已隐藏 " + hidden + " 篇忽略" : "");
     renderPagination(total);
     syncUrl();
   }
@@ -194,8 +239,13 @@
   }
 
   function ensurePrefixForPage(generation, total) {
-    var target = Math.min(state.page * PAGE_SIZE, total);
     function step() {
+      // Recomputed each round: every newly loaded year can reveal more
+      // ignored papers, which the page needs replacements for.
+      var target = Math.min(
+        state.page * PAGE_SIZE + hiddenIgnoredCount(),
+        total + hiddenIgnoredCount()
+      );
       if (generation !== state.generation ||
           loadedPrefixMatchCount() >= target ||
           state.cursor >= yearsForPriority().length) {
@@ -233,6 +283,8 @@
     else params.delete("year");
     if (state.relevance) params.set("relevance", state.relevance);
     else params.delete("relevance");
+    if (state.hideIgnored) params.set("hide_ignored", "1");
+    else params.delete("hide_ignored");
     if (state.page > 1) params.set("page", String(state.page));
     else params.delete("page");
     history.replaceState(null, "", "?" + params.toString());
@@ -291,6 +343,9 @@
       state.direction = params.get("direction") || "";
       state.year = params.get("year") || "";
       state.relevance = params.get("relevance") || "";
+      state.hideIgnored = params.has("hide_ignored")
+        ? params.get("hide_ignored") === "1"
+        : rememberedHideIgnored();
       if (state.direction && !(manifest.directions || {})[state.direction]) {
         state.direction = "";
       }
@@ -308,6 +363,7 @@
       });
       directionSelect.value = state.direction;
       relevanceSelect.value = state.relevance;
+      if (hideIgnoredBox) hideIgnoredBox.checked = state.hideIgnored;
 
       function populateYears() {
         yearSelect.replaceChildren(element("option", "", "全部年份"));
@@ -347,6 +403,23 @@
       relevanceSelect.addEventListener("change", function () {
         state.relevance = relevanceSelect.value;
         loadView(1, false);
+      });
+      if (hideIgnoredBox) {
+        hideIgnoredBox.addEventListener("change", function () {
+          state.hideIgnored = hideIgnoredBox.checked;
+          rememberHideIgnored(state.hideIgnored);
+          loadView(1, false);
+        });
+      }
+      // Marking a card 忽略 while the filter is on should make it leave the
+      // list straight away, not at the next page turn.
+      document.addEventListener("radar:mark-changed", function (event) {
+        if (!state.hideIgnored || state.loading) return;
+        var detail = event.detail || {};
+        var onThisPage = state.records.some(function (record) {
+          return record.identity_key === detail.identity_key;
+        });
+        if (onThisPage) loadView(state.page, false);
       });
       previous.addEventListener("click", function () {
         if (!state.loading && state.page > 1) loadView(state.page - 1, false);
