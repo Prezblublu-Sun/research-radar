@@ -24,6 +24,14 @@ to grade noise correctly downstream.
 - When tuning, the question is "are we recalling enough?", not
   "are we showing too much?".
 
+(NOTE 2026-09-25: ADR-0035 buys some of that adjacent-field inspiration
+directly. The journals behind each day's High papers each contribute two
+randomly drawn papers from the current month, scored with the ordinary
+prompt. They are NOT recommendations and must stay out of `data/daily/`,
+the seen-state, the queue, the search index and Zotero — most will score
+Low, which is the expected outcome of reading outside your keywords, not a
+scorer failure to be tuned away.)
+
 See: `TODO.md` § "2026-05-13 优化方向校准".
 
 ---

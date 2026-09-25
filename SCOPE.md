@@ -103,6 +103,12 @@ These are explicitly out of scope and belong to other systems (primarily lit-sys
   GitHub issue notification (ADR-0032 addendum) — no mail server, and no
   reading of paper content beyond what the mark itself stored.
 - Cross-corpus priority navigation pages (high-priority.html etc).
+- A daily serendipity pass (ADR-0035): the journals behind the day's High
+  papers each contribute two randomly drawn papers from the current month,
+  scored with the ordinary prompt and recorded in `data/random_reading/`.
+  Discovery-layer work by the same rules as any fetcher — but deliberately
+  outside the corpus: not in `data/daily/`, the seen-state, the queue, the
+  search index or Zotero, and it does not move the day's priority counts.
 - Open-license visual previews on browse cards, joined from a sidecar registry
   and isolated from scored corpus records (ADR-0029).
 - These are human-curation aids on Radar. Distinct from lit-system,
