@@ -32,7 +32,11 @@ on:
         type: boolean
         default: true
       force:
-        description: "Redraw days that already have a file"
+        description: "Throw away days that already have a file and redraw them"
+        type: boolean
+        default: false
+      top_up:
+        description: "Keep what a day has and draw only the shortfall (use after a rule change)"
         type: boolean
         default: false
 
@@ -79,6 +83,7 @@ jobs:
           python -m scripts.backfill_random_reading $args \
             ${{ inputs.dry_run && '--dry-run' || '' }} \
             ${{ inputs.force && '--force' || '' }} \
+            ${{ inputs.top_up && '--top-up' || '' }} \
             | tee "$RUNNER_TEMP/backfill.log"
 
       - name: Summarise the run

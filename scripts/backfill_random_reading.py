@@ -21,8 +21,15 @@ is indistinguishable from a live one.
     python -m scripts.backfill_random_reading --from 2026-09-17 --to 2026-09-23
     python -m scripts.backfill_random_reading --days 7 --dry-run
 
-A day that already has a file is skipped unless --force is given: the point
-is to fill gaps, not to pay for a second draw.
+A day that already has a file is skipped unless --force or --top-up is
+given: the point is to fill gaps, not to pay for a second draw.
+
+--top-up exists for a rule change. --force throws the day away and draws it
+again, which also throws away whatever the old draw found — and since the
+stream remembers its own picks, the redraw is guaranteed to be different
+papers. --top-up instead keeps what is there and draws only the shortfall,
+so raising a journal's allocation from two to five costs three papers and
+loses nothing.
 """
 
 from __future__ import annotations
@@ -95,6 +102,34 @@ def high_papers_with_journals(papers: list[dict]) -> list[dict]:
     return high
 
 
+def existing_day(path: pathlib.Path) -> tuple[list[dict], dict[str, int]]:
+    """Papers already recorded for a day, and how many each journal gave."""
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return [], {}
+    papers = payload.get("papers") or []
+    held: dict[str, int] = {}
+    for paper in papers:
+        venue = (paper.get("random_reading") or {}).get("venue_id") or ""
+        if venue:
+            held[venue] = held.get(venue, 0) + 1
+    return papers, held
+
+
+def merge_reports(old: list[dict], new: list[dict]) -> list[dict]:
+    """Carry the earlier draw's positions into the refreshed journal report."""
+    before = {entry.get("venue_id"): entry for entry in old}
+    merged = []
+    for entry in new:
+        previous = before.get(entry.get("venue_id")) or {}
+        entry = dict(entry)
+        entry["positions"] = list(previous.get("positions") or []) + entry["positions"]
+        entry["skipped_known"] = (previous.get("skipped_known") or 0) + entry["skipped_known"]
+        merged.append(entry)
+    return merged
+
+
 def known_keys(data_dir: pathlib.Path) -> set[str]:
     try:
         state = json.loads((data_dir / "seen_dois.json").read_text(encoding="utf-8"))
@@ -111,7 +146,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--from", dest="from_date", help="YYYY-MM-DD")
     parser.add_argument("--to", dest="to_date", help="YYYY-MM-DD")
     parser.add_argument("--force", action="store_true",
-                        help="redraw days that already have a file")
+                        help="throw away days that already have a file and redraw")
+    parser.add_argument("--top-up", dest="top_up", action="store_true",
+                        help="keep what a day already has and draw only the "
+                             "shortfall against the current rule")
     parser.add_argument("--dry-run", action="store_true",
                         help="pick and report, but score nothing and write nothing")
     args = parser.parse_args(argv)
@@ -137,10 +175,18 @@ def main(argv: list[str] | None = None) -> int:
 
     for day in days:
         target = out_dir / f"{day}.json"
-        if target.exists() and not args.force:
-            _print(f"{day}: already has a file, skipping")
-            totals["skipped"] += 1
-            continue
+        held_papers: list[dict] = []
+        held_counts: dict[str, int] = {}
+        held_report: list[dict] = []
+        if target.exists():
+            if args.top_up:
+                held_papers, held_counts = existing_day(target)
+                held_report = (json.loads(target.read_text(encoding="utf-8"))
+                               .get("journals") or [])
+            elif not args.force:
+                _print(f"{day}: already has a file, skipping")
+                totals["skipped"] += 1
+                continue
         papers = grouped.get(day) or []
         if not papers:
             _print(f"{day}: no run found in the corpus")
@@ -151,16 +197,21 @@ def main(argv: list[str] | None = None) -> int:
             continue
 
         picks, report = random_reading.collect(
-            high, seen, day, directions, exclusions)
+            high, seen, day, directions, exclusions, have=held_counts)
         # `collect` adds each pick to the set, so later days in this same
         # backfill will not draw them again either.
-        names = ", ".join(f"{j['venue']}({j['month_works']}→{j['target_picks']})"
-                          for j in report["journals"]) or "(none)"
+        names = ", ".join(
+            f"{j['venue']}({j['month_works']}→{j['target_picks']}"
+            + (f", 已有{held_counts.get(j['venue_id'], 0)}"
+               if held_counts.get(j["venue_id"]) else "") + ")"
+            for j in report["journals"]) or "(none)"
         _print(f"{day}: {len(high)} High, {len(report['journals'])} journal(s) "
-               f"-> {len(picks)} paper(s) [{names}]")
+               f"-> {len(picks)} new paper(s) [{names}]")
         totals["journals"] += len(report["journals"])
         totals["errors"] += report["errors"]
         if not picks:
+            if held_papers:
+                _print("    nothing to add; the day already meets the rule")
             continue
         totals["papers"] += len(picks)
         if args.dry_run:
@@ -171,13 +222,14 @@ def main(argv: list[str] | None = None) -> int:
         scored, _raw = llm_scorer.score_batch(picks, directions)
         out_dir.mkdir(parents=True, exist_ok=True)
         v2.atomic_write_json(target, random_reading.build_file(
-            day, scored, report,
+            day, held_papers + scored, merge_reports(held_report, report["journals"]),
             v2.scorer_version_from_active_prompt(), v2.utc_now_iso()))
         counts: dict[str, int] = {}
         for paper in scored:
             key = (paper.get("llm") or {}).get("priority") or "Unscored"
             counts[key] = counts.get(key, 0) + 1
-        _print(f"    scored {counts} -> {target}")
+        kept = f" (kept {len(held_papers)})" if held_papers else ""
+        _print(f"    scored {counts}{kept} -> {target}")
         totals["days"] += 1
         if llm_scorer.budget_exhausted():
             _print("::warning::DeepSeek balance exhausted; stopping the backfill")

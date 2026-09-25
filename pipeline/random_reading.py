@@ -38,23 +38,27 @@ SCHEMA_VERSION = 1
 # A day has 0-5 High papers; the cap only protects against a freak run.
 MAX_JOURNALS = 6
 
-# How many papers to draw, as a share of what the journal published that
-# month — a bigger journal hides more, so it gives up more. Bounded at both
-# ends, and the bounds are the whole design:
+# How many papers to draw. The draw scales *inversely* with the journal's
+# monthly output, which is the opposite of the first rule and is what the
+# evidence asked for.
 #
-#   * without the floor, a specialist journal shrinks. Computational
-#     Mechanics published 13 papers in 2026-09 and 5% of that is 1 — yet it
-#     is the journal whose draw was actually relevant.
-#   * without the cap, a megajournal swamps everything. Scientific Reports
-#     published 3,375 that month; 5% is 169 papers of mostly cell biology,
-#     and across one real week the uncapped rule put 95% of its draws into
-#     two journals that are topically the furthest away.
+# The 2026-09-18..24 backfill settled it. Nature Communications contributed
+# ten papers across two days and every one of them scored Exclude, while the
+# one High and all three Medium came from specialist journals — including
+# the paper the keyword filter never found, "Neural operators solve inverse
+# problems for constitutive model discovery" (CMAME). Monthly volume is a
+# usable proxy for topical spread: a journal publishing 3,000 papers a month
+# is publishing everything, so a random draw from it is a random draw from
+# science, and reading more of it buys nothing.
 #
-# Measured over 2026-09-17..23 (8 journals): fixed-2 drew 16, uncapped 5%
-# drew 215, this rule draws 24.
-SAMPLE_FRACTION = 0.05
-MIN_PICKS = 2
-MAX_PICKS = 5
+# So a specialist journal gives up five and a megajournal two. The threshold
+# is not arbitrary: the seventeen journals seen so far run 3, 3, 3, 13, 13,
+# 15, 34, 36, 40, 72, 82, 102, 102, 134, 367, 726, 3375 — a 2.7x gap between
+# 134 and 367, with exactly the three topically diffuse journals above it
+# (Materials, Nature Communications, Scientific Reports).
+MEGAJOURNAL_WORKS = 200
+SPECIALIST_PICKS = 5
+MEGAJOURNAL_PICKS = 2
 # Extra candidates fetched beyond the target, so a paper already in the
 # corpus can be dropped without a second round trip to pick a replacement.
 EXTRA_CANDIDATES = 4
@@ -64,7 +68,8 @@ def picks_for_volume(month_works: int) -> int:
     """How many papers to draw from a journal that published `month_works`."""
     if month_works <= 0:
         return 0
-    return min(MAX_PICKS, max(MIN_PICKS, round(month_works * SAMPLE_FRACTION)))
+    return (MEGAJOURNAL_PICKS if month_works > MEGAJOURNAL_WORKS
+            else SPECIALIST_PICKS)
 # OpenAlex marks preprint servers and repositories as their own source type;
 # arXiv has no monthly issue to browse, so only real journals qualify.
 JOURNAL_SOURCE_TYPES = {"journal"}
@@ -144,8 +149,12 @@ def _rng(today: str, source_id: str) -> random.Random:
 
 
 def sample_journal(journal: dict, today: str, known_keys: set[str],
-                   fetcher=None) -> tuple[list[dict], dict]:
+                   fetcher=None, have: int = 0) -> tuple[list[dict], dict]:
     """Draw unseen papers from this journal's month, scaled to its volume.
+
+    `have` is how many papers this journal already contributed on this day,
+    so a rule change can top a day up instead of redrawing it and throwing
+    away what the last draw found.
 
     Returns the picks and a report of what the draw saw. Any OpenAlex failure
     is reported, never raised: a serendipity pass must not be able to fail
@@ -189,8 +198,11 @@ def sample_journal(journal: dict, today: str, known_keys: set[str],
     report["truncated_pool"] = total > reachable
 
     rng = _rng(today, journal["venue_id"])
-    wanted = min(picks_for_volume(total), reachable)
-    report["target_picks"] = wanted
+    target = min(picks_for_volume(total), reachable)
+    report["target_picks"] = target
+    wanted = max(0, target - max(0, have))
+    if not wanted:
+        return [], report
     order = rng.sample(range(1, reachable + 1),
                        k=min(reachable, wanted + EXTRA_CANDIDATES))
 
@@ -229,17 +241,23 @@ def sample_journal(journal: dict, today: str, known_keys: set[str],
 
 def collect(scored: list[dict], known_keys: set[str], today: str,
             directions_cfg: dict, exclusions: dict | None = None,
-            fetcher=None) -> tuple[list[dict], dict]:
+            fetcher=None, have: dict[str, int] | None = None
+            ) -> tuple[list[dict], dict]:
     """Pick this run's random reading. Returns (papers, report).
 
     `known_keys` is mutated: papers already in the corpus are skipped, and
     each pick joins the set so one journal cannot hand back another's paper.
+
+    `have` maps a venue id to how many papers that journal already
+    contributed on this day, for topping a day up after a rule change.
     """
     report = {"journals": [], "papers": 0, "errors": 0}
     journals = journals_of_high_papers(scored)
     picks: list[dict] = []
     for journal in journals:
-        drawn, journal_report = sample_journal(journal, today, known_keys, fetcher)
+        drawn, journal_report = sample_journal(
+            journal, today, known_keys, fetcher,
+            have=(have or {}).get(journal["venue_id"], 0))
         report["journals"].append(journal_report)
         if journal_report["error"]:
             report["errors"] += 1
@@ -258,21 +276,29 @@ def collect(scored: list[dict], known_keys: set[str], today: str,
     return picks, report
 
 
-def build_file(today: str, picks: list[dict], report: dict,
-               scorer_version: str, generated_at: str) -> dict:
+def build_file(today: str, picks: list[dict], report, scorer_version: str,
+               generated_at: str) -> dict:
     """The on-disk record. Deliberately self-contained: the random papers are
-    not in data/daily/, so this file is the only place they exist."""
+    not in data/daily/, so this file is the only place they exist.
+
+    `report` is either a collect() report or, when a caller has merged the
+    journal entries itself (a top-up), that list of entries.
+    """
+    if isinstance(report, list):
+        journals, errors = report, sum(1 for j in report if j.get("error"))
+    else:
+        journals, errors = report["journals"], report["errors"]
     return {
         "schema_version": SCHEMA_VERSION,
         "date": today,
         "month": today[:7],
         "generated_at": generated_at,
         "scorer_version": scorer_version,
-        "journals": report["journals"],
+        "journals": journals,
         "counts": {
-            "journals": len(report["journals"]),
+            "journals": len(journals),
             "papers": len(picks),
-            "errors": report["errors"],
+            "errors": errors,
         },
         "papers": picks,
     }

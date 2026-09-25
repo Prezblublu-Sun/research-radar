@@ -156,3 +156,44 @@ Not revisited: which papers are drawn (still uniform over the month), and
 whether a big journal should be skipped entirely (it is not — it just
 contributes at most five).
 
+## Addendum 2026-09-25 (second) — the allocation is inverted
+
+The 5% rule lasted one backfill. Running it over 2026-09-18..24 produced 24
+papers across nine journals and scored them:
+
+| source | papers | High | Medium |
+|---|---:|---:|---:|
+| Nature Communications (726/month) | 10 | 0 | 0 |
+| specialist journals (3–72/month) | 14 | 1 | 3 |
+
+Every one of the ten megajournal draws scored Exclude. The one High —
+"Neural operators solve inverse problems for constitutive model discovery",
+CMAME, 72 papers that month — is a paper the keyword filter never found,
+which is the entire justification for this ADR.
+
+So the allocation runs the other way: **a specialist journal gives up five
+papers and a megajournal two.** Monthly volume is a usable proxy for topical
+spread — a journal publishing three thousand papers a month is publishing
+everything, so a random draw from it is a random draw from science, and
+reading more of it buys nothing.
+
+    picks = 5 if month_works <= 200 else 2
+
+The threshold is placed where the data has a gap, not by taste. The
+seventeen journals observed so far publish 3, 3, 3, 13, 13, 15, 34, 36, 40,
+72, 82, 102, 102, 134, 367, 726, 3375 a month; the only wide gap is 134 →
+367 (2.7x), and exactly the three topically diffuse journals — *Materials*,
+*Nature Communications*, *Scientific Reports* — sit above it.
+
+### Topping up instead of redrawing
+
+Changing the rule raises most journals from two to five, which needed a way
+to grow a day that already exists. `--force` cannot do it: it discards the
+day, and because the stream remembers its own picks (`drawn_keys`), the
+redraw is *guaranteed* to be different papers — it would have thrown the
+High paper away. `--top-up` keeps what is there, asks each journal only for
+its shortfall, and merges the report so the earlier draw's positions survive.
+
+Superseded from the first addendum: `SAMPLE_FRACTION`, `MIN_PICKS`,
+`MAX_PICKS`. The measurements in it stand and are why this one exists.
+

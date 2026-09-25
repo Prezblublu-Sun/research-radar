@@ -137,9 +137,9 @@ def test_papers_are_drawn_from_the_month():
         {"venue_id": "S1", "venue": "J", "issn_l": "", "direction": "d",
          "seed_title": "t", "seed_identity_key": "doi:10.1/seed"},
         "2026-09-25", set(), fake)
-    assert len(picks) == rr.MIN_PICKS                # 5% of 40 is under the floor
+    assert len(picks) == rr.SPECIALIST_PICKS        # 40 a month is specialist
     assert report["month_works"] == 40
-    assert report["target_picks"] == rr.MIN_PICKS
+    assert report["target_picks"] == rr.SPECIALIST_PICKS
     assert len(set(report["positions"])) == len(picks)  # never the same twice
     assert all(1 <= p <= 40 for p in report["positions"])
     meta = picks[0]["random_reading"]
@@ -149,49 +149,130 @@ def test_papers_are_drawn_from_the_month():
 
 
 # ---------------------------------------------------------------------------
-# How many to draw: 5% of the month, floor 2, cap 5
+# How many to draw: five from a specialist journal, two from a megajournal
 # ---------------------------------------------------------------------------
 
 @pytest.mark.parametrize("month_works,expected", [
     (0, 0),        # nothing published: nothing to read
-    (3, 2),        # a tiny journal still gives the floor
-    (13, 2),       # Computational Mechanics, 2026-09 — 5% would be 1
-    (40, 2),
-    (72, 4),       # CMAME — the rule bites here
-    (102, 5),      # and saturates at the cap
-    (726, 5),      # Nature Communications
-    (3375, 5),     # Scientific Reports — 5% would be 169
+    (3, 5),        # Smart Materials in Manufacturing
+    (13, 5),       # Computational Mechanics
+    (72, 5),       # CMAME — where the one High and two Medium came from
+    (134, 5),      # Journal of Materials Science
+    (200, 5),      # the threshold itself is still specialist
+    (201, 2),
+    (367, 2),      # Materials
+    (726, 2),      # Nature Communications
+    (3375, 2),     # Scientific Reports
 ])
-def test_the_draw_scales_with_volume_between_a_floor_and_a_cap(month_works, expected):
+def test_the_draw_scales_inversely_with_volume(month_works, expected):
     assert rr.picks_for_volume(month_works) == expected
 
 
-def test_the_floor_protects_the_journals_that_are_actually_relevant():
-    # Measured 2026-09-25: the specialist journal whose draw was relevant
-    # publishes ~13 papers a month. An uncapped 5% would cut it to one while
-    # handing 169 to Scientific Reports.
-    assert rr.picks_for_volume(13) > round(13 * rr.SAMPLE_FRACTION)
-    assert rr.picks_for_volume(3375) < round(3375 * rr.SAMPLE_FRACTION)
-    assert (rr.MIN_PICKS, rr.MAX_PICKS, rr.SAMPLE_FRACTION) == (2, 5, 0.05)
+def test_reading_more_of_a_megajournal_buys_nothing():
+    # 2026-09-18..24: Nature Communications contributed ten papers over two
+    # days and every one scored Exclude, while the one High and all three
+    # Medium came from journals publishing tens of papers a month. Volume is
+    # a proxy for topical spread, so the allocation runs the other way.
+    assert rr.picks_for_volume(726) < rr.picks_for_volume(72)
+    assert (rr.SPECIALIST_PICKS, rr.MEGAJOURNAL_PICKS) == (5, 2)
+    assert rr.MEGAJOURNAL_WORKS == 200
 
 
-def test_a_journal_smaller_than_the_floor_gives_what_it_has():
+def test_the_threshold_sits_in_the_gap_the_data_actually_has():
+    # Seventeen journals observed so far: 3, 3, 3, 13, 13, 15, 34, 36, 40,
+    # 72, 82, 102, 102, 134, 367, 726, 3375. The only 2.7x gap is 134 -> 367,
+    # and exactly the three diffuse journals sit above it.
+    specialist = [3, 13, 15, 34, 36, 40, 72, 82, 102, 134]
+    diffuse = [367, 726, 3375]
+    assert all(rr.picks_for_volume(n) == rr.SPECIALIST_PICKS for n in specialist)
+    assert all(rr.picks_for_volume(n) == rr.MEGAJOURNAL_PICKS for n in diffuse)
+
+
+def test_a_journal_smaller_than_its_allocation_gives_what_it_has():
     picks, report = rr.sample_journal(
         {"venue_id": "S1", "venue": "J", "issn_l": "", "direction": "d",
          "seed_title": "", "seed_identity_key": ""},
-        "2026-09-25", set(), FakeOpenAlex({"S1": 1}))
-    assert rr.picks_for_volume(1) == 2      # the rule asks for two...
-    assert len(picks) == 1                  # ...the journal only has one
-    assert report["target_picks"] == 1
+        "2026-09-25", set(), FakeOpenAlex({"S1": 3}))
+    assert rr.picks_for_volume(3) == 5      # the rule asks for five...
+    assert len(picks) == 3                  # ...the journal only has three
+    assert report["target_picks"] == 3
 
 
-def test_a_big_journal_gives_the_cap_not_five_percent():
+def test_a_megajournal_gives_two_however_big_it_is():
     picks, report = rr.sample_journal(
         {"venue_id": "S1", "venue": "J", "issn_l": "", "direction": "d",
          "seed_title": "", "seed_identity_key": ""},
         "2026-09-25", set(), FakeOpenAlex({"S1": 3375}))
-    assert len(picks) == rr.MAX_PICKS == 5
+    assert len(picks) == rr.MEGAJOURNAL_PICKS == 2
+    assert report["target_picks"] == 2
+
+
+# ---------------------------------------------------------------------------
+# Topping a day up after a rule change
+# ---------------------------------------------------------------------------
+
+def test_a_journal_that_already_met_its_allocation_draws_nothing():
+    fake = FakeOpenAlex({"S1": 40})
+    picks, report = rr.sample_journal(
+        {"venue_id": "S1", "venue": "J", "issn_l": "", "direction": "d",
+         "seed_title": "", "seed_identity_key": ""},
+        "2026-09-25", set(), fake, have=5)
+    assert picks == []
+    assert report["target_picks"] == 5      # the target is still reported
+    assert fake.calls == [("count", "S1", "2026-09-01", "2026-09-30")]
+
+
+def test_only_the_shortfall_is_drawn():
+    picks, report = rr.sample_journal(
+        {"venue_id": "S1", "venue": "J", "issn_l": "", "direction": "d",
+         "seed_title": "", "seed_identity_key": ""},
+        "2026-09-25", set(), FakeOpenAlex({"S1": 40}), have=2)
+    assert len(picks) == 3                  # 5 wanted, 2 already held
     assert report["target_picks"] == 5
+
+
+def test_collect_tops_up_per_journal():
+    fake = FakeOpenAlex({"S1": 40, "S2": 40})
+    picks, _ = rr.collect(
+        [_high(venue="A", venue_id="S1"), _high(venue="B", venue_id="S2")],
+        set(), "2026-09-25", DIRECTIONS, {}, fake, have={"S1": 4})
+    by_journal = {}
+    for paper in picks:
+        by_journal.setdefault(paper["random_reading"]["venue_id"], 0)
+        by_journal[paper["random_reading"]["venue_id"]] += 1
+    assert by_journal == {"S1": 1, "S2": 5}
+
+
+def test_a_top_up_keeps_what_the_day_already_found(tmp_path):
+    path = tmp_path / "2026-09-19.json"
+    path.write_text(json.dumps({"papers": [
+        {"doi": "10.9/kept-1", "random_reading": {"venue_id": "S1"}},
+        {"doi": "10.9/kept-2", "random_reading": {"venue_id": "S1"}},
+        {"doi": "10.9/kept-3", "random_reading": {"venue_id": "S2"}},
+    ]}), encoding="utf-8")
+    papers, held = bf.existing_day(path)
+    assert [p["doi"] for p in papers] == ["10.9/kept-1", "10.9/kept-2", "10.9/kept-3"]
+    assert held == {"S1": 2, "S2": 1}
+    assert bf.existing_day(tmp_path / "missing.json") == ([], {})
+
+
+def test_a_top_up_carries_the_earlier_draws_positions_forward():
+    merged = bf.merge_reports(
+        [{"venue_id": "S1", "positions": [3, 7], "skipped_known": 1}],
+        [{"venue_id": "S1", "positions": [11], "skipped_known": 2},
+         {"venue_id": "S2", "positions": [4], "skipped_known": 0}])
+    assert merged[0]["positions"] == [3, 7, 11]
+    assert merged[0]["skipped_known"] == 3
+    assert merged[1]["positions"] == [4]
+
+
+def test_force_and_top_up_are_different_things():
+    source = (REPO_ROOT / "scripts" / "backfill_random_reading.py").read_text(encoding="utf-8")
+    # --force throws the day away; because the stream remembers its own
+    # picks, that guarantees a different sample and loses what was found.
+    assert "elif not args.force:" in source
+    assert "if args.top_up:" in source
+    assert "held_papers + scored" in source
 
 
 def test_the_same_day_always_draws_the_same_papers():
@@ -215,7 +296,7 @@ def test_a_paper_already_in_the_corpus_is_skipped_not_shown_twice():
     picks, report = rr.sample_journal(journal, "2026-09-25", known, fake)
     assert report["skipped_known"] == 1
     assert all(p["doi"] != wanted[0]["doi"] for p in picks)
-    assert len(picks) == rr.MIN_PICKS   # the extra candidates covered the loss
+    assert len(picks) == rr.SPECIALIST_PICKS  # extra candidates covered the loss
 
 
 def test_a_drawn_paper_joins_the_known_set_so_two_journals_cannot_collide():
@@ -257,7 +338,7 @@ def test_a_pool_deeper_than_basic_paging_is_sampled_from_what_is_reachable():
     assert report["truncated_pool"] is True
     assert report["month_works"] == 30_000
     assert all(p <= openalex_fetcher.PAGE_LIMIT for p in report["positions"])
-    assert len(picks) == rr.MAX_PICKS
+    assert len(picks) == rr.MEGAJOURNAL_PICKS   # 30,000 a month is diffuse
 
 
 # ---------------------------------------------------------------------------
@@ -299,7 +380,7 @@ def test_one_broken_journal_does_not_stop_the_others():
     picks, report = rr.collect(scored, set(), "2026-09-25", DIRECTIONS, {},
                                OnlyS1Breaks({"S1": 40, "S2": 40}))
     assert report["errors"] == 1
-    assert len(picks) == 2                     # S2 still delivered
+    assert len(picks) == rr.SPECIALIST_PICKS   # S2 still delivered
     assert [j["venue"] for j in report["journals"]] == ["A", "B"]
 
 
@@ -420,8 +501,8 @@ def test_the_pass_writes_its_own_file_and_never_the_corpus(monkeypatch, daily):
     payload = json.loads(written[0].read_text(encoding="utf-8"))
     assert payload["schema_version"] == rr.SCHEMA_VERSION
     assert payload["counts"]["journals"] == 1
-    assert payload["counts"]["papers"] == 2
-    assert len(payload["papers"]) == 2
+    assert payload["counts"]["papers"] == rr.SPECIALIST_PICKS
+    assert len(payload["papers"]) == rr.SPECIALIST_PICKS
     assert all(p["random_reading"]["venue_id"] == "S147854436"
                for p in payload["papers"])
 
@@ -434,7 +515,7 @@ def test_the_pass_writes_its_own_file_and_never_the_corpus(monkeypatch, daily):
 
     # ...and the day's priority counts describe the corpus, not the draw.
     assert report["counts"]["priority_counts"]["High"] == 1
-    assert report["counts"]["random_reading"]["papers"] == 2
+    assert report["counts"]["random_reading"]["papers"] == rr.SPECIALIST_PICKS
 
 
 def test_a_drawn_paper_can_still_be_discovered_normally_later(monkeypatch, daily):
@@ -526,12 +607,28 @@ def test_the_page_shows_the_pool_and_what_the_rule_asked_for(tmp_path):
     assert "Computational Mechanics" in html
     assert "因为今天的 High：The High paper" in html
     assert "2026-09 共 13 篇" in html
-    assert "按 5% 抽 2 篇" in html
+    assert "专业刊，抽 2 篇" in html
     assert "跳过 2 篇已在库" in html
     assert "A drawn paper" in html
     assert "2026-09-25" in html
     # The disclaimer matters: these are not recommendations.
     assert "不是雷达推荐" in html
+
+
+def test_the_page_labels_a_megajournal_as_one(tmp_path):
+    (tmp_path / "random_reading").mkdir(parents=True)
+    (tmp_path / "random_reading" / "2026-09-21.json").write_text(json.dumps({
+        "date": "2026-09-21", "counts": {"journals": 1, "papers": 0},
+        "journals": [{"venue_id": "S1", "venue": "Nature Communications",
+                      "month": "2026-09", "month_works": 726, "target_picks": 2,
+                      "positions": [], "skipped_known": 0, "error": ""}],
+        "papers": [{"doi": "10.9/x", "title": "t", "authors": [], "llm": {},
+                    "random_reading": {"venue_id": "S1"}}],
+    }, ensure_ascii=False), encoding="utf-8")
+    html = build_pages._render_random_reading_page(
+        build_pages._load_random_reading(tmp_path), DIRECTIONS)
+    assert "大刊，抽 2 篇" in html
+    assert build_pages.RANDOM_MEGAJOURNAL_WORKS == rr.MEGAJOURNAL_WORKS
 
 
 def test_the_page_explains_itself_when_there_is_nothing_yet(tmp_path):
