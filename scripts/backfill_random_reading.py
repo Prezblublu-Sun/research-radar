@@ -118,14 +118,30 @@ def existing_day(path: pathlib.Path) -> tuple[list[dict], dict[str, int]]:
 
 
 def merge_reports(old: list[dict], new: list[dict]) -> list[dict]:
-    """Carry the earlier draw's positions into the refreshed journal report."""
+    """Carry the earlier draw's positions into the refreshed journal report.
+
+    Everything else comes from the new report, because it describes the
+    current rule: `target_picks` and `month_works` would otherwise keep
+    advertising whatever the file was built under.
+
+    `skipped_known` is the one count that must NOT be summed. The two draws
+    share an ordering prefix, so the second scan re-walks and re-skips most
+    of the same papers; adding them produced "skipped 21 already in the
+    library" for a journal that published 15 that month. The later scan
+    covers a superset of the positions, so it is the count to keep.
+    """
     before = {entry.get("venue_id"): entry for entry in old}
     merged = []
     for entry in new:
         previous = before.get(entry.get("venue_id")) or {}
         entry = dict(entry)
-        entry["positions"] = list(previous.get("positions") or []) + entry["positions"]
-        entry["skipped_known"] = (previous.get("skipped_known") or 0) + entry["skipped_known"]
+        seen_positions = list(previous.get("positions") or [])
+        entry["positions"] = seen_positions + [
+            position for position in entry["positions"]
+            if position not in seen_positions
+        ]
+        entry["skipped_known"] = max(previous.get("skipped_known") or 0,
+                                     entry["skipped_known"])
         merged.append(entry)
     return merged
 
@@ -210,7 +226,18 @@ def main(argv: list[str] | None = None) -> int:
         totals["journals"] += len(report["journals"])
         totals["errors"] += report["errors"]
         if not picks:
-            if held_papers:
+            if not held_papers:
+                continue
+            # Nothing new to buy, but the stored journal metadata may still
+            # be advertising the rule the day was drawn under. Refreshing it
+            # costs a file write and keeps the page honest.
+            refreshed = merge_reports(held_report, report["journals"])
+            if refreshed != held_report:
+                v2.atomic_write_json(target, random_reading.build_file(
+                    day, held_papers, refreshed,
+                    v2.scorer_version_from_active_prompt(), v2.utc_now_iso()))
+                _print("    nothing to add; refreshed the journal metadata")
+            else:
                 _print("    nothing to add; the day already meets the rule")
             continue
         totals["papers"] += len(picks)
