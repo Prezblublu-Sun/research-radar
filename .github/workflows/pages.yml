@@ -13,10 +13,16 @@ on:
       # published page renders.
       - "data/digest/**"
   workflow_run:
+    # A bot push made with GITHUB_TOKEN does NOT trigger the `push` event
+    # above, so every writer whose data a published page renders has to be
+    # listed here or its commit is never published. (marks-sync and
+    # marks-digest are deliberately absent: what they write is covered by
+    # the paths-ignore above.)
     workflows:
       - daily-research-radar
       - manual-backfill
       - manual-rescore
+      - manual-random-reading
       - enrich-research-radar-visuals
     types: [completed]
     branches: [main]
