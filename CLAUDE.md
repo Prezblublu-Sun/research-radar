@@ -30,7 +30,9 @@ randomly drawn papers from the current month, scored with the ordinary
 prompt. They are NOT recommendations and must stay out of `data/daily/`,
 the seen-state, the queue, the search index and Zotero — most will score
 Low, which is the expected outcome of reading outside your keywords, not a
-scorer failure to be tuned away.)
+scorer failure to be tuned away. The allocation is INVERSE to journal size:
+a specialist journal gives 5, a megajournal above 200 papers/month gives 2,
+because measured over a week every megajournal draw scored Exclude.)
 
 See: `TODO.md` § "2026-05-13 优化方向校准".
 
