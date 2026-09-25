@@ -410,6 +410,39 @@ def _normalize(work: dict) -> dict:
 PAGE_LIMIT = 10_000
 
 
+# Papers stored before ADR-0035 have no venue_id, so a backfill has to ask
+# OpenAlex what journal they came from. Batched: 50 works per call, and
+# `select` keeps the payload to the one field that matters.
+RESOLVE_BATCH = 50
+
+
+def resolve_sources(work_ids: list[str]) -> dict[str, dict]:
+    """Map bare OpenAlex work ids to their journal, in batches.
+
+    Unknown or unresolvable ids are simply absent from the result; a caller
+    backfilling old records must cope with that anyway.
+    """
+    wanted = [w for w in dict.fromkeys(work_ids) if w]
+    out: dict[str, dict] = {}
+    for start in range(0, len(wanted), RESOLVE_BATCH):
+        chunk = wanted[start:start + RESOLVE_BATCH]
+        data = _request_json({
+            "filter": "openalex_id:" + "|".join(chunk),
+            "per-page": RESOLVE_BATCH,
+            "select": "id,primary_location",
+        })
+        for work in data.get("results", []):
+            ident = str(work.get("id") or "").rsplit("/", 1)[-1]
+            source = (work.get("primary_location") or {}).get("source") or {}
+            out[ident] = {
+                "venue_id": _source_id(source),
+                "venue": source.get("display_name", "") or "",
+                "venue_issn_l": source.get("issn_l") or "",
+                "venue_type": source.get("type", "") or "",
+            }
+    return out
+
+
 def journal_month_filter(source_id: str, from_date: str, to_date: str) -> str:
     return (f"primary_location.source.id:{source_id},"
             f"from_publication_date:{from_date},"

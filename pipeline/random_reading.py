@@ -26,6 +26,8 @@ from __future__ import annotations
 import calendar
 import datetime as dt
 import hashlib
+import json
+import pathlib
 import random
 
 from fetchers import openalex_fetcher
@@ -35,10 +37,34 @@ from render import identity as _identity
 SCHEMA_VERSION = 1
 # A day has 0-5 High papers; the cap only protects against a freak run.
 MAX_JOURNALS = 6
-PICKS_PER_JOURNAL = 2
-# Candidates drawn per pick, so papers already in the corpus can be dropped
-# without a second round trip to decide what to draw instead.
-OVERSAMPLE = 3
+
+# How many papers to draw, as a share of what the journal published that
+# month — a bigger journal hides more, so it gives up more. Bounded at both
+# ends, and the bounds are the whole design:
+#
+#   * without the floor, a specialist journal shrinks. Computational
+#     Mechanics published 13 papers in 2026-09 and 5% of that is 1 — yet it
+#     is the journal whose draw was actually relevant.
+#   * without the cap, a megajournal swamps everything. Scientific Reports
+#     published 3,375 that month; 5% is 169 papers of mostly cell biology,
+#     and across one real week the uncapped rule put 95% of its draws into
+#     two journals that are topically the furthest away.
+#
+# Measured over 2026-09-17..23 (8 journals): fixed-2 drew 16, uncapped 5%
+# drew 215, this rule draws 24.
+SAMPLE_FRACTION = 0.05
+MIN_PICKS = 2
+MAX_PICKS = 5
+# Extra candidates fetched beyond the target, so a paper already in the
+# corpus can be dropped without a second round trip to pick a replacement.
+EXTRA_CANDIDATES = 4
+
+
+def picks_for_volume(month_works: int) -> int:
+    """How many papers to draw from a journal that published `month_works`."""
+    if month_works <= 0:
+        return 0
+    return min(MAX_PICKS, max(MIN_PICKS, round(month_works * SAMPLE_FRACTION)))
 # OpenAlex marks preprint servers and repositories as their own source type;
 # arXiv has no monthly issue to browse, so only real journals qualify.
 JOURNAL_SOURCE_TYPES = {"journal"}
@@ -87,6 +113,30 @@ def journals_of_high_papers(scored: list[dict]) -> list[dict]:
     return list(journals.values())[:MAX_JOURNALS]
 
 
+def drawn_keys(data_root) -> set[str]:
+    """Identity keys this pass has already drawn on earlier days.
+
+    The seed is per day, so the same journal drawn on two days draws two
+    independent samples — which, out of a 13-paper month, will sometimes be
+    the same paper. These never enter the corpus seen-state (that would hide
+    them from real discovery), so the stream has to remember them itself.
+    """
+    folder = pathlib.Path(data_root) / "random_reading"
+    if not folder.is_dir():
+        return set()
+    keys: set[str] = set()
+    for path in folder.glob("*.json"):
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        for paper in (payload.get("papers") or []):
+            key = _identity.canonical_key(paper)
+            if key:
+                keys.add(key)
+    return keys
+
+
 def _rng(today: str, source_id: str) -> random.Random:
     """Deterministic per day and journal, so a re-run repeats the draw."""
     digest = hashlib.sha256(f"{today}:{source_id}".encode("utf-8")).hexdigest()
@@ -95,7 +145,7 @@ def _rng(today: str, source_id: str) -> random.Random:
 
 def sample_journal(journal: dict, today: str, known_keys: set[str],
                    fetcher=None) -> tuple[list[dict], dict]:
-    """Draw up to PICKS_PER_JOURNAL unseen papers from this journal's month.
+    """Draw unseen papers from this journal's month, scaled to its volume.
 
     Returns the picks and a report of what the draw saw. Any OpenAlex failure
     is reported, never raised: a serendipity pass must not be able to fail
@@ -120,6 +170,7 @@ def sample_journal(journal: dict, today: str, known_keys: set[str],
         "direction": journal.get("direction"),
         "month": today[:7],
         "month_works": 0,
+        "target_picks": 0,
         "positions": [],
         "skipped_known": 0,
         "truncated_pool": False,
@@ -138,9 +189,10 @@ def sample_journal(journal: dict, today: str, known_keys: set[str],
     report["truncated_pool"] = total > reachable
 
     rng = _rng(today, journal["venue_id"])
-    wanted = min(PICKS_PER_JOURNAL, reachable)
+    wanted = min(picks_for_volume(total), reachable)
+    report["target_picks"] = wanted
     order = rng.sample(range(1, reachable + 1),
-                       k=min(reachable, wanted * OVERSAMPLE))
+                       k=min(reachable, wanted + EXTRA_CANDIDATES))
 
     picks: list[dict] = []
     for position in order:

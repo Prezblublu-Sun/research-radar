@@ -363,8 +363,11 @@ def run(days_back: int = 2, skip_zotero: bool = False, force: bool = False) -> d
         _print("Random reading skipped: the DeepSeek balance is exhausted")
     else:
         try:
+            # The corpus keys stop a draw repeating a paper the radar already
+            # found; the previous draws stop it repeating itself.
+            already = set(updated_seen) | random_reading.drawn_keys(DATA_DIR)
             picks, rr_report = random_reading.collect(
-                scored, set(updated_seen), today, directions, exclusions,
+                scored, already, today, directions, exclusions,
             )
             random_counts.update({
                 "journals": len(rr_report["journals"]),

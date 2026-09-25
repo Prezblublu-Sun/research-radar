@@ -2135,6 +2135,8 @@ def _random_journal_block(journal: dict, papers: list[dict],
     """One journal: why it is here, how big the pool was, and the draw."""
     pool = int(journal.get("month_works") or 0)
     meta = [f"{journal.get('month', '')} 共 {pool} 篇"]
+    if journal.get("target_picks"):
+        meta.append(f"按 5% 抽 {journal['target_picks']} 篇")
     if journal.get("truncated_pool"):
         meta.append("抽样仅覆盖前 10,000 篇")
     if journal.get("skipped_known"):
