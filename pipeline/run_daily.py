@@ -18,6 +18,7 @@ from pipeline import (
     aggregator,
     direction_router,
     llm_scorer,
+    random_reading,
     v2_schema as v2,
     zotero_sync,
     manifest as mf,
@@ -48,6 +49,17 @@ ARXIV_MIN_LOOKBACK_DAYS = 5
 # OpenAlex indexes publisher deposits days to weeks after the publication
 # date, so its window stays wide and relies on DOI dedup for repeats.
 OPENALEX_MIN_LOOKBACK_DAYS = 14
+
+# ADR-0035: read two random papers a month from each journal that produced a
+# High paper today. Set RADAR_RANDOM_READING=0 to skip the pass entirely.
+# Derived from DATA_DIR at call time, never bound at import: tests relocate
+# DATA_DIR, and a constant captured here would write into the real data/.
+def _random_reading_dir() -> pathlib.Path:
+    return DATA_DIR / "random_reading"
+
+
+def _random_reading_enabled() -> bool:
+    return os.environ.get("RADAR_RANDOM_READING", "1").strip() not in ("0", "false", "no")
 
 
 def _print(msg: str):
@@ -334,6 +346,59 @@ def run(days_back: int = 2, skip_zotero: bool = False, force: bool = False) -> d
 
     counts["touched_dates"] = dict(touched_dates)
     counts["papers_with_missing_date"] = missing_date
+
+    # ===== ADR-0035: serendipity pass =====
+    # The journals behind today's High papers get two of their own month read
+    # at random. Deliberately after the corpus write and deliberately into its
+    # own file: these papers are NOT radar recommendations, they must not
+    # touch data/daily/, the queue, the seen-state or Zotero. A copy of the
+    # seen keys is passed so a drawn paper can still be discovered normally
+    # later; nothing here is ever marked as seen.
+    random_counts = {"journals": 0, "papers": 0, "errors": 0, "status": "skipped"}
+    if not _random_reading_enabled():
+        _print("Random reading disabled (RADAR_RANDOM_READING=0)")
+    elif fetched_total == 0:
+        _print("Random reading skipped: the run fetched nothing")
+    elif llm_scorer.budget_exhausted():
+        _print("Random reading skipped: the DeepSeek balance is exhausted")
+    else:
+        try:
+            picks, rr_report = random_reading.collect(
+                scored, set(updated_seen), today, directions, exclusions,
+            )
+            random_counts.update({
+                "journals": len(rr_report["journals"]),
+                "papers": len(picks),
+                "errors": rr_report["errors"],
+                "status": "ok",
+            })
+            names = ", ".join(j["venue"] for j in rr_report["journals"]) or "(none)"
+            _print(f"Random reading: {len(rr_report['journals'])} journal(s) "
+                   f"behind today's High papers -> {len(picks)} paper(s) [{names}]")
+            if picks:
+                rr_scored, rr_raw = llm_scorer.score_batch(picks, directions)
+                # One manifest, one cost figure: the serendipity calls are
+                # part of what the day actually spent.
+                raw_responses.extend(rr_raw)
+                rr_priorities: dict[str, int] = {}
+                for paper in rr_scored:
+                    key = (paper.get("llm") or {}).get("priority") or "Unscored"
+                    rr_priorities[key] = rr_priorities.get(key, 0) + 1
+                random_counts["priority_counts"] = rr_priorities
+                target = _random_reading_dir() / f"{today}.json"
+                target.parent.mkdir(parents=True, exist_ok=True)
+                v2.atomic_write_json(
+                    target,
+                    random_reading.build_file(today, rr_scored, rr_report,
+                                              scorer_version, run_ts),
+                )
+                _print(f"  -> scored {rr_priorities}, wrote {target}")
+        except Exception as e:  # pragma: no cover - defensive
+            random_counts["status"] = f"failed: {type(e).__name__}"
+            _print(f"  ! Random reading failed (the daily run continues): {e}")
+    counts["random_reading"] = random_counts
+    if random_counts.get("errors"):
+        quality_flags.append("random_reading_partial")
 
     # Quality flags for downstream (manifest, report)
     if fetched_total > 0 and fetched_total < 50:

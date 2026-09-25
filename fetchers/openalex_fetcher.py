@@ -141,6 +141,13 @@ def _request_json(params: dict) -> dict:
     raise OpenAlexError("OpenAlex request exhausted retries")
 
 
+def _source_id(source: dict | None) -> str:
+    """The bare OpenAlex source id (``S12345``) of a work's venue."""
+    raw = str((source or {}).get("id") or "").strip()
+    ident = raw.rsplit("/", 1)[-1]
+    return ident if ident.startswith("S") and ident[1:].isdigit() else ""
+
+
 def _abstract_from_inverted_index(inv: dict | None) -> str:
     """OpenAlex returns abstracts as an inverted index. Reconstruct text."""
     if not inv:
@@ -373,6 +380,12 @@ def _normalize(work: dict) -> dict:
         "first_author_affiliation": first_author_affiliation,
         "corresponding_authors": corresponding,
         "venue": venue.get("display_name", ""),
+        # ADR-0035: the display name alone cannot be queried back. The source
+        # id is what "what else did this journal publish this month" needs,
+        # and `venue_type` separates a real journal from a preprint server.
+        "venue_id": _source_id(venue),
+        "venue_issn_l": venue.get("issn_l") or "",
+        "venue_type": venue.get("type", "") or "",
         "year": work.get("publication_year"),
         "date": date_str,
         "date_precision": date_precision,
@@ -382,6 +395,48 @@ def _normalize(work: dict) -> dict:
         "categories": [],
         "raw_type": work.get("type", ""),
     }
+
+
+# --- ADR-0035: uniform random sampling inside one journal-month ------------
+#
+# Reading a whole month of a megajournal would be ~15 pages of results to
+# throw almost all of away. OpenAlex's basic `page` paging addresses a single
+# work directly, so one call establishes the size of the pool and one call
+# per pick draws from it — a genuinely uniform sample for ~3 filter calls
+# ($0.10 per 1,000) instead of fifteen.
+#
+# Basic paging cannot reach past 10,000 results; a journal-month that large
+# is sampled from its first 10,000, which the caller is told about.
+PAGE_LIMIT = 10_000
+
+
+def journal_month_filter(source_id: str, from_date: str, to_date: str) -> str:
+    return (f"primary_location.source.id:{source_id},"
+            f"from_publication_date:{from_date},"
+            f"to_publication_date:{to_date},type:article|review")
+
+
+def journal_month_count(source_id: str, from_date: str, to_date: str) -> int:
+    """How many articles/reviews this journal published in the window."""
+    data = _request_json({
+        "filter": journal_month_filter(source_id, from_date, to_date),
+        "per-page": 1,
+    })
+    return int((data.get("meta") or {}).get("count") or 0)
+
+
+def journal_work_at(source_id: str, from_date: str, to_date: str,
+                    position: int) -> dict | None:
+    """The work at a 1-based position in the journal-month listing."""
+    if position < 1 or position > PAGE_LIMIT:
+        return None
+    data = _request_json({
+        "filter": journal_month_filter(source_id, from_date, to_date),
+        "per-page": 1,
+        "page": position,
+    })
+    results = data.get("results") or []
+    return _normalize(results[0]) if results else None
 
 
 if __name__ == "__main__":

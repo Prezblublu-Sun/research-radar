@@ -818,6 +818,7 @@ def _site_nav(active: str = "") -> str:
         ("search", "search.html", "搜索"),
         ("library", "library.html", "资料库"),
         ("reading", "reading.html", "阅读清单"),
+        ("random", "random-reading.html", "随机阅读"),
         ("archive", "archive.html", "归档"),
     ]
     rendered = []
@@ -2108,6 +2109,96 @@ def _render_reading_page() -> str:
 </body></html>"""
 
 
+# ADR-0035: how many days of the serendipity pass the page shows. Each day
+# is at most ~10 cards, so a month of them is a normal-sized page.
+RANDOM_READING_DAYS = 30
+
+
+def _load_random_reading(data_dir: pathlib.Path) -> list[dict]:
+    """Newest-first, most recent RANDOM_READING_DAYS files."""
+    folder = pathlib.Path(data_dir) / "random_reading"
+    if not folder.is_dir():
+        return []
+    days = []
+    for path in sorted(folder.glob("*.json"), reverse=True)[:RANDOM_READING_DAYS]:
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue  # one unreadable day must not empty the page
+        if isinstance(payload, dict) and payload.get("papers"):
+            days.append(payload)
+    return days
+
+
+def _random_journal_block(journal: dict, papers: list[dict],
+                          directions_cfg: dict) -> str:
+    """One journal: why it is here, how big the pool was, and the draw."""
+    pool = int(journal.get("month_works") or 0)
+    meta = [f"{journal.get('month', '')} 共 {pool} 篇"]
+    if journal.get("truncated_pool"):
+        meta.append("抽样仅覆盖前 10,000 篇")
+    if journal.get("skipped_known"):
+        meta.append(f"跳过 {journal['skipped_known']} 篇已在库")
+    if journal.get("error"):
+        meta.append(f"抽取失败：{journal['error']}")
+
+    cards = []
+    for paper in papers:
+        direction = paper.get("direction")
+        color = (directions_cfg.get(direction) or {}).get("color", "#8B8980")
+        cards.append(_paper_card(paper, color,
+                                 identity_key=_identity_key(paper)))
+    body = ("".join(cards) if cards
+            else '<p class="run-note">这本期刊本月没有可抽取的新论文。</p>')
+
+    seed = journal.get("seed_title") or ""
+    seed_html = (f'<p class="random-seed">因为今天的 High：{_esc(seed)}</p>'
+                 if seed else "")
+    return (f'<section class="random-journal">'
+            f'<h3>{_esc(journal.get("venue") or "")}</h3>'
+            f'{seed_html}'
+            f'<p class="random-meta">{_esc(" · ".join(meta))}</p>'
+            f'<div class="paper-grid">{body}</div></section>')
+
+
+def _render_random_reading_page(days: list[dict], directions_cfg: dict) -> str:
+    """ADR-0035: the serendipity stream, newest day first."""
+    sections = []
+    for day in days:
+        by_journal: dict[str, list[dict]] = {}
+        for paper in day.get("papers") or []:
+            venue_id = ((paper.get("random_reading") or {}).get("venue_id")
+                        or paper.get("venue_id") or "")
+            by_journal.setdefault(venue_id, []).append(paper)
+        blocks = "".join(
+            _random_journal_block(journal, by_journal.get(journal.get("venue_id"), []),
+                                  directions_cfg)
+            for journal in (day.get("journals") or [])
+        )
+        counts = day.get("counts") or {}
+        sections.append(
+            f'<section class="random-day"><h2>{_esc(day.get("date", ""))}</h2>'
+            f'<p class="subtitle">{counts.get("journals", 0)} 本期刊 · '
+            f'{counts.get("papers", 0)} 篇随机阅读</p>{blocks}</section>'
+        )
+
+    empty = ('<p class="run-note">还没有随机阅读记录。它在每日运行里产生：'
+             '当天出现 High 论文时，其所属期刊各随机抽两篇当月论文评价并记录。'
+             '没有 High 论文的日子就没有记录。</p>')
+    return f"""<!doctype html><html lang="zh"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Research Radar — 随机阅读</title>
+{ASSET_HEAD}</head><body>
+{_site_nav("random")}
+<main id="main-content" class="container">
+<div class="eyebrow">Serendipity</div>
+<h1>随机阅读</h1>
+<p class="page-intro">雷达只会找到像你自己工作的论文。当天出现 High 论文，说明它所在的期刊正在你关心的邻域出版——而那本期刊当月绝大多数论文都匹配不上任何关键词，因此永远不会出现在雷达里。这里每天从这些期刊各随机抽两篇当月论文，用同一套评分器评价并记录。<b>它们不是雷达推荐</b>：不进语料库、不进队列、不同步 Zotero，评成 Low 很正常，读它们本来就是为了跳出关键词。</p>
+{"".join(sections) if sections else empty}
+</main>
+</body></html>"""
+
+
 def _render_library_page() -> str:
     body = """
 <div class="library-grid">
@@ -2338,6 +2429,11 @@ def build(docs_dir, directions_cfg, manifest=None, touched_dates=None,
     )
     (docs_dir / "reading.html").write_text(
         _render_reading_page(), encoding="utf-8"
+    )
+    (docs_dir / "random-reading.html").write_text(
+        _clean_html(_render_random_reading_page(
+            _load_random_reading(data_dir), directions_cfg)),
+        encoding="utf-8",
     )
     (docs_dir / "my-marks.html").write_text(
         _redirect_page("My marks", "library.html#marks"), encoding="utf-8")
