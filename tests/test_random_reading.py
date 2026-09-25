@@ -27,6 +27,7 @@ from fetchers import openalex_fetcher  # noqa: E402
 from pipeline import random_reading as rr  # noqa: E402
 from pipeline import run_daily as rd  # noqa: E402
 from render import build_pages  # noqa: E402
+from scripts import backfill_random_reading as bf  # noqa: E402
 
 DIRECTIONS = {
     "fea_surrogate": {"display_name": "FEA & Surrogate", "color": "#D85A30",
@@ -130,20 +131,67 @@ def test_the_window_is_the_whole_calendar_month():
 # The draw
 # ---------------------------------------------------------------------------
 
-def test_two_papers_are_drawn_from_the_month():
+def test_papers_are_drawn_from_the_month():
     fake = FakeOpenAlex({"S1": 40})
     picks, report = rr.sample_journal(
         {"venue_id": "S1", "venue": "J", "issn_l": "", "direction": "d",
          "seed_title": "t", "seed_identity_key": "doi:10.1/seed"},
         "2026-09-25", set(), fake)
-    assert len(picks) == rr.PICKS_PER_JOURNAL
+    assert len(picks) == rr.MIN_PICKS                # 5% of 40 is under the floor
     assert report["month_works"] == 40
-    assert len(set(report["positions"])) == 2      # never the same paper twice
+    assert report["target_picks"] == rr.MIN_PICKS
+    assert len(set(report["positions"])) == len(picks)  # never the same twice
     assert all(1 <= p <= 40 for p in report["positions"])
     meta = picks[0]["random_reading"]
     assert meta["venue"] == "J" and meta["month"] == "2026-09"
     assert meta["month_works"] == 40
     assert meta["seed_title"] == "t"
+
+
+# ---------------------------------------------------------------------------
+# How many to draw: 5% of the month, floor 2, cap 5
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("month_works,expected", [
+    (0, 0),        # nothing published: nothing to read
+    (3, 2),        # a tiny journal still gives the floor
+    (13, 2),       # Computational Mechanics, 2026-09 — 5% would be 1
+    (40, 2),
+    (72, 4),       # CMAME — the rule bites here
+    (102, 5),      # and saturates at the cap
+    (726, 5),      # Nature Communications
+    (3375, 5),     # Scientific Reports — 5% would be 169
+])
+def test_the_draw_scales_with_volume_between_a_floor_and_a_cap(month_works, expected):
+    assert rr.picks_for_volume(month_works) == expected
+
+
+def test_the_floor_protects_the_journals_that_are_actually_relevant():
+    # Measured 2026-09-25: the specialist journal whose draw was relevant
+    # publishes ~13 papers a month. An uncapped 5% would cut it to one while
+    # handing 169 to Scientific Reports.
+    assert rr.picks_for_volume(13) > round(13 * rr.SAMPLE_FRACTION)
+    assert rr.picks_for_volume(3375) < round(3375 * rr.SAMPLE_FRACTION)
+    assert (rr.MIN_PICKS, rr.MAX_PICKS, rr.SAMPLE_FRACTION) == (2, 5, 0.05)
+
+
+def test_a_journal_smaller_than_the_floor_gives_what_it_has():
+    picks, report = rr.sample_journal(
+        {"venue_id": "S1", "venue": "J", "issn_l": "", "direction": "d",
+         "seed_title": "", "seed_identity_key": ""},
+        "2026-09-25", set(), FakeOpenAlex({"S1": 1}))
+    assert rr.picks_for_volume(1) == 2      # the rule asks for two...
+    assert len(picks) == 1                  # ...the journal only has one
+    assert report["target_picks"] == 1
+
+
+def test_a_big_journal_gives_the_cap_not_five_percent():
+    picks, report = rr.sample_journal(
+        {"venue_id": "S1", "venue": "J", "issn_l": "", "direction": "d",
+         "seed_title": "", "seed_identity_key": ""},
+        "2026-09-25", set(), FakeOpenAlex({"S1": 3375}))
+    assert len(picks) == rr.MAX_PICKS == 5
+    assert report["target_picks"] == 5
 
 
 def test_the_same_day_always_draws_the_same_papers():
@@ -167,7 +215,7 @@ def test_a_paper_already_in_the_corpus_is_skipped_not_shown_twice():
     picks, report = rr.sample_journal(journal, "2026-09-25", known, fake)
     assert report["skipped_known"] == 1
     assert all(p["doi"] != wanted[0]["doi"] for p in picks)
-    assert len(picks) == 2          # oversampling covered the loss
+    assert len(picks) == rr.MIN_PICKS   # the extra candidates covered the loss
 
 
 def test_a_drawn_paper_joins_the_known_set_so_two_journals_cannot_collide():
@@ -209,7 +257,7 @@ def test_a_pool_deeper_than_basic_paging_is_sampled_from_what_is_reachable():
     assert report["truncated_pool"] is True
     assert report["month_works"] == 30_000
     assert all(p <= openalex_fetcher.PAGE_LIMIT for p in report["positions"])
-    assert len(picks) == 2
+    assert len(picks) == rr.MAX_PICKS
 
 
 # ---------------------------------------------------------------------------
@@ -455,14 +503,15 @@ def test_a_partial_draw_is_flagged_in_the_manifest(monkeypatch, daily):
 # The page
 # ---------------------------------------------------------------------------
 
-def test_the_page_says_why_each_journal_is_there(tmp_path):
+def test_the_page_shows_the_pool_and_what_the_rule_asked_for(tmp_path):
     (tmp_path / "random_reading").mkdir(parents=True)
     (tmp_path / "random_reading" / "2026-09-25.json").write_text(json.dumps({
         "schema_version": 1, "date": "2026-09-25", "month": "2026-09",
         "counts": {"journals": 1, "papers": 1},
         "journals": [{"venue_id": "S1", "venue": "Computational Mechanics",
                       "seed_title": "The High paper", "seed_count": 1,
-                      "month": "2026-09", "month_works": 13, "positions": [3],
+                      "month": "2026-09", "month_works": 13, "target_picks": 2,
+                      "positions": [3],
                       "skipped_known": 2, "truncated_pool": False, "error": ""}],
         "papers": [{"doi": "10.9/x", "title": "A drawn paper", "authors": [],
                     "venue": "Computational Mechanics", "date": "2026-09-10",
@@ -477,6 +526,7 @@ def test_the_page_says_why_each_journal_is_there(tmp_path):
     assert "Computational Mechanics" in html
     assert "因为今天的 High：The High paper" in html
     assert "2026-09 共 13 篇" in html
+    assert "按 5% 抽 2 篇" in html
     assert "跳过 2 篇已在库" in html
     assert "A drawn paper" in html
     assert "2026-09-25" in html
@@ -507,6 +557,127 @@ def test_one_unreadable_day_does_not_empty_the_page(tmp_path):
 def test_the_page_is_in_the_navigation():
     assert 'href="random-reading.html"' in build_pages._site_nav()
     assert "随机阅读" in build_pages._site_nav()
+
+
+# ---------------------------------------------------------------------------
+# Not drawing the same paper twice on different days
+# ---------------------------------------------------------------------------
+
+def test_earlier_draws_are_remembered(tmp_path):
+    folder = tmp_path / "random_reading"
+    folder.mkdir()
+    (folder / "2026-09-19.json").write_text(json.dumps({
+        "papers": [{"doi": "10.9/Already-Seen"}, {"doi": ""}]}), encoding="utf-8")
+    (folder / "2026-09-20.json").write_text("{broken", encoding="utf-8")
+    assert rr.drawn_keys(tmp_path) == {"doi:10.9/already-seen"}
+    assert rr.drawn_keys(tmp_path / "nope") == set()
+
+
+def test_a_journal_drawn_on_two_days_does_not_repeat_itself(tmp_path):
+    # The seed is per day, so two days are two independent samples — out of a
+    # 13-paper month they will sometimes collide. These papers never enter the
+    # corpus seen-state, so the stream has to remember them itself.
+    journal = {"venue_id": "S1", "venue": "J", "issn_l": "", "direction": "d",
+               "seed_title": "", "seed_identity_key": ""}
+    known = set()
+    first, _ = rr.sample_journal(journal, "2026-09-19", known, FakeOpenAlex({"S1": 6}))
+    second, _ = rr.sample_journal(journal, "2026-09-20", known, FakeOpenAlex({"S1": 6}))
+    drawn = [p["doi"] for p in first] + [p["doi"] for p in second]
+    assert len(drawn) == len(set(drawn))
+
+
+def test_the_daily_run_excludes_what_the_stream_already_drew(monkeypatch, daily):
+    tmp_path, _ = daily
+    _install(monkeypatch, FakeOpenAlex({"S147854436": 40}))
+    rd.run(days_back=1, skip_zotero=True)
+    folder = tmp_path / "data" / "random_reading"
+    first = {p["doi"] for p in json.loads(
+        next(folder.glob("*.json")).read_text(encoding="utf-8"))["papers"]}
+    assert first
+    # A second run on the same day would redraw the same positions; the
+    # remembered keys are what stop it handing back the same papers.
+    assert "already = set(updated_seen) | random_reading.drawn_keys(DATA_DIR)" in \
+        (REPO_ROOT / "pipeline" / "run_daily.py").read_text(encoding="utf-8")
+
+
+# ---------------------------------------------------------------------------
+# Backfilling past days
+# ---------------------------------------------------------------------------
+
+def test_a_run_day_is_reconstructed_from_first_seen_at(tmp_path):
+    # A run scores a 14-day publication window, so "the papers of run-day D"
+    # are the records stamped with D — not the bucket named D.
+    daily_dir = tmp_path / "daily"
+    daily_dir.mkdir(parents=True)
+    (daily_dir / "2026-09-10.json").write_text(json.dumps({"papers": [
+        {"doi": "10.1/a", "first_seen_at": "2026-09-19T05:00:00Z"},
+        {"doi": "10.1/b", "first_seen_at": "2026-09-20T05:00:00Z"},
+    ]}), encoding="utf-8")
+    (daily_dir / "2026-09-19.json").write_text(json.dumps({"papers": [
+        {"doi": "10.1/c", "first_seen_at": "2026-09-19T05:00:00Z"},
+    ]}), encoding="utf-8")
+    grouped = bf.papers_by_run_day(tmp_path, ["2026-09-19", "2026-09-20"])
+    assert {p["doi"] for p in grouped["2026-09-19"]} == {"10.1/a", "10.1/c"}
+    assert {p["doi"] for p in grouped["2026-09-20"]} == {"10.1/b"}
+
+
+def test_buckets_far_outside_the_window_are_not_even_opened(tmp_path):
+    daily_dir = tmp_path / "daily"
+    daily_dir.mkdir(parents=True)
+    (daily_dir / "2020-01-01.json").write_text("{not json", encoding="utf-8")
+    (daily_dir / "2026-09-19.json").write_text(json.dumps({"papers": [
+        {"doi": "10.1/c", "first_seen_at": "2026-09-19T05:00:00Z"}]}), encoding="utf-8")
+    grouped = bf.papers_by_run_day(tmp_path, ["2026-09-19"])
+    assert [p["doi"] for p in grouped["2026-09-19"]] == ["10.1/c"]
+
+
+def test_an_old_high_paper_gets_its_journal_resolved(monkeypatch):
+    # Records written before ADR-0035 have no venue_id at all.
+    calls = []
+
+    def resolve(ids):
+        calls.append(list(ids))
+        return {"W1": {"venue_id": "S147854436", "venue": "Computational Mechanics",
+                       "venue_issn_l": "0178-7675", "venue_type": "journal"}}
+
+    monkeypatch.setattr(bf.openalex_fetcher, "resolve_sources", resolve)
+    papers = [
+        {"id": "https://openalex.org/W1", "source": "openalex",
+         "llm": {"priority": "High"}},
+        {"id": "https://openalex.org/W2", "source": "openalex",
+         "llm": {"priority": "Medium"}},                      # not High
+        {"id": "2609.1", "source": "arxiv", "llm": {"priority": "High"}},
+        {"id": "https://openalex.org/W3", "source": "openalex", "venue_id": "S9",
+         "llm": {"priority": "High"}},                        # already has one
+    ]
+    high = bf.high_papers_with_journals(papers)
+    assert calls == [["W1"]]             # only the High ones that need it
+    assert high[0]["venue_id"] == "S147854436"
+    assert high[0]["venue_type"] == "journal"
+    assert high[2]["venue_id"] == "S9"   # untouched
+
+
+def test_a_day_that_already_has_a_file_is_not_redrawn(tmp_path, monkeypatch, capsys):
+    (tmp_path / "daily").mkdir(parents=True)
+    (tmp_path / "random_reading").mkdir(parents=True)
+    (tmp_path / "random_reading" / "2026-09-19.json").write_text(
+        json.dumps({"papers": []}), encoding="utf-8")
+    monkeypatch.setattr(bf.openalex_fetcher, "resolve_sources", lambda ids: {})
+    assert bf.main(["--data-root", str(tmp_path),
+                    "--from", "2026-09-19", "--to", "2026-09-19"]) == 0
+    assert "already has a file" in capsys.readouterr().out
+
+
+def test_the_backfill_is_the_production_code_path():
+    source = (REPO_ROOT / "scripts" / "backfill_random_reading.py").read_text(encoding="utf-8")
+    # The draw, the rule and the file layout must not be reimplemented here.
+    assert "random_reading.collect(" in source
+    assert "random_reading.build_file(" in source
+    assert "llm_scorer.score_batch(" in source
+    for reimplemented in ("SAMPLE_FRACTION", "picks_for_volume", "journal_work_at"):
+        assert reimplemented not in source, reimplemented
+    # The month follows the day being backfilled, never today.
+    assert "day, directions, exclusions" in source
 
 
 # ---------------------------------------------------------------------------
@@ -550,6 +721,28 @@ def test_the_journal_month_filter_is_bounded_on_both_sides():
     assert "from_publication_date:2026-09-01" in flt
     assert "to_publication_date:2026-09-30" in flt
     assert "type:article|review" in flt
+
+
+def test_sources_are_resolved_in_batches_without_duplicates(monkeypatch):
+    seen = []
+
+    def fake(params):
+        ids = params["filter"].split(":", 1)[1].split("|")
+        # `select` is what keeps a 50-work payload small.
+        assert params["select"] == "id,primary_location"
+        seen.append(ids)
+        return {"results": [
+            {"id": f"https://openalex.org/{i}",
+             "primary_location": {"source": {"id": f"https://openalex.org/S{i[1:]}",
+                                             "display_name": "J", "type": "journal"}}}
+            for i in ids]}
+
+    monkeypatch.setattr(openalex_fetcher, "_request_json", fake)
+    ids = [f"W{n}" for n in range(120)] + ["W5", ""]
+    out = openalex_fetcher.resolve_sources(ids)
+    assert [len(batch) for batch in seen] == [50, 50, 20]   # deduped, batched
+    assert out["W5"]["venue_id"] == "S5"
+    assert out["W5"]["venue_type"] == "journal"
 
 
 def test_a_position_outside_basic_paging_is_not_requested(monkeypatch):

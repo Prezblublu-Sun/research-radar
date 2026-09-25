@@ -92,8 +92,7 @@ is exhausted, or when `RADAR_RANDOM_READING=0`.
   where the value is — the same draw from *Computational Mechanics* (13
   papers that month) returned "From legacy finite element modeling to
   explainable simulation". The pool size is recorded per journal so the
-  trade is visible; capping or weighting by monthly volume is deliberately
-  **not** done here, because it is the user's call, not a default.
+  trade is visible. **Superseded the same day — see the addendum below.**
 - `venue_id` / `venue_issn_l` / `venue_type` are new on OpenAlex records.
   Papers already in the corpus do not have them, so only journals seen from
   today onwards can be read. No backfill is planned.
@@ -103,9 +102,8 @@ is exhausted, or when `RADAR_RANDOM_READING=0`.
 
 ## Not in this stage
 
-- Weighting or excluding journals by monthly volume, and any other change to
-  *which* papers are drawn. The draw is uniform on purpose; narrowing it is
-  a decision for the user once there is a month of evidence.
+- Excluding journals by monthly volume outright. The draw now scales with
+  volume (addendum below) but every qualifying journal still contributes.
 - Bringing a draw into the corpus when it scores well. Promotion would make
   the pass a discovery source, which changes what the radar claims to be.
 - Reading the journals behind Medium papers. High is the sharp signal.
@@ -116,3 +114,45 @@ Set `RADAR_RANDOM_READING=0`, or revert the pass. `data/random_reading/`
 becomes inert data and `random-reading.html` renders its empty state. No
 corpus record, count, or manifest field outside `counts.random_reading` is
 touched by this ADR.
+
+## Addendum 2026-09-25 — the draw scales with the journal's volume
+
+The first cut drew a flat two papers per journal. The user asked for the
+count to follow the journal's output instead, at "about 5% of what it
+published". Measured against the eight journals behind the High papers of
+2026-09-17..23 before changing anything:
+
+| journal | 2026-09 output | flat 2 | uncapped 5% |
+|---|---:|---:|---:|
+| Scientific Reports | 3,375 | 2 | **169** |
+| Nature Communications | 726 | 2 | **36** |
+| Comput. Methods Appl. Mech. Engrg. | 72 | 2 | 4 |
+| Fatigue & Fracture Engng Mater. | 36 | 2 | 2 |
+| Int. J. Bioprinting | 15 | 2 | 1 |
+| **Computational Mechanics** | 13 | 2 | **1** |
+| Virtual and Physical Prototyping | 13 | 2 | 1 |
+| Smart Materials in Manufacturing | 3 | 2 | 1 |
+| **week total** | | **16** | **215** |
+
+Uncapped, 5% inverts the signal: 205 of the 215 draws (95%) land in the two
+journals that are topically furthest away, while the specialist journal whose
+draw was actually relevant *shrinks* from two papers to one. Cost is not the
+constraint — 215 papers a week is about ¥0.09/day — the page is: thirty-one
+cards a day of mostly cell biology and plasma physics.
+
+So the rule is bounded at both ends, and the bounds are the design:
+
+    picks = min(5, max(2, round(month_works * 0.05)))
+
+The floor keeps a specialist journal at two. The cap stops a megajournal
+from swamping the page and preserves the property that made the flat rule
+tolerable — a journal nobody can usefully sample costs almost nothing.
+The same week draws **24** papers under this rule, about 3.4 a day.
+
+`target_picks` is recorded per journal and shown on the page next to the
+pool size, so the rule's arithmetic is visible rather than implied.
+
+Not revisited: which papers are drawn (still uniform over the month), and
+whether a big journal should be skipped entirely (it is not — it just
+contributes at most five).
+

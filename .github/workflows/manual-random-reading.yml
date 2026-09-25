@@ -1,0 +1,106 @@
+name: manual-random-reading
+
+# Manually-triggered backfill of the ADR-0035 serendipity pass over past
+# run-days. The pass normally runs at the end of each daily run; this fills
+# days that ran before the feature existed, or days it was skipped.
+#
+# Resumable and idempotent: a day that already has a file is skipped unless
+# `force` is set, and the draw is seeded by date and journal, so re-running
+# a day produces the same papers rather than paying for a second sample.
+#
+# Start with dry_run to see which journals and how many papers a range would
+# cost before spending anything.
+
+on:
+  workflow_dispatch:
+    inputs:
+      days:
+        description: "How many days back from yesterday (ignored if from/to are set)"
+        required: false
+        type: string
+        default: "7"
+      from_date:
+        description: "Range start YYYY-MM-DD (use with to_date)"
+        required: false
+        type: string
+      to_date:
+        description: "Range end YYYY-MM-DD (use with from_date)"
+        required: false
+        type: string
+      dry_run:
+        description: "Pick and report, score nothing, write nothing"
+        type: boolean
+        default: true
+      force:
+        description: "Redraw days that already have a file"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: research-radar-writer
+  cancel-in-progress: false
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # workflow_dispatch may wait behind another corpus writer.
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -e .
+
+      - name: Backfill the serendipity pass
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_BASE_URL: ${{ secrets.OPENAI_BASE_URL }}
+          MODEL_NAME: ${{ vars.MODEL_NAME }}
+          SCORER_PROMPT_FILE: scorer_v3.txt
+          OPENALEX_API_KEY: ${{ secrets.OPENALEX_API_KEY }}
+          OPENALEX_EMAIL: ${{ vars.OPENALEX_EMAIL }}
+          RANGE_FROM: ${{ inputs.from_date }}
+          RANGE_TO: ${{ inputs.to_date }}
+          DAYS: ${{ inputs.days }}
+        run: |
+          args=""
+          if [ -n "$RANGE_FROM" ] && [ -n "$RANGE_TO" ]; then
+            args="--from $RANGE_FROM --to $RANGE_TO"
+          else
+            args="--days ${DAYS:-7}"
+          fi
+          python -m scripts.backfill_random_reading $args \
+            ${{ inputs.dry_run && '--dry-run' || '' }} \
+            ${{ inputs.force && '--force' || '' }} \
+            | tee "$RUNNER_TEMP/backfill.log"
+
+      - name: Summarise the run
+        if: always()
+        run: |
+          {
+            echo '### 随机阅读回补'
+            echo
+            echo '```'
+            cat "$RUNNER_TEMP/backfill.log" 2>/dev/null || echo "(no output)"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Commit the backfilled days
+        if: ${{ !inputs.dry_run }}
+        run: |
+          git config user.name "research-radar-bot"
+          git config user.email "actions@github.com"
+          git add data/random_reading/ 2>/dev/null || true
+          if git diff --staged --quiet; then
+            echo "Nothing new to commit."
+          else
+            git commit -m "random reading: backfill past run-days (ADR-0035)"
+            bash scripts/git_push_retry.sh main 5
+          fi
