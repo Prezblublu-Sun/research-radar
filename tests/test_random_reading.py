@@ -231,6 +231,39 @@ def test_only_the_shortfall_is_drawn():
     assert report["target_picks"] == 5
 
 
+def test_a_small_journal_the_radar_already_covers_still_fills_its_allocation():
+    # The case that failed in production on 2026-09-25: Int. J. Bioprinting
+    # publishes ~15 a month and the radar already held six; with only four
+    # spare candidates the top-up ran out and returned nothing.
+    fake = FakeOpenAlex({"S1": 15})
+    journal = {"venue_id": "S1", "venue": "J", "issn_l": "", "direction": "d",
+               "seed_title": "", "seed_identity_key": ""}
+    # Nine of the fifteen are unusable: six in the corpus, three drawn before.
+    known = {f"doi:10.9/s1-{n}" for n in range(1, 10)}
+    picks, report = rr.sample_journal(journal, "2026-09-25", known, fake)
+    assert len(picks) == rr.SPECIALIST_PICKS
+    assert report["skipped_known"] >= 1
+    assert all(p["doi"].lower() not in known for p in picks)
+
+
+def test_a_top_up_walks_further_down_the_same_ordering():
+    # Python's sample is a partial shuffle, so the same seed gives the same
+    # prefix whatever k is: a top-up continues the first draw's list instead
+    # of starting an unrelated one.
+    journal = {"venue_id": "S1", "venue": "J", "issn_l": "", "direction": "d",
+               "seed_title": "", "seed_identity_key": ""}
+    first, _ = rr.sample_journal(journal, "2026-09-25", set(), FakeOpenAlex({"S1": 60}))
+    known = {f"doi:{p['doi'].lower()}" for p in first}
+    topped, _ = rr.sample_journal(journal, "2026-09-25", known,
+                                  FakeOpenAlex({"S1": 60}), have=len(first))
+    assert topped == []                         # already at the allocation
+    # Raising the allocation draws papers the first pass had not reached.
+    more, _ = rr.sample_journal(journal, "2026-09-25", set(known),
+                                FakeOpenAlex({"S1": 60}), have=2)
+    assert len(more) == rr.SPECIALIST_PICKS - 2
+    assert not ({p["doi"] for p in more} & {p["doi"] for p in first})
+
+
 def test_collect_tops_up_per_journal():
     fake = FakeOpenAlex({"S1": 40, "S2": 40})
     picks, _ = rr.collect(

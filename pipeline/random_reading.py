@@ -59,9 +59,17 @@ MAX_JOURNALS = 6
 MEGAJOURNAL_WORKS = 200
 SPECIALIST_PICKS = 5
 MEGAJOURNAL_PICKS = 2
-# Extra candidates fetched beyond the target, so a paper already in the
-# corpus can be dropped without a second round trip to pick a replacement.
-EXTRA_CANDIDATES = 4
+# How many extra positions to look at beyond the target, so papers the radar
+# already holds can be skipped without another round trip.
+#
+# Four was not enough. International Journal of Bioprinting publishes ~15
+# papers a month and the radar already had six of them; adding the two this
+# pass had drawn, more than half the pool was unusable, and a top-up asking
+# for three more ran out of candidates and returned nothing. Ten means a
+# small, well-covered journal is effectively scanned — which is right, since
+# the few papers the radar missed are the entire point — while a megajournal
+# still costs at most a dozen calls.
+FETCH_HEADROOM = 10
 
 
 def picks_for_volume(month_works: int) -> int:
@@ -203,8 +211,11 @@ def sample_journal(journal: dict, today: str, known_keys: set[str],
     wanted = max(0, target - max(0, have))
     if not wanted:
         return [], report
+    # The same seed gives the same ordering whatever k is — Python's sample
+    # builds a partial shuffle — so a top-up walks further down the list the
+    # first draw already used, rather than starting a different one.
     order = rng.sample(range(1, reachable + 1),
-                       k=min(reachable, wanted + EXTRA_CANDIDATES))
+                       k=min(reachable, target + FETCH_HEADROOM))
 
     picks: list[dict] = []
     for position in order:
