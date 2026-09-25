@@ -2144,7 +2144,10 @@ def _random_journal_block(journal: dict, papers: list[dict],
     if journal.get("truncated_pool"):
         meta.append("抽样仅覆盖前 10,000 篇")
     if journal.get("skipped_known"):
-        meta.append(f"跳过 {journal['skipped_known']} 篇已在库")
+        # Clamped: a count larger than the month's output is a merge bug
+        # showing through, and a wrong number is worse than a rounded one.
+        skipped = min(int(journal["skipped_known"]), pool) if pool else journal["skipped_known"]
+        meta.append(f"跳过 {skipped} 篇已在库")
     if journal.get("error"):
         meta.append(f"抽取失败：{journal['error']}")
 

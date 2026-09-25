@@ -292,11 +292,39 @@ def test_a_top_up_keeps_what_the_day_already_found(tmp_path):
 def test_a_top_up_carries_the_earlier_draws_positions_forward():
     merged = bf.merge_reports(
         [{"venue_id": "S1", "positions": [3, 7], "skipped_known": 1}],
-        [{"venue_id": "S1", "positions": [11], "skipped_known": 2},
+        [{"venue_id": "S1", "positions": [7, 11], "skipped_known": 2},
          {"venue_id": "S2", "positions": [4], "skipped_known": 0}])
-    assert merged[0]["positions"] == [3, 7, 11]
-    assert merged[0]["skipped_known"] == 3
+    assert merged[0]["positions"] == [3, 7, 11]      # 7 is not repeated
     assert merged[1]["positions"] == [4]
+
+
+def test_a_top_up_does_not_double_count_the_papers_it_re_scanned():
+    # The two draws share an ordering prefix, so the second scan re-skips
+    # most of the same papers. Summing produced "skipped 21 already in the
+    # library" for a journal that published 15 that month.
+    merged = bf.merge_reports(
+        [{"venue_id": "S1", "month_works": 15, "positions": [], "skipped_known": 6}],
+        [{"venue_id": "S1", "month_works": 15, "positions": [], "skipped_known": 9}])
+    assert merged[0]["skipped_known"] == 9
+    assert merged[0]["skipped_known"] <= merged[0]["month_works"]
+
+
+def test_a_top_up_refreshes_what_the_rule_now_says():
+    # target_picks and month_works describe the current rule, not the one the
+    # file was built under, or the page advertises a stale allocation.
+    merged = bf.merge_reports(
+        [{"venue_id": "S1", "target_picks": 5, "month_works": 700,
+          "positions": [1], "skipped_known": 0}],
+        [{"venue_id": "S1", "target_picks": 2, "month_works": 726,
+          "positions": [], "skipped_known": 0}])
+    assert merged[0]["target_picks"] == 2
+    assert merged[0]["month_works"] == 726
+
+
+def test_a_day_with_nothing_to_add_still_gets_its_metadata_refreshed():
+    source = (REPO_ROOT / "scripts" / "backfill_random_reading.py").read_text(encoding="utf-8")
+    assert "if refreshed != held_report:" in source
+    assert "refreshed the journal metadata" in source
 
 
 def test_force_and_top_up_are_different_things():
