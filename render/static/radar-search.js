@@ -2,6 +2,16 @@
 (function () {
   "use strict";
 
+  // The page loads this bundle with a ?v=<content hash> so a deploy is not
+  // stuck behind the ten-minute cache. The worker is fetched from here
+  // rather than from the page, so it has to inherit that query or it keeps
+  // running yesterday's copy.
+  var assetQuery = (function () {
+    var src = (document.currentScript && document.currentScript.src) || "";
+    var at = src.indexOf("?");
+    return at >= 0 ? src.slice(at) : "";
+  })();
+
   var PAGE_SIZE = 50;
   var queryInput = document.getElementById("search-query");
   var direction = document.getElementById("search-direction");
@@ -15,7 +25,7 @@
   var more = document.getElementById("search-more");
   if (!queryInput || !results || !window.Worker) return;
 
-  var worker = new Worker("radar-search-worker.js");
+  var worker = new Worker("radar-search-worker.js" + assetQuery);
   var manifest = null;
   var loaded = 0;
   var failedYears = [];

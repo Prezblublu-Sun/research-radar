@@ -276,7 +276,7 @@ def test_legacy_embedded_day_loads_shared_broken_image_fallback():
     rendered = build_pages._render_daily_embedded(
         [], "2026-08-12", {}, ["2026-08-12"], None
     )
-    assert rendered.count('<script src="radar-card.js" defer></script>') == 1
+    assert rendered.count(build_pages._script("radar-card.js")) == 1
 
 
 def test_visual_css_is_compact_responsive_and_preserves_scientific_figures():

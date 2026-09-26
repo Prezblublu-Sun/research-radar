@@ -1,6 +1,7 @@
 """Render daily HTML pages with top-bar navigation and version footer."""
 
 from __future__ import annotations
+import functools
 import hashlib
 import html
 import json
@@ -950,13 +951,40 @@ details.summary-en[open] summary{margin-bottom:var(--space-sm)}
 # NOTE: the former inline daily-page JS (direction tabs + priority buttons)
 # now lives in render/static/radar-ui.js, which also adds ADR-0016 D3/D4/D5.
 # Per ADR-0016 the script is an external, cacheable file — never inlined.
+@functools.lru_cache(maxsize=None)
+def _asset_version(name: str) -> str:
+    """Content hash of a shipped bundle, so a deploy invalidates the cache.
+
+    GitHub Pages serves these with `Cache-Control: max-age=600` and the
+    pages referenced them by bare name, so a behaviour change took up to ten
+    minutes to reach a browser that had already loaded the site — longer
+    while a tab stayed open. Reported on 2026-09-26 as "still can't see it"
+    about a fix that had in fact already deployed.
+
+    The static files do not change while a build runs, so the hash is cached
+    for the process.
+    """
+    path = pathlib.Path(__file__).resolve().parent / "static" / name
+    try:
+        return hashlib.sha256(path.read_bytes()).hexdigest()[:10]
+    except OSError:
+        return ""
+
+
+def _asset(name: str) -> str:
+    version = _asset_version(name)
+    return f"{name}?v={version}" if version else name
+
+
+def _script(name: str) -> str:
+    return f'<script src="{_asset(name)}" defer></script>'
+
+
 LEGACY_ASSET_HEAD = (
-    '<link rel="stylesheet" href="radar-ui.css">'
-    '<script src="radar-ui.js" defer></script>'
+    f'<link rel="stylesheet" href="{_asset("radar-ui.css")}">'
+    + _script("radar-ui.js")
 )
-ASSET_HEAD = (
-    LEGACY_ASSET_HEAD + '<script src="radar-card.js" defer></script>'
-)
+ASSET_HEAD = LEGACY_ASSET_HEAD + _script("radar-card.js")
 
 
 def _render_daily_embedded(
@@ -1009,7 +1037,7 @@ def _render_daily(papers, date, directions_cfg, archive_dates, manifest):
     return f"""<!doctype html><html lang="zh"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Research Radar — {_esc(date)}</title>
-{ASSET_HEAD}<script src="radar-day.js" defer></script></head><body>
+{ASSET_HEAD}{_script("radar-day.js")}</head><body>
 {_site_nav("archive")}
 <main id="main-content" data-date="{_esc(date)}">
 <div class="eyebrow">发表日期</div>
@@ -1762,7 +1790,7 @@ def _render_queue_page() -> str:
     return f"""<!doctype html><html lang="zh"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Research Radar — 论文队列</title>
-{ASSET_HEAD}<script src="radar-queue.js" defer></script></head><body>
+{ASSET_HEAD}{_script("radar-queue.js")}</head><body>
 {_site_nav("queue")}
 <main id="main-content" class="container">
 <div class="eyebrow">Canonical corpus queue</div>
@@ -1989,7 +2017,7 @@ def _render_search_page(docs_dir, directions_cfg: dict):
     html = f"""<!doctype html><html lang="zh"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Research Radar — 搜索</title>
-{ASSET_HEAD}<script src="radar-search.js" defer></script></head><body>
+{ASSET_HEAD}{_script("radar-search.js")}</head><body>
 {_site_nav("search")}
 <main id="main-content" class="container">
 <div class="eyebrow">Metadata-first corpus search</div>
@@ -2075,7 +2103,7 @@ def _render_reading_page() -> str:
     return f"""<!doctype html><html lang="zh"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Research Radar — 阅读清单</title>
-{ASSET_HEAD}<script src="radar-reading.js" defer></script></head><body>
+{ASSET_HEAD}{_script("radar-reading.js")}</head><body>
 {_site_nav("reading")}
 <main id="main-content" class="container" data-rui-no-filter="1">
 <div class="eyebrow">Local reading list</div>

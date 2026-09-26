@@ -22,8 +22,8 @@ STATIC = REPO_ROOT / "render" / "static"
 def test_reading_page_shell_has_the_controls_and_bundle():
     html = build_pages._render_reading_page()
     for needle in (
-        '<script src="radar-reading.js" defer></script>',
-        '<script src="radar-card.js" defer></script>',
+        build_pages._script("radar-reading.js"),
+        build_pages._script("radar-card.js"),
         'data-rui-no-filter="1"',
         'id="reading-state"', 'data-state="to-read"', 'data-state="read"',
         'data-state="ignore"', 'data-state="note"', 'id="reading-tag"',

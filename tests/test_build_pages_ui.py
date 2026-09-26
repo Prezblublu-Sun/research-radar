@@ -190,7 +190,7 @@ def test_workbench_root_and_archive_month_grid(built):
     assert 'id="day-results" class="paper-grid"' in daily
     assert '<article class="paper"' not in daily
     assert 'class="archive-select"' not in daily
-    assert 'src="radar-day.js"' in daily
+    assert build_pages._script("radar-day.js") in daily
     queue = (built / "queue.html").read_text(encoding="utf-8")
     assert 'id="queue-results" class="paper-grid"' in queue
     assert 'id="queue-pagination"' in queue
@@ -301,8 +301,8 @@ def test_d3_daily_page_has_priority_filter_bar_and_data_priority(built):
         "High", "Medium", "Low", "Exclude",
     }
     # external bundle referenced, not inlined
-    assert '<script src="radar-ui.js" defer></script>' in html
-    assert '<link rel="stylesheet" href="radar-ui.css">' in html
+    assert build_pages._script("radar-ui.js") in html
+    assert f'href="{build_pages._asset("radar-ui.css")}"' in html
 
 
 # ---------------------------------------------------------------- D4
@@ -505,7 +505,7 @@ def test_adr0027_search_index_display_fields_are_stable(search_built):
 def test_adr0027_search_page_uses_external_progressive_runtime(built):
     search_html = (built / "search.html").read_text(encoding="utf-8")
     assert "fetch('search-index.json')" not in search_html
-    assert 'src="radar-search.js"' in search_html
+    assert build_pages._script("radar-search.js") in search_html
     assert 'id="search-deep-toggle"' in search_html
     assert 'id="search-deep-year"' in search_html
     assert "search-index-manifest.json" not in search_html

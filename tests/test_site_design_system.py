@@ -101,7 +101,10 @@ def test_lazy_daily_loader_preserves_hash_and_local_card_state_contracts():
 
 
 def test_search_is_progressive_worker_backed_and_dom_safe():
-    assert 'new Worker("radar-search-worker.js")' in SEARCH_JS
+    # The worker inherits the bundle's ?v= so a deploy is not stuck behind
+    # the ten-minute asset cache (2026-09-26).
+    assert 'new Worker("radar-search-worker.js" + assetQuery)' in SEARCH_JS
+    assert "document.currentScript && document.currentScript.src" in SEARCH_JS
     assert 'fetch("search-index-manifest.json")' in SEARCH_JS
     assert 'fetch("search-index-" + selectedYear + ".json")' in SEARCH_JS
     assert 'fetch("search-deep-" + selectedYear + ".json")' in SEARCH_JS
