@@ -206,8 +206,34 @@
     status.textContent = state.priority + "：当前筛选 " + total +
       " 篇 · 第 " + (total ? state.page : 0) + " / " + count +
       " 页 · 每页 " + PAGE_SIZE + " 篇" + note;
+    showBlocked(!total && filtersMarks());
     renderPagination(total);
     syncUrl();
+  }
+
+  // An empty queue caused by the mark filter gets the same way out as an
+  // empty day: name the filter, offer the reset. (A restrictive filter that
+  // arrived from another page — or from the ADR-0034 migration — otherwise
+  // reads as "the queue has nothing".)
+  var blockedNote = null;
+  function showBlocked(blocked) {
+    if (!blockedNote) {
+      blockedNote = element("div", "empty day-blocked");
+      blockedNote.appendChild(element("p", "", ""));
+      var reset = element("button", "queue-page-button", "显示全部");
+      reset.type = "button";
+      reset.addEventListener("click", function () {
+        if (window.RadarUI && window.RadarUI.clearFilters) window.RadarUI.clearFilters();
+      });
+      blockedNote.appendChild(reset);
+      results.parentNode.insertBefore(blockedNote, results);
+    }
+    blockedNote.hidden = !blocked;
+    if (!blocked) return;
+    var api = window.RadarUI;
+    var active = api && api.activeFilters ? api.activeFilters() : [];
+    blockedNote.firstChild.textContent = "当前筛选下没有论文" +
+      (active.length ? "：" + active.join("；") : "") + "。";
   }
 
   function sortRecords() {

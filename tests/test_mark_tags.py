@@ -142,7 +142,7 @@ def test_the_server_can_read_a_tag_the_way_it_reads_a_state():
 def test_the_browser_migrates_its_own_storage_once():
     block = UI_JS.split("function migrateMarks()")[1].split("migrateMarks();")[0]
     assert 'var SCHEMA_KEY = "radar:marks-schema";' in UI_JS
-    assert "var SCHEMA_NOW = 2;" in UI_JS
+    assert "var SCHEMA_NOW = 3;" in UI_JS   # 3 repairs what 2 did, see below
     assert "if (done >= SCHEMA_NOW) return;" in block
     assert 'record.state = "read";' in block
     assert "tags.push(INSPIRING_TAG)" in block
@@ -158,15 +158,16 @@ def test_the_migration_leaves_the_timestamp_alone():
     assert "record.at" not in block
 
 
-def test_the_migration_carries_the_two_filters_that_named_states():
+def test_the_migration_carries_the_filter_that_named_states():
     block = UI_JS.split("function migrateMarks()")[1].split("migrateMarks();")[0]
-    # The daily-page checkbox bar...
+    # The daily-page checkbox bar names states, so it moves with them.
     assert 'lsGet("radar:filter:marks", null)' in block
     assert 'state !== "interesting"' in block
-    # ...and the queue's retired three-way 忽略 select.
-    assert 'localStorage.getItem("radar:filter:queue-ignored")' in block
-    assert 'lsSet("radar:filter:marks", ["ignore"]);' in block
-    assert 'lsSet("radar:filter:marks", ["to-read", "read", "none"]);' in block
+    # The queue's retired 忽略 select is dropped rather than carried: it was
+    # a queue-scoped preference, and promoting it to the global mark filter
+    # is what emptied the whole site on 2026-09-26.
+    assert 'localStorage.removeItem("radar:filter:queue-ignored");' in block
+    assert 'lsSet("radar:filter:marks", ["ignore"]);' not in block
 
 
 def test_a_stale_filter_value_cannot_hide_every_read_paper():
