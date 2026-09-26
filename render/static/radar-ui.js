@@ -271,21 +271,39 @@
     var gradeBar = document.getElementById("rui-priority-filter");
     // The reading list shows exactly what the user marked; the daily-page
     // priority / mark filters must not hide anything there.
+    var cards = document.querySelectorAll(".paper");
     if (document.querySelector("main[data-rui-no-filter]")) {
-      document.querySelectorAll(".paper").forEach(function (card) {
+      cards.forEach(function (card) {
         card.dataset.hidden = "0";
       });
+      announceFiltersApplied(cards.length, 0);
       return;
     }
-    document.querySelectorAll(".paper").forEach(function (card) {
+    var hidden = 0;
+    cards.forEach(function (card) {
       var d = card.dataset.direction || "";
       var pr = card.dataset.priority || "Low";
       var idk = card.dataset.identityKey || "";
       var dirOk = dirFilter === "all" || dirFilter === d;
       var prOk = !gradeBar || prios.indexOf(pr) >= 0;
       var mkOk = visible(idk ? markRecord(idk) : null);
-      card.dataset.hidden = dirOk && prOk && mkOk ? "0" : "1";
+      var show = dirOk && prOk && mkOk;
+      card.dataset.hidden = show ? "0" : "1";
+      if (!show) hidden += 1;
     });
+    announceFiltersApplied(cards.length, hidden);
+  }
+
+  // A page that renders its own count has to be told what the filters then
+  // did to it, or it goes on claiming "1 paper on this page" over an empty
+  // grid — which is what a day holding a single Low paper looked like.
+  // Emitted from here rather than from each control, so the direction tabs,
+  // the priority bar, the mark bar, the tag chips and every mark write all
+  // report through one path.
+  function announceFiltersApplied(total, hidden) {
+    document.dispatchEvent(new CustomEvent("radar:filters-applied", {
+      detail: { total: total, hidden: hidden, shown: total - hidden }
+    }));
   }
 
   // ---- direction tabs (ported from the old inline build_pages JS) ----

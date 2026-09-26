@@ -192,6 +192,25 @@
     });
   }
 
+  // The filters above the grid are applied after the cards are built, so the
+  // count printed at render time is a claim the page cannot keep on its own.
+  var baseStatus = "";
+  var cardsOnPage = 0;   // NOT `pageTotal`: that name is the "共 N 页" element
+
+  function describeFilters(hidden) {
+    if (!cardsOnPage || !hidden) return "";
+    if (hidden >= cardsOnPage) {
+      return " · 本页 " + hidden + " 篇都被上方筛选隐藏了";
+    }
+    return " · 已按筛选隐藏 " + hidden + " 篇";
+  }
+
+  document.addEventListener("radar:filters-applied", function (event) {
+    if (!baseStatus) return;
+    var detail = event.detail || {};
+    status.textContent = baseStatus + describeFilters(detail.hidden || 0);
+  });
+
   function showPage(records, targetAnchor) {
     var fragment = document.createDocumentFragment();
     records.slice(0, PAGE_SIZE).forEach(function (record) {
@@ -199,10 +218,15 @@
     });
     results.replaceChildren(fragment);
     results.setAttribute("aria-busy", "false");
-    hydrate();
+    // The base line has to exist before hydrate() runs the filters, or the
+    // first render dispatches into a listener with nothing to append to and
+    // the note only appears once a filter is touched.
     var count = pageCount();
-    status.textContent = "全天 " + totalPapers() + " 篇 · 第 " +
-      currentPage + " / " + count + " 页 · 当前页 " + records.length + " 篇";
+    cardsOnPage = records.length;
+    baseStatus = "全天 " + totalPapers() + " 篇 · 第 " +
+      currentPage + " / " + count + " 页 · 当前页 " + cardsOnPage + " 篇";
+    status.textContent = baseStatus;
+    hydrate();
     renderPagination(false);
     focusTarget(targetAnchor);
   }

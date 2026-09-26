@@ -2202,6 +2202,7 @@ def _render_random_reading_page(days: list[dict], directions_cfg: dict) -> str:
 <main id="main-content" class="container">
 <div class="eyebrow">Serendipity</div>
 <h1>随机阅读</h1>
+{_marks_filter_bar()}
 <p class="page-intro">雷达只会找到像你自己工作的论文。当天出现 High 论文，说明它所在的期刊正在你关心的邻域出版——而那本期刊当月绝大多数论文都匹配不上任何关键词，因此永远不会出现在雷达里。这里每天从这些期刊随机抽当月论文，用同一套评分器评价并记录：<b>专业刊抽 5 篇，月发文超过 200 篇的大刊只抽 2 篇</b>——实测大刊抽到的论文无一及格，而唯一一篇 High 来自月发 72 篇的专业刊。<b>它们不是雷达推荐</b>：不进语料库、不进队列、不同步 Zotero，评成 Low 很正常，读它们本来就是为了跳出关键词。</p>
 {"".join(sections) if sections else empty}
 </main>
