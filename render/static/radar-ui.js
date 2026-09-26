@@ -397,6 +397,35 @@
     document.dispatchEvent(new CustomEvent("radar:filter-changed"));
   }
 
+  // Turn every filter off and show whatever the page is holding.
+  //
+  // A day whose papers are all Low renders an empty grid under the default
+  // filter (High/Medium/Unscored). Saying so is not enough — the reader came
+  // to see the papers — so this is what the page's "显示全部" offers. It
+  // resets rather than special-cases: silently overriding a filter the
+  // reader chose would be worse than an empty page.
+  function clearFilters() {
+    var allTab = document.querySelector('.tab[data-filter="all"]');
+    if (allTab) {
+      tabs.forEach(function (tab) { tab.classList.remove("active"); });
+      allTab.classList.add("active");
+    }
+    dirFilter = "all";
+    // "Unscored" has no checkbox but cards can carry it.
+    var prios = ["Unscored"];
+    prioCbs.forEach(function (cb) {
+      cb.checked = true;
+      if (prios.indexOf(cb.value) < 0) prios.push(cb.value);
+    });
+    if (prioCbs.length) lsSet("radar:filter:priority", prios);
+    markCbs.forEach(function (cb) { cb.checked = true; });
+    if (markCbs.length) lsSet("radar:filter:marks", MARKS_DEFAULT.slice());
+    setTagFilter([]);
+    renderTagFilter();
+    applyFilters();
+    announceFilterChange();
+  }
+
   function cardMeta(card) {
     return {
       title: card.dataset.title || "",
@@ -837,6 +866,7 @@
 
   window.RadarUI = {
     hydrate: hydrateCards,
+    clearFilters: clearFilters,
     markRecord: markRecord,
     markState: markState,
     markTags: markTags,
