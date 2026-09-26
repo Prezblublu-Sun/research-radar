@@ -22,11 +22,12 @@ import sys
 REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
-from render import build_pages  # noqa: E402
+from render import build_pages, corpus_view  # noqa: E402
 
 STATIC = REPO_ROOT / "render" / "static"
 UI_JS = (STATIC / "radar-ui.js").read_text(encoding="utf-8")
 DAY_JS = (STATIC / "radar-day.js").read_text(encoding="utf-8")
+QUEUE_JS = (STATIC / "radar-queue.js").read_text(encoding="utf-8")
 
 
 def test_apply_filters_reports_how_much_it_hid():
@@ -74,17 +75,50 @@ def test_the_card_counter_does_not_shadow_the_page_total_element():
 
 def test_an_all_hidden_page_offers_a_way_to_see_its_papers():
     # Saying "1 paper, all hidden" over an empty box is not a fix: the reader
-    # opened the day to read it. 2026-09-25 published one paper and it was
-    # Low, so the default filter left nothing on screen.
-    assert 'var blockedNote = element("div", "empty day-blocked");' in DAY_JS
-    assert '"显示全部"' in DAY_JS
-    assert "window.RadarUI.clearFilters();" in DAY_JS
-    handler = DAY_JS.split('document.addEventListener("radar:filters-applied"')[1]
-    assert "var blocked = cardsOnPage > 0 && hidden >= cardsOnPage;" in handler
-    assert "blockedNote.hidden = !blocked;" in handler
-    # It names the levels being withheld, so the reader knows what they get.
-    assert "function hiddenPriorities()" in DAY_JS
-    assert '"（等级：" + levels.join("、") + "）"' in DAY_JS
+    # opened the day to read it. The notice is drawn by the bundle that owns
+    # the filters, so every page with a filter bar gets it — it was day-page
+    # code first, and random-reading, with the same bar, sat empty.
+    block = UI_JS.split("function renderBlockedNotice(total, hidden)")[1].split("function announceFiltersApplied")[0]
+    assert 'document.querySelectorAll("#rui-priority-filter, #rui-marks-filter")' in block
+    assert "if (!bars.length) return;" in block          # no bar, no filter, no notice
+    assert "var blocked = total > 0 && hidden >= total;" in block
+    assert '"显示全部"' in block
+    assert 'reset.addEventListener("click", clearFilters);' in block
+    assert "renderBlockedNotice(cards.length, hidden);" in UI_JS
+    # The day page keeps only its status-line suffix.
+    assert "day-blocked" not in DAY_JS
+
+
+def test_the_notice_names_the_filter_that_did_it_not_a_guess():
+    # The first notice listed the hidden cards' priorities, so a page emptied
+    # by the mark filter said "（等级：High、Medium、Low、Exclude）".
+    assert "hiddenPriorities" not in DAY_JS
+    block = UI_JS.split("function activeFilters()")[1].split("function clearFilters")[0]
+    assert '"等级未勾选 "' in block
+    assert '"标记未勾选 "' in block
+    assert '"只看标签 "' in block
+    # Under the same gating applyFilters uses, so it never names a filter the
+    # page is not applying.
+    assert 'document.getElementById("rui-priority-filter")' in block
+    assert 'document.getElementById("rui-marks-filter")' in block
+    assert "activeFilters: activeFilters," in UI_JS
+
+
+def test_a_selected_tag_nobody_carries_still_has_a_chip():
+    # Chips were built from the tags in use, so a selected tag removed from
+    # its last paper vanished from the bar while still hiding every card.
+    block = UI_JS.split("function renderTagFilter()")[1].split("function announceFilterChange")[0]
+    assert "active.forEach(function (tag) {" in block
+    assert "known.push({ tag: tag, count: 0 });" in block
+    assert block.index("var active = tagFilter();") < block.index("if (!known.length) return;")
+
+
+def test_an_empty_queue_gets_the_same_way_out():
+    assert "showBlocked(!total && filtersMarks());" in QUEUE_JS
+    block = QUEUE_JS.split("function showBlocked(blocked)")[1]
+    assert '"当前筛选下没有论文"' in block
+    assert "window.RadarUI.clearFilters();" in block
+    assert "api.activeFilters()" in block
 
 
 def test_clearing_the_filters_resets_every_one_of_them():
@@ -102,9 +136,57 @@ def test_clearing_the_filters_resets_every_one_of_them():
 
 def test_clearing_filters_is_offered_never_imposed():
     # Silently overriding a filter the reader chose would be worse than an
-    # empty page; the reset only ever runs from the button.
+    # empty page; the reset only ever runs from a button.
     assert UI_JS.count("clearFilters()") == 1            # the definition only
-    assert DAY_JS.count("clearFilters()") == 1           # the click handler
+    assert UI_JS.count('addEventListener("click", clearFilters)') == 1
+    assert DAY_JS.count("clearFilters") == 0
+    assert QUEUE_JS.count("clearFilters()") == 1         # inside its click handler
+    handler = QUEUE_JS.split('reset.addEventListener("click"')[1].split("});")[0]
+    assert "clearFilters()" in handler
+
+
+def test_a_filter_is_only_applied_where_its_control_is_shown():
+    # The workbench has neither bar. A stored "only 忽略" hid all 777 of its
+    # cards — headings and counts still claiming they were there — with no
+    # checkbox on the page to undo it. Reported 2026-09-26 as "没变化".
+    block = UI_JS.split("function applyFilters()")[1].split("function announceFiltersApplied")[0]
+    assert 'var gradeBar = document.getElementById("rui-priority-filter");' in block
+    assert 'var markBar = document.getElementById("rui-marks-filter");' in block
+    assert "var prOk = !gradeBar || prios.indexOf(pr) >= 0;" in block
+    assert "var mkOk = !markBar || visible(idk ? markRecord(idk) : null);" in block
+
+
+def test_the_pages_that_filter_are_exactly_the_pages_that_offer_the_control():
+    filtered = {
+        "queue": build_pages._render_queue_page(),
+        "random": build_pages._render_random_reading_page([], {}),
+    }
+    for name, html in filtered.items():
+        assert 'id="rui-marks-filter"' in html, name
+    # The workbench renders cards and offers neither bar, so under the rule
+    # above it filters nothing.
+    workbench = build_pages._render_workbench(
+        [], {}, {}, corpus_view.CorpusStats(0, 0, 0, {}), {})
+    assert 'id="rui-marks-filter"' not in workbench
+    assert 'id="rui-priority-filter"' not in workbench
+
+
+def test_the_queue_preference_is_not_promoted_to_a_global_filter():
+    # The first cut of the ADR-0034 migration turned the queue's own
+    # "只看已忽略" into the global mark filter, which is what produced the
+    # ["ignore"] that emptied the site.
+    block = UI_JS.split("function migrateMarks()")[1].split("migrateMarks();")[0]
+    assert 'lsSet("radar:filter:marks", ["ignore"]);' not in block
+    assert 'lsSet("radar:filter:marks", ["to-read", "read", "none"]);' not in block
+    assert 'localStorage.removeItem("radar:filter:queue-ignored");' in block
+
+
+def test_a_browser_that_already_ran_the_bad_migration_is_repaired():
+    block = UI_JS.split("function migrateMarks()")[1].split("migrateMarks();")[0]
+    assert "var SCHEMA_NOW = 3;" in UI_JS
+    assert "if (done === 2) {" in block
+    assert 'stored.length === 1 && stored[0] === "ignore"' in block
+    assert 'lsSet("radar:filter:marks", MARKS_DEFAULT.slice());' in block
 
 
 def test_the_random_reading_page_shows_the_filter_that_applies_to_it():

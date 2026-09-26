@@ -94,7 +94,7 @@
   // silently reverting work done elsewhere. The server-side validator maps
   // the retired state too, so a tab that never reloads still syncs correctly.
   var SCHEMA_KEY = "radar:marks-schema";
-  var SCHEMA_NOW = 2;
+  var SCHEMA_NOW = 3;
 
   function migrateMarks() {
     var done = 0;
@@ -133,19 +133,29 @@
       if (marks.indexOf("read") < 0) marks.push("read");
       lsSet("radar:filter:marks", marks);
     }
-    // The queue's three-way 忽略 select is now part of the same filter.
-    var legacy = null;
+    // The queue's retired three-way 忽略 select is dropped, not carried
+    // over. It was a queue-scoped preference and the first cut of this
+    // migration promoted it to the *global* mark filter — so a reader who
+    // had once picked "只看已忽略" got a site that showed nothing anywhere.
+    // Losing one page's preference is the cheaper mistake.
     try {
-      legacy = localStorage.getItem("radar:filter:queue-ignored");
       localStorage.removeItem("radar:filter:queue-ignored");
       localStorage.removeItem("radar:filter:queue-hide-ignored");
     } catch (error) {
-      legacy = null;
+      /* private mode — nothing to clean up */
     }
-    if (legacy === "only") {
-      lsSet("radar:filter:marks", ["ignore"]);
-    } else if (legacy === "exclude") {
-      lsSet("radar:filter:marks", ["to-read", "read", "none"]);
+
+    // Repair what schema 2 did to browsers that already ran it. Exactly
+    // ["ignore"] as a *global* filter is not something a reader chooses —
+    // it would mean unticking 待阅读, 已阅读 and 未标记 while keeping 忽略 —
+    // it is what the queue-preference promotion above used to write. The
+    // cost of being wrong is one re-tick; the cost of leaving it is a site
+    // that shows nothing.
+    if (done === 2) {
+      var stored = lsGet("radar:filter:marks", null);
+      if (Array.isArray(stored) && stored.length === 1 && stored[0] === "ignore") {
+        lsSet("radar:filter:marks", MARKS_DEFAULT.slice());
+      }
     }
 
     try {
@@ -265,10 +275,13 @@
   function applyFilters() {
     var prios = priorityFilter();
     var visible = markFilterFn();
-    // The priority bar only exists on the daily pages. The queue picks its
-    // own priority and has no such control, so honouring the stored value
-    // there would hide cards with nothing on screen to explain it.
+    // A filter is only applied on a page that shows its control. The
+    // workbench has neither bar: a stored "only 忽略" hid all 777 of its
+    // cards, headings and counts still claiming they were there, and no
+    // checkbox anywhere on the page to undo it (reported 2026-09-26).
+    // Gating on the control makes that impossible to reintroduce.
     var gradeBar = document.getElementById("rui-priority-filter");
+    var markBar = document.getElementById("rui-marks-filter");
     // The reading list shows exactly what the user marked; the daily-page
     // priority / mark filters must not hide anything there.
     var cards = document.querySelectorAll(".paper");
@@ -286,12 +299,42 @@
       var idk = card.dataset.identityKey || "";
       var dirOk = dirFilter === "all" || dirFilter === d;
       var prOk = !gradeBar || prios.indexOf(pr) >= 0;
-      var mkOk = visible(idk ? markRecord(idk) : null);
+      var mkOk = !markBar || visible(idk ? markRecord(idk) : null);
       var show = dirOk && prOk && mkOk;
       card.dataset.hidden = show ? "0" : "1";
       if (!show) hidden += 1;
     });
     announceFiltersApplied(cards.length, hidden);
+    renderBlockedNotice(cards.length, hidden);
+  }
+
+  // When the filters hide every card, say which filters and offer the reset,
+  // right under the bar that did it. Lives here rather than in each page's
+  // script so that any page carrying a filter bar gets it — it was day-page
+  // code at first, and the random-reading page, with the same bar, sat empty
+  // without a word.
+  var blockedNotice = null;
+  function renderBlockedNotice(total, hidden) {
+    var bars = document.querySelectorAll("#rui-priority-filter, #rui-marks-filter");
+    if (!bars.length) return;
+    var blocked = total > 0 && hidden >= total;
+    if (!blockedNotice) {
+      if (!blocked) return;
+      blockedNotice = node("div", "empty day-blocked");
+      blockedNotice.appendChild(node("p", "", ""));
+      var reset = node("button", "queue-page-button", "显示全部");
+      reset.type = "button";
+      reset.addEventListener("click", clearFilters);
+      blockedNotice.appendChild(reset);
+      var anchor = bars[bars.length - 1];
+      anchor.parentNode.insertBefore(blockedNotice, anchor.nextSibling);
+    }
+    blockedNotice.hidden = !blocked;
+    if (!blocked) return;
+    var active = activeFilters();
+    blockedNotice.firstChild.textContent = "本页 " + hidden +
+      " 篇论文都被上方的筛选隐藏了" +
+      (active.length ? "：" + active.join("；") : "") + "。";
   }
 
   // A page that renders its own count has to be told what the filters then
@@ -369,9 +412,17 @@
     }
     host.textContent = "";
     var known = allTags();
-    if (!known.length) return;  // nothing tagged yet: no row at all
-    host.appendChild(node("b", "", "标签："));
     var active = tagFilter();
+    // A selected tag that no paper carries any more still filters. Chips were
+    // built from the tags in use only, so it vanished from the bar while
+    // still hiding every card — a filter nobody could see or untick. Keep it
+    // on screen, with its real count of zero, until it is clicked off.
+    active.forEach(function (tag) {
+      var present = known.some(function (entry) { return entry.tag === tag; });
+      if (!present) known.push({ tag: tag, count: 0 });
+    });
+    if (!known.length) return;  // nothing tagged and nothing selected
+    host.appendChild(node("b", "", "标签："));
     known.forEach(function (entry) {
       var chip = node("button", "rui-tagf-chip", entry.tag + " " + entry.count);
       chip.type = "button";
@@ -395,6 +446,34 @@
   // it has to reload the view. One event, so every surface stays in step.
   function announceFilterChange() {
     document.dispatchEvent(new CustomEvent("radar:filter-changed"));
+  }
+
+  // Plain-language list of the filters currently narrowing this page, under
+  // the same gating applyFilters uses — so it never names a filter the page
+  // is not applying. The empty-page notes print this instead of guessing:
+  // the first version listed the hidden cards' priority levels, which blamed
+  // "等级：Low" when the mark filter was what had emptied the page.
+  function activeFilters() {
+    var out = [];
+    if (dirFilter !== "all") {
+      var tab = document.querySelector(".tab.active");
+      out.push("方向 " + (tab ? tab.textContent.trim() : dirFilter));
+    }
+    if (document.getElementById("rui-priority-filter")) {
+      var offPriority = [];
+      prioCbs.forEach(function (cb) { if (!cb.checked) offPriority.push(cb.value); });
+      if (offPriority.length) out.push("等级未勾选 " + offPriority.join("、"));
+    }
+    if (document.getElementById("rui-marks-filter")) {
+      var offMarks = [];
+      markCbs.forEach(function (cb) {
+        if (!cb.checked) offMarks.push(STATE_LABELS[cb.value] || cb.value);
+      });
+      if (offMarks.length) out.push("标记未勾选 " + offMarks.join("、"));
+      var tags = tagFilter();
+      if (tags.length) out.push("只看标签 " + tags.join("、"));
+    }
+    return out;
   }
 
   // Turn every filter off and show whatever the page is holding.
@@ -867,6 +946,7 @@
   window.RadarUI = {
     hydrate: hydrateCards,
     clearFilters: clearFilters,
+    activeFilters: activeFilters,
     markRecord: markRecord,
     markState: markState,
     markTags: markTags,
