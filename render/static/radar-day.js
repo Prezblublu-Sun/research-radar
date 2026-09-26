@@ -205,10 +205,44 @@
     return " · 已按筛选隐藏 " + hidden + " 篇";
   }
 
+  // Shown in place of the grid when the filters hide everything on the page,
+  // because a reader who opened a day to read it is not helped by an empty
+  // box and a sentence explaining the box.
+  var blockedNote = element("div", "empty day-blocked");
+  var blockedText = element("p", "", "");
+  var blockedButton = element("button", "queue-page-button", "显示全部");
+  blockedButton.type = "button";
+  blockedButton.addEventListener("click", function () {
+    if (window.RadarUI && window.RadarUI.clearFilters) {
+      window.RadarUI.clearFilters();
+    }
+  });
+  blockedNote.appendChild(blockedText);
+  blockedNote.appendChild(blockedButton);
+  blockedNote.hidden = true;
+  results.parentNode.insertBefore(blockedNote, results);
+
+  function hiddenPriorities() {
+    var levels = [];
+    results.querySelectorAll('.paper[data-hidden="1"]').forEach(function (card) {
+      var level = card.dataset.priority || "Low";
+      if (levels.indexOf(level) < 0) levels.push(level);
+    });
+    return levels;
+  }
+
   document.addEventListener("radar:filters-applied", function (event) {
     if (!baseStatus) return;
     var detail = event.detail || {};
-    status.textContent = baseStatus + describeFilters(detail.hidden || 0);
+    var hidden = detail.hidden || 0;
+    status.textContent = baseStatus + describeFilters(hidden);
+    var blocked = cardsOnPage > 0 && hidden >= cardsOnPage;
+    blockedNote.hidden = !blocked;
+    if (blocked) {
+      var levels = hiddenPriorities();
+      blockedText.textContent = "本页 " + hidden + " 篇论文都被上方的筛选隐藏了" +
+        (levels.length ? "（等级：" + levels.join("、") + "）" : "") + "。";
+    }
   });
 
   function showPage(records, targetAnchor) {

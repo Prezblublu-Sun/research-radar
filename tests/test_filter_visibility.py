@@ -72,6 +72,41 @@ def test_the_card_counter_does_not_shadow_the_page_total_element():
     assert "var cardsOnPage = 0;" in DAY_JS
 
 
+def test_an_all_hidden_page_offers_a_way_to_see_its_papers():
+    # Saying "1 paper, all hidden" over an empty box is not a fix: the reader
+    # opened the day to read it. 2026-09-25 published one paper and it was
+    # Low, so the default filter left nothing on screen.
+    assert 'var blockedNote = element("div", "empty day-blocked");' in DAY_JS
+    assert '"显示全部"' in DAY_JS
+    assert "window.RadarUI.clearFilters();" in DAY_JS
+    handler = DAY_JS.split('document.addEventListener("radar:filters-applied"')[1]
+    assert "var blocked = cardsOnPage > 0 && hidden >= cardsOnPage;" in handler
+    assert "blockedNote.hidden = !blocked;" in handler
+    # It names the levels being withheld, so the reader knows what they get.
+    assert "function hiddenPriorities()" in DAY_JS
+    assert '"（等级：" + levels.join("、") + "）"' in DAY_JS
+
+
+def test_clearing_the_filters_resets_every_one_of_them():
+    block = UI_JS.split("function clearFilters()")[1].split("function mergeMeta")[0]
+    assert 'dirFilter = "all";' in block                 # direction tabs
+    assert 'lsSet("radar:filter:priority", prios);' in block
+    assert 'lsSet("radar:filter:marks", MARKS_DEFAULT.slice());' in block
+    assert "setTagFilter([]);" in block                  # and the tag chips
+    assert "applyFilters();" in block
+    # "Unscored" has no checkbox but cards carry it, so it has to be added
+    # explicitly or a rescored-pending paper stays invisible.
+    assert 'var prios = ["Unscored"];' in block
+    assert "clearFilters: clearFilters," in UI_JS
+
+
+def test_clearing_filters_is_offered_never_imposed():
+    # Silently overriding a filter the reader chose would be worse than an
+    # empty page; the reset only ever runs from the button.
+    assert UI_JS.count("clearFilters()") == 1            # the definition only
+    assert DAY_JS.count("clearFilters()") == 1           # the click handler
+
+
 def test_the_random_reading_page_shows_the_filter_that_applies_to_it():
     html = build_pages._render_random_reading_page([], {})
     assert 'id="rui-marks-filter"' in html
