@@ -94,7 +94,7 @@
   // silently reverting work done elsewhere. The server-side validator maps
   // the retired state too, so a tab that never reloads still syncs correctly.
   var SCHEMA_KEY = "radar:marks-schema";
-  var SCHEMA_NOW = 2;
+  var SCHEMA_NOW = 3;
 
   function migrateMarks() {
     var done = 0;
@@ -133,19 +133,29 @@
       if (marks.indexOf("read") < 0) marks.push("read");
       lsSet("radar:filter:marks", marks);
     }
-    // The queue's three-way 忽略 select is now part of the same filter.
-    var legacy = null;
+    // The queue's retired three-way 忽略 select is dropped, not carried
+    // over. It was a queue-scoped preference and the first cut of this
+    // migration promoted it to the *global* mark filter — so a reader who
+    // had once picked "只看已忽略" got a site that showed nothing anywhere.
+    // Losing one page's preference is the cheaper mistake.
     try {
-      legacy = localStorage.getItem("radar:filter:queue-ignored");
       localStorage.removeItem("radar:filter:queue-ignored");
       localStorage.removeItem("radar:filter:queue-hide-ignored");
     } catch (error) {
-      legacy = null;
+      /* private mode — nothing to clean up */
     }
-    if (legacy === "only") {
-      lsSet("radar:filter:marks", ["ignore"]);
-    } else if (legacy === "exclude") {
-      lsSet("radar:filter:marks", ["to-read", "read", "none"]);
+
+    // Repair what schema 2 did to browsers that already ran it. Exactly
+    // ["ignore"] as a *global* filter is not something a reader chooses —
+    // it would mean unticking 待阅读, 已阅读 and 未标记 while keeping 忽略 —
+    // it is what the queue-preference promotion above used to write. The
+    // cost of being wrong is one re-tick; the cost of leaving it is a site
+    // that shows nothing.
+    if (done === 2) {
+      var stored = lsGet("radar:filter:marks", null);
+      if (Array.isArray(stored) && stored.length === 1 && stored[0] === "ignore") {
+        lsSet("radar:filter:marks", MARKS_DEFAULT.slice());
+      }
     }
 
     try {
@@ -265,10 +275,13 @@
   function applyFilters() {
     var prios = priorityFilter();
     var visible = markFilterFn();
-    // The priority bar only exists on the daily pages. The queue picks its
-    // own priority and has no such control, so honouring the stored value
-    // there would hide cards with nothing on screen to explain it.
+    // A filter is only applied on a page that shows its control. The
+    // workbench has neither bar: a stored "only 忽略" hid all 777 of its
+    // cards, headings and counts still claiming they were there, and no
+    // checkbox anywhere on the page to undo it (reported 2026-09-26).
+    // Gating on the control makes that impossible to reintroduce.
     var gradeBar = document.getElementById("rui-priority-filter");
+    var markBar = document.getElementById("rui-marks-filter");
     // The reading list shows exactly what the user marked; the daily-page
     // priority / mark filters must not hide anything there.
     var cards = document.querySelectorAll(".paper");
@@ -286,7 +299,7 @@
       var idk = card.dataset.identityKey || "";
       var dirOk = dirFilter === "all" || dirFilter === d;
       var prOk = !gradeBar || prios.indexOf(pr) >= 0;
-      var mkOk = visible(idk ? markRecord(idk) : null);
+      var mkOk = !markBar || visible(idk ? markRecord(idk) : null);
       var show = dirOk && prOk && mkOk;
       card.dataset.hidden = show ? "0" : "1";
       if (!show) hidden += 1;
