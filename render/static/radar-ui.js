@@ -305,6 +305,36 @@
       if (!show) hidden += 1;
     });
     announceFiltersApplied(cards.length, hidden);
+    renderBlockedNotice(cards.length, hidden);
+  }
+
+  // When the filters hide every card, say which filters and offer the reset,
+  // right under the bar that did it. Lives here rather than in each page's
+  // script so that any page carrying a filter bar gets it — it was day-page
+  // code at first, and the random-reading page, with the same bar, sat empty
+  // without a word.
+  var blockedNotice = null;
+  function renderBlockedNotice(total, hidden) {
+    var bars = document.querySelectorAll("#rui-priority-filter, #rui-marks-filter");
+    if (!bars.length) return;
+    var blocked = total > 0 && hidden >= total;
+    if (!blockedNotice) {
+      if (!blocked) return;
+      blockedNotice = node("div", "empty day-blocked");
+      blockedNotice.appendChild(node("p", "", ""));
+      var reset = node("button", "queue-page-button", "显示全部");
+      reset.type = "button";
+      reset.addEventListener("click", clearFilters);
+      blockedNotice.appendChild(reset);
+      var anchor = bars[bars.length - 1];
+      anchor.parentNode.insertBefore(blockedNotice, anchor.nextSibling);
+    }
+    blockedNotice.hidden = !blocked;
+    if (!blocked) return;
+    var active = activeFilters();
+    blockedNotice.firstChild.textContent = "本页 " + hidden +
+      " 篇论文都被上方的筛选隐藏了" +
+      (active.length ? "：" + active.join("；") : "") + "。";
   }
 
   // A page that renders its own count has to be told what the filters then
@@ -382,9 +412,17 @@
     }
     host.textContent = "";
     var known = allTags();
-    if (!known.length) return;  // nothing tagged yet: no row at all
-    host.appendChild(node("b", "", "标签："));
     var active = tagFilter();
+    // A selected tag that no paper carries any more still filters. Chips were
+    // built from the tags in use only, so it vanished from the bar while
+    // still hiding every card — a filter nobody could see or untick. Keep it
+    // on screen, with its real count of zero, until it is clicked off.
+    active.forEach(function (tag) {
+      var present = known.some(function (entry) { return entry.tag === tag; });
+      if (!present) known.push({ tag: tag, count: 0 });
+    });
+    if (!known.length) return;  // nothing tagged and nothing selected
+    host.appendChild(node("b", "", "标签："));
     known.forEach(function (entry) {
       var chip = node("button", "rui-tagf-chip", entry.tag + " " + entry.count);
       chip.type = "button";
@@ -408,6 +446,34 @@
   // it has to reload the view. One event, so every surface stays in step.
   function announceFilterChange() {
     document.dispatchEvent(new CustomEvent("radar:filter-changed"));
+  }
+
+  // Plain-language list of the filters currently narrowing this page, under
+  // the same gating applyFilters uses — so it never names a filter the page
+  // is not applying. The empty-page notes print this instead of guessing:
+  // the first version listed the hidden cards' priority levels, which blamed
+  // "等级：Low" when the mark filter was what had emptied the page.
+  function activeFilters() {
+    var out = [];
+    if (dirFilter !== "all") {
+      var tab = document.querySelector(".tab.active");
+      out.push("方向 " + (tab ? tab.textContent.trim() : dirFilter));
+    }
+    if (document.getElementById("rui-priority-filter")) {
+      var offPriority = [];
+      prioCbs.forEach(function (cb) { if (!cb.checked) offPriority.push(cb.value); });
+      if (offPriority.length) out.push("等级未勾选 " + offPriority.join("、"));
+    }
+    if (document.getElementById("rui-marks-filter")) {
+      var offMarks = [];
+      markCbs.forEach(function (cb) {
+        if (!cb.checked) offMarks.push(STATE_LABELS[cb.value] || cb.value);
+      });
+      if (offMarks.length) out.push("标记未勾选 " + offMarks.join("、"));
+      var tags = tagFilter();
+      if (tags.length) out.push("只看标签 " + tags.join("、"));
+    }
+    return out;
   }
 
   // Turn every filter off and show whatever the page is holding.
@@ -880,6 +946,7 @@
   window.RadarUI = {
     hydrate: hydrateCards,
     clearFilters: clearFilters,
+    activeFilters: activeFilters,
     markRecord: markRecord,
     markState: markState,
     markTags: markTags,
