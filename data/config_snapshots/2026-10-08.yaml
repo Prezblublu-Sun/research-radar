@@ -1,0 +1,240 @@
+version: 1
+
+directions:
+
+  ai_bioprinting:
+    display_name: "AI for Bioprinting"
+    color: "#7F77DD"
+    sources:
+      arxiv_categories: ["cs.LG", "cs.CV", "cs.RO", "q-bio.TO"]
+      openalex_concepts: ["C2779718196", "C49892992"]  # 3D bioprinting, Tissue engineering
+      openalex_keywords: ["bioprinting", "biofabrication", "bioink"]
+      pubmed_terms: ["3D bioprinting", "biofabrication", "bioink"]
+    strong_keywords:
+      - "3D bioprinting"
+      - "biofabrication"
+      - "bioink"
+      - "printability"
+      - "extrusion bioprinting"
+      - "cell-laden hydrogel"
+      - "closed-loop bioprinting"
+      - "digital twin"
+      - "self-driving laboratory"
+    must_pair_with:
+      - ["AI", "bioink"]
+      - ["AI", "bioprinting"]
+      - ["machine learning", "bioink"]
+      - ["digital twin", "bioprinting"]
+      - ["digital twin", "biomaterials"]
+    tag_namespace: "AI_Bioprinting"
+    subtopics:
+      PrePrinting: ["bioink design", "printability prediction", "rheology", "process optimization"]
+      InPrinting: ["online monitoring", "computer vision", "defect detection", "closed-loop control"]
+      PostPrinting: ["cell viability", "tissue maturation", "scaffold-cell interaction"]
+      DigitalTwin: ["digital twin", "self-driving laboratory", "autonomous experimentation"]
+    llm_prompt_focus: |
+      For each paper, evaluate:
+      1. Does it embed AI into a specific bioprinting workflow stage (pre/in/post)?
+      2. Is there experimental validation, not just model training?
+      3. Does it advance from observation to autonomous decision?
+      Output the workflow stage as a tag.
+
+  hip_implant:
+    display_name: "Hip Implant & Femoral Stem"
+    color: "#1D9E75"
+    sources:
+      arxiv_categories: ["physics.med-ph", "q-bio.TO"]
+      openalex_concepts:
+        - "C3020736514"   # Hip arthroplasty (current narrow concept)
+        - "C3019025420"   # Total hip arthroplasty (parent concept, broader)
+        - "C2778985418"   # Stress shielding (specific subtopic)
+      openalex_keywords: ["femoral stem", "hip implant", "total hip arthroplasty", "stress shielding", "micromotion"]
+      pubmed_terms: ["femoral stem design", "hip arthroplasty stem", "stress shielding"]
+    strong_keywords:
+      - "femoral stem"
+      - "short stem"
+      - "hip implant"
+      - "total hip arthroplasty"
+      - "stress shielding"
+      - "micromotion"
+      - "primary stability"
+      - "bone-implant interface"
+      - "press-fit"
+      - "patient-specific implant"
+      - "neck-sparing"
+    must_pair_with:
+      - ["finite element", "femoral stem"]
+      - ["finite element", "hip implant"]
+      - ["stress shielding", "femoral"]
+      - ["micromotion", "stem"]
+    tag_namespace: "Hip_Implant"
+    subtopics:
+      StressShielding: ["stress shielding", "load transfer", "Gruen zones", "strain energy density", "bone remodeling"]
+      Micromotion: ["micromotion", "primary stability", "press-fit", "rotational stability"]
+      Geometry: ["short stem", "neck-sparing", "patient-specific", "custom"]
+      Porous: ["porous stem", "lattice stem", "TPMS stem"]
+    llm_prompt_focus: |
+      For each paper, evaluate:
+      1. Does it quantify proximal femur stress/strain/SED in Gruen zones?
+      2. Does it report micromotion values with contact/friction modeling?
+      3. Is it patient-specific or population-based?
+      4. Does it compare intact vs implanted femur?
+      Flag whether it provides usable boundary conditions for FE work.
+
+  fea_surrogate:
+    display_name: "FEA & Surrogate Modelling"
+    color: "#D85A30"
+    sources:
+      arxiv_categories: ["cs.LG", "cs.CE", "stat.ML", "math.OC", "cs.NA", "math.NA", "physics.med-ph"]
+      openalex_concepts:
+        - "C135628077"   # Finite element method
+        - "C170700871"   # Biomechanics
+      openalex_keywords: ["finite element surrogate", "physics-informed neural network", "active learning", "Bayesian optimization", "uncertainty quantification"]
+      pubmed_terms: ["finite element validation", "subject-specific finite element"]
+    strong_keywords:
+      - "finite element surrogate"
+      - "physics-informed neural network"
+      - "PINN"
+      - "neural operator"
+      - "DeepONet"
+      - "Fourier neural operator"
+      - "active learning"
+      - "Bayesian optimization"
+      - "uncertainty quantification"
+      - "conformal prediction"
+      - "surrogate-assisted optimization"
+      - "reduced-order model"
+      - "Gaussian process"
+      - "deep ensembles"
+    must_pair_with:
+      - ["surrogate", "finite element"]
+      - ["surrogate", "biomechanics"]
+      - ["surrogate", "implant"]
+      - ["PINN", "mechanics"]
+      - ["active learning", "simulation"]
+    tag_namespace: "FEA"
+    subtopics:
+      Surrogate: ["surrogate model", "reduced-order", "GNN", "3D U-Net"]
+      PhysicsInformed: ["PINN", "physics-informed", "neural operator", "DeepONet"]
+      UQ: ["uncertainty quantification", "deep ensembles", "conformal prediction", "OOD"]
+      Optimization: ["Bayesian optimization", "active learning", "multi-objective", "Pareto"]
+    llm_prompt_focus: |
+      For each paper, evaluate:
+      1. Does it solve expensive simulation sampling efficiency?
+      2. Does it handle constraints, not just single-objective optimization?
+      3. Does it have UQ rather than point prediction?
+      4. Is the method transferable to implant/biomechanics design?
+
+  rl_world_model:
+    display_name: "RL & World Models"
+    color: "#2E8B8B"
+    sources:
+      arxiv_categories: ["cs.LG", "cs.AI", "cs.RO"]
+      # openalex_concepts intentionally empty: candidate IDs C119857082 /
+      # C2780451532 (machine learning, reinforcement learning) were not
+      # verified against the OpenAlex API. Per ADR-0023, an unverified
+      # concept ID silently returns zero papers — keywords are the safer
+      # path until the IDs are confirmed.
+      openalex_concepts: []
+      openalex_keywords: ["world model", "model-based reinforcement learning", "model predictive control"]
+      pubmed_terms: []
+    strong_keywords:
+      - "world model"
+      - "model-based reinforcement learning"
+      - "latent dynamics"
+      - "Dreamer"
+      - "MuZero"
+      - "learned simulator"
+      - "model predictive control"
+      - "recurrent state-space model"
+      - "latent imagination"
+      - "planning with learned models"
+      - "trajectory optimization"
+    must_pair_with:
+      - ["reinforcement learning", "world model"]
+      - ["reinforcement learning", "dynamics model"]
+      - ["reinforcement learning", "model-based"]
+      - ["reinforcement learning", "simulation"]
+      - ["reinforcement learning", "surrogate"]
+      - ["reinforcement learning", "finite element"]
+      - ["reinforcement learning", "design optimization"]
+      - ["world model", "physics"]
+      - ["world model", "simulation"]
+    llm_prompt_focus: |
+      For each paper in RL & World Models, evaluate:
+      1. Does it connect model-based RL / world models to ENGINEERING
+         SIMULATION — surrogate models, FEA/FEM data, physics simulators,
+         design optimization? If YES this is high-value (the user does
+         FE-based implant/biomechanics design); lean High/Medium.
+      2. Is it a pure RL/world-model methods paper with no simulation/
+         physics/engineering tie-in (games, generic robotics, language)?
+         Relevant as methodology only; lean Low.
+      Output whether the paper touches engineering simulation as a tag.
+
+  am_biomedical:
+    display_name: "AM Biomedical Materials"
+    color: "#185FA5"
+    sources:
+      arxiv_categories: ["cond-mat.mtrl-sci", "physics.med-ph", "q-bio.TO"]
+      openalex_concepts:
+        - "C26796778"    # Selective laser melting (SLM)
+        - "C2775868795"  # Direct metal laser sintering (DMLS)
+        - "C2778414984"  # Biomaterial
+        - "C2781411149"  # Implant (broadens reach to AM-implant papers)
+      openalex_keywords: ["laser powder bed fusion", "selective laser melting", "porous titanium", "TPMS", "lattice structure"]
+      pubmed_terms: ["additive manufacturing implant", "porous titanium implant", "osseointegration"]
+    strong_keywords:
+      - "LPBF"
+      - "laser powder bed fusion"
+      - "selective laser melting"
+      - "Ti-6Al-4V"
+      - "porous titanium"
+      - "porous femoral stem"
+      - "TPMS"
+      - "gyroid"
+      - "lattice structure"
+      - "graded lattice"
+      - "osseointegration"
+      - "bone ingrowth"
+    must_pair_with:
+      - ["LPBF", "implant"]
+      - ["LPBF", "Ti-6Al-4V"]
+      - ["porous", "implant"]
+      - ["lattice", "bone"]
+      - ["TPMS", "implant"]
+    tag_namespace: "AM"
+    subtopics:
+      LPBF: ["LPBF", "SLM", "selective laser melting", "process parameter"]
+      Lattice: ["lattice", "TPMS", "gyroid", "graded porous"]
+      Fatigue: ["fatigue", "ISO 7206", "mechanical testing"]
+      SurfaceBone: ["surface roughness", "osseointegration", "bone ingrowth", "micro-CT"]
+    llm_prompt_focus: |
+      For each paper, evaluate:
+      1. Does it link porous structure to stress shielding or stiffness matching?
+      2. Is there LPBF fabrication AND mechanical testing?
+      3. Does it cover fatigue, not just static compression?
+      4. Are surface roughness, as-built morphology, or osseointegration reported?
+
+exclusions:
+  hard_exclude_if_only_about:
+    - "civil engineering"
+    - "bridge structural"
+    - "geotechnical"
+    - "aerospace structural optimization"
+    - "concrete fatigue"
+    - "soil mechanics"
+    - "tumor classification"
+    - "radiology diagnosis only"
+    - "drug discovery"
+    - "molecular docking"
+    - "protein folding"
+    - "general chatbot"
+    - "sentiment analysis"
+    - "LLM benchmark"
+  ambiguous_terms_require_pairing:
+    - "artificial intelligence"
+    - "deep learning"
+    - "finite element"
+    - "optimization"
+    - "digital twin"
+    - "additive manufacturing"
