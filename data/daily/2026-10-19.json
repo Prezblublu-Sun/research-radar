@@ -12637,34 +12637,1640 @@
       "schema_version": "v2",
       "scorer_version": "v3",
       "first_seen_at": "2026-10-20T17:17:59Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2610.27387v1",
+      "doi": "",
+      "arxiv_id": "2610.27387v1",
+      "title": "Training Controllable World Models via Action Influence Maximization",
+      "abstract": "Action-conditioned video generative models trained on successful, goal-directed demonstrations tend to ignore the commanded action, rendering a plausible expert-like future regardless of what is asked of them. We trace this failure to training data that lack sufficient action influence. We analyze this metric and prove that it upper bounds the action influence that any model trained on that data can express. Expert demonstrations, whose narrow action distributions let next states be predicted without attending to the action, set a low ceiling that no amount of model capacity alone can raise. Raising it requires collecting different data. We introduce Action Influence Maximization (AIM), an algorithm for actively collecting training data for improving dataset action influence. We compare the performance and data-efficiency of AIM against exploration heuristics and intrinsic-motivation methods on simulated navigation and manipulation tasks. In pixel-based manipulation, AIM is the only method that consistently improves controllability: 500 actively collected episodes added to 3k demonstrations match a world model trained on 300k expert episodes on end-effector controllability, an $85\\times$ reduction in data.",
+      "authors": [
+        "Samuel M. Bateman",
+        "Tenny Yin",
+        "Chongyi Zheng",
+        "Lei Huang",
+        "Brian Wang",
+        "Benjamin Eysenbach",
+        "Jaime Fernández Fisac",
+        "Dhruv Shah"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-10-19",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2610.27387v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.RO",
+        "cs.LG"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "world model"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该文研究动作条件世界模型的数据采集，与工程仿真/FEA代理模型无直接关联，仅作为世界模型方法论背景。",
+        "why_not_core": "It addresses action controllability in video world models for navigation/manipulation, with no FEA, surrogate modeling, physics simulation, or biomechanical/implant context.",
+        "validation_kind": "simulation_case",
+        "flags": {
+          "has_experimental_validation": true,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "world models",
+          "model-based RL",
+          "action influence",
+          "data collection",
+          "video generation"
+        ],
+        "summary_zh": {
+          "motivation": "动作条件世界模型常忽略指令动作，生成与指令无关的专家式未来。",
+          "method": "提出AIM算法主动采集数据以最大化数据集的动作影响力。",
+          "result": "在像素操作任务中，500条主动采集数据即可媲美30万专家数据的效果。",
+          "validation": "在模拟导航与操作任务上对比探索启发式和内在动机方法。"
+        },
+        "summary_en": {
+          "motivation": "Action-conditioned video world models trained on expert demonstrations often disregard the commanded action and produce plausible but uncontrollable futures.",
+          "method": "The authors formalize dataset action influence as an upper bound on model controllability and propose Action Influence Maximization to actively collect training data that raises this bound.",
+          "result": "On pixel-based manipulation, AIM is the only method that consistently improves controllability, matching a model trained on 300k expert episodes with only 500 actively collected episodes.",
+          "validation": "Evaluated against exploration heuristics and intrinsic-motivation baselines on simulated navigation and manipulation tasks."
+        },
+        "key_terms": [
+          {
+            "en": "world model",
+            "zh": "世界模型"
+          },
+          {
+            "en": "action influence",
+            "zh": "动作影响力"
+          },
+          {
+            "en": "model-based reinforcement learning",
+            "zh": "基于模型的强化学习"
+          },
+          {
+            "en": "action-conditioned video generation",
+            "zh": "动作条件视频生成"
+          },
+          {
+            "en": "active data collection",
+            "zh": "主动数据采集"
+          },
+          {
+            "en": "controllability",
+            "zh": "可控性"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-10-21T17:20:43Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2610.27280v1",
+      "doi": "",
+      "arxiv_id": "2610.27280v1",
+      "title": "VPFlow: Value-Predictive Planning with Imperfect World Models for Offline Goal Reaching",
+      "abstract": "Offline goal-conditioned reinforcement learning enables skill acquisition by reaching any goal from any state without dense rewards. Model-based methods allow for planning by scaling test-time compute to solve complex tasks. Combining both holds appealing promise for pre-training on suboptimal demonstrations and zero-shot adaptation via goal specification and planning. Yet existing methods assume effective planning requires accurate next-state prediction in pixel or latent space. In this work, we show that value prediction is more useful for planning, whereas accurate state prediction is often unnecessary. Our key insight is that offline goal reaching naturally admits a closed-form Monte Carlo return, enabling value regression to replace temporal-difference bootstrapping. We use this return as the sole supervision for latent world models: imagined latents are trained to predict goal-reaching value rather than match future states, implicitly preventing representation collapse. These planning-oriented representations let imperfect world models imagine on the level sets of value field beyond dataset transitions. We then present VPFlow, a value-predictive planner that pairs the world models with a one-step flow policy and plans in its noise space via evolutionary search. It enables policy improvement with imagined generalized advantage and reduces out-of-distribution queries common in action-space planning. On 30 state and pixel OGBench datasets, VPFlow surpasses model-free baselines by at least 30.3 and 10.1 percentage points in success rate, respectively, and outperforms latent planners LeWorldModel, PLDM, and TD-MPC2. It achieves this despite a latent prediction error orders of magnitude larger than with state prediction, while minimizing this error lowers success rate. This demonstrates that value-predictive representations, not exact state prediction, are what offline planning requires.",
+      "authors": [
+        "Yunzhe Hu",
+        "Dong Xu"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-10-19",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2610.27280v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "reinforcement learning + model-based"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该文是纯离线目标到达强化学习与世界模型规划方法，未涉及工程仿真、FEA或植入体设计，仅作为世界模型方法论背景。",
+        "why_not_core": "This paper contains no engineering simulation, no FEA/FEM surrogate modeling, no physics simulator, and no biomechanics or implant design context; it is evaluated purely on OGBench RL benchmarks.",
+        "validation_kind": "numerical_benchmark",
+        "flags": {
+          "has_experimental_validation": true,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "world_model",
+          "offline_rl",
+          "goal_conditioned_rl",
+          "value_prediction",
+          "planning",
+          "no_engineering_simulation"
+        ],
+        "summary_zh": {
+          "motivation": "离线目标到达中，现有方法误以为规划需要精确的状态预测。",
+          "method": "用闭式蒙特卡洛回报监督潜世界模型预测价值，并结合一步流策略在噪声空间做进化搜索规划。",
+          "result": "在30个OGBench数据集上成功率显著超过无模型基线和潜空间规划器，且状态预测误差大反而更好。",
+          "validation": "在OGBench状态与像素基准上做数值对比实验。"
+        },
+        "summary_en": {
+          "motivation": "Existing offline goal-reaching planners assume accurate next-state prediction is necessary for effective planning.",
+          "method": "The latent world model is supervised solely by a closed-form Monte Carlo goal-reaching return, paired with a one-step flow policy searched in noise space via evolutionary search.",
+          "result": "The planner outperforms model-free baselines and latent planners on 30 OGBench datasets, showing value-predictive rather than state-predictive representations drive planning success.",
+          "validation": "Numerical benchmarking on 30 state and pixel OGBench datasets against model-free and latent-planning baselines."
+        },
+        "key_terms": [
+          {
+            "en": "world model",
+            "zh": "世界模型"
+          },
+          {
+            "en": "offline goal-conditioned RL",
+            "zh": "离线目标条件强化学习"
+          },
+          {
+            "en": "value prediction",
+            "zh": "价值预测"
+          },
+          {
+            "en": "Monte Carlo return",
+            "zh": "蒙特卡洛回报"
+          },
+          {
+            "en": "latent planning",
+            "zh": "潜空间规划"
+          },
+          {
+            "en": "flow policy",
+            "zh": "流策略"
+          },
+          {
+            "en": "evolutionary search",
+            "zh": "进化搜索"
+          },
+          {
+            "en": "OGBench",
+            "zh": "OGBench基准"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-10-21T17:20:43Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2610.27271v1",
+      "doi": "",
+      "arxiv_id": "2610.27271v1",
+      "title": "XoNav: An Exoskeleton as a Personalized Haptic Interface for Assisted Navigation",
+      "abstract": "Walking without vision requires timely, unambiguous guidance, yet many wearable aids encode directions as audio or vibrotactile signals that users must translate into movement. We present XoNav, a four-actuator hip exoskeleton that renders guidance cues directly at the hip joints. It renders an Advance cue and two-level Braking cues through sagittal-plane actuators and two-level Steering cues through frontal-plane actuators. A bilateral LSTM-based gait-state classifier uses two thigh-mounted IMUs to identify gait states, enabling haptic cues to be delivered in coordination with the wearer's gait while suppressing them during standing. The classifier generalized to unseen users with recalls of 95.2-97.9%, with mean detection delays of 38.6 and 63.1 ms for stance-to-swing and swing-to-stance transitions, respectively. Constrained human-in-the-loop Bayesian optimization personalized Braking for minimum resistance and Steering for maximum comfort while ensuring detectability and safety. All participants reliably distinguished between grades of their personalized cues and the firmest Braking cue remained below 53% of the safety limit. In blindfolded Wizard-of-Oz navigation trials along three paths, the participants kept 98.8% of the walked distance within a 0.75 m wide passage, with a 4.9% increase in mean progression speed per trial. A body-worn camera, RTAB-Map and Nav2 further enabled a feasibility study of autonomous navigation and detours around previously unmapped obstacles.",
+      "authors": [
+        "Debadrata Sarkar",
+        "Soumen Sen",
+        "Aman Arora"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-10-19",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2610.27271v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.RO"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "fea_surrogate"
+      ],
+      "direction": "fea_surrogate",
+      "direction_name": "FEA & Surrogate Modelling",
+      "routing_matches": {
+        "fea_surrogate": [
+          "Bayesian optimization"
+        ]
+      },
+      "llm": {
+        "priority": "Exclude",
+        "relevance_level": "Peripheral",
+        "read_action": "Ignore",
+        "relevance_to_user": "该论文研究髋部外骨骼触觉导航与步态分类，与FEA代理建模、植入物生物力学或增材制造无直接关系。",
+        "why_not_core": "This paper presents a wearable haptic navigation exoskeleton with LSTM gait classification and Bayesian optimization, but contains no FEA, no surrogate modelling of solid mechanics, no implant or bone-implant interface mechanics, and no biomechanical simulation.",
+        "validation_kind": "clinical",
+        "flags": {
+          "has_experimental_validation": true,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "exoskeleton",
+          "haptic_feedback",
+          "gait_classification",
+          "bayesian_optimization",
+          "assistive_navigation"
+        ],
+        "summary_zh": {
+          "motivation": "视障者行走需要及时明确的方向引导，现有音频或振动提示需用户自行转译为动作。",
+          "method": "设计四执行器髋部外骨骼，用双侧LSTM步态分类器协调触觉提示，并以人在回路贝叶斯优化个性化制动力与转向提示。",
+          "result": "分类器对未见用户召回率95.2-97.9%，个性化提示可被可靠区分，盲行试验中98.8%路径保持在0.75米通道内。",
+          "validation": "健康受试者人体实验与盲行导航试验验证。"
+        },
+        "summary_en": {
+          "motivation": "Wearable navigation aids that encode directions as audio or vibrotactile signals impose a translation burden on users walking without vision.",
+          "method": "A four-actuator hip exoskeleton renders advance, braking, and steering cues at the hip joints, coordinated by a bilateral LSTM gait-state classifier and personalized via constrained human-in-the-loop Bayesian optimization.",
+          "result": "The classifier generalized to unseen users with 95.2-97.9% recall, personalized cues were reliably distinguishable, and blindfolded participants maintained 98.8% of walked distance within a 0.75 m passage.",
+          "validation": "Human subject experiments including blindfolded Wizard-of-Oz navigation trials and an autonomous navigation feasibility study."
+        },
+        "key_terms": [
+          {
+            "en": "hip exoskeleton",
+            "zh": "髋部外骨骼"
+          },
+          {
+            "en": "haptic interface",
+            "zh": "触觉接口"
+          },
+          {
+            "en": "gait-state classification",
+            "zh": "步态状态分类"
+          },
+          {
+            "en": "human-in-the-loop Bayesian optimization",
+            "zh": "人在回路贝叶斯优化"
+          },
+          {
+            "en": "assistive navigation",
+            "zh": "辅助导航"
+          },
+          {
+            "en": "inertial measurement unit",
+            "zh": "惯性测量单元"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-10-21T17:20:43Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2610.27180v1",
+      "doi": "",
+      "arxiv_id": "2610.27180v1",
+      "title": "Meta-iLaD: Identifiable Latent Dynamics via Meta-Learning of Dynamics Environments",
+      "abstract": "Learning latent dynamics is central to assessing the current states and forecasting the future trajectories of high-dimensional time series. For locally-stationary latent dynamics $\\mathcal{F}(\\mathbf{z}_{<t}; \\mathbf{c})$ with latent dynamics state $\\mathbf{z}_t$ and environment variable $\\mathbf{c}$, prior identifiability results have largely focused on $\\mathbf{z}_t$ when conditioned on predefined label $u$ of dynamics environments. This leaves two limitations: reliance on predefined labels that hinder generalization to unseen environments, and a limited understanding of the identifiability of $\\mathcal{F}$ and $\\mathbf{c}$ which -- although offering important structural properties for the identifiability of $\\mathbf{z}_t$ -- are learned jointly with $\\mathbf{z}_t$. We address these limitations with Meta-iLaD, a novel identifiable latent dynamics framework attained by meta-learning across dynamics environments. Meta-iLaD introduces a novel conditional prior of $\\mathbf{c}$, modeled as a feedforward meta-learner to rapidly extract $\\mathbf{c}$ from few-shot examples. Meta-iLaD further establishes identifiability for $\\mathbf{z}_t$, $\\mathbf{c}$, and $\\mathcal{F}$ simultaneously, for a general formulation of $\\mathcal{F}(\\mathbf{z}_{< t};\\mathbf{c})$ without restricting the dimension of $\\mathbf{c}$ or how it modulates $\\mathcal{F}$. On synthetic and real data, we provide strong empirical evidence that 1) conditioning on few-shot examples enables generalization to out-of-distribution environments, and 2) identifiability for $\\mathbf{c}$ and $\\mathcal{F}$ is critical for accurate forecasting beyond reconstructing observed trajectories. Code is available at https://github.com/GoForIt-YYB/Meta-iLaD.",
+      "authors": [
+        "Yubo Ye",
+        "Sweekar Piya",
+        "Xiajun Jiang",
+        "Linwei Wang"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-10-19",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2610.27180v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.LG"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "latent dynamics"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该文提出可识别潜动力学与元学习环境变量的方法，属于纯RL/世界模型方法论，未涉及工程仿真或有限元数据，仅可作为潜动力学建模思路的背景参考。",
+        "why_not_core": "This paper provides no engineering simulation, no FEA/FEM surrogate modeling, no physics simulator coupling, and no implant or biomechanics context; it is a pure latent-dynamics identifiability method.",
+        "validation_kind": "numerical_benchmark",
+        "flags": {
+          "has_experimental_validation": true,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "latent dynamics",
+          "meta-learning",
+          "identifiability",
+          "world models",
+          "time series forecasting"
+        ],
+        "summary_zh": {
+          "motivation": "现有潜动力学可识别性依赖预定义环境标签，难以泛化到未见环境。",
+          "method": "用前馈元学习器从少样本中快速提取环境变量，并同时证明状态、环境与动力学的可识别性。",
+          "result": "少样本条件化可泛化到分布外环境，环境与动力学可识别性提升预测精度。",
+          "validation": "在合成与真实时间序列数据上进行数值基准验证。"
+        },
+        "summary_en": {
+          "motivation": "Prior identifiability results for latent dynamics rely on predefined environment labels, which limits generalization to unseen environments.",
+          "method": "The authors propose Meta-iLaD, which models the environment variable with a feedforward meta-learner conditioned on few-shot examples and establishes joint identifiability of the latent state, environment, and dynamics function.",
+          "result": "Few-shot conditioning enables generalization to out-of-distribution environments, and identifiability of the environment and dynamics improves forecasting beyond trajectory reconstruction.",
+          "validation": "The approach is evaluated empirically on synthetic and real time-series datasets."
+        },
+        "key_terms": [
+          {
+            "en": "latent dynamics",
+            "zh": "潜动力学"
+          },
+          {
+            "en": "identifiability",
+            "zh": "可识别性"
+          },
+          {
+            "en": "meta-learning",
+            "zh": "元学习"
+          },
+          {
+            "en": "world model",
+            "zh": "世界模型"
+          },
+          {
+            "en": "out-of-distribution generalization",
+            "zh": "分布外泛化"
+          },
+          {
+            "en": "few-shot learning",
+            "zh": "少样本学习"
+          },
+          {
+            "en": "time series forecasting",
+            "zh": "时间序列预测"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-10-21T17:20:43Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2610.27132v1",
+      "doi": "",
+      "arxiv_id": "2610.27132v1",
+      "title": "Glass-Box Deep Reinforcement Learning for High-Speed Flow Control",
+      "abstract": "Deep reinforcement learning (DRL) is challenging long-held assumptions in active flow control. By learning directly from interaction with a flow, DRL agents can find actuation strategies for nonlinear, unsteady flows without explicit models, often exploiting mechanisms that classical control would not anticipate. High-speed flows are a demanding test of this promise: shocks, shock/boundary-layer interactions, transition, aerothermal loading and microsecond-scale dynamics strain both algorithms and hardware. Yet most demonstrations remain idealized, low-speed simulations with limited evidence of robustness, interpretability, transferability or experimental deployment. In this perspective, we examine what constrains DRL-based high-speed flow control, including compressible simulation cost and fidelity, data efficiency, sensing in extreme environments, reward design, explainability, and generalization across Mach and Reynolds number. We argue that these limits reflect a tension between data-driven optimization and the structured physics, constraints and uncertainties of real flows. We then highlight where DRL may go beyond conventional approaches: adaptive control of shock-induced separation and turbulent boundary layers, coordination of distributed actuators, and discovery of unconventional flow-manipulation mechanisms.The central challenge, however, is translating these capabilities into reliable technology, which will require validated compressible simulation environments, physics- and constraint-aware learning, robustness to off-design conditions and sensor degradation, real-time operation, hardware-in-the-loop and wind-tunnel validation, and credible pathways to safety and certification.",
+      "authors": [
+        "Ameya D. Jagtap"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-10-19",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2610.27132v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.LG"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "reinforcement learning + simulation"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该文是高速流动控制中深度强化学习的展望性综述，与用户的有限元植入物/生物力学设计方向仅有方法层面的间接关联，不涉及工程仿真代理或植入物力学。",
+        "why_not_core": "It is a perspective on DRL for compressible high-speed flow control with no surrogate modeling of FEA data, no implant/biomechanics context, and no design-optimization or structural-mechanics validation.",
+        "validation_kind": "none",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": true
+        },
+        "tags": [
+          "deep reinforcement learning",
+          "flow control",
+          "physics-aware learning",
+          "simulation fidelity",
+          "review"
+        ],
+        "summary_zh": {
+          "motivation": "评估深度强化学习用于高速流动控制时面临的现实瓶颈。",
+          "method": "以展望性综述梳理可压缩仿真成本、数据效率、奖励设计与泛化等制约因素。",
+          "result": "指出数据驱动优化与结构化物理约束之间的张力，并给出验证与认证路径。",
+          "validation": "无实验验证，属观点性综述。"
+        },
+        "summary_en": {
+          "motivation": "To assess what currently limits deep reinforcement learning when applied to high-speed compressible flow control.",
+          "method": "A perspective review that organizes constraints such as compressible simulation cost and fidelity, data efficiency, sensing, reward design, explainability, and Mach/Reynolds generalization.",
+          "result": "The authors argue that these limits stem from a tension between data-driven optimization and the structured physics, constraints, and uncertainties of real flows, and outline paths toward validated, certifiable deployment.",
+          "validation": "No experimental validation; the work is a perspective review."
+        },
+        "key_terms": [
+          {
+            "en": "deep reinforcement learning",
+            "zh": "深度强化学习"
+          },
+          {
+            "en": "flow control",
+            "zh": "流动控制"
+          },
+          {
+            "en": "compressible simulation",
+            "zh": "可压缩仿真"
+          },
+          {
+            "en": "physics-aware learning",
+            "zh": "物理感知学习"
+          },
+          {
+            "en": "shock/boundary-layer interaction",
+            "zh": "激波/边界层干扰"
+          },
+          {
+            "en": "generalization",
+            "zh": "泛化"
+          },
+          {
+            "en": "hardware-in-the-loop",
+            "zh": "硬件在环"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-10-21T17:20:43Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2610.27130v1",
+      "doi": "",
+      "arxiv_id": "2610.27130v1",
+      "title": "Synthetic Dataset Generation, Physical Consistency and Active Learning for Shape-Informed Surrogate Modeling of Hemodynamics",
+      "abstract": "Model order reduction has the potential to enable real-time patient-specific assessment of cardiovascular flows. However, it still faces significant challenges stemming from the geometric variability of vascular anatomies. Building upon the SynthAorta dataset (Bosnjak et al., IEEE Trans. Med. Imag. 45(1), 2026) of physiological aortic geometries, we generate an extensive dataset of physiologically consistent computational fluid dynamics solutions through an automatic boundary-condition adjustment procedure. A common reference geometry allows all patient-specific anatomies to be represented by displacement fields, providing point-to-point correspondence without the need for geometric registration.   Based on this dataset, we develop Graph U-Net and Transformer U-Net surrogate models to predict velocity and pressure fields at peak systole. We further investigate two strategies to enhance data efficiency and prediction accuracy: active learning and differentiable physical consistency constraints based on the finite element residual. The results show that active learning is strongly regime-dependent: while it offers little benefit over random sampling during early training, it improves performance during fine-tuning through gradient- and subspace-based acquisition strategies. Similarly, physical consistency constraints prove to be substantially more effective as a fine-tuning objective than as a regularizer applied throughout training. Finally, out-of-distribution studies demonstrate that the primary limitation of surrogate models lies in the geometric support of the underlying parametrization rather than in the neural network architectures themselves. The proposed framework combines synthetic dataset generation, geometry-aware surrogate modeling, physics-informed optimization, and active learning into a scalable workflow for inter-patient hemodynamic prediction.",
+      "authors": [
+        "Francesco Romor",
+        "Richard Schussnig",
+        "Charles A. Taylor",
+        "Gerhard A. Holzapfel",
+        "Alfonso Caiazzo"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-10-19",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2610.27130v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.CE",
+        "physics.flu-dyn"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "fea_surrogate"
+      ],
+      "direction": "fea_surrogate",
+      "direction_name": "FEA & Surrogate Modelling",
+      "routing_matches": {
+        "fea_surrogate": [
+          "active learning",
+          "surrogate + finite element"
+        ]
+      },
+      "llm": {
+        "priority": "Medium",
+        "relevance_level": "Transferable",
+        "read_action": "Save for project",
+        "relevance_to_user": "该文提出几何感知的血流代理模型与主动学习、物理一致性约束，方法可迁移到植入物/生物力学FEA代理建模，但未涉及骨科植入物。",
+        "why_not_core": "It targets cardiovascular hemodynamics with Graph/Transformer U-Nets and no femoral stem, bone-implant interface, or orthopedic biomechanics validation.",
+        "validation_kind": "simulation_case",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": true,
+          "is_review": false
+        },
+        "tags": [
+          "surrogate_modeling",
+          "active_learning",
+          "physics_informed",
+          "hemodynamics",
+          "geometry_aware"
+        ],
+        "summary_zh": {
+          "motivation": "血管几何变异大，降阶模型难以实现实时患者特异性血流评估。",
+          "method": "基于SynthAorta生成CFD数据集，用Graph U-Net与Transformer U-Net预测峰值收缩期速度与压力场，并比较主动学习与有限元残差物理约束。",
+          "result": "主动学习收益依赖训练阶段，物理约束作微调目标更有效；分布外误差主要源于几何参数化支撑而非网络结构。",
+          "validation": "在合成主动脉CFD算例上做数值验证与分布外测试。"
+        },
+        "summary_en": {
+          "motivation": "Real-time patient-specific cardiovascular flow assessment is hindered by the geometric variability of vascular anatomies, which challenges reduced-order surrogates.",
+          "method": "An automatic boundary-condition adjustment procedure generates a large physiologically consistent CFD dataset on SynthAorta geometries, and Graph U-Net and Transformer U-Net surrogates predict peak-systolic velocity and pressure fields, augmented by active learning and finite-element-residual physical consistency constraints.",
+          "result": "Active learning benefits are regime-dependent and most useful during fine-tuning, physical constraints work better as a fine-tuning objective than as a regularizer, and out-of-distribution errors stem mainly from the geometric support of the parametrization rather than network architecture.",
+          "validation": "Numerical validation on synthetic aortic CFD cases including out-of-distribution geometric studies."
+        },
+        "key_terms": [
+          {
+            "en": "surrogate modeling",
+            "zh": "代理建模"
+          },
+          {
+            "en": "active learning",
+            "zh": "主动学习"
+          },
+          {
+            "en": "physics-informed constraints",
+            "zh": "物理约束"
+          },
+          {
+            "en": "model order reduction",
+            "zh": "降阶模型"
+          },
+          {
+            "en": "hemodynamics",
+            "zh": "血流动力学"
+          },
+          {
+            "en": "Graph U-Net",
+            "zh": "图U-Net"
+          },
+          {
+            "en": "out-of-distribution",
+            "zh": "分布外"
+          },
+          {
+            "en": "finite element residual",
+            "zh": "有限元残差"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-10-21T17:20:43Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2610.27085v1",
+      "doi": "",
+      "arxiv_id": "2610.27085v1",
+      "title": "Modular Bayesian Inference for Partially Misspecified Mixtures with Uncertain Class Labels",
+      "abstract": "Scientific inference often involves observations from multiple latent populations whose class memberships are uncertain and must be inferred from available data. While full Bayesian mixture modelling provides a principled approach to joint uncertainty quantification in this setting, often the model is misspecified or less trustworthy for populations that are not the target of the inference, which can distort posterior inference for the parameters of interest. We propose a modular Bayesian framework that safeguards against such biases. We decouple classification from downstream inference using fixed class probabilities, for example from a classifier trained on a subset of labelled data. We then protect inference on the parameters of interest by preventing the likelihood contributions of less trustworthy populations from influencing them. A key benefit of this principled modularization is that it greatly simplifies inference, reducing a fully joint mixture analysis to sampling label allocations, fitting the protected downstream model for each sample, and averaging the resulting posteriors. We establish calibration conditions on these class probabilities under which the proposed procedure preserves the inferential target of the analysis with known labels, and demonstrate the method in synthetic experiments and in cosmological analysis of photometric supernova samples.",
+      "authors": [
+        "Maximilian Autenrieth",
+        "Konstantin Karchev",
+        "David A. van Dyk",
+        "Kaisey Mandel",
+        "Roberto Trotta"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-10-19",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2610.27085v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "stat.ME",
+        "astro-ph.CO",
+        "stat.ML"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "fea_surrogate"
+      ],
+      "direction": "fea_surrogate",
+      "direction_name": "FEA & Surrogate Modelling",
+      "routing_matches": {
+        "fea_surrogate": [
+          "uncertainty quantification"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该文提出模块化贝叶斯推断处理混合模型误设与类别标签不确定，属于通用统计方法，与FEA代理建模或植入物力学无直接关联，仅UQ思想可作背景参考。",
+        "why_not_core": "This paper contains no surrogate modelling, no FEA or PDE benchmarks, no implant/biomechanics context, and no simulation-sampling-efficiency experiments; it is a general Bayesian mixture methodology demonstrated on cosmology.",
+        "validation_kind": "simulation_case",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": true,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "modular_bayesian_inference",
+          "mixture_model",
+          "uncertain_labels",
+          "uncertainty_quantification",
+          "model_misspecification"
+        ],
+        "summary_zh": {
+          "motivation": "混合模型误设时，非目标总体的似然会污染目标参数的后验推断。",
+          "method": "用固定类别概率解耦分类与推断，屏蔽不可信总体的似然贡献，再对标签分配采样并平均后验。",
+          "result": "给出类别概率的校准条件，使模块化推断保持已知标签下的推断目标。",
+          "validation": "合成实验与超新星光度样本的宇宙学分析。"
+        },
+        "summary_en": {
+          "motivation": "Joint Bayesian mixture inference can be biased when some latent populations are misspecified and their likelihood contributions distort the parameters of interest.",
+          "method": "The authors decouple classification from downstream inference using fixed class probabilities and shield the target parameters from untrustworthy likelihood contributions, reducing joint inference to label sampling, per-sample model fitting, and posterior averaging.",
+          "result": "Calibration conditions on the class probabilities are derived under which the modular procedure retains the inferential target of the known-label analysis.",
+          "validation": "The approach is assessed on synthetic experiments and a cosmological analysis of photometric supernova samples."
+        },
+        "key_terms": [
+          {
+            "en": "modular Bayesian inference",
+            "zh": "模块化贝叶斯推断"
+          },
+          {
+            "en": "mixture model",
+            "zh": "混合模型"
+          },
+          {
+            "en": "uncertain class labels",
+            "zh": "不确定类别标签"
+          },
+          {
+            "en": "model misspecification",
+            "zh": "模型误设"
+          },
+          {
+            "en": "posterior calibration",
+            "zh": "后验校准"
+          },
+          {
+            "en": "uncertainty quantification",
+            "zh": "不确定性量化"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-10-21T17:20:43Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2610.27017v1",
+      "doi": "",
+      "arxiv_id": "2610.27017v1",
+      "title": "Data-driven accelerated multigrid method for Riesz space fractional diffusion equations",
+      "abstract": "The multigrid method is one of the most efficient iterative methods for solving large structured linear systems, and its efficiency stems from the complementarity between the smoother and the coarse grid correction. In this paper, we consider the block Toeplitz linear system obtained by discretizing time dependent Riesz space fractional diffusion equations, and employ the weighted Jacobi iterative method as a smoother. The weighted Jacobi smoother features a simple structure and low computational cost, yet its smoothing property is highly dependent on the relaxation parameter. We adopt Gaussian process regression to select the relaxation parameter to accelerate the convergence of the multigrid method. Numerical experiments confirm the theoretical analysis, which simultaneously verifies the effectiveness and superiority of the data-driven parameter selection strategy.",
+      "authors": [
+        "Yang Hu",
+        "Juan Zhang"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-10-19",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2610.27017v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "math.NA"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "fea_surrogate"
+      ],
+      "direction": "fea_surrogate",
+      "direction_name": "FEA & Surrogate Modelling",
+      "routing_matches": {
+        "fea_surrogate": [
+          "Gaussian process"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该文用高斯过程回归加速分数阶扩散方程的多重网格求解，与FEA代理建模方向仅方法层面弱相关。",
+        "why_not_core": "It targets fractional diffusion PDE solvers with multigrid smoothing, not surrogate modelling of FEA, no implant/biomechanics context, no uncertainty quantification of a surrogate, and no constrained design optimization.",
+        "validation_kind": "numerical_benchmark",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "multigrid",
+          "Gaussian process regression",
+          "fractional diffusion",
+          "iterative solver",
+          "parameter selection"
+        ],
+        "summary_zh": {
+          "motivation": "加权Jacobi光滑子的收敛性高度依赖松弛参数，需自动选取。",
+          "method": "用高斯过程回归为块Toeplitz系统选择多重网格松弛参数。",
+          "result": "数值实验验证了理论分析并显示该数据驱动策略更优。",
+          "validation": "在一维/二维分数阶扩散方程数值算例上验证。"
+        },
+        "summary_en": {
+          "motivation": "The smoothing efficiency of weighted Jacobi in multigrid is highly sensitive to the relaxation parameter, motivating an automated selection strategy.",
+          "method": "Gaussian process regression is employed to choose the relaxation parameter for a multigrid solver applied to block Toeplitz systems from Riesz space fractional diffusion equations.",
+          "result": "Numerical experiments corroborate the theoretical analysis and demonstrate improved convergence over fixed-parameter choices.",
+          "validation": "The approach is validated on numerical benchmark problems for time-dependent fractional diffusion equations."
+        },
+        "key_terms": [
+          {
+            "en": "multigrid method",
+            "zh": "多重网格法"
+          },
+          {
+            "en": "Gaussian process regression",
+            "zh": "高斯过程回归"
+          },
+          {
+            "en": "fractional diffusion equation",
+            "zh": "分数阶扩散方程"
+          },
+          {
+            "en": "block Toeplitz system",
+            "zh": "块Toeplitz系统"
+          },
+          {
+            "en": "weighted Jacobi smoother",
+            "zh": "加权Jacobi光滑子"
+          },
+          {
+            "en": "relaxation parameter",
+            "zh": "松弛参数"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-10-21T17:20:43Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2610.26987v1",
+      "doi": "",
+      "arxiv_id": "2610.26987v1",
+      "title": "Dynamic Dual-Feedback Conformal Inference for Time Series Forecasting",
+      "abstract": "Quantifying uncertainty in time series forecasting is particularly demanding because sequential data exhibit temporal dependence and are prone to distributional changes. Conformal inference has emerged as a powerful uncertainty quantification approach through the construction of prediction sets. Recent advances have introduced online conformal methods that adaptively adjust prediction thresholds through feedback mechanisms. However, the existing feedback mechanism typically relies solely on miscoverage indicators (actual feedback), whether the true label falls within the interval at each time step, while overlooking the empirical prediction threshold (estimated feedback) that is derived from the oracle conformal method. In this paper, we propose Dynamic Dual-feedback Conformal Inference (DDCI), which incorporates a dual-feedback mechanism consisting of actual feedback and estimated feedback. The former drives the primary adjustment of the intervals based on true observations, while the latter dampens excessive expansions or contractions by leveraging empirical thresholds from conformal inference during updates. By balancing these two signals, DDCI achieves more stable and narrower prediction intervals in sequential settings while maintaining near-nominal coverage in practice.",
+      "authors": [
+        "Songlin Du",
+        "Ling Luo",
+        "Uwe Aickelin"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-10-19",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2610.26987v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "stat.ML",
+        "cs.AI",
+        "cs.LG"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "fea_surrogate"
+      ],
+      "direction": "fea_surrogate",
+      "direction_name": "FEA & Surrogate Modelling",
+      "routing_matches": {
+        "fea_surrogate": [
+          "uncertainty quantification"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Transferable",
+        "read_action": "Skim only",
+        "relevance_to_user": "该文提出时间序列预测的共形不确定性量化方法，其UQ思路可迁移到FEA代理模型的不确定性量化，但不涉及仿真采样或生物力学。",
+        "why_not_core": "It addresses time-series conformal prediction intervals, not expensive FEA simulation sampling, surrogate modeling of solid mechanics, or implant/biomechanics design.",
+        "validation_kind": "numerical_benchmark",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": true,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "conformal inference",
+          "uncertainty quantification",
+          "time series",
+          "surrogate modeling"
+        ],
+        "summary_zh": {
+          "motivation": "在线共形预测仅用覆盖率反馈，区间调整不稳定。",
+          "method": "引入实际反馈与估计反馈的双反馈机制动态调整预测区间阈值。",
+          "result": "在保持近名义覆盖率的同时获得更窄更稳定的预测区间。",
+          "validation": "在时间序列基准数据集上进行数值对比实验。"
+        },
+        "summary_en": {
+          "motivation": "Online conformal prediction for sequential data suffers from unstable interval adjustments when only miscoverage feedback is used.",
+          "method": "The authors propose a dual-feedback conformal inference scheme that combines actual miscoverage signals with empirical oracle-derived threshold estimates to regulate interval updates.",
+          "result": "The approach yields narrower and more stable prediction intervals while approximately preserving nominal coverage.",
+          "validation": "Empirical evaluation on time-series forecasting benchmarks against online conformal baselines."
+        },
+        "key_terms": [
+          {
+            "en": "conformal inference",
+            "zh": "共形推断"
+          },
+          {
+            "en": "uncertainty quantification",
+            "zh": "不确定性量化"
+          },
+          {
+            "en": "prediction interval",
+            "zh": "预测区间"
+          },
+          {
+            "en": "coverage guarantee",
+            "zh": "覆盖率保证"
+          },
+          {
+            "en": "time series forecasting",
+            "zh": "时间序列预测"
+          },
+          {
+            "en": "online adaptation",
+            "zh": "在线自适应"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-10-21T17:20:43Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2610.26979v1",
+      "doi": "",
+      "arxiv_id": "2610.26979v1",
+      "title": "Latent Projection for Latent Planning",
+      "abstract": "Latent world models let an agent plan in latent space. The planner searches for an action sequence that minimizes a cost, and that cost is often the $\\ell_2$ distance between the predicted terminal latent and the goal latent. The latent, however, is partly noise: the regularizer that prevents collapse during world model training promotes variance in the directions carrying no signal. We show that the same regularizer also supplies the structure to prune that noise in the latent. SIGReg drives the latent marginal to a standard Gaussian at every step, and assuming further that the latent sequence is a Gauss-Markov process, the transition is linear with its covariance pinned by the map itself, $z' \\mid z \\sim \\mathcal{N}(Az,\\, I - AA^\\top)$. Fitting the state dynamics $A$ therefore yields the covariance at no additional cost, and in its eigenbasis each latent direction carries its own uncertainty. Furthermore, constraining $A$ to be a normal matrix fixes that basis across timesteps, so one eigenbasis measures the uncertainty over an arbitrary number of steps and serves as a stable basis to compute the planning cost on. We then restrict the $\\ell_2$ cost to the $k$-dimensional subspace the state dynamics carry forward with the least uncertainty. The correction is post hoc: the encoder, the predictor, the rollout, and the planner are all left untouched, and only a single constrained matrix, $A$, is fit. We evaluate across six environments and show large gains on the 2D navigation tasks, TwoRoom and PointMaze, raising success rate over the plain $\\ell_2$ cost by up to $+54.7$ points under a harder planning setting. Code is available at https://github.com/yjang43/lp2.",
+      "authors": [
+        "Yoo Sung Jang",
+        "Michael Ryoo"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-10-19",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2610.26979v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.LG",
+        "cs.RO"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "world model"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该文是纯潜空间世界模型规划方法，未涉及工程仿真、FEA 或物理代理模型，与用户基于有限元的植入体/生物力学设计方向仅方法层面弱相关。",
+        "why_not_core": "This paper proposes a latent-space planning cost correction for world models but contains no FEA/FEM data, no physics simulator, no surrogate modeling, and no biomedical or implant mechanics context.",
+        "validation_kind": "simulation_case",
+        "flags": {
+          "has_experimental_validation": true,
+          "has_uncertainty_quantification": true,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "world model",
+          "latent planning",
+          "model-based RL",
+          "uncertainty",
+          "no engineering simulation"
+        ],
+        "summary_zh": {
+          "motivation": "潜空间规划中目标距离代价受潜变量噪声干扰，降低规划可靠性。",
+          "method": "利用 SIGReg 的高斯结构与 Gauss-Markov 假设拟合状态动力学矩阵，在低不确定性子空间上计算规划代价。",
+          "result": "在六个环境中验证，TwoRoom 与 PointMaze 任务成功率最高提升 54.7 个百分点。",
+          "validation": "在六个标准强化学习导航与迷宫环境进行仿真对比实验。"
+        },
+        "summary_en": {
+          "motivation": "Latent-space planners that minimize terminal latent distance are degraded by noise directions in the learned representation.",
+          "method": "The authors exploit the Gaussian structure induced by SIGReg and a Gauss-Markov assumption to fit a constrained state-dynamics matrix, then restrict the planning cost to the low-uncertainty eigen-subspace.",
+          "result": "The post hoc correction substantially improves planning success, raising rates by up to 54.7 points on TwoRoom and PointMaze.",
+          "validation": "Empirical evaluation across six simulated environments with comparative success-rate benchmarks."
+        },
+        "key_terms": [
+          {
+            "en": "world model",
+            "zh": "世界模型"
+          },
+          {
+            "en": "latent planning",
+            "zh": "潜空间规划"
+          },
+          {
+            "en": "model-based reinforcement learning",
+            "zh": "基于模型的强化学习"
+          },
+          {
+            "en": "Gauss-Markov process",
+            "zh": "高斯-马尔可夫过程"
+          },
+          {
+            "en": "uncertainty quantification",
+            "zh": "不确定性量化"
+          },
+          {
+            "en": "eigenbasis",
+            "zh": "特征基"
+          },
+          {
+            "en": "SIGReg",
+            "zh": "SIGReg 正则化"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-10-21T17:20:43Z"
+    },
+    {
+      "source": "openalex",
+      "id": "https://openalex.org/W7222920673",
+      "doi": "10.1016/j.applthermaleng.2026.133629",
+      "pmid": "",
+      "arxiv_id": "",
+      "title": "Tailoring bubble dynamics in 3D-printed graded porous lattices for enhanced conjugate pool boiling heat transfer",
+      "abstract": "Two-phase immersion cooling offers promising thermal management capacity for AI-driven data centers with escalating power densities, for which sustaining efficient nucleate boiling across varying operating temperatures and power densities is essential. This work demonstrates that graded BCC porous lattice structures fabricated via laser powder bed fusion (L-PBF) enable enhanced pool boiling heat transfer compared with matched uniform lattices over the investigated superheat range. At a representative wall superheat of approximately 14 K, the graded lattice with an average porosity of 80% exhibited an HTC approximately 137% higher than that of its matched uniform counterpart. This enhancement arises because the graded porosity accommodates progressive vapor bubble growth along the height direction, while transverse interconnected pores enable timely liquid replenishment without compromising vertical bubble detachment. Quantitative high-speed visualization directly reveals distributed nucleation over the lattice height and shows that, unlike a flat copper surface following classical trends, the lattice structures exhibit increasing bubble departure diameter and a two-stage departure frequency response with increasing superheat. The graded lattice design provides robust heat transfer performance across varying operating conditions, with a large effective heating area that is directly comparable to CPU/GPU cooling demands. The synergistic combination of three-dimensional heat spreading, capillary-driven liquid supply, optimized graded porosity, and regulated vapor–liquid pathways offers a scalable approach for next-generation two-phase immersion cooling of high-power-density electronics.",
+      "authors": [
+        "Shaoyun Zhou",
+        "Tingyang Duan",
+        "Feifei Wu",
+        "Chihiro Inoue",
+        "Makoto Kobashi",
+        "Zhenying Wang"
+      ],
+      "first_author_affiliation": "Department of Materials Process Engineering, Graduate School of Engineering, Nagoya University, Furo-cho, Chikusa-ku, Nagoya, 464-8603, Japan",
+      "corresponding_authors": [
+        {
+          "name": "Zhenying Wang",
+          "affiliation": "Department of Mechanical Engineering, Kyushu University, 744 Motooka, Nishi-ku, Fukuoka, 819-0395, Japan"
+        }
+      ],
+      "venue": "Applied Thermal Engineering",
+      "venue_id": "S129676613",
+      "venue_issn_l": "1359-4311",
+      "venue_type": "journal",
+      "year": 2026,
+      "date": "2026-10-19",
+      "date_precision": "day",
+      "url": "https://doi.org/10.1016/j.applthermaleng.2026.133629",
+      "cited_by_count": 0,
+      "concepts": [
+        "Materials science",
+        "Boiling",
+        "Bubble",
+        "Porosity",
+        "Heat transfer",
+        "Conjugate",
+        "Dynamics (music)",
+        "Boiling heat transfer",
+        "Mechanics",
+        "Porous medium",
+        "Thermodynamics",
+        "Composite material",
+        "Chemical engineering",
+        "Nucleate boiling",
+        "Thermal management of electronic devices and systems"
+      ],
+      "categories": [],
+      "raw_type": "article",
+      "directions": [
+        "am_biomedical"
+      ],
+      "direction": "am_biomedical",
+      "direction_name": "AM Biomedical Materials",
+      "routing_matches": {
+        "am_biomedical": [
+          "laser powder bed fusion",
+          "graded lattice"
+        ]
+      },
+      "llm": {
+        "priority": "Exclude",
+        "relevance_level": "Peripheral",
+        "read_action": "Ignore",
+        "relevance_to_user": "该论文研究L-PBF制备的梯度多孔点阵用于池沸腾散热，与用户关注的骨科植入物多孔结构、应力遮挡和骨整合无关。",
+        "why_not_core": "This paper addresses thermal management for electronics cooling and reports no stress shielding, stiffness matching, osseointegration, fatigue, or bone-implant interface mechanics.",
+        "validation_kind": "mechanical_testing",
+        "flags": {
+          "has_experimental_validation": true,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "LPBF",
+          "graded porous lattice",
+          "pool boiling",
+          "heat transfer",
+          "thermal management"
+        ],
+        "summary_zh": {
+          "motivation": "高功率密度电子器件需要高效两相浸没冷却。",
+          "method": "用L-PBF制备梯度BCC多孔点阵并开展池沸腾换热实验与高速可视化。",
+          "result": "梯度点阵换热系数较均匀点阵提高约137%，气泡脱离行为呈两阶段响应。",
+          "validation": "通过池沸腾实验与高速摄影可视化验证。"
+        },
+        "summary_en": {
+          "motivation": "Escalating power densities in data centers motivate more effective two-phase immersion cooling strategies.",
+          "method": "Graded BCC porous lattices were additively manufactured by L-PBF and characterized in pool boiling experiments with high-speed visualization.",
+          "result": "The graded lattice achieved roughly 137% higher heat transfer coefficient than a matched uniform lattice and exhibited a two-stage bubble departure frequency response.",
+          "validation": "Experimental pool boiling testing combined with quantitative high-speed flow visualization."
+        },
+        "key_terms": [
+          {
+            "en": "laser powder bed fusion",
+            "zh": "激光粉末床熔融"
+          },
+          {
+            "en": "graded porous lattice",
+            "zh": "梯度多孔点阵"
+          },
+          {
+            "en": "pool boiling heat transfer",
+            "zh": "池沸腾换热"
+          },
+          {
+            "en": "bubble departure",
+            "zh": "气泡脱离"
+          },
+          {
+            "en": "heat transfer coefficient",
+            "zh": "换热系数"
+          },
+          {
+            "en": "two-phase immersion cooling",
+            "zh": "两相浸没冷却"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-10-21T17:20:43Z"
+    },
+    {
+      "source": "openalex",
+      "id": "https://openalex.org/W7222926095",
+      "doi": "10.5281/zenodo.23478373",
+      "pmid": "",
+      "arxiv_id": "",
+      "title": "TEACHING MEDICAL BIOPHYSICS THROUGH GUIDED SIMULATION AND CLINICAL PROBLEM SOLVING",
+      "abstract": "Medical biophysics requires students to connect mathematical relationships with physiological mechanisms and the operation of medical devices. This article develops an instructional approach that combines guided simulation, clinical problem solving and formative assessment. A focused narrative synthesis of eight publications on active learning, physics simulations, laboratory instruction and health professions education was used to identify principles relevant to undergraduate medical biophysics. The synthesis supports structured student participation, interpretable representations, explicit feedback and assessment beyond satisfaction; however, evidence from other disciplines cannot establish effectiveness in a local biophysics course. The proposed sequence requires learners to state assumptions, predict an outcome, vary a parameter, explain the observed relationship and apply the principle to an unfamiliar problem. An idealized fluid-flow example illustrates how numerical calculation can be connected to model limitations. A four-domain assessment framework addresses conceptual explanation, quantitative accuracy, interpretation of evidence and transfer. The article provides a practical basis for course design and prospective evaluation. No original classroom intervention or student outcome dataset is reported. Its principal contribution is an explicit connection between the learning task, the reasoning process and the evidence required to assess that reasoning.",
+      "authors": [
+        "Toshpo’latova Muhayyo Baxtiyorjon qizi",
+        "Worldly Knowledge Publishing Centre"
+      ],
+      "first_author_affiliation": "Assistant  Department of Biological Physics, Informatics and Biomedical Engineering Andijan State Medical Institute, Andijan, Uzbekistan",
+      "corresponding_authors": [],
+      "venue": "HSR (London)",
+      "venue_id": "S7407075273",
+      "venue_issn_l": "2058-5519",
+      "venue_type": "journal",
+      "year": 2026,
+      "date": "2026-10-19",
+      "date_precision": "day",
+      "url": "https://doi.org/10.5281/zenodo.23478373",
+      "cited_by_count": 0,
+      "concepts": [
+        "Formative assessment",
+        "Principal (computer security)",
+        "Computer science",
+        "Process (computing)",
+        "Interpretation (philosophy)",
+        "Outcome (game theory)",
+        "Narrative",
+        "Narrative review",
+        "Management science",
+        "Extant taxon",
+        "Educational measurement",
+        "Mathematics education",
+        "Sequence (biology)",
+        "Curriculum",
+        "Variety (cybernetics)",
+        "Intervention (counseling)",
+        "Problem-based learning",
+        "Teaching method"
+      ],
+      "categories": [],
+      "raw_type": "article",
+      "directions": [
+        "fea_surrogate"
+      ],
+      "direction": "fea_surrogate",
+      "direction_name": "FEA & Surrogate Modelling",
+      "routing_matches": {
+        "fea_surrogate": [
+          "active learning",
+          "active learning + simulation"
+        ]
+      },
+      "llm": {
+        "priority": "Exclude",
+        "relevance_level": "Peripheral",
+        "read_action": "Ignore",
+        "relevance_to_user": "该文是医学物理教学法综述，与FEA代理建模、仿真采样效率或植入物生物力学设计无关。",
+        "why_not_core": "It is a pedagogical narrative synthesis on teaching medical biophysics, with no surrogate model, no FEA sampling strategy, no uncertainty quantification, and no implant or biomechanics application.",
+        "validation_kind": "none",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": true
+        },
+        "tags": [
+          "medical education",
+          "simulation-based learning",
+          "biophysics teaching",
+          "narrative review"
+        ],
+        "summary_zh": {
+          "motivation": "医学物理教学需衔接数学关系与生理机制及器械原理。",
+          "method": "基于八篇文献的叙述性综述，提出引导式仿真与临床问题求解的教学序列。",
+          "result": "给出含假设陈述、参数变化与迁移应用的流程及四维评价框架。",
+          "validation": "仅文献综合与理想化流体示例，无课堂干预或学生数据。"
+        },
+        "summary_en": {
+          "motivation": "Medical biophysics instruction must bridge mathematical relationships with physiological mechanisms and device operation.",
+          "method": "A focused narrative synthesis of eight publications informs an instructional sequence combining guided simulation, clinical problem solving, and formative assessment.",
+          "result": "The proposal specifies a reasoning cycle of assumption stating, prediction, parameter variation, explanation, and transfer, paired with a four-domain assessment framework.",
+          "validation": "Validation is limited to literature synthesis and an idealized fluid-flow illustration, with no classroom intervention or student outcome data."
+        },
+        "key_terms": [
+          {
+            "en": "guided simulation",
+            "zh": "引导式仿真"
+          },
+          {
+            "en": "medical biophysics",
+            "zh": "医学物理"
+          },
+          {
+            "en": "formative assessment",
+            "zh": "形成性评价"
+          },
+          {
+            "en": "clinical problem solving",
+            "zh": "临床问题求解"
+          },
+          {
+            "en": "narrative synthesis",
+            "zh": "叙述性综述"
+          },
+          {
+            "en": "conceptual transfer",
+            "zh": "概念迁移"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-10-21T17:20:43Z"
+    },
+    {
+      "source": "openalex",
+      "id": "https://openalex.org/W7222932462",
+      "doi": "10.14444/8967",
+      "pmid": "42896921",
+      "arxiv_id": "",
+      "title": "Porous Ti6Al4V as an Osteogenic Microenvironment? A Perspective From Architecture-Matched In Vitro Studies",
+      "abstract": "BACKGROUND: Additively manufactured porous titanium implants are widely used in interbody fusion, yet they are still commonly framed as structural carriers for bone grafts and biologic adjuncts. At the same time, much of the preclinical literature has been difficult to interpret mechanistically because 3-dimensional architecture is often confounded with surface state, material processing, or coating strategy. OBJECTIVE: To present a narrative perspective, grounded in architecture-controlled in vitro studies, on whether one additively manufactured porous titanium-6 aluminum-4 vanadium (Ti6Al4V) implant architecture can provide a biologically permissive microenvironment that supports early-to-intermediate osteogenic program engagement in human mesenchymal stromal cells (MSCs) under standardized osteogenic induction. METHODS: This perspective integrates 3 complementary in vitro datasets involving human bone marrow-derived MSCs cultured on a specific porous Ti6Al4V implant system and architecture-matched control substrates: (1) feasibility optimization for osteogenic assessment on porous titanium, (2) controlled porous-vs-solid comparisons fabricated from the same base material and subjected to identical surface treatments, and (3) quantitative reverse transcription polymerase chain reaction (qRT-PCR) profiling of osteogenic gene-expression patterns across architectural and surface conditions. This article is intended as a narrative, hypothesis-generating synthesis rather than a systematic review or a claim of clinical efficacy. RESULTS: remained low within the day 7 to 14 observation window. These findings support osteogenic permissiveness and staged lineage progression but do not establish terminal maturation, fusion mass formation, or clinical fusion efficacy. CONCLUSIONS: In this specific experimental context, a porous Ti6Al4V lattice may function as more than a passive structural substrate by providing a 3-dimensional physical environment that supports early osteogenic cell engagement and regulated osteogenic program activation. These observations are most appropriately interpreted as mechanistic and hypothesis-generating, with relevance to implant biology and future translational study design rather than as evidence that porous titanium alone predicts or replaces clinical fusion strategies. CLINICAL RELEVANCE: The translational relevance of these findings lies in improving mechanistic understanding of how implant architecture may influence the early bone-implant interface and in informing future preclinical and clinical studies of biologically informed implant design.",
+      "authors": [
+        "Kai‐Uwe Lewandrowski",
+        "Morgan P. Lorio",
+        "John C. Elfar",
+        "Alexander P. L. Lewandrowski",
+        "Alexander R. Vaccaro",
+        "Emmanouil Liodakis"
+      ],
+      "first_author_affiliation": "Department of Orthopaedics, Fundación Universitaria Sanitas, Bogotá, Colombia",
+      "corresponding_authors": [],
+      "venue": "The International Journal of Spine Surgery",
+      "venue_id": "S2764896700",
+      "venue_issn_l": "2211-4599",
+      "venue_type": "journal",
+      "year": 2026,
+      "date": "2026-10-19",
+      "date_precision": "day",
+      "url": "https://doi.org/10.14444/8967",
+      "cited_by_count": 0,
+      "concepts": [
+        "Medicine",
+        "Perspective (graphical)",
+        "In vitro",
+        "Nanotechnology",
+        "Titanium alloy",
+        "Biomedical engineering"
+      ],
+      "categories": [],
+      "raw_type": "article",
+      "directions": [
+        "am_biomedical",
+        "hip_implant"
+      ],
+      "direction": "am_biomedical",
+      "direction_name": "AM Biomedical Materials",
+      "routing_matches": {
+        "am_biomedical": [
+          "porous titanium",
+          "porous + implant",
+          "lattice + bone"
+        ],
+        "hip_implant": [
+          "bone-implant interface"
+        ]
+      },
+      "llm": {
+        "priority": "Medium",
+        "relevance_level": "Direct",
+        "read_action": "Save for project",
+        "relevance_to_user": "该文以架构匹配的体外实验探讨多孔Ti6Al4V支架的成骨微环境，与增材制造骨植入物的骨整合方向直接相关，但缺乏力学与疲劳验证。",
+        "why_not_core": "It reports only in vitro MSC gene expression on architecture-matched porous Ti6Al4V, with no LPBF process characterization, no mechanical or fatigue testing, and no stress-shielding or stiffness-matching analysis.",
+        "validation_kind": "in_vitro",
+        "flags": {
+          "has_experimental_validation": true,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "porous Ti6Al4V",
+          "osteogenesis",
+          "in vitro MSC",
+          "additive manufacturing",
+          "implant architecture"
+        ],
+        "summary_zh": {
+          "motivation": "多孔钛植入物的成骨作用常与表面状态和材料工艺混淆，难以机理解释。",
+          "method": "整合三组架构匹配的体外实验，比较多孔与实心Ti6Al4V上人MSC的成骨基因表达。",
+          "result": "多孔架构支持早期成骨程序激活，但未证实终末成熟或临床融合效果。",
+          "validation": "基于人骨髓MSC的体外qRT-PCR与可行性实验。"
+        },
+        "summary_en": {
+          "motivation": "Preclinical evidence on porous titanium osteogenicity is confounded because three-dimensional architecture is rarely isolated from surface state and processing.",
+          "method": "Three architecture-matched in vitro datasets were synthesized, comparing human bone marrow MSCs on a specific porous Ti6Al4V implant system against solid and surface-matched controls with qRT-PCR osteogenic profiling.",
+          "result": "The porous lattice supported early-to-intermediate osteogenic program engagement without demonstrating terminal maturation or fusion efficacy.",
+          "validation": "In vitro human MSC culture with qRT-PCR gene-expression analysis under standardized osteogenic induction."
+        },
+        "key_terms": [
+          {
+            "en": "porous Ti6Al4V",
+            "zh": "多孔Ti6Al4V"
+          },
+          {
+            "en": "osteogenic microenvironment",
+            "zh": "成骨微环境"
+          },
+          {
+            "en": "mesenchymal stromal cells",
+            "zh": "间充质基质细胞"
+          },
+          {
+            "en": "additive manufacturing",
+            "zh": "增材制造"
+          },
+          {
+            "en": "architecture-matched control",
+            "zh": "架构匹配对照"
+          },
+          {
+            "en": "ossointegration",
+            "zh": "骨整合"
+          },
+          {
+            "en": "qRT-PCR",
+            "zh": "定量逆转录PCR"
+          },
+          {
+            "en": "interbody fusion",
+            "zh": "椎间融合"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-10-21T17:20:43Z"
+    },
+    {
+      "source": "openalex",
+      "id": "https://openalex.org/W7223009341",
+      "doi": "10.1177/14697874261493889",
+      "pmid": "",
+      "arxiv_id": "",
+      "title": "Understanding the Effective Use of Explaining to Fictitious Others in Instructional Videos: A Process-Oriented Analysis of Learners with Higher and Lower Learning Performance",
+      "abstract": "Instructional videos are becoming an increasingly popular learning tool, appealing to a wide range of learners. However, research warns that learners may experience higher dropout rates and increased mind-wandering compared to traditional face-to-face classrooms. Explaining to fictitious others (EtFO) is an active learning strategy that has the potential to enhance self-regulated learning and reduce mind-wandering. However, there is a dearth of research examining how learners’ use of this strategy contributes to its effectiveness in the context of instructional videos. The aim of this study was to investigate how learners engaged in the EtFO strategy across different learning stages and how these learning processes were associated with learning outcomes. In addition, the study compared the learning processes of learners with higher and lower learning performance based on a post-hoc median split of learning test scores. The findings confirm that key variables, including percentage dwell time on learning content, self-regulated behavioral sequences, the quality of explanations, and the co-occurrence of metacognitive and high-level cognitive processes, are important components of the effective use of the EtFO strategy. The findings provide insights into the learning processes of learners with higher and lower learning performance by revealing differences in their attention during the video-viewing stage, their behaviors during the preparation stage, and the quality and cognitive network of their explanations during the explanation stage. This study has the potential for informing the effective use of learning strategies when learning from instructional videos.",
+      "authors": [
+        "Zhongling Pi",
+        "Jingjing Dong",
+        "Xin Zhao",
+        "Jiayu Wang",
+        "Xiying Li"
+      ],
+      "first_author_affiliation": "Key Laboratory of Modern Teaching Technology (Ministry of Education), Faculty of Education, Shaanxi Normal University, Xi’an, China",
+      "corresponding_authors": [
+        {
+          "name": "Xiying Li",
+          "affiliation": "Key Laboratory of Modern Teaching Technology (Ministry of Education), Faculty of Education, Shaanxi Normal University, Xi’an, China"
+        }
+      ],
+      "venue": "Active Learning in Higher Education",
+      "venue_id": "S63896471",
+      "venue_issn_l": "1469-7874",
+      "venue_type": "journal",
+      "year": 2026,
+      "date": "2026-10-19",
+      "date_precision": "day",
+      "url": "https://doi.org/10.1177/14697874261493889",
+      "cited_by_count": 0,
+      "concepts": [
+        "Psychology",
+        "Metacognition",
+        "Cooperative learning",
+        "Context (archaeology)",
+        "Active learning (machine learning)",
+        "Cognition",
+        "Quality (philosophy)",
+        "Experiential learning",
+        "Mathematics education",
+        "Educational technology",
+        "Learning sciences",
+        "Instructional design",
+        "Proactive learning",
+        "Cognitive psychology",
+        "Context effect",
+        "Teaching method",
+        "Learning theory"
+      ],
+      "categories": [],
+      "raw_type": "article",
+      "directions": [
+        "fea_surrogate"
+      ],
+      "direction": "fea_surrogate",
+      "direction_name": "FEA & Surrogate Modelling",
+      "routing_matches": {
+        "fea_surrogate": [
+          "active learning"
+        ]
+      },
+      "llm": {
+        "priority": "Exclude",
+        "relevance_level": "Peripheral",
+        "read_action": "Ignore",
+        "relevance_to_user": "该论文研究教学视频中的学习策略与认知过程，与FEA代理建模、仿真采样效率或植入物生物力学设计完全无关。",
+        "why_not_core": "This is an education/learning-science study with no simulation, surrogate modeling, uncertainty quantification, or biomechanics content.",
+        "validation_kind": "none",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "education",
+          "learning-strategy",
+          "instructional-video",
+          "off-topic"
+        ],
+        "summary_zh": {
+          "motivation": "探究教学视频中向虚拟他人解释策略为何有效。",
+          "method": "基于学习过程数据，对比高、低成绩学习者的注意、行为与解释质量。",
+          "result": "停留时间、自我调节行为序列与解释质量是策略有效的关键成分。",
+          "validation": "基于学习测试成绩的中位数分组进行事后过程分析。"
+        },
+        "summary_en": {
+          "motivation": "The study seeks to clarify why explaining to fictitious others improves learning from instructional videos.",
+          "method": "Learner process data were analyzed and compared between higher- and lower-performing groups split by post-hoc median test scores.",
+          "result": "Dwell time, self-regulated behavioral sequences, and explanation quality emerged as key components of effective strategy use.",
+          "validation": "Post-hoc process analysis of learner behavior and test outcomes without simulation or biomechanical validation."
+        },
+        "key_terms": [
+          {
+            "en": "explaining to fictitious others",
+            "zh": "向虚拟他人解释"
+          },
+          {
+            "en": "instructional video",
+            "zh": "教学视频"
+          },
+          {
+            "en": "self-regulated learning",
+            "zh": "自我调节学习"
+          },
+          {
+            "en": "mind-wandering",
+            "zh": "走神"
+          },
+          {
+            "en": "process-oriented analysis",
+            "zh": "过程导向分析"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-10-21T17:20:43Z"
+    },
+    {
+      "source": "openalex",
+      "id": "https://openalex.org/W7223016339",
+      "doi": "10.1177/14697874261493770",
+      "pmid": "",
+      "arxiv_id": "",
+      "title": "Student-Centred Teaching and Basic Psychological Need Satisfaction in Higher Education: Longitudinal Evidence From Flipped and Lecture-Based Engineering Mathematics Courses",
+      "abstract": "Student-centred teaching methods, such as flipped learning, have been found to enhance learning outcomes in higher education (HE); however, their impact on factors that influence student learning and well-being has been less researched. In addition to facing various challenges during their first study year, first-year students’ preparedness for student-centred and active learning methods can be low at the start of HE, requiring research to look beyond short time-span changes and cross-sectional associations. To address these gaps, this study examined the development of engineering HE students’ ( n = 367) satisfaction of basic psychological needs – autonomy (RQ1), competence (RQ2) and relatedness (RQ3) – over time in two parallel sets of four engineering mathematics courses implemented with two student-centred pedagogical models: a lecture-based model (control; n = 192) and a flipped learning model (intervention; n = 175). Using five measurement points across the academic year 2019 to 2020, we analysed longitudinal change in students’ need satisfaction with two-level growth models. The results showed a decline in autonomy satisfaction in the lecture-based group, while the flipped model mitigated this decline (interaction between measurement point and teaching model: β = 0.042, p = .008). Regarding competence satisfaction, the lecture-based group declined more steeply than the flipped model (β = 0.055, p = .002). Relatedness satisfaction increased over time in both groups, although this growth decelerated over time (Time: β = 0.127, p < .001). When pandemic restrictions began, declines in autonomy and competence satisfaction were more pronounced in the lecture-based group. Differences between genders (autonomy and competence) and high versus low achievers (competence) were observed. The results imply that, in first-year, high-enrolment, or otherwise demanding HE courses, student-centred course design can provide benefits by supporting students’ autonomy and competence through clear structure, guided preparation, active participation and timely feedback, even during disruptions to normal teaching formats.",
+      "authors": [
+        "Ilmari Puhakka",
+        "Petri Nokelainen",
+        "Vikke Vuorenpää",
+        "Johanna Rämö",
+        "Riikka Kangaslampi",
+        "Terhi Kaarakka",
+        "Elina Viro",
+        "Jani Hirvonen",
+        "Simo Ali‐Löytty"
+      ],
+      "first_author_affiliation": "Faculty of Education and Culture, Tampere University, Finland",
+      "corresponding_authors": [
+        {
+          "name": "Ilmari Puhakka",
+          "affiliation": "Faculty of Education and Culture, Tampere University, Finland"
+        }
+      ],
+      "venue": "Active Learning in Higher Education",
+      "venue_id": "S63896471",
+      "venue_issn_l": "1469-7874",
+      "venue_type": "journal",
+      "year": 2026,
+      "date": "2026-10-19",
+      "date_precision": "day",
+      "url": "https://doi.org/10.1177/14697874261493770",
+      "cited_by_count": 0,
+      "concepts": [
+        "Autonomy",
+        "Competence (human resources)",
+        "Preparedness",
+        "Longitudinal study",
+        "Psychology",
+        "Mathematics education",
+        "Flipped learning",
+        "Engineering education",
+        "Flipped classroom",
+        "Higher education"
+      ],
+      "categories": [],
+      "raw_type": "article",
+      "directions": [
+        "fea_surrogate"
+      ],
+      "direction": "fea_surrogate",
+      "direction_name": "FEA & Surrogate Modelling",
+      "routing_matches": {
+        "fea_surrogate": [
+          "active learning"
+        ]
+      },
+      "llm": {
+        "priority": "Exclude",
+        "relevance_level": "Peripheral",
+        "read_action": "Ignore",
+        "relevance_to_user": "该论文研究工程数学课程的教学法与心理需求满足，与FEA代理建模、仿真采样效率或植入物力学设计完全无关。",
+        "why_not_core": "This is an education-pedagogy longitudinal study with no simulation, surrogate modelling, optimization, uncertainty quantification, or biomechanics content.",
+        "validation_kind": "clinical",
+        "flags": {
+          "has_experimental_validation": true,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "education research",
+          "flipped learning",
+          "longitudinal study",
+          "off-topic"
+        ],
+        "summary_zh": {
+          "motivation": "探究学生中心教学对工科生心理需求满足的长期影响。",
+          "method": "对367名工科生开展一学年五点纵向追踪，用两层增长模型比较翻转课堂与讲授式教学。",
+          "result": "翻转课堂缓解了自主性与胜任感满足的下降，疫情限制期间差异更明显。",
+          "validation": "基于真实课程队列的纵向统计建模。"
+        },
+        "summary_en": {
+          "motivation": "The study addresses limited longitudinal evidence on how student-centred instruction affects psychological need satisfaction in engineering higher education.",
+          "method": "Two-level growth models were fitted to five repeated measures from 367 first-year engineering students across parallel flipped and lecture-based mathematics courses.",
+          "result": "Flipped learning attenuated declines in autonomy and competence satisfaction, with group differences amplified during pandemic restrictions.",
+          "validation": "Longitudinal statistical analysis of a real student cohort rather than simulation or mechanical testing."
+        },
+        "key_terms": [
+          {
+            "en": "flipped learning",
+            "zh": "翻转课堂"
+          },
+          {
+            "en": "basic psychological needs",
+            "zh": "基本心理需求"
+          },
+          {
+            "en": "longitudinal growth model",
+            "zh": "纵向增长模型"
+          },
+          {
+            "en": "engineering education",
+            "zh": "工程教育"
+          },
+          {
+            "en": "autonomy satisfaction",
+            "zh": "自主性满足"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-10-21T17:20:43Z"
     }
   ],
   "counts": {
-    "fetched_total": 107,
+    "fetched_total": 122,
     "by_source": {
-      "openalex": 83,
+      "openalex": 88,
       "pubmed": 2,
-      "arxiv": 22
+      "arxiv": 32
     },
-    "after_dedup": 107,
-    "after_routing": 107,
+    "after_dedup": 122,
+    "after_routing": 122,
     "by_direction": {
-      "am_biomedical": 16,
+      "am_biomedical": 18,
       "hip_implant": 8,
-      "fea_surrogate": 44,
+      "fea_surrogate": 52,
       "ai_bioprinting": 14,
-      "rl_world_model": 25
+      "rl_world_model": 30
     },
     "routed_by_source": {
-      "openalex": 83,
+      "openalex": 88,
       "pubmed": 2,
-      "arxiv": 22
+      "arxiv": 32
     },
-    "scored": 107,
+    "scored": 122,
     "priority_counts": {
-      "Medium": 23,
-      "Exclude": 36,
-      "Low": 48
+      "Medium": 25,
+      "Exclude": 41,
+      "Low": 56
     }
   }
 }
