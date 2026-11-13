@@ -10389,33 +10389,903 @@
       "schema_version": "v2",
       "scorer_version": "v3",
       "first_seen_at": "2026-11-12T20:02:59Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2611.14815v1",
+      "doi": "",
+      "arxiv_id": "2611.14815v1",
+      "title": "BirdDreams: Joint Perspective and BEV Video Generation for a Plausible, Reactive Driving World Model",
+      "abstract": "Driving world models aim to simulate how a scene unfolds under different ego actions. This requires plausible motion of surrounding vehicles as well as precise ego-trajectory control. Learning vehicle motion from perspective video alone is challenging because motion is entangled with appearance and vehicles can be occluded. Prior work therefore conditions video generation on layouts that specify vehicle motion, providing control over surrounding vehicles but requiring their future trajectories as inputs. We introduce BirdDreams, an autoregressive driving world model that jointly generates perspective video and a schematic bird's-eye-view (BEV) video, making scene layout part of the predicted future. The BEV, rendered from scene annotations for training, depicts roads and vehicles as simple shapes at a fixed metric scale, providing a top-down view of their positions and motion with reduced occlusion between vehicles. Perspective video, by contrast, retains scene details that the BEV omits, such as traffic signals and object appearance. Joint attention between two video diffusion transformers, one per stream, lets each stream inform the other during generation. The predicted BEV also provides a geometric interface for ego control: we translate and rotate its latest frame along an input ego trajectory and use the resulting frames as a soft condition that shows how the scene would appear to move if only the ego vehicle moved. At inference, BirdDreams generates both videos from a single camera image without requiring an HD map or vehicle-state inputs. On PhysicalAI-AV and nuScenes, BirdDreams follows input ego trajectories more faithfully than prior driving world models and generates more plausible ego motion without ego-action conditioning. Human evaluation shows that BirdDreams outperforms a perspective-only baseline in generating realistic surrounding-vehicle behavior.",
+      "authors": [
+        "Junyoung Seo",
+        "Jaewoo Seo",
+        "Seungryong Kim",
+        "Laura Leal-Taixé",
+        "Xiuming Zhang",
+        "Seung Wook Kim"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-11-10",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2611.14815v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.CV"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "world model"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该论文是自动驾驶视频世界模型，与工程仿真/FEA代理模型无直接关联，仅作为世界模型方法论背景。",
+        "why_not_core": "It generates driving videos with diffusion transformers and BEV layouts, with no FEA/surrogate modeling, no physics simulation, and no biomechanical or implant design context.",
+        "validation_kind": "numerical_benchmark",
+        "flags": {
+          "has_experimental_validation": true,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "world_model",
+          "video_generation",
+          "autonomous_driving",
+          "diffusion_transformer",
+          "no_engineering_simulation"
+        ],
+        "summary_zh": {
+          "motivation": "驾驶世界模型需同时保证周围车辆运动合理与自车轨迹可控。",
+          "method": "用双流扩散Transformer联合生成透视视频与BEV示意图，并以BEV几何接口实现自车控制。",
+          "result": "在PhysicalAI-AV和nuScenes上自车轨迹跟随更准，周围车辆行为更真实。",
+          "validation": "在两个驾驶数据集上做定量对比与人工评估。"
+        },
+        "summary_en": {
+          "motivation": "Driving world models must produce plausible surrounding-vehicle motion while allowing precise ego-trajectory control.",
+          "method": "Two video diffusion transformers with joint attention autoregressively generate perspective video and a schematic BEV stream, using the BEV as a geometric interface for ego control.",
+          "result": "The model follows input ego trajectories more faithfully and yields more plausible ego and surrounding-vehicle motion than prior driving world models.",
+          "validation": "Quantitative comparisons on PhysicalAI-AV and nuScenes plus human evaluation."
+        },
+        "key_terms": [
+          {
+            "en": "world model",
+            "zh": "世界模型"
+          },
+          {
+            "en": "bird's-eye-view (BEV)",
+            "zh": "鸟瞰图"
+          },
+          {
+            "en": "video diffusion transformer",
+            "zh": "视频扩散Transformer"
+          },
+          {
+            "en": "ego-trajectory control",
+            "zh": "自车轨迹控制"
+          },
+          {
+            "en": "autoregressive generation",
+            "zh": "自回归生成"
+          },
+          {
+            "en": "joint attention",
+            "zh": "联合注意力"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-11-13T19:51:04Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2611.14656v1",
+      "doi": "",
+      "arxiv_id": "2611.14656v1",
+      "title": "Thompson Sampling using Prior-fitted Diffusion Transformers",
+      "abstract": "Thompson sampling is natural randomized strategy for optimizing unknown functions in a black-box manner. In continuous global optimization, Thompson sampling has largely been restricted to Gaussian process priors, as these are essentially the only class for which computing the posterior distribution has been tractable in practice. In this work, we introduce \\emph{prior-fitted diffusion transformers}, which are diffusion models that perform Thompson sampling in-context at inference time, after being pre-trained using the prior-fitted network paradigm. To apply these models, we develop a set of practical non-Gaussian priors for general black-box functions---including those that have characteristics that cannot be achieved under Gaussianity, such as priors over unimodal functions. We also quantify the tradeoff between model size and the number of pre-training iterations, and show that these models follow scaling laws akin to those observed in transformers defined over other modalities. Across a set of global optimization benchmarks, we show that prior-fitted diffusion transformers with non-Gaussian priors can achieve improved performance compared to traditional pipelines built on Gaussian processes.",
+      "authors": [
+        "Sihwa Park",
+        "Jingsen Zhu",
+        "Vinamr Jain",
+        "Sheng-Yen Chou",
+        "Alexander Terenin"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-11-10",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2611.14656v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.LG",
+        "cs.AI",
+        "stat.ML"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "fea_surrogate"
+      ],
+      "direction": "fea_surrogate",
+      "direction_name": "FEA & Surrogate Modelling",
+      "routing_matches": {
+        "fea_surrogate": [
+          "Gaussian process"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该文用扩散Transformer做贝叶斯优化中的Thompson采样，与FEA代理建模的采样效率有间接关联，但不涉及仿真或生物力学。",
+        "why_not_core": "It targets black-box global optimization with diffusion-based Thompson sampling, with no FEA surrogate training, no PDE/mechanics benchmarks, no uncertainty-quantified field prediction, and no implant or biomechanics application.",
+        "validation_kind": "numerical_benchmark",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": true,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "Thompson sampling",
+          "diffusion transformer",
+          "Bayesian optimization",
+          "prior-fitted networks",
+          "black-box optimization"
+        ],
+        "summary_zh": {
+          "motivation": "突破高斯过程先验对连续黑箱优化中Thompson采样的限制。",
+          "method": "预训练扩散Transformer，在推理时以in-context方式执行Thompson采样，并设计非高斯先验。",
+          "result": "在全局优化基准上优于传统高斯过程流程，并呈现类似Transformer的缩放规律。",
+          "validation": "在标准全局优化基准上做数值对比实验。"
+        },
+        "summary_en": {
+          "motivation": "Thompson sampling for continuous black-box optimization has been confined to Gaussian process priors because tractable posteriors are scarce.",
+          "method": "The authors pre-train diffusion transformers under the prior-fitted network paradigm so that Thompson sampling is performed in-context at inference, together with practical non-Gaussian function priors.",
+          "result": "The proposed models outperform Gaussian-process pipelines on global optimization benchmarks and exhibit transformer-like scaling behavior with model size and pre-training iterations.",
+          "validation": "Empirical evaluation on a suite of standard global optimization benchmarks against Gaussian-process baselines."
+        },
+        "key_terms": [
+          {
+            "en": "Thompson sampling",
+            "zh": "汤普森采样"
+          },
+          {
+            "en": "diffusion transformer",
+            "zh": "扩散Transformer"
+          },
+          {
+            "en": "prior-fitted network",
+            "zh": "先验拟合网络"
+          },
+          {
+            "en": "black-box optimization",
+            "zh": "黑箱优化"
+          },
+          {
+            "en": "Gaussian process prior",
+            "zh": "高斯过程先验"
+          },
+          {
+            "en": "scaling law",
+            "zh": "缩放规律"
+          },
+          {
+            "en": "in-context inference",
+            "zh": "上下文推理"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-11-13T19:51:04Z"
+    },
+    {
+      "source": "openalex",
+      "id": "https://openalex.org/W7225878192",
+      "doi": "10.11648/j.sr.20261406.13",
+      "pmid": "",
+      "arxiv_id": "",
+      "title": "Comparison of Prosthesis Position and Lower-Limb Functional Recovery After Total Hip Arthroplasty via the Modified Hardinge and SuperPATH Approaches",
+      "abstract": "Purpose: To compare prosthesis position, lower-limb reconstruction, and functional recovery after primary unilateral total hip arthroplasty (THA) via the modified Hardinge or SuperPATH approach, focusing on longitudinal changes in balance and joint position sense (JPS). Materials and Methods: This retrospective study included 93 patients who underwent primary unilateral THA between October 2022 and October 2025. Forty-six patients received the SuperPATH approach and 47 received the modified Hardinge approach. Baseline data, postoperative radiographic measures, 6-minute walking distance, activities of daily living, and hip range of motion at 6 months were collected. Berg Balance Scale (BBS) scores and JPS errors were assessed preoperatively and at 1, 3, and 6 months postoperatively. Two-way repeated-measures analysis of variance was used for longitudinal outcomes. Welch’s t test with Holm adjustment was used for single-time-point comparisons. Results: Baseline age, BMI, sex, operative side, and ASA grade were comparable. The SuperPATH group had a slightly lower preoperative BBS score and smaller JPS error (Bonferroni-adjusted P=0.026 and 0.011, respectively). Significant group-by-time interactions were found for BBS [F(2.506, 228.048)=40.554, P<0.001; partial η²=0.308] and JPS [F(2.658, 241.909)=387.809, P<0.001; partial η²=0.810]. The SuperPATH group had higher BBS scores at 1 and 6 months and smaller JPS errors at 1 and 3 months; the adjusted differences at 3 months for BBS and at 6 months for JPS were not significant. The side-to-side femoral offset difference was smaller in the SuperPATH group (Holm-adjusted P=0.029). At 6 months, walking distance, daily living function, external rotation, and flexion were comparable; internal rotation was 2.46° greater in the SuperPATH group (Holm-adjusted P=0.042). Conclusion : Both approaches achieved satisfactory prosthesis positioning and functional recovery. The SuperPATH approach may facilitate early sensorimotor recovery, but the retrospective design and small baseline differences require prospective confirmation.",
+      "authors": [
+        "Zhichao Wang",
+        "Bo Wang",
+        "Run Liu",
+        "Wei Huang",
+        "Weiping Ji"
+      ],
+      "first_author_affiliation": "Lishui People's Hospital, Lishui, China;Longquan People's Hospital, Lishui, China",
+      "corresponding_authors": [],
+      "venue": "Science Research",
+      "venue_id": "S4210220575",
+      "venue_issn_l": "2329-0927",
+      "venue_type": "journal",
+      "year": 2026,
+      "date": "2026-11-10",
+      "date_precision": "day",
+      "url": "https://doi.org/10.11648/j.sr.20261406.13",
+      "cited_by_count": 0,
+      "concepts": [
+        "Medicine",
+        "Prosthesis",
+        "Range of motion",
+        "Surgery",
+        "Total hip arthroplasty",
+        "Radiography",
+        "Balance (ability)",
+        "Harris Hip Score",
+        "Arthroplasty",
+        "Retrospective cohort study",
+        "External rotation",
+        "Total hip replacement"
+      ],
+      "categories": [],
+      "raw_type": "article",
+      "directions": [
+        "hip_implant"
+      ],
+      "direction": "hip_implant",
+      "direction_name": "Hip Implant & Femoral Stem",
+      "routing_matches": {
+        "hip_implant": [
+          "total hip arthroplasty"
+        ]
+      },
+      "llm": {
+        "priority": "Exclude",
+        "relevance_level": "Peripheral",
+        "read_action": "Ignore",
+        "relevance_to_user": "该文为全髋置换手术入路的临床对照研究，不涉及股骨柄应力遮挡、微动或有限元建模，与髋植入物生物力学方向基本无关。",
+        "why_not_core": "This is a clinical retrospective comparison of surgical approaches with no biomechanical modeling, no femoral stem stress shielding or micromotion quantification, and no FEA or implant design analysis.",
+        "validation_kind": "clinical",
+        "flags": {
+          "has_experimental_validation": true,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": true,
+          "is_review": false
+        },
+        "tags": [
+          "total hip arthroplasty",
+          "surgical approach",
+          "SuperPATH",
+          "clinical outcome",
+          "prosthesis position"
+        ],
+        "summary_zh": {
+          "motivation": "比较SuperPATH与改良Hardinge入路对假体位置及功能恢复的影响。",
+          "method": "回顾性纳入93例单侧全髋置换患者，纵向评估影像学、平衡与关节位置觉。",
+          "result": "SuperPATH组早期平衡与关节位置觉恢复更优，股骨偏心距差异更小。",
+          "validation": "临床患者随访数据与重复测量统计分析。"
+        },
+        "summary_en": {
+          "motivation": "The study compares two surgical approaches for total hip arthroplasty in terms of prosthesis placement and postoperative functional recovery.",
+          "method": "A retrospective cohort of 93 unilateral THA patients was analyzed with radiographic measures, balance scales, and joint position sense testing over six months.",
+          "result": "The SuperPATH group showed modestly better early sensorimotor recovery and smaller side-to-side femoral offset differences, while most six-month outcomes were comparable.",
+          "validation": "Clinical patient follow-up data analyzed with repeated-measures and adjusted t tests."
+        },
+        "key_terms": [
+          {
+            "en": "total hip arthroplasty",
+            "zh": "全髋关节置换"
+          },
+          {
+            "en": "SuperPATH approach",
+            "zh": "SuperPATH入路"
+          },
+          {
+            "en": "femoral offset",
+            "zh": "股骨偏心距"
+          },
+          {
+            "en": "joint position sense",
+            "zh": "关节位置觉"
+          },
+          {
+            "en": "Berg Balance Scale",
+            "zh": "Berg平衡量表"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-11-13T19:51:04Z"
+    },
+    {
+      "source": "openalex",
+      "id": "https://openalex.org/W7220155128",
+      "doi": "10.31893/multirev.2027286",
+      "pmid": "",
+      "arxiv_id": "",
+      "title": "Active learning and development of methodological skills in higher education: A systematic review",
+      "abstract": "In higher education, research skills are essential, as they enable students, among many other things, to develop critical competencies that are vital for academic and professional success. In this process, active learning is of great importance as a strategy for fostering student reflection and active participation. Therefore, this study aims to analyze the empirical evidence on the impact of active learning strategies on the development of university students’ methodological competencies, identifying pedagogical patterns, effective approaches, limitations, and research gaps. A systematic review with a thematic narrative synthesis was conducted, following the PRISMA 2020 protocol. Searches were conducted in six databases in English and Spanish for the period 2013–2026. Of the 5,887 records identified, 28 empirical studies were selected using predefined eligibility criteria and an independent assessment of methodological quality with tools differentiated by design (ROBINS-I, MMAT, RoB 2, CASP/JBI). The results show that 24 of the 28 studies report favorable outcomes in at least one methodological domain. The domains of literature search and management, and critical thinking and evidence evaluation, contain the most consistent evidence. The study design domain is the least represented. The risk of bias profile is predominantly high or moderate-high, placing the overall level of confidence at moderate-low. The most important findings show that there is a systematic divergence between self-report-based studies—consistently favorable results—and studies that used objective performance instruments—greater within-study variability. Self-regulated learning theory interprets the observed discrepancy as a gap between self-perceived competence and verifiable procedural competence. Active interventions that include explicit formative feedback, a combination of strategies, and sustained exposure demonstrate.",
+      "authors": [
+        "Nicolás Paucar Misaico",
+        "Rafael Castillo Tito",
+        "Rosa Isabel Flores Quispe",
+        "René Farfán Bellido",
+        "Edith Julia Correa Sánchez"
+      ],
+      "first_author_affiliation": "Universidad Nacional de San Cristóbal de Huamanga, Perú",
+      "corresponding_authors": [],
+      "venue": "Multidisciplinary Reviews",
+      "venue_id": "S4210226397",
+      "venue_issn_l": "2595-3982",
+      "venue_type": "journal",
+      "year": 2026,
+      "date": "2026-11-10",
+      "date_precision": "day",
+      "url": "https://doi.org/10.31893/multirev.2027286",
+      "cited_by_count": 0,
+      "concepts": [
+        "Formative assessment",
+        "Competence (human resources)",
+        "Psychology",
+        "Higher education",
+        "Critical thinking",
+        "Mathematics education",
+        "Psychological intervention",
+        "Empirical evidence",
+        "Thematic analysis",
+        "Empirical research",
+        "Systematic review",
+        "Active learning (machine learning)",
+        "Quality (philosophy)",
+        "Higher-order thinking",
+        "Narrative",
+        "Medical education",
+        "Qualitative research",
+        "Pedagogy"
+      ],
+      "categories": [],
+      "raw_type": "article",
+      "directions": [
+        "fea_surrogate"
+      ],
+      "direction": "fea_surrogate",
+      "direction_name": "FEA & Surrogate Modelling",
+      "routing_matches": {
+        "fea_surrogate": [
+          "active learning"
+        ]
+      },
+      "llm": {
+        "priority": "Exclude",
+        "relevance_level": "Peripheral",
+        "read_action": "Ignore",
+        "relevance_to_user": "该文是高等教育主动学习教学法的系统综述，与FEA代理建模、仿真采样效率或植入物生物力学设计完全无关。",
+        "why_not_core": "This is an education-pedagogy systematic review with no surrogate modeling, no FEA, no uncertainty quantification, and no biomechanics or implant design content.",
+        "validation_kind": "none",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": true
+        },
+        "tags": [
+          "education",
+          "active learning",
+          "systematic review",
+          "off-topic"
+        ],
+        "summary_zh": {
+          "motivation": "评估主动学习策略对大学生方法论能力培养的实证效果。",
+          "method": "按PRISMA 2020流程检索六个数据库，筛选28项实证研究并做主题叙述综合。",
+          "result": "多数研究报告正向效果，但自评与客观测评结果存在系统性分歧。",
+          "validation": "系统综述与偏倚风险评估，无计算或实验验证。"
+        },
+        "summary_en": {
+          "motivation": "The study examines how active learning strategies influence the development of methodological competencies in university students.",
+          "method": "A PRISMA 2020 systematic review with thematic narrative synthesis screened six databases and appraised 28 empirical studies using design-specific quality tools.",
+          "result": "Most included studies reported favorable outcomes, yet self-report measures diverged systematically from objective performance instruments.",
+          "validation": "Systematic review with risk-of-bias assessment; no computational or experimental validation."
+        },
+        "key_terms": [
+          {
+            "en": "active learning",
+            "zh": "主动学习"
+          },
+          {
+            "en": "systematic review",
+            "zh": "系统综述"
+          },
+          {
+            "en": "methodological competencies",
+            "zh": "方法论能力"
+          },
+          {
+            "en": "PRISMA 2020",
+            "zh": "PRISMA 2020"
+          },
+          {
+            "en": "risk of bias",
+            "zh": "偏倚风险"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-11-13T19:51:04Z"
+    },
+    {
+      "source": "openalex",
+      "id": "https://openalex.org/W7225707187",
+      "doi": "10.14456/rpjnrru.2026.35",
+      "pmid": "",
+      "arxiv_id": "",
+      "title": "รูปแบบการบริหารงานวิชาการเพื่อส่งเสริมการจัดการเรียนรู้เชิงรุกของครูในโรงเรียนประถมศึกษา สังกัดสำนักงานคณะกรรมการการศึกษาขั้นพื้นฐาน",
+      "abstract": "The objective of this research was to propose an academic administration model for promoting teachers’ active learning management in primary schools under the Office of the Basic Education Commission. The study employed a mixed-methods research design consisting of two phases: Phase 1 Involved investigating the priority needs and academic administration approaches. The sample for the needs assessment consisted of 370 school administrators and heads of academic affairs, selected through stratified random sampling, with the sample size determined using Yamane’s formula. Data were collected using questionnaires and analyzed using mean, standard deviation, and the Priority Needs Index (PNI). The target group for studying academic administration approaches included 6 participants from 3 best-practice schools, consisting of school administrators and heads of academic affairs selected through purposive sampling. Data were collected through structured interviews and analyzed using content analysis; and Phase 2 Involved the development of the model through a focus group discussion with 12 experts selected by purposive sampling. The research instruments included focus group discussion issues and a model evaluation form to examine the appropriateness and feasibility of the model. Data were analyzed using mean and standard deviation. The results revealed that the priority needs index ranged from 0.35 to 0.55. The developed model consisted of five components: principles, objectives, operational procedures in six areas, evaluation, and success conditions. The overall evaluation results indicated that the appropriateness and feasibility of the model were at the highest level, with mean scores of 4.85 and 4.82, respectively.",
+      "authors": [
+        "ชไมพร กุลบุตรดี"
+      ],
+      "first_author_affiliation": "",
+      "corresponding_authors": [
+        {
+          "name": "ชไมพร กุลบุตรดี",
+          "affiliation": ""
+        }
+      ],
+      "venue": "Ratchaphruek Journal",
+      "venue_id": "S7407066176",
+      "venue_issn_l": "3027-7663",
+      "venue_type": "journal",
+      "year": 2026,
+      "date": "2026-11-10",
+      "date_precision": "day",
+      "url": "https://doi.org/10.14456/rpjnrru.2026.35",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [],
+      "raw_type": "article",
+      "directions": [
+        "fea_surrogate"
+      ],
+      "direction": "fea_surrogate",
+      "direction_name": "FEA & Surrogate Modelling",
+      "routing_matches": {
+        "fea_surrogate": [
+          "active learning"
+        ]
+      },
+      "llm": {
+        "priority": "Exclude",
+        "relevance_level": "Peripheral",
+        "read_action": "Ignore",
+        "relevance_to_user": "该论文研究小学教师主动学习的学术管理模式，与FEA及代理建模方向完全无关。",
+        "why_not_core": "This is an educational administration study with no simulation, surrogate modeling, FEA, uncertainty quantification, or biomechanics content whatsoever.",
+        "validation_kind": "none",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "education_administration",
+          "mixed_methods",
+          "off_topic"
+        ],
+        "summary_zh": {
+          "motivation": "旨在为小学教师主动学习管理提出学术行政模式。",
+          "method": "采用混合方法，先问卷评估需求，再访谈与专家焦点小组开发模式。",
+          "result": "提出含原则、目标、六方面操作流程、评价与成功条件的五要素模式，评价得分很高。",
+          "validation": "通过370人问卷与12名专家焦点小组评估模式适宜性。"
+        },
+        "summary_en": {
+          "motivation": "The study aims to develop an academic administration model that supports active learning management among primary school teachers.",
+          "method": "A two-phase mixed-methods design combined a questionnaire-based needs assessment with structured interviews and an expert focus group to construct and evaluate the model.",
+          "result": "The resulting five-component model, covering principles, objectives, six operational areas, evaluation, and success conditions, was rated highly for appropriateness and feasibility.",
+          "validation": "Validation relied on a 370-respondent needs survey and a 12-expert focus group evaluation rather than any computational or experimental assessment."
+        },
+        "key_terms": [
+          {
+            "en": "academic administration model",
+            "zh": "学术管理模式"
+          },
+          {
+            "en": "active learning",
+            "zh": "主动学习"
+          },
+          {
+            "en": "priority needs index",
+            "zh": "需求优先指数"
+          },
+          {
+            "en": "mixed-methods design",
+            "zh": "混合方法设计"
+          },
+          {
+            "en": "focus group",
+            "zh": "焦点小组"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-11-13T19:51:04Z"
+    },
+    {
+      "source": "openalex",
+      "id": "https://openalex.org/W7225932203",
+      "doi": "",
+      "pmid": "",
+      "arxiv_id": "",
+      "title": "Monitoria em disciplinas básicas em cursos de graduação na área da saúde: um relato de experiência",
+      "abstract": "The objective of this study is to report the experience of an undergraduate student participating in a tutoring program developed between 2021 and 2024 in basic courses within the health sciences area at a community university located in the metropolitan region of Porto Alegre (RS), Brazil. This is a descriptive study, characterized as an experience report. The courses involved included Molecular Biology and Biochemistry, Kinesiology and Biomechanics, Exercise Physiology, Human Physiology, and Human Morphology, offered in both in-person and remote formats. Initially, student participation was low, possibly due to a lack of understanding about the roles and benefits of the tutoring program. To increase engagement, strategies such as collective review sessions and integration between classes were implemented, resulting in greater participation. The tutor incorporated active learning methodologies, including the discussion of clinical cases and the use of educational games, promoting collaborative learning and the development of higher-order cognitive skills, in line with constructivist approaches to health education. Despite the challenges, these strategies enhanced academic performance and strengthened the link between theory and practice. The experience enabled the tutor to improve pedagogical skills, develop teaching materials, and consolidate her teaching training, while for students it provided a supportive space for reflection and deeper learning.",
+      "authors": [
+        "Tainá Aparecida Haubert",
+        "Patrick da Silveira Gonçalves",
+        "Liciane Fernandes Medeiros"
+      ],
+      "first_author_affiliation": "",
+      "corresponding_authors": [],
+      "venue": "Cippus",
+      "venue_id": "S4210230648",
+      "venue_issn_l": "2238-9032",
+      "venue_type": "journal",
+      "year": 2026,
+      "date": "2026-11-10",
+      "date_precision": "day",
+      "url": "https://openalex.org/W7225932203",
+      "cited_by_count": 0,
+      "concepts": [
+        "TUTOR",
+        "Medical education",
+        "Psychology",
+        "Pedagogy",
+        "Discipline",
+        "Metropolitan area",
+        "Social constructivism",
+        "Constructivist teaching methods",
+        "Reflection (computer programming)",
+        "Problem-based learning",
+        "Human science",
+        "Higher education",
+        "Multidisciplinary approach",
+        "Kinesiology",
+        "Experiential learning",
+        "Service-learning",
+        "Educational science",
+        "Academic community"
+      ],
+      "categories": [],
+      "raw_type": "article",
+      "directions": [
+        "fea_surrogate"
+      ],
+      "direction": "fea_surrogate",
+      "direction_name": "FEA & Surrogate Modelling",
+      "routing_matches": {
+        "fea_surrogate": [
+          "active learning"
+        ]
+      },
+      "llm": {
+        "priority": "Exclude",
+        "relevance_level": "Peripheral",
+        "read_action": "Ignore",
+        "relevance_to_user": "该文是健康科学课程辅导教学的经验报告，与FEA代理建模、仿真采样效率、不确定性量化或植入物生物力学设计完全无关。",
+        "why_not_core": "This is a pedagogical experience report on undergraduate tutoring in health-science basic courses; it contains no simulation, surrogate modeling, optimization, uncertainty quantification, or biomechanics/implant design content.",
+        "validation_kind": "none",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "education",
+          "tutoring",
+          "health sciences",
+          "active learning"
+        ],
+        "summary_zh": {
+          "motivation": "报告健康科学基础课程辅导项目的实施经验。",
+          "method": "采用描述性经验报告，结合主动学习、临床案例讨论与教学游戏。",
+          "result": "参与度与学业表现提升，导师教学能力得到锻炼。",
+          "validation": "无定量验证，仅为经验性描述。"
+        },
+        "summary_en": {
+          "motivation": "The study aims to document an undergraduate tutoring initiative in basic health-science courses.",
+          "method": "A descriptive experience report describes active-learning strategies, clinical case discussions, and educational games used across several courses.",
+          "result": "Student engagement and academic performance reportedly improved, and the tutor's pedagogical skills were consolidated.",
+          "validation": "No formal validation; the account is purely descriptive and experiential."
+        },
+        "key_terms": [
+          {
+            "en": "tutoring program",
+            "zh": "辅导项目"
+          },
+          {
+            "en": "active learning",
+            "zh": "主动学习"
+          },
+          {
+            "en": "experience report",
+            "zh": "经验报告"
+          },
+          {
+            "en": "health sciences education",
+            "zh": "健康科学教育"
+          },
+          {
+            "en": "biomechanics course",
+            "zh": "生物力学课程"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-11-13T19:51:04Z"
+    },
+    {
+      "source": "openalex",
+      "id": "https://openalex.org/W7225943366",
+      "doi": "",
+      "pmid": "",
+      "arxiv_id": "",
+      "title": "Global Research Trends in Artificial Intelligence-Driven Conductive Bioinks for Wound Healing: A Bibliometric Analysis (2021–2025)",
+      "abstract": "Artificial intelligence (AI), conductive bioinks, and advanced wound healing technologies are among the fastest-growing areas at the intersection of regenerative medicine and tissue engineering. This study mapped global research trends in AI-enabled conductive bioinks for wound healing from 2021 to 2025, examining collaboration networks, thematic development, and influential publications. Bibliometric analysis was performed on data retrieved from the Dimensions database, using Bibliometrix and VOSviewer for statistical and visual analyses. Annual scientific output showed a clear upward trajectory, reaching its highest level in 2025, based on records available up to the search date of January 15, 2026. China, India, and the United States led in publication volume, while the United States stood out for the breadth and strength of its international collaboration networks. Keyword co-occurrence mapping revealed three dominant thematic clusters centered on hydrogels, tissue engineering, and 3D printing with polymer science. “Skin” and “3D bioprinting” had the highest domain-specific relevance scores, reflecting a growing focus on skin regeneration and smart wound care. Highly cited publications addressed advanced bioprinting, conductive biomaterials, smart wound dressings, wearable biosensors, and AI-assisted regenerative strategies. Overall, the findings highlight a meaningful convergence of AI, biomaterials science, and wound healing research, with momentum building around intelligent material design, real-time wound monitoring, and precision medicine approaches. This analysis offers a structured view of the field’s intellectual development and serves as a useful reference for researchers and innovators working on next-generation wound care solutions.",
+      "authors": [
+        "Meka Deesongkram",
+        "Kreetha Phupardrae",
+        "Keerattaya Homthong",
+        "Parinda Thussamee",
+        "Janyamon Tupila",
+        "Jutathip Chumjom"
+      ],
+      "first_author_affiliation": "Department of Science and Technology, Sakolrajwittayanukul School, Mueang Sakon Nakhon District, Sakon Nakhon 47000, Thailand",
+      "corresponding_authors": [],
+      "venue": "Interprofessional Journal of Health Sciences",
+      "venue_id": "S7407066984",
+      "venue_issn_l": "2672-9423",
+      "venue_type": "journal",
+      "year": 2026,
+      "date": "2026-11-10",
+      "date_precision": "day",
+      "url": "https://openalex.org/W7225943366",
+      "cited_by_count": 0,
+      "concepts": [
+        "Thematic map",
+        "Wearable technology",
+        "Relevance (law)",
+        "Wearable computer",
+        "Thematic analysis",
+        "Wound care",
+        "Data science",
+        "Engineering",
+        "Intersection (aeronautics)",
+        "Computer science",
+        "Wound dressing",
+        "Artificial intelligence"
+      ],
+      "categories": [],
+      "raw_type": "article",
+      "directions": [
+        "ai_bioprinting"
+      ],
+      "direction": "ai_bioprinting",
+      "direction_name": "AI for Bioprinting",
+      "routing_matches": {
+        "ai_bioprinting": [
+          "3D bioprinting",
+          "AI + bioprinting"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该文为文献计量分析，仅勾勒AI+导电生物墨水用于伤口愈合的研究格局，未涉及任何AI嵌入生物打印流程的具体方法。",
+        "why_not_core": "It is a bibliometric trend analysis with no AI model, no bioprinting workflow integration, and no experimental validation of printed constructs.",
+        "validation_kind": "none",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": true
+        },
+        "tags": [
+          "bibliometric_analysis",
+          "conductive_bioink",
+          "wound_healing",
+          "AI_in_bioprinting",
+          "research_trends"
+        ],
+        "summary_zh": {
+          "motivation": "梳理AI驱动导电生物墨水在伤口愈合领域的研究格局与热点。",
+          "method": "基于Dimensions数据库，用Bibliometrix和VOSviewer对2021–2025年文献做计量与可视化分析。",
+          "result": "发文量逐年上升，形成水凝胶、组织工程、3D打印三大主题簇，中美印产出领先。",
+          "validation": "文献计量统计与关键词共现可视化，无实验验证。"
+        },
+        "summary_en": {
+          "motivation": "The study aims to chart the intellectual landscape and emerging themes at the intersection of AI, conductive bioinks, and wound healing.",
+          "method": "Bibliometric records from the Dimensions database were analyzed with Bibliometrix and VOSviewer to map collaboration networks and thematic clusters over 2021–2025.",
+          "result": "Output rose steadily to a 2025 peak, with three dominant clusters around hydrogels, tissue engineering, and 3D printing, and China, India, and the US leading volume.",
+          "validation": "Validation is limited to bibliometric statistics and keyword co-occurrence visualization, with no experimental or model-based assessment."
+        },
+        "key_terms": [
+          {
+            "en": "conductive bioink",
+            "zh": "导电生物墨水"
+          },
+          {
+            "en": "bibliometric analysis",
+            "zh": "文献计量分析"
+          },
+          {
+            "en": "wound healing",
+            "zh": "伤口愈合"
+          },
+          {
+            "en": "keyword co-occurrence",
+            "zh": "关键词共现"
+          },
+          {
+            "en": "3D bioprinting",
+            "zh": "3D生物打印"
+          },
+          {
+            "en": "hydrogel",
+            "zh": "水凝胶"
+          },
+          {
+            "en": "skin regeneration",
+            "zh": "皮肤再生"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-11-13T19:51:04Z"
+    },
+    {
+      "source": "openalex",
+      "id": "https://openalex.org/W7225956958",
+      "doi": "",
+      "pmid": "",
+      "arxiv_id": "",
+      "title": "Model Pembelajaran STEM Berbasis Pembelajaran Mendalam untuk Meningkatkan Literasi Sains Anak Usia Dini",
+      "abstract": "This research aims to develop and implement a deep learning-based STEM learning model to enhance early childhood science literacy. The study is motivated by children's limited understanding of basic scientific concepts, insufficient opportunities for exploration in early childhood classrooms, and the continued use of teacher-centered instructional methods that restrict active learning and critical thinking. The proposed model integrates deep learning principles through observation, exploration, experimentation, discussion, and reflection, enabling children to construct scientific understanding actively and meaningfully. This research employed a qualitative Research and Development (R&D) approach involving teachers, children aged 5–6 years, and school principals. Data were collected through classroom observations, interviews, documentation, and field notes and analyzed using thematic analysis. The findings indicate that the developed model significantly improves children's ability to explain scientific phenomena, make predictions, formulate questions, and understand simple cause-and-effect relationships. Children also demonstrate increased curiosity, confidence in conducting experiments, and communication skills when presenting their findings. In addition, teachers enhance their competence in facilitating inquiry-based and experiment-oriented learning. A well-designed learning environment further supports meaningful learning experiences. Overall, the deep learning-based STEM learning model is feasible, practical, and effective in strengthening early childhood science literacy and provides an innovative instructional alternative for early childhood education settings.",
+      "authors": [
+        "Alfian Ashshidiqi Poppyariyana",
+        "Ibnu Hurri"
+      ],
+      "first_author_affiliation": "Universitas Muhammadiyah Sukabumi",
+      "corresponding_authors": [],
+      "venue": "Hadlonah Jurnal Pendidikan dan Pengasuhan Anak",
+      "venue_id": "S4387281696",
+      "venue_issn_l": "2549-0141",
+      "venue_type": "journal",
+      "year": 2026,
+      "date": "2026-11-10",
+      "date_precision": "day",
+      "url": "https://openalex.org/W7225956958",
+      "cited_by_count": 0,
+      "concepts": [
+        "Competence (human resources)",
+        "Early childhood",
+        "Psychology",
+        "Scientific literacy",
+        "Construct (python library)",
+        "Thematic analysis",
+        "Mathematics education",
+        "Science learning",
+        "Learning to learn",
+        "Literacy",
+        "Learning sciences",
+        "Qualitative research",
+        "Early childhood education"
+      ],
+      "categories": [],
+      "raw_type": "article",
+      "directions": [
+        "fea_surrogate"
+      ],
+      "direction": "fea_surrogate",
+      "direction_name": "FEA & Surrogate Modelling",
+      "routing_matches": {
+        "fea_surrogate": [
+          "active learning"
+        ]
+      },
+      "llm": {
+        "priority": "Exclude",
+        "relevance_level": "Peripheral",
+        "read_action": "Ignore",
+        "relevance_to_user": "该论文是幼儿STEM教育研究，与FEA及代理建模方向完全无关。",
+        "why_not_core": "This is an early-childhood education study using qualitative R&D methods; it contains no simulation, no surrogate modeling, no FEA, no uncertainty quantification, and no biomechanics or implant context.",
+        "validation_kind": "none",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "education",
+          "STEM learning",
+          "qualitative research",
+          "off-topic"
+        ],
+        "summary_zh": {
+          "motivation": "幼儿科学概念理解不足且课堂以教师为中心。",
+          "method": "采用质性研发方法，结合观察、访谈与主题分析构建深度学习式STEM模型。",
+          "result": "儿童科学解释、提问与因果理解能力提升，教师引导能力增强。",
+          "validation": "课堂观察、访谈与文档的主题分析。"
+        },
+        "summary_en": {
+          "motivation": "The study addresses young children's limited grasp of basic science concepts and the prevalence of teacher-centered instruction in early childhood classrooms.",
+          "method": "A qualitative research-and-development approach was used, integrating observation, exploration, experimentation, discussion, and reflection into a STEM learning model, with data from classroom observations, interviews, and documentation analyzed thematically.",
+          "result": "The model reportedly improved children's scientific explanation, prediction, questioning, and causal reasoning, along with their curiosity and confidence, while also strengthening teachers' inquiry-facilitation competence.",
+          "validation": "Validation relied on qualitative thematic analysis of classroom observations, interviews, documentation, and field notes rather than quantitative or computational assessment."
+        },
+        "key_terms": [
+          {
+            "en": "STEM education",
+            "zh": "STEM教育"
+          },
+          {
+            "en": "early childhood science literacy",
+            "zh": "幼儿科学素养"
+          },
+          {
+            "en": "qualitative research and development",
+            "zh": "质性研发"
+          },
+          {
+            "en": "thematic analysis",
+            "zh": "主题分析"
+          },
+          {
+            "en": "inquiry-based learning",
+            "zh": "探究式学习"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-11-13T19:51:04Z"
     }
   ],
   "counts": {
-    "fetched_total": 88,
+    "fetched_total": 96,
     "by_source": {
-      "openalex": 66,
-      "arxiv": 19,
+      "openalex": 72,
+      "arxiv": 21,
       "pubmed": 3
     },
-    "after_dedup": 88,
-    "after_routing": 88,
+    "after_dedup": 96,
+    "after_routing": 96,
     "by_direction": {
-      "hip_implant": 5,
-      "fea_surrogate": 46,
-      "rl_world_model": 15,
+      "hip_implant": 6,
+      "fea_surrogate": 51,
+      "rl_world_model": 16,
       "am_biomedical": 12,
-      "ai_bioprinting": 10
+      "ai_bioprinting": 11
     },
     "routed_by_source": {
-      "openalex": 66,
-      "arxiv": 19,
+      "openalex": 72,
+      "arxiv": 21,
       "pubmed": 3
     },
-    "scored": 88,
+    "scored": 96,
     "priority_counts": {
-      "Exclude": 33,
-      "Low": 31,
+      "Exclude": 38,
+      "Low": 34,
       "Medium": 23,
       "High": 1
     }
