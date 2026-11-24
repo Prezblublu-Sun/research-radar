@@ -12347,34 +12347,1098 @@
       "schema_version": "v2",
       "scorer_version": "v3",
       "first_seen_at": "2026-11-22T19:48:09Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2611.26867v1",
+      "doi": "",
+      "arxiv_id": "2611.26867v1",
+      "title": "SonoAtlasWorld: Anatomy-Grounded Ultrasound World Models for Wide-Range Scanning",
+      "abstract": "Learning robotic ultrasound policies requires interactive environments for scalable data generation and repeatable evaluation, while exploration on real patients is limited by acquisition costs and safety constraints. Generative world models offer an alternative, but image history and probe actions alone do not ensure anatomical consistency across wide-range scans and changing acoustic windows. We introduce SonoAtlasWorld, an ultrasound world model built on anatomy as state. A persistent 3D anatomical asset extracted from computed tomography (CT) anchors each scan to a specific anatomy. Probe actions determine anatomical and acoustic visibility conditions for a causal ultrasound generator trained on clinical videos. Our three-stage pipeline combines anatomy-conditioned pretraining, causal conversion and long-rollout alignment. Inference optimizations achieve pose-to-ultrasound throughput of 81.2 FPS. To evaluate anatomical control beyond image similarity, we introduce the Action-Following Index (AFI), which measures normalized reconstruction gain over a static-prefix baseline. On 40 held-out 3D volumes, SonoAtlasWorld achieves liver and macro-organ AFI of 0.428 and 0.262, compared with at most 0.117 and 0.038 for the tested action- and geometry-conditioned methods. Long-rollout alignment reduces brightness drift by 3.46x at the end of 40 repeated scan cycles. SonoAtlasWorld also generates offline policy-training demonstrations and supports anatomically grounded closed-loop evaluation. Scaling the generated training data improves key-plane acquisition success from 48.2% to 81.2% on unseen anatomies in simulation, demonstrating its utility for robotic ultrasound policy learning.",
+      "authors": [
+        "Zheyuan Zhang",
+        "Boris Mailhe",
+        "Hang Yu",
+        "Yikang Liu",
+        "Xiao Chen",
+        "Ankush Mukherjee",
+        "Terrence Chen",
+        "Shanhui Sun"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-11-19",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2611.26867v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.CV"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "world model",
+          "world model + simulation"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该论文构建超声世界模型用于机器人扫描策略学习，与用户关注的有限元植入物/生物力学设计仿真无直接关联，仅作为世界模型方法背景。",
+        "why_not_core": "This paper builds an ultrasound generative world model for robotic scanning policy learning; it contains no FEA/FEM surrogate modeling, no implant biomechanics, and no structural design optimization.",
+        "validation_kind": "simulation_case",
+        "flags": {
+          "has_experimental_validation": true,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "world model",
+          "robotic ultrasound",
+          "generative model",
+          "policy learning",
+          "no engineering simulation"
+        ],
+        "summary_zh": {
+          "motivation": "真实患者超声扫描成本高且受限，需可重复的交互环境生成数据。",
+          "method": "以CT提取的持久3D解剖资产作为状态，结合探针动作条件训练因果超声生成器。",
+          "result": "在40个留出体数据上解剖控制指标显著优于基线，生成数据提升策略成功率至81.2%。",
+          "validation": "在仿真环境中用留出解剖体数据与策略学习实验验证。"
+        },
+        "summary_en": {
+          "motivation": "Scalable and repeatable environments are needed to train robotic ultrasound policies without risky real-patient exploration.",
+          "method": "The authors anchor a causal ultrasound generator to a persistent 3D anatomical asset from CT, conditioning visibility on probe actions through a three-stage training pipeline.",
+          "result": "The model achieves substantially higher anatomical action-following indices than baselines and generated demonstrations raise key-plane acquisition success from 48.2% to 81.2%.",
+          "validation": "Evaluated on 40 held-out 3D volumes in simulation with policy-learning experiments."
+        },
+        "key_terms": [
+          {
+            "en": "world model",
+            "zh": "世界模型"
+          },
+          {
+            "en": "robotic ultrasound",
+            "zh": "机器人超声"
+          },
+          {
+            "en": "anatomical state",
+            "zh": "解剖状态"
+          },
+          {
+            "en": "causal generator",
+            "zh": "因果生成器"
+          },
+          {
+            "en": "policy learning",
+            "zh": "策略学习"
+          },
+          {
+            "en": "action-following index",
+            "zh": "动作跟随指数"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-11-24T00:00:46Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2611.26825v1",
+      "doi": "",
+      "arxiv_id": "2611.26825v1",
+      "title": "Skill-JEPA: Learning Planner-Aligned Action Spaces for World Models",
+      "abstract": "World models based on Joint-Embedding Predictive Architectures (JEPAs) learn from pixels to predict the outcome of actions in a latent space. To reach a goal, a planner samples many candidate action sequences, uses the model to predict where each one leads, and executes the best one. However, standard planners draw their candidates from a Gaussian, while the model has only seen the structured, state-dependent actions of its training data. Its predictions for such candidates are unreliable, and planning fails more often as goals move farther away. We propose Skill-JEPA, which learns an action space aligned with the planner. A variational autoencoder conditioned on the current state encodes short action sequences into latent skills with a standard Gaussian prior, and decodes them back into actions. The world model predicts the effect of skills rather than raw actions, and the planner searches over skills starting from that same Gaussian, so its candidates resemble the model's training data. Skill-JEPA adds a single module, trained end-to-end with the world model, and leaves the planner untouched, with no subgoals, hierarchy, or hand-designed skills. Across three JEPA world models and four benchmarks, average success on goals 80 steps away rises from 42% with raw actions to 62%; the gains grow with goal distance and hold across four planners. On AntMaze, a quadruped locomotion task, success on goals two maze cells away rises from 0.4% to 38%. This suggests that part of the difficulty of reaching distant goals lies in the action space, and can be removed without changing the planner.",
+      "authors": [
+        "Tomás Couso Coddou",
+        "Christ Devia",
+        "Rex G. Liu",
+        "Rodrigo Toro Icarte"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-11-19",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2611.26825v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.RO",
+        "cs.LG"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "world model"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该文提出面向世界模型的规划对齐动作空间方法，属于纯强化学习/世界模型方法研究，与有限元代理建模、植入物生物力学设计无直接关联，仅可作为方法学背景参考。",
+        "why_not_core": "This paper contains no engineering simulation, no FEA/FEM surrogate modeling, no physics simulator coupling, and no biomedical or implant design context; it is evaluated only on RL navigation and locomotion benchmarks.",
+        "validation_kind": "numerical_benchmark",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "world model",
+          "JEPA",
+          "model-based RL",
+          "action space learning",
+          "planning",
+          "no engineering simulation"
+        ],
+        "summary_zh": {
+          "motivation": "标准规划器从高斯分布采样动作，与世界模型训练数据的结构化动作分布不匹配，导致远距离目标规划失败。",
+          "method": "用状态条件变分自编码器将短动作序列编码为高斯先验下的潜在技能，世界模型预测技能效果，规划器在同一高斯空间搜索。",
+          "result": "在三个JEPA世界模型和四个基准上，80步远目标成功率由42%升至62%，AntMaze两格远目标由0.4%升至38%。",
+          "validation": "在导航与四足运动等强化学习基准上做数值对比实验。"
+        },
+        "summary_en": {
+          "motivation": "Planners that sample Gaussian action candidates mismatch the structured, state-dependent action distribution a JEPA world model was trained on, degrading long-horizon planning.",
+          "method": "A state-conditioned variational autoencoder maps short action sequences into latent skills with a Gaussian prior, and the world model and planner both operate over these skills.",
+          "result": "Success on goals 80 steps away improves from 42% to 62% across three world models and four benchmarks, with larger gains on AntMaze.",
+          "validation": "Empirical evaluation on standard reinforcement learning navigation and locomotion benchmarks across multiple planners and world models."
+        },
+        "key_terms": [
+          {
+            "en": "world model",
+            "zh": "世界模型"
+          },
+          {
+            "en": "Joint-Embedding Predictive Architecture",
+            "zh": "联合嵌入预测架构"
+          },
+          {
+            "en": "model-based reinforcement learning",
+            "zh": "基于模型的强化学习"
+          },
+          {
+            "en": "latent skill",
+            "zh": "潜在技能"
+          },
+          {
+            "en": "variational autoencoder",
+            "zh": "变分自编码器"
+          },
+          {
+            "en": "action space alignment",
+            "zh": "动作空间对齐"
+          },
+          {
+            "en": "long-horizon planning",
+            "zh": "长时程规划"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-11-24T00:00:46Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2611.26763v1",
+      "doi": "",
+      "arxiv_id": "2611.26763v1",
+      "title": "Search-Informed MPPI for Kinodynamic Motion Planning via Monte Carlo Tree Expansion",
+      "abstract": "Kinodynamic motion planning in large-scale, cluttered environments remains challenging, as dynamically feasible, collision-free trajectories must be computed efficiently over long horizons. Monte Carlo Tree Search (MCTS) can strategically explore long-horizon alternatives but faces large branching factors in continuous control spaces and often relies on random default-policy rollouts, whereas Model Predictive Path Integral (MPPI) efficiently optimizes local trajectories yet remains susceptible to obstacle-induced local minima. To overcome these challenges, we propose Search-Informed MPPI (SI-MPPI), a unified framework that embeds MPPI trajectory optimization within MCTS-based tree search. The core concept is to fuse the expansion and default-policy simulation stages of MCTS into a single MPPI expansion stage guided by structured intermediate targets, termed baits. During each expansion, an adaptive bait-handling rule retains geometrically valid baits as local targets for GPU-batched MPPI optimizations that generate dynamically feasible candidate motion segments. Feasibility gating then checks these candidates for collision safety and sufficient progress, and top-$k$ selection admits the lowest-cost accepted candidates as tree edges, yielding sparse, directed tree growth; thereafter, effective sample size (ESS)-guided adaptation warm-starts subsequent expansions, while cost-based backpropagation updates tree statistics. Extensive simulations across four large-scale, cluttered 2D occupancy-grid maps demonstrate that SI-MPPI consistently produces the smallest search trees and smoothest angular control profiles compared with three kinodynamic baselines, while maintaining competitive planning times and path lengths. Ablation results further highlight the importance of GPU batching, adaptive bait handling, and retaining multiple expansion candidates for planning efficiency and robustness.",
+      "authors": [
+        "Ihab S. Mohamed",
+        "Lantao Liu"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-11-19",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2611.26763v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.RO",
+        "eess.SY"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "trajectory optimization"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该文将MPPI轨迹优化嵌入MCTS树搜索，属于机器人运动规划方法，与用户的FEA代理模型、髋关节植入物力学及生物打印方向无直接关联，仅作为RL/规划方法学背景。",
+        "why_not_core": "This paper addresses robot kinodynamic motion planning in 2D occupancy grids with no FEA/surrogate modeling, no physics-simulation data generation, no implant or biomechanics context, and no engineering design optimization.",
+        "validation_kind": "simulation_case",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "MPPI",
+          "MCTS",
+          "motion planning",
+          "model-based control",
+          "no engineering simulation tie-in"
+        ],
+        "summary_zh": {
+          "motivation": "大规模杂乱环境中长时程动力学可行轨迹规划效率低，MCTS分支大且MPPI易陷局部极小。",
+          "method": "将MPPI轨迹优化嵌入MCTS扩展阶段，用结构化bait引导GPU批量优化并做可行性门控与top-k选边。",
+          "result": "在四张大规模2D栅格地图上搜索树最小、角控制最平滑，规划时间与路径长度具竞争力。",
+          "validation": "四类2D占用栅格仿真与消融实验，无物理或工程仿真验证。"
+        },
+        "summary_en": {
+          "motivation": "Long-horizon kinodynamic planning in cluttered spaces is hampered by MCTS's large continuous branching and MPPI's susceptibility to obstacle-induced local minima.",
+          "method": "The authors embed GPU-batched MPPI optimization inside MCTS expansion, using structured intermediate targets (baits) with feasibility gating and top-k edge selection to grow a sparse directed tree.",
+          "result": "Across four large-scale cluttered 2D occupancy maps, the method yields the smallest search trees and smoothest angular control while keeping planning time and path length competitive.",
+          "validation": "Evaluated through simulation case studies on four 2D occupancy-grid maps plus ablation analyses, without physical or engineering-simulation validation."
+        },
+        "key_terms": [
+          {
+            "en": "Model Predictive Path Integral",
+            "zh": "模型预测路径积分"
+          },
+          {
+            "en": "Monte Carlo Tree Search",
+            "zh": "蒙特卡洛树搜索"
+          },
+          {
+            "en": "kinodynamic motion planning",
+            "zh": "动力学运动规划"
+          },
+          {
+            "en": "occupancy grid",
+            "zh": "占用栅格"
+          },
+          {
+            "en": "feasibility gating",
+            "zh": "可行性门控"
+          },
+          {
+            "en": "effective sample size",
+            "zh": "有效样本量"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-11-24T00:00:46Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2611.26761v1",
+      "doi": "",
+      "arxiv_id": "2611.26761v1",
+      "title": "Pathwise Factorization and Uncertainty Quantification for Impedance Obstacles with Random Boundaries",
+      "abstract": "We develop a factorization method with finite-sample statistical guarantees for two-dimensional acoustic scattering by impedance obstacles whose boundary is random and whose data are finitely many noisy multistatic measurements. In the two-dimensional far-field normalization, the symmetrization must act on a phase-rotated far-field operator; we prove the optical and range identities for every realization of a compact family of uniformly bi-Lipschitz domains, with jointly measurable regularized indicators. A quadrature-weighted finite-sample analysis separates angular approximation, measurement noise, test-vector error, and regularization, and yields a consistency theorem for empirical means and variances, joint in all data parameters. Bounded indicators admit simultaneous confidence bands, a diagonal threshold recovers the probability that a sampling point lies in the random obstacle, and a nested design yields unbiased variance components. Computations use a combined-field integral equation proved invertible at all frequencies, and the finite-grid guarantees are examined in a coverage study against a high-accuracy Monte Carlo reference.",
+      "authors": [
+        "George Pelekanos",
+        "Koung Hee Leem"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-11-19",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2611.26761v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "math.NA",
+        "math.ST"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "fea_surrogate"
+      ],
+      "direction": "fea_surrogate",
+      "direction_name": "FEA & Surrogate Modelling",
+      "routing_matches": {
+        "fea_surrogate": [
+          "uncertainty quantification"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该文研究随机边界声散射的分解方法与不确定性量化，属于逆问题统计推断，与FEA代理建模和植入物力学设计仅有方法论上的间接关联。",
+        "why_not_core": "It addresses acoustic inverse scattering with random boundaries and statistical guarantees, not surrogate modeling of expensive FEA, no solid-mechanics or implant/biomechanics context, and no constrained design optimization.",
+        "validation_kind": "numerical_benchmark",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": true,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "uncertainty_quantification",
+          "inverse_scattering",
+          "random_boundary",
+          "finite_sample_guarantees",
+          "acoustic_obstacle"
+        ],
+        "summary_zh": {
+          "motivation": "为随机边界阻抗障碍的声散射逆问题提供带有限样本保证的分解方法。",
+          "method": "基于相位旋转远场算子的分解法，结合求积加权有限样本分析与组合场积分方程。",
+          "result": "得到联合一致性与置信带，可估计采样点落入随机障碍的概率并分解方差分量。",
+          "validation": "以高精度蒙特卡洛为参考开展覆盖性数值研究。"
+        },
+        "summary_en": {
+          "motivation": "The work aims to provide statistically guaranteed factorization for acoustic scattering by impedance obstacles with random boundaries from finitely many noisy measurements.",
+          "method": "A phase-rotated far-field factorization is combined with quadrature-weighted finite-sample analysis and a combined-field integral equation formulation.",
+          "result": "Consistency for empirical means and variances, simultaneous confidence bands, and unbiased variance components are established.",
+          "validation": "Finite-grid guarantees are examined in a coverage study against a high-accuracy Monte Carlo reference."
+        },
+        "key_terms": [
+          {
+            "en": "uncertainty quantification",
+            "zh": "不确定性量化"
+          },
+          {
+            "en": "inverse scattering",
+            "zh": "逆散射"
+          },
+          {
+            "en": "random boundary",
+            "zh": "随机边界"
+          },
+          {
+            "en": "factorization method",
+            "zh": "分解方法"
+          },
+          {
+            "en": "confidence band",
+            "zh": "置信带"
+          },
+          {
+            "en": "finite-sample analysis",
+            "zh": "有限样本分析"
+          },
+          {
+            "en": "combined-field integral equation",
+            "zh": "组合场积分方程"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-11-24T00:00:46Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2611.26717v1",
+      "doi": "",
+      "arxiv_id": "2611.26717v1",
+      "title": "Coherence by Construction: Synthesizing CTI Knowledge Graphs and the Formal Limits of Coherence Validation",
+      "abstract": "Synthesizing relational training data such as knowledge graphs with a large language model typically emits structured objects one at a time, which keeps each object valid but leaves the relationships between them ungrounded. We study an alternative paradigm, generation by simulation: rather than describing a relational artifact, we simulate a process that produces it and take the artifact to be its causal record. Language-model agents propose intent and a deterministic referee resolves outcomes against an explicit world model, so a relation is emitted only when the event it represents occurs, making coherence a property of construction. We instantiate the paradigm for cyber threat intelligence knowledge graphs in the STIX 2.1 standard with three engines, among them an evolutionary engine applying language-model genetic operators to structured graph genomes, sharing a deterministic compiler that makes malformed and dangling output unrepresentable. We prove referential closure, causal grounding, and identifier stability, an ablation localizes each to the referee and world model rather than the policy, and two independent LLM judges reproduce the rubric's engine ranking. Our central result is cautionary, and we prove it: a validator reading any graph feature set a structure-matched random graph can reproduce is uninformative about coherence for a coherence-by-construction generator. Using Erdős-Rényi controls we realize the theorem four times, as structural separation, embedding transfer, inductive link prediction, and real-data augmentation each reward a triviality rather than coherence; we give the mechanism behind each and the conditions a valid benchmark must meet.",
+      "authors": [
+        "Tanzimul Alam Fahim",
+        "Mohammad Arif Hossain"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-11-19",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2611.26717v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.AI"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "world model",
+          "world model + simulation"
+        ]
+      },
+      "llm": {
+        "priority": "Exclude",
+        "relevance_level": "Peripheral",
+        "read_action": "Ignore",
+        "relevance_to_user": "该论文研究用LLM智能体模拟生成网络威胁情报知识图谱，与工程仿真、代理模型或植入物生物力学无任何关联。",
+        "why_not_core": "It addresses LLM-driven knowledge graph synthesis for cyber threat intelligence with no FEA, surrogate modeling, physics simulation, or biomechanical/implant context.",
+        "validation_kind": "numerical_benchmark",
+        "flags": {
+          "has_experimental_validation": true,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "knowledge_graph",
+          "LLM_agents",
+          "cyber_threat_intelligence",
+          "coherence_validation",
+          "not_engineering_simulation"
+        ],
+        "summary_zh": {
+          "motivation": "解决LLM逐条生成关系数据时对象间关系缺乏依据的问题。",
+          "method": "提出生成即模拟范式，由LLM智能体提议意图、确定性裁判依据显式世界模型裁决，并用进化引擎生成STIX图谱。",
+          "result": "证明构造式生成器下多数验证器无法区分真实连贯性与结构匹配随机图，给出有效基准的必要条件。",
+          "validation": "通过定理证明、消融实验及两个独立LLM评审复现引擎排序进行验证。"
+        },
+        "summary_en": {
+          "motivation": "LLM-based relational data synthesis typically emits individually valid objects while leaving inter-object relationships ungrounded.",
+          "method": "The authors propose generation-by-simulation, where LLM agents propose intents and a deterministic referee resolves outcomes against an explicit world model, instantiated for STIX 2.1 threat-intelligence graphs with an evolutionary engine.",
+          "result": "They prove referential closure and causal grounding, and show that validators reproducible by structure-matched random graphs are uninformative about coherence, specifying conditions for valid benchmarks.",
+          "validation": "Validation combines formal proofs, an ablation localizing guarantees to the referee and world model, and two independent LLM judges reproducing the engine ranking."
+        },
+        "key_terms": [
+          {
+            "en": "knowledge graph",
+            "zh": "知识图谱"
+          },
+          {
+            "en": "world model",
+            "zh": "世界模型"
+          },
+          {
+            "en": "LLM agents",
+            "zh": "大语言模型智能体"
+          },
+          {
+            "en": "coherence validation",
+            "zh": "连贯性验证"
+          },
+          {
+            "en": "STIX 2.1",
+            "zh": "STIX 2.1标准"
+          },
+          {
+            "en": "Erdős-Rényi control",
+            "zh": "Erdős-Rényi随机对照"
+          },
+          {
+            "en": "generation by simulation",
+            "zh": "生成即模拟"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-11-24T00:00:46Z"
+    },
+    {
+      "source": "openalex",
+      "id": "https://openalex.org/W7236775280",
+      "doi": "10.1016/j.jlp.2026.106247",
+      "pmid": "",
+      "arxiv_id": "",
+      "title": "A digital twin-driven evidential Bayesian framework for dynamic failure probability assessment of urban natural gas pipelines",
+      "abstract": "",
+      "authors": [
+        "Xinhong Li",
+        "Runmei Li",
+        "Ahmed Salim",
+        "Ziyue Han",
+        "Nan Zhang"
+      ],
+      "first_author_affiliation": "School of Resources Engineering, Xi’an University of Architecture and Technology, No.13 Yanta Road, Xi'an, 710055, China",
+      "corresponding_authors": [
+        {
+          "name": "Xinhong Li",
+          "affiliation": "School of Resources Engineering, Xi’an University of Architecture and Technology, No.13 Yanta Road, Xi'an, 710055, China"
+        }
+      ],
+      "venue": "Journal of Loss Prevention in the Process Industries",
+      "venue_id": "S97378760",
+      "venue_issn_l": "0950-4230",
+      "venue_type": "journal",
+      "year": 2026,
+      "date": "2026-11-19",
+      "date_precision": "day",
+      "url": "https://doi.org/10.1016/j.jlp.2026.106247",
+      "cited_by_count": 0,
+      "concepts": [
+        "Pipeline transport",
+        "Bayesian probability",
+        "Evidential reasoning approach",
+        "Natural gas",
+        "Computer science",
+        "Engineering",
+        "Data mining",
+        "Bayesian network",
+        "Uncertainty quantification",
+        "Pipeline (software)",
+        "Reliability engineering",
+        "Environmental science",
+        "Bayesian inference",
+        "Petroleum engineering",
+        "Dynamic Bayesian network"
+      ],
+      "categories": [],
+      "raw_type": "article",
+      "directions": [
+        "ai_bioprinting"
+      ],
+      "direction": "ai_bioprinting",
+      "direction_name": "AI for Bioprinting",
+      "routing_matches": {
+        "ai_bioprinting": [
+          "digital twin"
+        ]
+      },
+      "llm": {
+        "priority": "Exclude",
+        "relevance_level": "Peripheral",
+        "read_action": "Ignore",
+        "relevance_to_user": "该论文研究城市天然气管道的数字孪生失效概率评估，与生物打印AI工作流无直接关联。",
+        "why_not_core": "It addresses urban natural gas pipeline failure probability with a digital twin and evidential Bayesian network, with no bioprinting workflow, no bioink or cell-laden process, and no biomedical or implant context.",
+        "validation_kind": "simulation_case",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": true,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "digital twin",
+          "Bayesian network",
+          "failure probability",
+          "pipeline integrity",
+          "uncertainty quantification"
+        ],
+        "summary_zh": {
+          "motivation": "城市天然气管网失效风险需动态评估以支撑安全管理。",
+          "method": "构建数字孪生与证据贝叶斯网络耦合的动态失效概率评估框架。",
+          "result": "框架可随运行状态更新管道失效概率并量化不确定性。",
+          "validation": "基于管道场景的仿真算例验证。"
+        },
+        "summary_en": {
+          "motivation": "Dynamic failure risk assessment is needed to support safety management of urban natural gas pipeline networks.",
+          "method": "A digital twin coupled with an evidential Bayesian network is constructed to assess time-varying failure probability.",
+          "result": "The framework updates pipeline failure probability with operating conditions while quantifying uncertainty.",
+          "validation": "The approach is demonstrated through simulation cases of pipeline scenarios."
+        },
+        "key_terms": [
+          {
+            "en": "digital twin",
+            "zh": "数字孪生"
+          },
+          {
+            "en": "evidential Bayesian network",
+            "zh": "证据贝叶斯网络"
+          },
+          {
+            "en": "failure probability",
+            "zh": "失效概率"
+          },
+          {
+            "en": "natural gas pipeline",
+            "zh": "天然气管道"
+          },
+          {
+            "en": "uncertainty quantification",
+            "zh": "不确定性量化"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-11-24T00:00:46Z"
+    },
+    {
+      "source": "openalex",
+      "id": "https://openalex.org/W7238368999",
+      "doi": "10.36948/ijfmr.2026.v08i06.91938",
+      "pmid": "",
+      "arxiv_id": "",
+      "title": "Advancing Quality Science Education Through Gamification: An Evaluation of Student Engagement and Achievement in Genetics",
+      "abstract": "The present study aimed to assess the effectiveness of gamified teaching in improving student engagement and achievement in Genetics subject in school Matthayom 6, Assumption College Thonburi for School Year 2025-2026. A mixed-methods research design using a convergent parallel approach was employed, combining a quasi-experimental non-equivalent pretest–posttest design for the quantitative component and a phenomenological approach for the qualitative component. A total enumeration of 150 students was followed by a purposive sampling of nine students for the qualitative co-participation phase. The study was carried out between December 15, 2025 and February 27, 2026 when lesson plans using gamified instructional materials were applied. Researcher-made engagement questionnaire, Genetics assessment tests, project-based assessments, classroom observations, and semi-structured interviews were used to gather data. The quantitative results indicated the academic achievement of students improved after gamified teaching, and three aspects of engagement, behavioral, emotional, and cognitive, were all interpreted as “More Engaged.” There were also significant positive connections between behavioral, emotional, and cognitive engagement with academic achievement, with the posttest correlation being highest for cognitive engagement. The qualitative results revealed that students' learning of Genetics through the game was interactive and meaningful because it included active learning, thinking, problem solving, and working together, peer learning, and applying the concepts of Genetics. The quantitative and qualitative results showed a positive integration where gamified instruction aided students in both engagement and academic outcomes and offered meaningful learning experiences. Given the findings, Proposed Enhanced Game Based Learning Tools for Genetics Instruction were created to increase the cognitive engagement, interaction, collaboration, application, feedback, and scaffolding. The study suggests that the use and further development of improved GBL tools in the teaching and learning of Genetics be considered by the teachers and schools, and that future researchers investigate the effectiveness of these tools with larger classes, longer teaching and learning periods and other science topics.",
+      "authors": [
+        "Jefferson Tangonan",
+        "Miriam Rañola"
+      ],
+      "first_author_affiliation": "Teacher , School District of La Crosse , United States of America,",
+      "corresponding_authors": [],
+      "venue": "International Journal For Multidisciplinary Research",
+      "venue_id": "S4210207214",
+      "venue_issn_l": "2582-2160",
+      "venue_type": "journal",
+      "year": 2026,
+      "date": "2026-11-19",
+      "date_precision": "day",
+      "url": "https://doi.org/10.36948/ijfmr.2026.v08i06.91938",
+      "cited_by_count": 0,
+      "concepts": [
+        "Nonprobability sampling",
+        "Psychology",
+        "Student engagement",
+        "Mathematics education",
+        "Qualitative research",
+        "Academic achievement",
+        "Cognition",
+        "Qualitative property",
+        "Multimethodology",
+        "Science education",
+        "Teaching method",
+        "Pedagogy",
+        "Qualitative analysis",
+        "Problem-based learning"
+      ],
+      "categories": [],
+      "raw_type": "article",
+      "directions": [
+        "fea_surrogate"
+      ],
+      "direction": "fea_surrogate",
+      "direction_name": "FEA & Surrogate Modelling",
+      "routing_matches": {
+        "fea_surrogate": [
+          "active learning"
+        ]
+      },
+      "llm": {
+        "priority": "Exclude",
+        "relevance_level": "Peripheral",
+        "read_action": "Ignore",
+        "relevance_to_user": "该论文研究游戏化教学对遗传学课程学生参与度和成绩的影响，与FEA代理建模、仿真采样效率、不确定性量化或植入物生物力学设计完全无关。",
+        "why_not_core": "This is an education-pedagogy study with no simulation, surrogate modeling, optimization, uncertainty quantification, or biomechanics content whatsoever.",
+        "validation_kind": "none",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "gamification",
+          "education",
+          "genetics",
+          "mixed-methods"
+        ],
+        "summary_zh": {
+          "motivation": "评估游戏化教学能否提升高中遗传学课程的参与度与成绩。",
+          "method": "采用混合方法，结合准实验前后测设计与现象学访谈，对150名学生施测。",
+          "result": "游戏化教学后成绩提升，行为、情感、认知参与度均提高且与成绩正相关。",
+          "validation": "通过问卷、测验、课堂观察与半结构化访谈进行实证验证。"
+        },
+        "summary_en": {
+          "motivation": "The study evaluates whether gamified instruction can improve student engagement and academic achievement in a secondary-school genetics course.",
+          "method": "A convergent mixed-methods design combined a quasi-experimental pretest-posttest with phenomenological interviews across 150 students.",
+          "result": "Gamified teaching was associated with higher achievement and elevated behavioral, emotional, and cognitive engagement, all positively correlated with outcomes.",
+          "validation": "Evidence came from researcher-made questionnaires, achievement tests, classroom observations, and semi-structured interviews."
+        },
+        "key_terms": [
+          {
+            "en": "gamification",
+            "zh": "游戏化教学"
+          },
+          {
+            "en": "student engagement",
+            "zh": "学生参与度"
+          },
+          {
+            "en": "mixed-methods design",
+            "zh": "混合方法设计"
+          },
+          {
+            "en": "quasi-experimental design",
+            "zh": "准实验设计"
+          },
+          {
+            "en": "academic achievement",
+            "zh": "学业成绩"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-11-24T00:00:46Z"
+    },
+    {
+      "source": "openalex",
+      "id": "https://openalex.org/W7238595153",
+      "doi": "",
+      "pmid": "",
+      "arxiv_id": "",
+      "title": "การวิเคราะห์เชิงธีมแบบสะท้อนคิด: การนิยามความสำเร็จ ของการจัดการเรียนรู้ โดยนักศึกษาครูระหว่างการปฏิบัติการสอน",
+      "abstract": "This study aimed to explore how Thai student teachers construct and define the meaning of “success” in instructional practice during their teaching practicum, within the discourse of Active Learning and 21st-century skills. A qualitative research design was employed under an interpretivist paradigm. The participants were 76 student teachers. Data were collected through open-ended reflective records and analyzed using Reflexive Thematic Analysis as proposed by Virginia Braun and Victoria Clarke. The findings revealed three prominent dimensions of meaning. First, success as Visible Engagement, emphasizing observable student participation and classroom atmosphere. Second, success as Remedial–Performance Success, defined through measurable improvement and performance-based criteria. Third, success as Holistic Development, highlighting equity, moral growth, and students’ overall potential. The first two dimensions were significantly more prevalent than the third. Importantly, “success” functioned not merely as an outcome of teaching but as a meaning structure shaping pedagogical decision-making and reflecting the ongoing formation of professional identity under the influence of performativity discourse and real-school contexts.",
+      "authors": [
+        "Wadaporn Poolpholamnoey",
+        "Naiyana Chamchong",
+        "Wrisda Watanasak",
+        "Phatruetai Lunsamrong",
+        "Anirutt Somsao"
+      ],
+      "first_author_affiliation": "คณะศึกษาศาสตร์ วิทยาลัยนครราชสีมา",
+      "corresponding_authors": [],
+      "venue": "วารสารสันตยาภิวัฒน์ วัดหนองนกกด",
+      "venue_id": "S7407066745",
+      "venue_issn_l": "2985-0436",
+      "venue_type": "journal",
+      "year": 2026,
+      "date": "2026-11-19",
+      "date_precision": "day",
+      "url": "https://openalex.org/W7238595153",
+      "cited_by_count": 0,
+      "concepts": [
+        "Meaning (existential)",
+        "Pedagogy",
+        "Reflexivity",
+        "Construct (python library)",
+        "Thematic analysis",
+        "Qualitative research",
+        "Performativity",
+        "Identity (music)",
+        "Discourse analysis",
+        "Sociology",
+        "Psychology",
+        "Reflective practice",
+        "Mathematics education"
+      ],
+      "categories": [],
+      "raw_type": "article",
+      "directions": [
+        "fea_surrogate"
+      ],
+      "direction": "fea_surrogate",
+      "direction_name": "FEA & Surrogate Modelling",
+      "routing_matches": {
+        "fea_surrogate": [
+          "active learning"
+        ]
+      },
+      "llm": {
+        "priority": "Exclude",
+        "relevance_level": "Peripheral",
+        "read_action": "Ignore",
+        "relevance_to_user": "该论文是泰国师范生教学实习的定性主题分析，与FEA及代理建模方向完全无关。",
+        "why_not_core": "This is a qualitative education study on student teachers' perceptions of teaching success, with no simulation, surrogate modeling, optimization, uncertainty quantification, or biomechanics content.",
+        "validation_kind": "none",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "qualitative research",
+          "teacher education",
+          "thematic analysis",
+          "off-topic"
+        ],
+        "summary_zh": {
+          "motivation": "探讨泰国师范生在实习中如何界定教学成功。",
+          "method": "对76名师范生的反思记录进行反身性主题分析。",
+          "result": "归纳出可见参与、补救绩效、整体发展三个成功维度。",
+          "validation": "基于开放式反思文本的定性分析，无定量验证。"
+        },
+        "summary_en": {
+          "motivation": "The study explores how Thai student teachers construct the meaning of success during their teaching practicum.",
+          "method": "Reflexive thematic analysis was applied to open-ended reflective records from 76 student teachers.",
+          "result": "Three dimensions of success emerged, with visible engagement and remedial-performance success dominating over holistic development.",
+          "validation": "Qualitative thematic analysis of reflective text without quantitative or experimental validation."
+        },
+        "key_terms": [
+          {
+            "en": "reflexive thematic analysis",
+            "zh": "反身性主题分析"
+          },
+          {
+            "en": "teaching practicum",
+            "zh": "教学实习"
+          },
+          {
+            "en": "active learning",
+            "zh": "主动学习"
+          },
+          {
+            "en": "professional identity",
+            "zh": "职业认同"
+          },
+          {
+            "en": "performativity discourse",
+            "zh": "绩效话语"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-11-24T00:00:46Z"
+    },
+    {
+      "source": "openalex",
+      "id": "https://openalex.org/W7238632359",
+      "doi": "",
+      "pmid": "",
+      "arxiv_id": "",
+      "title": "Preparing Teachers to Implement Social and Emotional Learning in Schools: A Synthetized Systematic Literature Review of Teacher Professional Development (TPD-SEL)",
+      "abstract": "Teacher professional development (TPD) is central to the implementation of Social and Emotional Learning (SEL), yet literature varies substantially in format, intensity, implementation support, and outcome measurement. This review synthesized evidence on TPD designed to prepare primary and secondary teachers to deliver student-focused SEL. A semantic search of more than 138 million academic records indexed from Semantic Scholar and OpenAlex retrieved 1,000 records for screening; 254 sources were retained for structured extraction, and 135 highest-ranked sources informed the narrative synthesis. The evidence indicates that brief workshops mainly improve teachers’ knowledge and perceived competence, whereas sustained programs combining active learning, modelling, rehearsal, coaching, and school-level support are more consistently associated with changes in classroom practice. Coaching relationships, leadership support, implementation quality, and culturally responsive adaptation emerged as important facilitators. Student engagement was most often represented through behavioural indicators such as attendance, participation, and on-task behaviour; emotional, cognitive, and social engagement were less consistently measured as distinct constructs. The evidence base remains limited by heterogeneous fidelity measures, reliance on self-report, uneven contextual representation, and incomplete specification of the pathway from TPD to student outcomes.",
+      "authors": [
+        "Giuseppe Valentino"
+      ],
+      "first_author_affiliation": "",
+      "corresponding_authors": [
+        {
+          "name": "Giuseppe Valentino",
+          "affiliation": ""
+        }
+      ],
+      "venue": "Journal of Inclusive Methodology and Technology in Learning and Teaching",
+      "venue_id": "S7407066639",
+      "venue_issn_l": "2785-5104",
+      "venue_type": "journal",
+      "year": 2026,
+      "date": "2026-11-19",
+      "date_precision": "day",
+      "url": "https://openalex.org/W7238632359",
+      "cited_by_count": 0,
+      "concepts": [
+        "Coaching",
+        "Psychology",
+        "Fidelity",
+        "Professional development",
+        "Adaptation (eye)",
+        "Systematic review",
+        "Narrative",
+        "Medical education",
+        "Social emotional learning",
+        "Pedagogy",
+        "Collaborative learning",
+        "Knowledge base",
+        "Student engagement",
+        "Reflective practice"
+      ],
+      "categories": [],
+      "raw_type": "review",
+      "directions": [
+        "fea_surrogate"
+      ],
+      "direction": "fea_surrogate",
+      "direction_name": "FEA & Surrogate Modelling",
+      "routing_matches": {
+        "fea_surrogate": [
+          "active learning"
+        ]
+      },
+      "llm": {
+        "priority": "Exclude",
+        "relevance_level": "Peripheral",
+        "read_action": "Ignore",
+        "relevance_to_user": "该文是教师社会情感学习培训的系统综述，与FEA代理建模、仿真采样效率、不确定性量化及植入物生物力学设计完全无关。",
+        "why_not_core": "This is an education-focused systematic review of teacher professional development for SEL, with no simulation, surrogate modeling, optimization, uncertainty quantification, or biomechanics content.",
+        "validation_kind": "none",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": true
+        },
+        "tags": [
+          "education",
+          "systematic review",
+          "social emotional learning",
+          "teacher training"
+        ],
+        "summary_zh": {
+          "motivation": "探讨教师专业发展如何支撑社会情感学习的落地实施。",
+          "method": "基于语义检索的大规模文献筛选与结构化提取，开展叙事性系统综述。",
+          "result": "持续型培训项目比短期工作坊更能改变课堂实践，但证据受自报数据与保真度测量异质性限制。",
+          "validation": "文献综述，无实验或数值验证。"
+        },
+        "summary_en": {
+          "motivation": "The review aims to clarify how teacher professional development supports the implementation of student-focused social and emotional learning.",
+          "method": "A semantic search across large academic indexes was screened and structured extraction was performed to inform a narrative synthesis of retained sources.",
+          "result": "Sustained programs combining active learning, coaching, and school-level support were more consistently linked to classroom practice change than brief workshops, though evidence is limited by heterogeneous fidelity measures and self-report reliance.",
+          "validation": "Systematic literature review without experimental or numerical validation."
+        },
+        "key_terms": [
+          {
+            "en": "teacher professional development",
+            "zh": "教师专业发展"
+          },
+          {
+            "en": "social and emotional learning",
+            "zh": "社会情感学习"
+          },
+          {
+            "en": "systematic literature review",
+            "zh": "系统文献综述"
+          },
+          {
+            "en": "implementation fidelity",
+            "zh": "实施保真度"
+          },
+          {
+            "en": "coaching",
+            "zh": "教练式指导"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-11-24T00:00:46Z"
+    },
+    {
+      "source": "openalex",
+      "id": "https://openalex.org/W7238676809",
+      "doi": "",
+      "pmid": "",
+      "arxiv_id": "",
+      "title": "Evaluating language and literature textbooks: a qualitative framework for the analysis and pilot application",
+      "abstract": "The teaching-learning process relies mostly on communicative competence as a foundational transversal ability for personal and professional development. According to Dell Hymes and Cantero Serena, this competence comprises linguistic, discursive, cultural, and strategic dimensions. Despite the evolution of new active learning methodologies, language textbooks continue to remain some static resources. Previous research show that oral skills are frequently underrepresented and inconsistently aligned with students' developmental stages. To address this gap, this study aims to design and pilot a qualitative analysis instrument to evaluate how Primary Education language textbooks promote communicative competence, meaningful participation, and scaffolding. The methodology establishes determined structured dimensions and indicators applied to a pilot sample of six textbooks across three countries (Spain, Italy, and Romania). This exploratory application seeks to refine the instrument's categories prior to a broader comparative study. Ultimately, this framework provides a systematic approach to assessing the didactic quality of school materials, offering researchers and educators a versatile tool to evaluate practices that support or hinder effective language learning.",
+      "authors": [
+        "María Carmen Fernández Tijero",
+        "Cristina Gabriela Chirila"
+      ],
+      "first_author_affiliation": "",
+      "corresponding_authors": [],
+      "venue": "Journal of Inclusive Methodology and Technology in Learning and Teaching",
+      "venue_id": "S7407066639",
+      "venue_issn_l": "2785-5104",
+      "venue_type": "journal",
+      "year": 2026,
+      "date": "2026-11-19",
+      "date_precision": "day",
+      "url": "https://openalex.org/W7238676809",
+      "cited_by_count": 0,
+      "concepts": [
+        "Competence (human resources)",
+        "Communicative competence",
+        "Psychology",
+        "Computer science",
+        "Qualitative research",
+        "Quality (philosophy)",
+        "Qualitative analysis",
+        "Pedagogy",
+        "Language acquisition",
+        "Exploratory research",
+        "Data collection",
+        "Mathematics education",
+        "Knowledge management",
+        "Process (computing)",
+        "Exploratory factor analysis",
+        "Sample (material)"
+      ],
+      "categories": [],
+      "raw_type": "article",
+      "directions": [
+        "fea_surrogate"
+      ],
+      "direction": "fea_surrogate",
+      "direction_name": "FEA & Surrogate Modelling",
+      "routing_matches": {
+        "fea_surrogate": [
+          "active learning"
+        ]
+      },
+      "llm": {
+        "priority": "Exclude",
+        "relevance_level": "Peripheral",
+        "read_action": "Ignore",
+        "relevance_to_user": "该论文属于语言教材评价的教育学研究，与FEA代理建模、仿真采样效率、不确定性量化及植入物生物力学设计完全无关。",
+        "why_not_core": "This is a qualitative education study on language textbook evaluation with no simulation, surrogate modeling, optimization, uncertainty quantification, or biomechanics content.",
+        "validation_kind": "none",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "education",
+          "textbook_evaluation",
+          "qualitative_framework",
+          "off_topic"
+        ],
+        "summary_zh": {
+          "motivation": "语言教材内容静态，口语技能覆盖不足且与学段不匹配。",
+          "method": "构建结构化维度与指标的定性分析工具，并在六本教材上试用。",
+          "result": "初步细化评价类别，为后续跨国比较研究奠定基础。",
+          "validation": "西班牙、意大利、罗马尼亚六本教材的试点应用。"
+        },
+        "summary_en": {
+          "motivation": "Language textbooks remain static resources that often underrepresent oral skills and misalign with learners' developmental stages.",
+          "method": "A structured qualitative instrument with defined dimensions and indicators was designed and piloted on a small textbook sample.",
+          "result": "The pilot application refined the instrument's categories in preparation for a broader comparative study.",
+          "validation": "Exploratory pilot application across six textbooks from three countries."
+        },
+        "key_terms": [
+          {
+            "en": "communicative competence",
+            "zh": "交际能力"
+          },
+          {
+            "en": "textbook evaluation",
+            "zh": "教材评价"
+          },
+          {
+            "en": "qualitative framework",
+            "zh": "定性框架"
+          },
+          {
+            "en": "scaffolding",
+            "zh": "支架式教学"
+          },
+          {
+            "en": "pilot study",
+            "zh": "试点研究"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-11-24T00:00:46Z"
     }
   ],
   "counts": {
-    "fetched_total": 107,
+    "fetched_total": 117,
     "by_source": {
-      "openalex": 72,
+      "openalex": 77,
       "pubmed": 3,
-      "arxiv": 32
+      "arxiv": 37
     },
-    "after_dedup": 107,
-    "after_routing": 107,
+    "after_dedup": 117,
+    "after_routing": 117,
     "by_direction": {
-      "ai_bioprinting": 11,
-      "rl_world_model": 35,
-      "fea_surrogate": 37,
+      "ai_bioprinting": 12,
+      "rl_world_model": 39,
+      "fea_surrogate": 42,
       "am_biomedical": 15,
       "hip_implant": 9
     },
     "routed_by_source": {
-      "openalex": 72,
+      "openalex": 77,
       "pubmed": 3,
-      "arxiv": 32
+      "arxiv": 37
     },
-    "scored": 107,
+    "scored": 117,
     "priority_counts": {
-      "Low": 55,
+      "Low": 59,
       "Medium": 25,
-      "Exclude": 26,
+      "Exclude": 32,
       "High": 1
     }
   }
