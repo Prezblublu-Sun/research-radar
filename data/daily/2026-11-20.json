@@ -14064,34 +14064,2058 @@
       "schema_version": "v2",
       "scorer_version": "v3",
       "first_seen_at": "2026-11-24T00:00:46Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2611.28387v1",
+      "doi": "",
+      "arxiv_id": "2611.28387v1",
+      "title": "Knowing What You Carry: Scalable Physics-Anchored World Models for Robotic Planning with Liquid Payloads",
+      "abstract": "Payload-carrying robots, such as delivery robots and autonomous trucks, must choose motions that keep them and their payload safe, so their planners predict the outcome of each candidate motion. Modern planners compare thousands of candidates per step on a GPU, using world models such as batched simulators or learned predictors. Most of them assume a rigid payload, but a liquid payload keeps moving after a maneuver, and its state is rarely measured. Near a safety limit, small prediction errors can make an unsafe plan look safe. Coupled fluid simulations are accurate but too costly for every candidate, while low-order slosh models are cheap but accurate only away from resonance. We study this trade-off on a ground vehicle with a partly filled tank near its rollover limit. First, we build PLiMB (Parallel Liquid-MultiBody), a GPU-parallel slosh simulator that, to our knowledge, couples FLIP liquid two-way with many multibody vehicles for the first time. It provides training data and a high-fidelity reference. Second, we propose a scalable physics-anchored world model that combines a modal-slosh and roll prior, an estimate of the hidden liquid state from the vehicle's own motion history (no sensor in the tank), and a learned correction. Without simulating the fluid, it scores thousands of candidate plans in one batched pass within a 20 Hz control tick on one GPU. We judge each world model by the plans it leads a planner to choose. Near the rollover limit, planners that treat the liquid as a rigid payload or use published low-order slosh models repeatedly pick unsafe plans when a safe one exists. Ours never does in our standard tank and makes about half as many in a wide tank whose sloshing mode lies in the maneuver band. There, the liquid state left by earlier driving can change the best plan, and reading it from the vehicle's history halves our model's near-limit prediction error.",
+      "authors": [
+        "Yicheng Zhu",
+        "Linfeng Tian",
+        "Yang Chen",
+        "Tao Li",
+        "Zilin Bian"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-11-20",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2611.28387v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.RO"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "world model",
+          "world model + physics"
+        ]
+      },
+      "llm": {
+        "priority": "Medium",
+        "relevance_level": "Transferable",
+        "read_action": "Save for project",
+        "relevance_to_user": "该文将物理锚定的世界模型与GPU并行流体仿真结合用于规划，其代理建模与不确定性感知思路可迁移到有限元代理与植入物设计优化。",
+        "why_not_core": "It targets robotic liquid-payload planning with a FLIP slosh simulator, not FEA surrogate modeling, implant biomechanics, or biomedical design optimization.",
+        "validation_kind": "simulation_case",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "world_model",
+          "physics_anchored_surrogate",
+          "GPU_simulation",
+          "model_based_RL",
+          "engineering_simulation"
+        ],
+        "summary_zh": {
+          "motivation": "液体载荷机器人规划需在安全极限附近准确预测候选动作后果。",
+          "method": "构建GPU并行FLIP-多体晃动仿真器，并提出融合模态先验、隐状态估计与学习修正的物理锚定世界模型。",
+          "result": "该方法在20Hz内批量评估上千候选方案，近倾覆极限下避免不安全规划，宽罐场景误差减半。",
+          "validation": "在部分充液地面车辆近倾覆极限的仿真场景中对比刚性载荷与低阶晃动模型。"
+        },
+        "summary_en": {
+          "motivation": "Payload-carrying robots near safety limits require planners that can reliably predict the consequences of candidate motions despite unmeasured liquid dynamics.",
+          "method": "The authors build a GPU-parallel FLIP-multibody slosh simulator and a physics-anchored world model combining a modal-slosh prior, hidden-state estimation from motion history, and a learned correction.",
+          "result": "The model scores thousands of plans within a 20 Hz tick on one GPU and avoids unsafe plans near rollover where rigid and low-order baselines fail, halving near-limit error in a wide tank.",
+          "validation": "Evaluated in simulation on a ground vehicle with a partly filled tank near its rollover limit against rigid-payload and published slosh-model baselines."
+        },
+        "key_terms": [
+          {
+            "en": "world model",
+            "zh": "世界模型"
+          },
+          {
+            "en": "physics-anchored surrogate",
+            "zh": "物理锚定代理模型"
+          },
+          {
+            "en": "liquid slosh dynamics",
+            "zh": "液体晃动动力学"
+          },
+          {
+            "en": "GPU-parallel simulation",
+            "zh": "GPU并行仿真"
+          },
+          {
+            "en": "model-based planning",
+            "zh": "基于模型的规划"
+          },
+          {
+            "en": "hidden state estimation",
+            "zh": "隐状态估计"
+          },
+          {
+            "en": "FLIP fluid simulation",
+            "zh": "FLIP流体仿真"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-11-24T22:35:14Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2611.28345v1",
+      "doi": "",
+      "arxiv_id": "2611.28345v1",
+      "title": "Toward Adversarially Robust World Models",
+      "abstract": "Latent dynamic world models have proven to be highly versatile tools for embodied artificial intelligence systems, enabling online action planning, safe policy evaluation, and scalable policy learning. However, this versatility makes world models a vulnerable and centralized point of failure as a compromised model can impact planning, evaluation, and training at once. Therefore it is critical that the security and robustness properties of world models are properly understood before they are universally deployed in embodied AI systems. In this work we take a unifying approach towards this understanding, developing two novel attacks against world models, named state hallucination and dynamic shift attacks, aimed directly at impacting downstream systems, and proposing a new theoretical lens through which to study the robustness of latent dynamic world models. Through our analysis we identify robust latent space encoders as the key component of robust world models. We empirically validate this finding on four separate latent dynamic world model families, studying Dino World Model, Le World Model, r2Dreamer, and Cosmos 3, demonstrating significant improvements in robustness through adversarial encoder model training.",
+      "authors": [
+        "Ethan Rathbun",
+        "Jonathan Nöther",
+        "Christopher Amato",
+        "Alina Oprea",
+        "Goran Radanović"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-11-20",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2611.28345v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.LG",
+        "cs.CR"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "world model"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该文研究世界模型的对抗鲁棒性，属于纯RL/具身智能方法，未涉及工程仿真、FEA或植入体设计，仅提供方法学背景。",
+        "why_not_core": "This paper studies adversarial attacks and robust encoders for latent world models in embodied AI, with no connection to engineering simulation, FEA surrogates, physics-based design optimization, or biomechanics.",
+        "validation_kind": "numerical_benchmark",
+        "flags": {
+          "has_experimental_validation": true,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "world models",
+          "adversarial robustness",
+          "embodied AI",
+          "latent dynamics",
+          "no engineering simulation"
+        ],
+        "summary_zh": {
+          "motivation": "世界模型在具身智能中广泛部署，其安全性尚未被充分理解。",
+          "method": "提出状态幻觉与动态偏移两种攻击，并从潜空间编码器角度建立鲁棒性理论分析。",
+          "result": "识别出鲁棒潜空间编码器是世界模型鲁棒性的关键，对抗编码器训练显著提升鲁棒性。",
+          "validation": "在四个潜动态世界模型家族上进行数值实验验证。"
+        },
+        "summary_en": {
+          "motivation": "Latent dynamic world models are increasingly deployed in embodied AI, yet their security and robustness properties remain poorly characterized.",
+          "method": "The authors introduce two attacks, state hallucination and dynamic shift, and propose a theoretical framework for analyzing latent world model robustness centered on the encoder.",
+          "result": "Robust latent space encoders are identified as the critical component, and adversarial encoder training yields substantial robustness gains.",
+          "validation": "Empirical evaluation across four latent dynamic world model families (Dino World Model, Le World Model, r2Dreamer, Cosmos 3)."
+        },
+        "key_terms": [
+          {
+            "en": "world model",
+            "zh": "世界模型"
+          },
+          {
+            "en": "adversarial robustness",
+            "zh": "对抗鲁棒性"
+          },
+          {
+            "en": "latent dynamics",
+            "zh": "潜动态"
+          },
+          {
+            "en": "state hallucination attack",
+            "zh": "状态幻觉攻击"
+          },
+          {
+            "en": "dynamic shift attack",
+            "zh": "动态偏移攻击"
+          },
+          {
+            "en": "embodied AI",
+            "zh": "具身智能"
+          },
+          {
+            "en": "encoder robustness",
+            "zh": "编码器鲁棒性"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-11-24T22:35:14Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2611.28319v1",
+      "doi": "",
+      "arxiv_id": "2611.28319v1",
+      "title": "Learning a Food World Model That Predicts the Next State from Production Data",
+      "abstract": "Food assembly robots pick ingredients from a pan, and every pick must deliver a target weight. We learn a world model of food picking from 61,773 production picks, labeled automatically by a camera and a scale (self-supervised learning). From the pre-pick heightmap of the pan on a 2.5 mm grid, the commanded pick action, the food and the utensil, the model predicts the post-pick heightmap and the picked mass with uncertainty. We evaluate the mass prediction on 12,294 held-out picks of nine foods. The production controller keeps each pick near its commanded target. The model's root-mean-square error (RMSE) of 10.93 g is 9% lower than that of the commanded target or of a per-food mean. This RMSE is 24% lower than that of the controller's internal mass estimate. Gradient-boosted trees on 20 hand-crafted features have a 0.2 g lower RMSE, but they predict only the mass, not the next state that planning and policy learning need. Using the predicted uncertainty, we decline the most uncertain picks and answer 89.4% of picks with an RMSE of 10.28 g. The prediction barely responds to the commanded volume and depth, because they vary little in closed-loop production. The model also fails without warning at target weights not seen in training. Future directions include action-primitive conditioning and a more general model across foods and utensils. We give recommendations for learning world models from production data.",
+      "authors": [
+        "Inkyu Sa",
+        "Gaurav Kuppa",
+        "Steve Van der Hoeven",
+        "Konstantin Stulov",
+        "Rajat Bhageria",
+        "Luis Rayas"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-11-20",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2611.28319v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.RO",
+        "cs.AI",
+        "cs.CV"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "world model"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该文用生产数据学习食品抓取的世界模型，与工程仿真、FEA代理模型或植入物力学无直接关联，仅在世界模型方法论层面有间接参考价值。",
+        "why_not_core": "It learns a data-driven world model for food-picking robotics with no FEA/surrogate modeling, no physics simulator, and no biomechanics or implant design context.",
+        "validation_kind": "simulation_case",
+        "flags": {
+          "has_experimental_validation": true,
+          "has_uncertainty_quantification": true,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "world_model",
+          "self_supervised_learning",
+          "robotic_manipulation",
+          "uncertainty_quantification",
+          "production_data"
+        ],
+        "summary_zh": {
+          "motivation": "食品装配机器人每次抓取需达到目标重量，需预测抓取结果以支撑规划。",
+          "method": "用相机与秤自动标注6万余次生产抓取，从高度图、动作、食材与器具预测抓后高度图与质量及不确定性。",
+          "result": "质量预测RMSE为10.93g，比指令目标低9%，利用不确定性可对89.4%抓取给出10.28g误差。",
+          "validation": "在九种食材的12,294次留出抓取上评估。"
+        },
+        "summary_en": {
+          "motivation": "Food assembly robots must hit a target weight on every pick, motivating a predictive model of picking outcomes to support planning.",
+          "method": "A world model is trained self-supervised on 61,773 production picks auto-labeled by camera and scale, predicting post-pick heightmap and picked mass with uncertainty from pre-pick heightmap, action, food, and utensil.",
+          "result": "Mass prediction achieves 10.93 g RMSE, 9% below the commanded target, and uncertainty-based rejection yields 10.28 g RMSE on 89.4% of picks.",
+          "validation": "Evaluated on 12,294 held-out picks across nine foods."
+        },
+        "key_terms": [
+          {
+            "en": "world model",
+            "zh": "世界模型"
+          },
+          {
+            "en": "self-supervised learning",
+            "zh": "自监督学习"
+          },
+          {
+            "en": "uncertainty quantification",
+            "zh": "不确定性量化"
+          },
+          {
+            "en": "heightmap prediction",
+            "zh": "高度图预测"
+          },
+          {
+            "en": "robotic food picking",
+            "zh": "机器人食品抓取"
+          },
+          {
+            "en": "production data",
+            "zh": "生产数据"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-11-24T22:35:14Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2611.28298v1",
+      "doi": "",
+      "arxiv_id": "2611.28298v1",
+      "title": "Language Model Harnesses can be Compositional Generalizers",
+      "abstract": "Modern language models (LMs) are post-trained and deployed as agents inside a \"harness\", but standard harness designs accumulate context that the neural network is forced to generalize to, making training for long-horizon tasks expensive and time-consuming. We study an alternative emerging path: training inherently neurosymbolic LM harnesses, which externalize and manage context programmatically to compose existing LM capabilities. We hypothesize that training around these harnesses can offer a better return on compute by enabling compositional generalization, as they can learn to decompose complex problems so that every observation their neural LM receives is locally in-distribution, even when the full task is novel. We find that harnesses like the Recursive Language Model (RLM) learn such decompositions readily under reinforcement learning post-training: (1) we demonstrate that training only on short tasks can generalize to tasks 2-64$\\times$ longer while the base neural LM improves less, and (2) training on one domain transfers to novel domains that share latent structure. On messier, complex tasks, we find that we can target individual LLM calls within a harness by generating and training on easier, synthetically generated surrogate environments with fake tool / sub-calls, a technique we call surrogate harness training. From this finding, we train RLM-27B on synthetic data, and show it improves Qwen3.8-27B in the same RLM harness on a hard suite of long-context tasks like CTC-Bench and ExpertLongBench by 26.9% on average while using $\\sim$2$\\times$ fewer tokens at inference time. Finally, we show that harnesses can compose over these newly learned decompositions using recursive sub-harness calls.",
+      "authors": [
+        "Alex L. Zhang",
+        "Souradip Chakraborty",
+        "Omar Khattab"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-11-20",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2611.28298v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.CL",
+        "cs.AI"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "reinforcement learning + surrogate"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该论文研究语言模型harness的组合泛化与RL后训练，与工程仿真、FEA代理模型或植入体生物力学无直接关联，仅提供RL训练方法论的背景参考。",
+        "why_not_core": "This paper addresses LLM agent harness training and compositional generalization in language tasks, with no connection to engineering simulation, FEA surrogates, physics simulators, or implant biomechanics.",
+        "validation_kind": "numerical_benchmark",
+        "flags": {
+          "has_experimental_validation": true,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "LLM agents",
+          "reinforcement learning",
+          "compositional generalization",
+          "surrogate training",
+          "no engineering simulation"
+        ],
+        "summary_zh": {
+          "motivation": "标准harness累积上下文导致长程任务训练成本高，探索神经符号harness的训练价值。",
+          "method": "用强化学习后训练递归语言模型harness，并引入合成代理环境训练单个LLM调用。",
+          "result": "短任务训练可泛化到长2-64倍任务，RLM-27B在长上下文基准上平均提升26.9%且推理token减半。",
+          "validation": "在CTC-Bench、ExpertLongBench等长上下文基准上做数值评测。"
+        },
+        "summary_en": {
+          "motivation": "Standard LM harnesses accumulate context that the network must generalize over, making long-horizon training costly, motivating the study of trainable neurosymbolic harnesses.",
+          "method": "The authors post-train recursive language model harnesses with reinforcement learning and introduce surrogate harness training on synthetic environments with fake tool calls.",
+          "result": "Training on short tasks generalizes to tasks 2-64 times longer, and RLM-27B improves a 27B base model by 26.9% on average on long-context benchmarks while using roughly half the inference tokens.",
+          "validation": "Empirical evaluation on hard long-context benchmark suites such as CTC-Bench and ExpertLongBench."
+        },
+        "key_terms": [
+          {
+            "en": "language model harness",
+            "zh": "语言模型执行框架"
+          },
+          {
+            "en": "compositional generalization",
+            "zh": "组合泛化"
+          },
+          {
+            "en": "reinforcement learning post-training",
+            "zh": "强化学习后训练"
+          },
+          {
+            "en": "surrogate harness training",
+            "zh": "代理框架训练"
+          },
+          {
+            "en": "recursive language model",
+            "zh": "递归语言模型"
+          },
+          {
+            "en": "long-horizon task",
+            "zh": "长程任务"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-11-24T22:35:14Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2611.28286v1",
+      "doi": "",
+      "arxiv_id": "2611.28286v1",
+      "title": "Scalable Beckmann Maps Improve One-step Generation",
+      "abstract": "Beckmann Transport Models (BTM) learn one-step generative maps end-to-end from data, without a teacher, a distillation stage, or pretrained features. We introduce Scalable Beckmann Maps (SBM), which bring to BTM the two ingredients behind the quality of modern multistep generators: classifier-free guidance (CFG) and a training recipe that scales, while keeping sampling at a single network evaluation. CFG combines conditional and unconditional velocity or score predictions, which a Beckmann map does not have. Our guidance rests on one observation: the BTM current is a positive multiple of an autonomous denoising field, to which CFG applies as it does to a velocity. With exact denoisers this gives guided BTM. In practice we substitute the map's own conditional and null predictions for the denoisers, which requires no additional network and introduces a bias that we characterize. We show that the guided update is consistent with a guided conservation equation, and that guidance can move the boundaries between basins, sending more noise to the modes a condition favors. Trained from scratch in the latent of a representation autoencoder, SBM reaches a one-step FID of 1.6 on ImageNet 256x256 without a teacher or a feature loss, outperforming the Improved-MeanFlow baseline with 3.2x fewer FLOPs. In text-to-image generation it reaches a GenEval score of 0.86 with one network evaluation. As a world model, where we train without guidance, the recipe alone outperforms DriftWorld on all five metrics of two robot-manipulation benchmarks, with 1.9-2.8x less training compute and no pretrained auxiliary feature encoder.",
+      "authors": [
+        "Ulrik Unneberg",
+        "Shiyi Wang",
+        "Lee Cheuk-Kit",
+        "Felix Berg",
+        "Boris Kozinsky",
+        "Yilun Du",
+        "Michael S. Albergo",
+        "Eric Vanden-Eijnden"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-11-20",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2611.28286v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.LG"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "world model"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该文属于一步生成/世界模型方法，仅在机器人操作基准上验证，未涉及工程仿真、FEA或植入体力学，与用户方向关联很弱。",
+        "why_not_core": "This paper develops a one-step generative model and world model for image and robot-manipulation benchmarks, with no FEA/surrogate modeling, no physics simulator coupling, and no biomechanics or implant design context.",
+        "validation_kind": "numerical_benchmark",
+        "flags": {
+          "has_experimental_validation": true,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "one-step generation",
+          "world model",
+          "robot manipulation",
+          "generative modeling",
+          "no engineering simulation"
+        ],
+        "summary_zh": {
+          "motivation": "为Beckmann一步生成模型引入无分类器引导与可扩展训练配方。",
+          "method": "利用BTM电流与自主去噪场的正比关系，用条件与空预测替代去噪器实现引导。",
+          "result": "ImageNet 256一步FID达1.6，机器人操作基准五项指标均超DriftWorld。",
+          "validation": "在ImageNet与两个机器人操作基准上做数值评测。"
+        },
+        "summary_en": {
+          "motivation": "The work aims to bring classifier-free guidance and scalable training to one-step Beckmann transport generative maps.",
+          "method": "It exploits the proportionality between the BTM current and an autonomous denoising field, substituting the map's conditional and null predictions for exact denoisers to enable guided updates.",
+          "result": "The approach attains a one-step FID of 1.6 on ImageNet 256x256 and surpasses DriftWorld on all five metrics of two robot-manipulation benchmarks with reduced training compute.",
+          "validation": "Evaluation is conducted on standard image-generation benchmarks and robot-manipulation world-model benchmarks."
+        },
+        "key_terms": [
+          {
+            "en": "Beckmann transport model",
+            "zh": "Beckmann输运模型"
+          },
+          {
+            "en": "classifier-free guidance",
+            "zh": "无分类器引导"
+          },
+          {
+            "en": "one-step generation",
+            "zh": "一步生成"
+          },
+          {
+            "en": "world model",
+            "zh": "世界模型"
+          },
+          {
+            "en": "denoising field",
+            "zh": "去噪场"
+          },
+          {
+            "en": "FID",
+            "zh": "FID指标"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-11-24T22:35:14Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2611.28274v1",
+      "doi": "",
+      "arxiv_id": "2611.28274v1",
+      "title": "Neural Fidelity Calibration for Informative Sim-to-Real Adaptation",
+      "abstract": "Deep reinforcement learning (RL) can transfer agile robot skills from simulation to the real world, but closing the sim-to-real gap by domain randomization requires expert physics knowledge, and simulator calibration from real data typically targets a few hand-picked parameters. Even then, simulators miss real-world effects, and environments reconstructed from onboard perception inherit sensing errors that limit policy improvement. We propose Neural Fidelity Calibration (NFC), which uses conditional flow matching to calibrate simulator physical parameters and residual fidelity domains online during deployment. Residual fidelity captures sim-to-real dynamics discrepancies and perception-induced environment uncertainty. NFC operates in a latent space so that realistic environments can be sampled from the inferred posterior for real-to-sim policy fine-tuning. The framework is informative: the pretrained policy is fine-tuned only when an anomaly is detected, sequential NFC seeds its proposal from the simulation-pretrained estimator, and a hallucination policy modulates posterior uncertainty following optimism in the face of uncertainty. NFC attains the most accurate posteriors among established simulation-based inference methods on five robots with up to 39 physical parameters and a 128x128 residual terrain. On a wheeled robot with a broken wheel axle deployed on snow, mud, and wet grass, NFC raises success on rough terrain from 26% to 70% and reduces orientation jerk by 88%. Code and videos will be released upon publication.",
+      "authors": [
+        "Youwei Yu",
+        "Lantao Liu"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-11-20",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2611.28274v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.RO",
+        "cs.LG",
+        "eess.SY"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "reinforcement learning + simulation"
+        ]
+      },
+      "llm": {
+        "priority": "Medium",
+        "relevance_level": "Transferable",
+        "read_action": "Save for project",
+        "relevance_to_user": "该文用条件流匹配在线校准仿真器物理参数与残差保真域，属于仿真到现实迁移的仿真校准方法，可迁移到有限元代理模型与植入物设计优化的仿真-实测对齐。",
+        "why_not_core": "It targets robot sim-to-real policy adaptation with no FEA, no biomechanics or implant context, and no surrogate modeling of solid mechanics.",
+        "validation_kind": "simulation_case",
+        "flags": {
+          "has_experimental_validation": true,
+          "has_uncertainty_quantification": true,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "sim-to-real",
+          "simulator calibration",
+          "conditional flow matching",
+          "simulation-based inference",
+          "domain randomization",
+          "engineering simulation"
+        ],
+        "summary_zh": {
+          "motivation": "域随机化依赖专家物理知识，且仅校准少数手工参数，难以弥合仿真与现实差距。",
+          "method": "用条件流匹配在潜空间在线校准仿真器物理参数与残差保真域，并按异常触发策略微调。",
+          "result": "在五类机器人上后验最准，轮式机器人断轴雪地等场景成功率由26%升至70%，姿态抖动降88%。",
+          "validation": "在五台机器人及多种复杂地形上做仿真与实机部署对比实验。"
+        },
+        "summary_en": {
+          "motivation": "Closing the sim-to-real gap via domain randomization demands expert physics knowledge and typically calibrates only a handful of hand-selected parameters.",
+          "method": "The authors employ conditional flow matching to infer simulator physical parameters and residual fidelity domains online in a latent space, enabling real-to-sim policy fine-tuning triggered by anomaly detection.",
+          "result": "The approach yields the most accurate posteriors among simulation-based inference baselines and improves rough-terrain success from 26% to 70% while cutting orientation jerk by 88% on a damaged wheeled robot.",
+          "validation": "Validation combines posterior accuracy comparisons across five robots with real-world deployment on snow, mud, and wet grass."
+        },
+        "key_terms": [
+          {
+            "en": "sim-to-real transfer",
+            "zh": "仿真到现实迁移"
+          },
+          {
+            "en": "simulator calibration",
+            "zh": "仿真器校准"
+          },
+          {
+            "en": "conditional flow matching",
+            "zh": "条件流匹配"
+          },
+          {
+            "en": "simulation-based inference",
+            "zh": "基于仿真的推断"
+          },
+          {
+            "en": "domain randomization",
+            "zh": "域随机化"
+          },
+          {
+            "en": "residual fidelity",
+            "zh": "残差保真度"
+          },
+          {
+            "en": "posterior uncertainty",
+            "zh": "后验不确定性"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-11-24T22:35:14Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2611.28190v1",
+      "doi": "10.20535/2521-1943.2026.10.3(110).371577",
+      "arxiv_id": "2611.28190v1",
+      "title": "Physically Informed Data-Driven Modeling of Low-Pressure Carburizing (LPC): A Self-Calibrating Boundary Condition for Carbon Flux",
+      "abstract": "This paper formulates an extended framework for a hybrid physically informed data-driven model of low-pressure carburizing (LPC), in which diffusive carbon transport in austenite is described by a physical equation, whereas the effective carbon flux across the gas-metal interface is treated as an unknown boundary forcing to be identified from experimental and process data. The basis for this formulation is that, in LPC, the most uncertain part of the model is not bulk diffusion but the transient surface kinetics of carbon uptake by the metal. In contrast to direct empirical relationships of the 'process regime-result' type, the proposed scheme uses machine learning as a closure operator for the boundary condition in the diffusion problem. This operator is calibrated using carbon concentration profiles, integral mass gain, surface concentration, effective case depth, and additional process measurements. Theoretically, the model is positioned as an operator-learning problem in a system constrained by a partial differential equation, physical flux constraints, inverse-problem regularization, and uncertainty quantification. The relationships between the proposed approach and physics-informed neural networks, operator learning, dynamic-system identification, boundary-operator learning, and boundary-control problems are considered. The mathematical formulation, calibration functional, identifiability conditions, preliminary tuning algorithm, and online adaptation scheme are formulated. The proposed approach is considered as a computational basis for developing interpretable digital support for LPC processes.",
+      "authors": [
+        "Alex V. Sagalovych",
+        "Tymofii Sagalovych",
+        "S. F. Dudnik",
+        "Vladislav Sagalovych"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-11-20",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2611.28190v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cond-mat.mtrl-sci"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "fea_surrogate"
+      ],
+      "direction": "fea_surrogate",
+      "direction_name": "FEA & Surrogate Modelling",
+      "routing_matches": {
+        "fea_surrogate": [
+          "uncertainty quantification"
+        ]
+      },
+      "llm": {
+        "priority": "Medium",
+        "relevance_level": "Transferable",
+        "read_action": "Skim only",
+        "relevance_to_user": "该文将机器学习作为PDE边界条件的闭合算子并做不确定性量化，方法可迁移到植入物/生物力学FEA代理建模，但应用领域为渗碳热处理而非骨科。",
+        "why_not_core": "It addresses carburizing surface kinetics and carbon flux identification, with no FEA surrogate for implant mechanics, no bone-implant interface, and no biomechanical validation.",
+        "validation_kind": "simulation_case",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": true,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "operator learning",
+          "boundary condition identification",
+          "physics-informed",
+          "uncertainty quantification",
+          "inverse problem"
+        ],
+        "summary_zh": {
+          "motivation": "低压渗碳中表面碳吸收动力学比体扩散更不确定，需数据驱动闭合。",
+          "method": "将界面碳通量视为未知边界强迫，用机器学习算子从浓度剖面等数据标定。",
+          "result": "给出标定泛函、可辨识条件与在线自适应方案，定位为PDE约束算子学习问题。",
+          "validation": "以仿真场景与初步调参算法论证，未做实验验证。"
+        },
+        "summary_en": {
+          "motivation": "In low-pressure carburizing the dominant model uncertainty lies in transient surface carbon uptake rather than bulk diffusion, motivating a data-driven closure for the interface flux.",
+          "method": "The authors treat the effective carbon flux at the gas-metal interface as an unknown boundary forcing and learn a closure operator from concentration profiles, mass gain, and process measurements within a PDE-constrained operator-learning formulation.",
+          "result": "The work delivers a calibration functional, identifiability conditions, a preliminary tuning algorithm, and an online adaptation scheme positioned relative to PINNs and boundary-operator learning.",
+          "validation": "Validation is limited to a simulation-based case with preliminary tuning, without experimental confirmation."
+        },
+        "key_terms": [
+          {
+            "en": "low-pressure carburizing",
+            "zh": "低压渗碳"
+          },
+          {
+            "en": "boundary operator learning",
+            "zh": "边界算子学习"
+          },
+          {
+            "en": "physics-informed neural network",
+            "zh": "物理信息神经网络"
+          },
+          {
+            "en": "inverse problem regularization",
+            "zh": "反问题正则化"
+          },
+          {
+            "en": "uncertainty quantification",
+            "zh": "不确定性量化"
+          },
+          {
+            "en": "carbon flux",
+            "zh": "碳通量"
+          },
+          {
+            "en": "identifiability",
+            "zh": "可辨识性"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-11-24T22:35:14Z"
+    },
+    {
+      "source": "arxiv",
+      "id": "http://arxiv.org/abs/2611.28175v1",
+      "doi": "",
+      "arxiv_id": "2611.28175v1",
+      "title": "A world model for longitudinal health-trajectory prediction in older adults across multinational cohorts",
+      "abstract": "Aging is characterized by continuously evolving health states, yet most existing prediction models focus on static health risk at isolated time points rather than explicitly modelling how health trajectories unfold over time. We developed a health world model based on the Joint-Embedding Predictive Architecture to represent evolving health states and simulate future trajectories under specified actions. The model combines a state encoder, an action- and context-conditioned predictor, a stop-gradient target encoder, and clinical outcome heads. We trained the model on the US Health and Retirement Study (HRS) and evaluated it without refitting in the English Longitudinal Study of Ageing (ELSA) and the China Health and Retirement Longitudinal Study (CHARLS). Open-loop evaluation assessed discrimination and calibration for mortality and worsening of activities of daily living (ADL) and instrumental activities of daily living (IADL). In the held-out HRS test set, the areas under the receiver operating characteristic curve (AUROCs) for mortality, ADL worsening, and IADL worsening were 0.89, 0.93, and 0.93 at the first horizon and 0.84, 0.84, and 0.85 at the fifth horizon, respectively. Predicted risks stratified subsequent outcomes across horizons. Across the evaluated horizons, mortality AUROC ranged from 0.867 to 0.881 in ELSA and from 0.796 to 0.801 in CHARLS. Simulated trajectories preserved the expected risk ordering across predefined action regimes. In counterfactual simulations, changes in lifestyle actions shifted predicted risks in directions consistent with observed associations. The model provides a framework for longitudinal risk prediction and action-conditioned simulation in older adults.",
+      "authors": [
+        "Jingyi Wu",
+        "Chenghua Guo",
+        "Qianlin Zuo",
+        "Pengfei Li",
+        "Luxia Zhang"
+      ],
+      "venue": "arXiv preprint",
+      "year": 2026,
+      "date": "2026-11-20",
+      "date_precision": "day",
+      "url": "http://arxiv.org/abs/2611.28175v1",
+      "cited_by_count": 0,
+      "concepts": [],
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "raw_type": "preprint",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "world model",
+          "world model + simulation"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该论文将世界模型(JEPA)用于老年健康轨迹预测，属于RL/世界模型方法在临床队列数据上的应用，与工程仿真、FEA代理模型或植入物生物力学无直接关联。",
+        "why_not_core": "It applies a JEPA world model to clinical cohort health trajectories with no engineering simulation, no FEA/surrogate modeling, no physics simulator, and no implant or biomechanics context.",
+        "validation_kind": "clinical",
+        "flags": {
+          "has_experimental_validation": true,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": true,
+          "is_review": false
+        },
+        "tags": [
+          "world_model",
+          "JEPA",
+          "longitudinal_prediction",
+          "clinical_cohort",
+          "counterfactual_simulation",
+          "no_engineering_simulation"
+        ],
+        "summary_zh": {
+          "motivation": "现有健康预测多聚焦静态风险，缺乏对健康状态随时间演化的显式建模。",
+          "method": "基于联合嵌入预测架构构建健康世界模型，含状态编码器、动作条件预测器和临床结局头。",
+          "result": "在HRS训练并在ELSA、CHARLS外部验证，死亡与ADL/IADL恶化预测AUROC达0.80-0.93。",
+          "validation": "跨国队列外部验证与反事实动作模拟。"
+        },
+        "summary_en": {
+          "motivation": "Most health prediction models estimate static risk at isolated time points rather than explicitly modeling how health states evolve over time.",
+          "method": "A Joint-Embedding Predictive Architecture world model with a state encoder, action- and context-conditioned predictor, stop-gradient target encoder, and clinical outcome heads was trained to represent and simulate health trajectories.",
+          "result": "The model achieved AUROCs of 0.84-0.93 for mortality and ADL/IADL worsening in the held-out HRS set and retained discrimination of 0.80-0.88 in external ELSA and CHARLS cohorts, with counterfactual lifestyle actions shifting predicted risk plausibly.",
+          "validation": "Open-loop discrimination and calibration on a held-out cohort plus external validation without refitting across two multinational cohorts and counterfactual action simulations."
+        },
+        "key_terms": [
+          {
+            "en": "world model",
+            "zh": "世界模型"
+          },
+          {
+            "en": "Joint-Embedding Predictive Architecture",
+            "zh": "联合嵌入预测架构"
+          },
+          {
+            "en": "health trajectory",
+            "zh": "健康轨迹"
+          },
+          {
+            "en": "counterfactual simulation",
+            "zh": "反事实模拟"
+          },
+          {
+            "en": "external validation",
+            "zh": "外部验证"
+          },
+          {
+            "en": "activities of daily living",
+            "zh": "日常生活活动能力"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-11-24T22:35:14Z"
+    },
+    {
+      "source": "openalex",
+      "id": "https://openalex.org/W7238780406",
+      "doi": "10.3390/coatings16111379",
+      "pmid": "",
+      "arxiv_id": "",
+      "title": "Study on Bone Integration and Osteogenic Performance of Polydopamine Combined with RGD Peptide in Porous Tantalum Scaffolds",
+      "abstract": "Porous tantalum (Ta) scaffolds possess excellent biocompatibility and mechanical properties but suffer from inherent bioinertia that limits early osteogenesis. To overcome this, we functionalized Ta scaffolds with polydopamine (pDA) and arginine-glycine-aspartic acid (RGD) peptide to enhance their osteogenic capacity. Three groups were fabricated: unmodified Ta, pDA-coated Ta, and pDA-RGD sequentially modified Ta. Surface characterization[scanning electron microscopy (SEM), energy-dispersive X-ray spectroscopy (EDS), hydrophilicity tests]confirmed the successful formation of a uniform coating, which significantly improved surface wettability. In vitro assays using MC3T3-E1 pre-osteoblasts demonstrated that the RGD-modified scaffolds markedly promoted cell adhesion, proliferation, and osteogenic differentiation, as evidenced by elevated alkaline phosphatase (ALP) activity and upregulated expression of key osteogenic genes. In vivo evaluation via a rabbit femoral condyle implantation model revealed that the RGD group facilitated superior new bone formation and osseointegration, yielding a significantly higher bone volume fraction (BV/TV) compared to the unmodified Ta group. This study demonstrates that pDA-mediated RGD functionalization effectively endows porous tantalum with enhanced bioactivity, providing a promising strategy for bone implant applications.",
+      "authors": [
+        "Jingyu Li",
+        "Yubo Zhang",
+        "Zhihua Cheng",
+        "Fang Cao",
+        "Guangxiao Yin",
+        "Zhijie Ma",
+        "Dewei Zhao"
+      ],
+      "first_author_affiliation": "Department of Orthopaedics, Affiliated Zhongshan Hospital of Dalian University, 6 Jiefang Road, Dalian 116001, China",
+      "corresponding_authors": [
+        {
+          "name": "Zhijie Ma",
+          "affiliation": "Department of Orthopaedics, Affiliated Zhongshan Hospital of Dalian University, 6 Jiefang Road, Dalian 116001, China"
+        },
+        {
+          "name": "Dewei Zhao",
+          "affiliation": "Department of Orthopaedics, Affiliated Zhongshan Hospital of Dalian University, 6 Jiefang Road, Dalian 116001, China"
+        }
+      ],
+      "venue": "Coatings",
+      "venue_id": "S4210205742",
+      "venue_issn_l": "2079-6412",
+      "venue_type": "journal",
+      "year": 2026,
+      "date": "2026-11-20",
+      "date_precision": "day",
+      "url": "https://doi.org/10.3390/coatings16111379",
+      "cited_by_count": 0,
+      "concepts": [
+        "Biocompatibility",
+        "Chemistry",
+        "Surface modification",
+        "Biomedical engineering",
+        "Tantalum",
+        "FEMORAL CONDYLE",
+        "In vivo",
+        "Alkaline phosphatase",
+        "Osseointegration",
+        "Bone tissue",
+        "Materials science",
+        "Peptide",
+        "Porosity",
+        "Implant",
+        "Bone healing",
+        "Biophysics",
+        "Cell adhesion"
+      ],
+      "categories": [],
+      "raw_type": "article",
+      "directions": [
+        "am_biomedical"
+      ],
+      "direction": "am_biomedical",
+      "direction_name": "AM Biomedical Materials",
+      "routing_matches": {
+        "am_biomedical": [
+          "osseointegration",
+          "porous + implant"
+        ]
+      },
+      "llm": {
+        "priority": "Medium",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该文研究多孔钽支架的表面生物功能化与骨整合，与AM生物医学植入物方向相关，但未涉及力学/应力遮挡或LPBF工艺。",
+        "why_not_core": "It reports surface chemistry and osseointegration of porous tantalum scaffolds but contains no LPBF fabrication, no mechanical testing, no stiffness matching or stress shielding analysis, and no fatigue evaluation.",
+        "validation_kind": "animal",
+        "flags": {
+          "has_experimental_validation": true,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "porous tantalum",
+          "surface modification",
+          "ossointegration",
+          "polydopamine",
+          "RGD peptide"
+        ],
+        "summary_zh": {
+          "motivation": "多孔钽支架生物惰性限制早期成骨。",
+          "method": "用聚多巴胺与RGD肽依次修饰钽支架并做材料与细胞表征。",
+          "result": "RGD修饰显著促进细胞黏附、成骨分化及兔股骨髁新骨形成。",
+          "validation": "体外MC3T3-E1实验加兔股骨髁植入实验。"
+        },
+        "summary_en": {
+          "motivation": "Porous tantalum scaffolds are mechanically favorable but bioinert, which restricts early bone formation.",
+          "method": "Tantalum scaffolds were sequentially coated with polydopamine and RGD peptide and characterized by SEM, EDS, wettability, and in vitro osteoblast assays.",
+          "result": "RGD functionalization enhanced cell adhesion, proliferation, osteogenic gene expression, and new bone formation with higher BV/TV in vivo.",
+          "validation": "In vitro MC3T3-E1 assays combined with a rabbit femoral condyle implantation model."
+        },
+        "key_terms": [
+          {
+            "en": "porous tantalum scaffold",
+            "zh": "多孔钽支架"
+          },
+          {
+            "en": "polydopamine",
+            "zh": "聚多巴胺"
+          },
+          {
+            "en": "RGD peptide",
+            "zh": "RGD肽"
+          },
+          {
+            "en": "ossointegration",
+            "zh": "骨整合"
+          },
+          {
+            "en": "osteogenic differentiation",
+            "zh": "成骨分化"
+          },
+          {
+            "en": "bone volume fraction",
+            "zh": "骨体积分数"
+          },
+          {
+            "en": "surface wettability",
+            "zh": "表面润湿性"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-11-24T22:35:14Z"
+    },
+    {
+      "source": "openalex",
+      "id": "https://openalex.org/W7236604085",
+      "doi": "10.1016/j.mtcomm.2026.116661",
+      "pmid": "",
+      "arxiv_id": "",
+      "title": "Effect of direct ageing on the chloride-induced corrosion resistance of a precipitation-hardenable martensitic steel manufactured by laser powder bed fusion",
+      "abstract": "The effect of direct ageing on the chloride-induced corrosion resistance of a precipitation-hardenable martensitic steel manufactured by laser powder bed fusion (PBF-LB), free of Co and Mo and containing approximately 8 wt.% Cr and 7 wt.% Ni, was evaluated. Three conditions were compared: as-built, aged at 540 °C for 2 h, and aged at 600 °C for 1 h, using microstructural characterisation, potentiodynamic and potentiostatic polarisation, SEM-EDX and electrochemical impedance spectroscopy (EIS) in a 3.5 wt.% NaCl solution. Ageing at 540 °C for 2 h produced the most noble and stable open-circuit potential but the lowest pitting potential (158 mV vs. Ag/AgCl). The as-built condition exhibited the highest pitting potential (613 mV vs. Ag/AgCl), together with the highest passive-film resistance and estimated thickness determined by EIS (230 kΩ and 7.06 nm), whereas ageing at 600 °C resulted in the lowest values (206 kΩ and 5.10 nm). Following potentiostatic polarisation, all conditions reached similar current densities after 1 h, although the as-built material showed the fastest current decay. Post-corrosion analysis revealed dissolution channels enriched in O and Cr in the as-built condition, whereas the aged conditions developed crust-like corrosion products enriched in O, Si and Ti. Overall, direct ageing did not improve corrosion resistance but altered the degradation mechanism by modifying passive-film stability through the coexistence of martensite, reverted austenite and strengthening precipitates.",
+      "authors": [
+        "Alejandro González-Pociño",
+        "Florentino Álvarez-Antolín",
+        "Ana Isabel Fernández-Abia",
+        "L.B. Peral"
+      ],
+      "first_author_affiliation": "Department of Mechanical, Informatics and Aerospace Engineering, University of León, Campus de Vegazana, 24071, León, Spain",
+      "corresponding_authors": [
+        {
+          "name": "Alejandro González-Pociño",
+          "affiliation": "Department of Mechanical, Informatics and Aerospace Engineering, University of León, Campus de Vegazana, 24071, León, Spain"
+        }
+      ],
+      "venue": "Materials Today Communications",
+      "venue_id": "S2765035490",
+      "venue_issn_l": "2352-4928",
+      "venue_type": "journal",
+      "year": 2026,
+      "date": "2026-11-20",
+      "date_precision": "day",
+      "url": "https://doi.org/10.1016/j.mtcomm.2026.116661",
+      "cited_by_count": 0,
+      "concepts": [
+        "Materials science",
+        "Fusion",
+        "Metallurgy",
+        "Martensite",
+        "Ageing",
+        "Corrosion",
+        "Laser",
+        "Composite material",
+        "Microstructure",
+        "Powder metallurgy",
+        "Martensitic stainless steel"
+      ],
+      "categories": [],
+      "raw_type": "article",
+      "directions": [
+        "am_biomedical"
+      ],
+      "direction": "am_biomedical",
+      "direction_name": "AM Biomedical Materials",
+      "routing_matches": {
+        "am_biomedical": [
+          "laser powder bed fusion"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该文研究LPBF马氏体不锈钢的腐蚀行为，与增材制造生物医学材料方向仅共享LPBF工艺背景，未涉及植入体力学或骨整合。",
+        "why_not_core": "This paper reports chloride corrosion electrochemistry of an LPBF martensitic steel with no porous structure, no stress shielding or stiffness matching, no mechanical or fatigue testing, and no biomedical or osseointegration context.",
+        "validation_kind": "in_vitro",
+        "flags": {
+          "has_experimental_validation": true,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "LPBF",
+          "corrosion resistance",
+          "martensitic steel",
+          "direct ageing",
+          "electrochemical testing"
+        ],
+        "summary_zh": {
+          "motivation": "评估直接时效对无钴钼LPBF马氏体不锈钢耐氯离子腐蚀性的影响。",
+          "method": "对比沉积态与540°C/2h、600°C/1h时效态，采用显微表征、动电位与恒电位极化、SEM-EDX及EIS测试。",
+          "result": "时效未提升耐蚀性，沉积态点蚀电位最高(613 mV)，时效改变钝化膜稳定性与腐蚀机制。",
+          "validation": "3.5 wt.% NaCl溶液中的电化学测试与腐蚀产物表征。"
+        },
+        "summary_en": {
+          "motivation": "The study examines whether direct ageing can improve the chloride corrosion resistance of a Co- and Mo-free precipitation-hardenable martensitic steel produced by laser powder bed fusion.",
+          "method": "As-built, 540 °C/2 h and 600 °C/1 h aged conditions were compared using microstructural characterisation, potentiodynamic and potentiostatic polarisation, SEM-EDX and electrochemical impedance spectroscopy in 3.5 wt.% NaCl.",
+          "result": "Ageing did not enhance corrosion resistance; the as-built condition showed the highest pitting potential and passive-film resistance, while ageing shifted the degradation mechanism through altered passive-film stability.",
+          "validation": "Electrochemical polarisation and impedance measurements combined with post-corrosion microstructural analysis in a chloride solution."
+        },
+        "key_terms": [
+          {
+            "en": "laser powder bed fusion",
+            "zh": "激光粉末床熔融"
+          },
+          {
+            "en": "precipitation-hardenable martensitic steel",
+            "zh": "沉淀硬化马氏体钢"
+          },
+          {
+            "en": "pitting potential",
+            "zh": "点蚀电位"
+          },
+          {
+            "en": "electrochemical impedance spectroscopy",
+            "zh": "电化学阻抗谱"
+          },
+          {
+            "en": "passive film",
+            "zh": "钝化膜"
+          },
+          {
+            "en": "direct ageing",
+            "zh": "直接时效"
+          },
+          {
+            "en": "chloride-induced corrosion",
+            "zh": "氯离子腐蚀"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-11-24T22:35:14Z"
+    },
+    {
+      "source": "openalex",
+      "id": "https://openalex.org/W7237079783",
+      "doi": "10.1016/j.wear.2026.207191",
+      "pmid": "",
+      "arxiv_id": "",
+      "title": "Architecture-dependent contact stability, surface degradation and structural deformation of LPBF A286 lattices under dry sliding at room temperature and 400 °C",
+      "abstract": "",
+      "authors": [
+        "B. Veera Siva Reddy",
+        "D. Akhil Kumar",
+        "A. Hafeezur Rahman",
+        "C. Chandrasekhara Sastry"
+      ],
+      "first_author_affiliation": "Department of Mechanical Engineering, Indian Institute of Information Technology Design and Manufacturing Kurnool (IIITDM Kurnool), Kurnool 518008, India",
+      "corresponding_authors": [
+        {
+          "name": "B. Veera Siva Reddy",
+          "affiliation": "Department of Mechanical Engineering, Indian Institute of Information Technology Design and Manufacturing Kurnool (IIITDM Kurnool), Kurnool 518008, India"
+        },
+        {
+          "name": "C. Chandrasekhara Sastry",
+          "affiliation": "Department of Mechanical Engineering, Indian Institute of Information Technology Design and Manufacturing Kurnool (IIITDM Kurnool), Kurnool 518008, India"
+        }
+      ],
+      "venue": "Wear",
+      "venue_id": "S16737290",
+      "venue_issn_l": "0043-1648",
+      "venue_type": "journal",
+      "year": 2026,
+      "date": "2026-11-20",
+      "date_precision": "day",
+      "url": "https://doi.org/10.1016/j.wear.2026.207191",
+      "cited_by_count": 0,
+      "concepts": [
+        "Materials science",
+        "Deformation (meteorology)",
+        "Degradation (telecommunications)",
+        "Composite material",
+        "Surface (topology)",
+        "Dry friction"
+      ],
+      "categories": [],
+      "raw_type": "article",
+      "directions": [
+        "am_biomedical"
+      ],
+      "direction": "am_biomedical",
+      "direction_name": "AM Biomedical Materials",
+      "routing_matches": {
+        "am_biomedical": [
+          "LPBF"
+        ]
+      },
+      "llm": {
+        "priority": "Medium",
+        "relevance_level": "Direct",
+        "read_action": "Save for project",
+        "relevance_to_user": "该文研究LPBF A286点阵结构的接触稳定性与表面退化，直接关联增材制造多孔植入体的摩擦磨损与结构完整性评价。",
+        "why_not_core": "It addresses tribological wear and contact stability of LPBF lattices but does not quantify stress shielding, stiffness matching, fatigue life, or osseointegration in a biomedical implant context.",
+        "validation_kind": "mechanical_testing",
+        "flags": {
+          "has_experimental_validation": true,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "LPBF",
+          "lattice structures",
+          "A286 superalloy",
+          "dry sliding wear",
+          "contact stability",
+          "surface degradation"
+        ],
+        "summary_zh": {
+          "motivation": "评估高温与室温干滑动下LPBF点阵结构的接触稳定性和表面退化规律。",
+          "method": "对激光粉末床熔融成形的A286点阵进行干滑动摩擦磨损与结构变形测试。",
+          "result": "接触稳定性与表面退化随点阵构型变化，温度显著影响磨损与变形行为。",
+          "validation": "室温与400°C干滑动磨损实验及结构变形表征。"
+        },
+        "summary_en": {
+          "motivation": "The study aims to clarify how lattice architecture governs contact stability and surface degradation of additively manufactured structures under sliding contact.",
+          "method": "LPBF-fabricated A286 lattice specimens with different architectures were subjected to dry sliding tests at room temperature and 400 °C, with wear and deformation characterization.",
+          "result": "Contact stability and surface degradation were found to be architecture-dependent, with temperature markedly influencing wear and structural deformation.",
+          "validation": "Experimental dry sliding wear testing and post-test structural deformation assessment at two temperatures."
+        },
+        "key_terms": [
+          {
+            "en": "laser powder bed fusion",
+            "zh": "激光粉末床熔融"
+          },
+          {
+            "en": "lattice architecture",
+            "zh": "点阵构型"
+          },
+          {
+            "en": "dry sliding wear",
+            "zh": "干滑动磨损"
+          },
+          {
+            "en": "contact stability",
+            "zh": "接触稳定性"
+          },
+          {
+            "en": "surface degradation",
+            "zh": "表面退化"
+          },
+          {
+            "en": "structural deformation",
+            "zh": "结构变形"
+          },
+          {
+            "en": "A286 superalloy",
+            "zh": "A286高温合金"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-11-24T22:35:14Z"
+    },
+    {
+      "source": "openalex",
+      "id": "https://openalex.org/W7237128781",
+      "doi": "10.1016/j.corsci.2026.114438",
+      "pmid": "",
+      "arxiv_id": "",
+      "title": "Corrosion behavior of 316L-Cu10Sn compositionally graded alloy fabricated by laser powder bed fusion",
+      "abstract": "",
+      "authors": [
+        "Zequn Zhang",
+        "Bowei Zhang",
+        "Ruben del Olmo",
+        "Reynier I. Revilla",
+        "Leonardo Iannucci",
+        "Emma Paola Maria Virginia Angelini",
+        "Sabrina Grassini",
+        "Junsheng Wu",
+        "Baicheng Zhang",
+        "Xiaogang Li"
+      ],
+      "first_author_affiliation": "Institute for Advanced Materials and Technology, University of Science and Technology Beijing, Beijing 100083, China",
+      "corresponding_authors": [
+        {
+          "name": "Bowei Zhang",
+          "affiliation": "Institute for Advanced Materials and Technology, University of Science and Technology Beijing, Beijing 100083, China"
+        }
+      ],
+      "venue": "Corrosion Science",
+      "venue_id": "S96167972",
+      "venue_issn_l": "0010-938X",
+      "venue_type": "journal",
+      "year": 2026,
+      "date": "2026-11-20",
+      "date_precision": "day",
+      "url": "https://doi.org/10.1016/j.corsci.2026.114438",
+      "cited_by_count": 0,
+      "concepts": [
+        "Materials science",
+        "Corrosion",
+        "Fusion",
+        "Alloy",
+        "Laser",
+        "Metallurgy",
+        "Composite material",
+        "Inertial confinement fusion",
+        "High-temperature corrosion",
+        "Laser treatment"
+      ],
+      "categories": [],
+      "raw_type": "article",
+      "directions": [
+        "am_biomedical"
+      ],
+      "direction": "am_biomedical",
+      "direction_name": "AM Biomedical Materials",
+      "routing_matches": {
+        "am_biomedical": [
+          "laser powder bed fusion"
+        ]
+      },
+      "llm": {
+        "priority": "Medium",
+        "relevance_level": "Transferable",
+        "read_action": "Skim only",
+        "relevance_to_user": "该文研究LPBF制备316L-Cu10Sn梯度合金的腐蚀行为，与增材制造生物医用材料方向相关，但未涉及植入体力学或骨整合。",
+        "why_not_core": "It reports corrosion electrochemistry of a graded alloy but contains no porous structure, no stress-shielding or stiffness-matching analysis, no fatigue or mechanical testing, and no osseointegration or biomedical implant context.",
+        "validation_kind": "in_vitro",
+        "flags": {
+          "has_experimental_validation": true,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "LPBF",
+          "compositionally graded alloy",
+          "corrosion",
+          "316L stainless steel",
+          "Cu-Sn"
+        ],
+        "summary_zh": {
+          "motivation": "探索LPBF成形316L-Cu10Sn梯度合金的耐蚀性以评估其服役可靠性。",
+          "method": "采用激光粉末床熔融制备成分梯度合金并开展电化学与腐蚀表征。",
+          "result": "揭示了梯度成分与微观组织对腐蚀行为及钝化性能的影响规律。",
+          "validation": "以电化学测试与腐蚀形貌观察进行实验验证。"
+        },
+        "summary_en": {
+          "motivation": "The study aims to clarify how compositional grading affects the corrosion resistance of additively manufactured stainless-steel/copper-tin alloys.",
+          "method": "316L-Cu10Sn compositionally graded specimens were produced by laser powder bed fusion and characterized through electrochemical and microstructural corrosion analysis.",
+          "result": "The graded composition and resulting microstructure are shown to govern passivation behavior and corrosion resistance along the gradient.",
+          "validation": "Experimental electrochemical measurements and post-corrosion morphology characterization support the findings."
+        },
+        "key_terms": [
+          {
+            "en": "laser powder bed fusion",
+            "zh": "激光粉末床熔融"
+          },
+          {
+            "en": "compositionally graded alloy",
+            "zh": "成分梯度合金"
+          },
+          {
+            "en": "corrosion resistance",
+            "zh": "耐腐蚀性"
+          },
+          {
+            "en": "passivation",
+            "zh": "钝化"
+          },
+          {
+            "en": "316L stainless steel",
+            "zh": "316L不锈钢"
+          },
+          {
+            "en": "Cu-Sn alloy",
+            "zh": "铜锡合金"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-11-24T22:35:14Z"
+    },
+    {
+      "source": "openalex",
+      "id": "https://openalex.org/W7238762385",
+      "doi": "10.1051/e3sconf/202675702001/pdf",
+      "pmid": "",
+      "arxiv_id": "",
+      "title": "Comparative evaluation of stratified TES models for digital twin applications using real-world operational data",
+      "abstract": "Thermal energy storage (TES) systems are increasingly used to improve the flexibility of heat pump driven HVAC systems. However, most TES validation studies rely on idealised charging and discharging experiments, neglecting simultaneous primary and secondary flows, and dynamic operating conditions. This study presents a comparative evaluation of three stratified TES modelling approaches for control-oriented digital twin applications under real-world operating conditions. A multi constant size layer model (MCSL), a plug flow model (PF), and an adaptive grid model (AG) are evaluated using measured data from three HVAC systems, represented by five operational profiles. The comparison uses RMSE and MAE metrics for outlet and internal temperatures. The results show that the PF model generally exhibits the largest deviations under highly dynamic operating conditions, while the MCSL and AG models provide lower and more consistent deviations across the evaluated profiles. The largest deviations are observed near the thermocline region, with RMSE values reaching up to 9.68 K for Ttes,top and Tsec,out. The analysis further indicates that part of the observed deviations are related to local mixing phenomena, hydraulic transport effects, and sensor-related dynamics that are not explicitly represented in the current modelling approaches. The results demonstrate the importance of validation using real operational data for control-oriented TES digital twin applications.",
+      "authors": [
+        "Jonas Cleiren",
+        "Efren Gruythuysen",
+        "Ilya T’Jollyn",
+        "Ivan Verhaert"
+      ],
+      "first_author_affiliation": "EMIB , Department of Electromechanical Engineering , Faculty of Applied Engineering , University of Antwerp , Belgium",
+      "corresponding_authors": [],
+      "venue": "Springer Link (Chiba Institute of Technology)",
+      "venue_id": "S4306400744",
+      "venue_issn_l": "",
+      "venue_type": "repository",
+      "year": 2026,
+      "date": "2026-11-20",
+      "date_precision": "day",
+      "url": "https://doi.org/10.1051/e3sconf/202675702001/pdf",
+      "cited_by_count": 0,
+      "concepts": [
+        "HVAC",
+        "Thermocline",
+        "Flexibility (engineering)",
+        "Mean squared error",
+        "Computer science",
+        "Dynamic data",
+        "Grid",
+        "Standard deviation",
+        "Mixing (physics)"
+      ],
+      "categories": [],
+      "raw_type": "article",
+      "directions": [
+        "ai_bioprinting"
+      ],
+      "direction": "ai_bioprinting",
+      "direction_name": "AI for Bioprinting",
+      "routing_matches": {
+        "ai_bioprinting": [
+          "digital twin"
+        ]
+      },
+      "llm": {
+        "priority": "Exclude",
+        "relevance_level": "Peripheral",
+        "read_action": "Ignore",
+        "relevance_to_user": "该论文研究暖通空调储热系统的数字孪生建模，与生物打印AI方向无关。",
+        "why_not_core": "This paper addresses stratified thermal energy storage digital twins for HVAC systems, with no bioprinting workflow, no AI/ML integration into printing stages, and no biological or biomedical context.",
+        "validation_kind": "simulation_case",
+        "flags": {
+          "has_experimental_validation": true,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "digital_twin",
+          "thermal_energy_storage",
+          "HVAC",
+          "model_comparison"
+        ],
+        "summary_zh": {
+          "motivation": "现有储热系统验证多依赖理想化实验，缺乏真实工况下的模型评估。",
+          "method": "对比多定尺寸分层、活塞流与自适应网格三种储热模型，用三套暖通系统的实测数据评估。",
+          "result": "活塞流模型在动态工况下偏差最大，多定尺寸分层与自适应网格模型更稳定，温跃层附近误差最高达9.68K。",
+          "validation": "基于三套暖通系统五个运行剖面的实测温度数据，用RMSE和MAE评估。"
+        },
+        "summary_en": {
+          "motivation": "Most thermal energy storage validation relies on idealized charging experiments that ignore simultaneous flows and dynamic real-world operation.",
+          "method": "Three stratified storage models—multi constant size layer, plug flow, and adaptive grid—are compared against measured data from three HVAC systems across five operational profiles.",
+          "result": "The plug flow model shows the largest deviations under dynamic conditions, while the multi-layer and adaptive grid models remain more consistent, with peak RMSE near the thermocline reaching 9.68 K.",
+          "validation": "Models are benchmarked against real operational temperature measurements using RMSE and MAE metrics."
+        },
+        "key_terms": [
+          {
+            "en": "digital twin",
+            "zh": "数字孪生"
+          },
+          {
+            "en": "thermal energy storage",
+            "zh": "储热"
+          },
+          {
+            "en": "stratification model",
+            "zh": "分层模型"
+          },
+          {
+            "en": "thermocline",
+            "zh": "温跃层"
+          },
+          {
+            "en": "plug flow model",
+            "zh": "活塞流模型"
+          },
+          {
+            "en": "adaptive grid",
+            "zh": "自适应网格"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-11-24T22:35:14Z"
+    },
+    {
+      "source": "openalex",
+      "id": "https://openalex.org/W7238779646",
+      "doi": "10.1051/e3sconf/202675707002/pdf",
+      "pmid": "",
+      "arxiv_id": "",
+      "title": "An Experimental Platform for Reinforcement Learning in Building Control Systems",
+      "abstract": "Reinforcement learning (RL) is becoming increasingly important in building control systems (BCS) because it offers the opportunity to ensure key performance indicators (KPI) such as energy efficiency and comfort, even under changing operational conditions. Time-consuming manual parameterization and adjustments are no longer necessary, as the system independently learns optimal operating strategies from data and feedback. Since training in live operation could negatively impact KPIs, simulations are required for the development and evaluation of RL-based BCS. Existing simulation workflows for RL training of control systems are mostly fragmented, difficult to reproduce, and complex. This study addresses these obstacles and presents a comprehensive, modular experimentation platform with front-end, back-end, and test environment subsystems, as well as a structured configuration model for environments, controllers, reward functions, and training settings via a graphical user interface. Clearly defined interfaces allow for the easy integration of new environments, controllers, and rewards. The container architecture enables portable deployment across different physical nodes. The evaluation demonstrates performance parity with established frameworks. Additionally, key RL design parameters can be varied directly within the user interface. The study results confirm the reproducibility, extensibility, and portability of the developed platform.",
+      "authors": [
+        "Johannes Hammerer",
+        "Sascha Hammes",
+        "Mohammad Esmaeili",
+        "Philipp Zech"
+      ],
+      "first_author_affiliation": "University of Innsbruck , Department of Computer Science , 6020 Innsbruck , Austria",
+      "corresponding_authors": [],
+      "venue": "Springer Link (Chiba Institute of Technology)",
+      "venue_id": "S4306400744",
+      "venue_issn_l": "",
+      "venue_type": "repository",
+      "year": 2026,
+      "date": "2026-11-20",
+      "date_precision": "day",
+      "url": "https://doi.org/10.1051/e3sconf/202675707002/pdf",
+      "cited_by_count": 0,
+      "concepts": [
+        "Software portability",
+        "Modular design",
+        "Reinforcement learning",
+        "Computer science",
+        "Workflow",
+        "Software deployment",
+        "Key (lock)",
+        "Container (type theory)",
+        "Control system",
+        "Architecture",
+        "Control (management)",
+        "Systems engineering",
+        "Efficient energy use",
+        "Simulation",
+        "Human–computer interaction",
+        "System integration",
+        "Control engineering"
+      ],
+      "categories": [],
+      "raw_type": "article",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "reinforcement learning + simulation"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该论文构建了建筑控制领域的强化学习实验平台，与用户关注的有限元仿真代理建模和植入体生物力学设计无直接关联，仅提供RL训练流程工程化的背景参考。",
+        "why_not_core": "This paper targets building control RL experimentation infrastructure and does not involve FEA/surrogate modeling, physics simulation of solids, or any biomechanical/implant design context.",
+        "validation_kind": "simulation_case",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "reinforcement learning",
+          "building control",
+          "simulation platform",
+          "reproducibility",
+          "no engineering simulation tie-in"
+        ],
+        "summary_zh": {
+          "motivation": "建筑控制中RL训练需仿真环境，但现有流程碎片化且难以复现。",
+          "method": "提出模块化实验平台，含前后端、测试环境及图形化配置接口。",
+          "result": "平台性能与主流框架持平，并支持RL关键参数的可复现调节。",
+          "validation": "通过与已有框架的性能对比仿真实验验证。"
+        },
+        "summary_en": {
+          "motivation": "Reinforcement learning for building control requires simulation-based training, yet existing workflows are fragmented and hard to reproduce.",
+          "method": "A modular experimentation platform with front-end, back-end, and test-environment subsystems plus a structured GUI-based configuration model is proposed.",
+          "result": "The platform achieves performance parity with established frameworks while enabling reproducible variation of key RL design parameters.",
+          "validation": "Evaluated through simulation-based performance comparison against existing RL frameworks."
+        },
+        "key_terms": [
+          {
+            "en": "reinforcement learning",
+            "zh": "强化学习"
+          },
+          {
+            "en": "building control systems",
+            "zh": "建筑控制系统"
+          },
+          {
+            "en": "simulation platform",
+            "zh": "仿真平台"
+          },
+          {
+            "en": "reproducibility",
+            "zh": "可复现性"
+          },
+          {
+            "en": "reward function",
+            "zh": "奖励函数"
+          },
+          {
+            "en": "container architecture",
+            "zh": "容器架构"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-11-24T22:35:14Z"
+    },
+    {
+      "source": "openalex",
+      "id": "https://openalex.org/W7238784860",
+      "doi": "10.1051/e3sconf/202675701002/pdf",
+      "pmid": "",
+      "arxiv_id": "",
+      "title": "Evaluating Machine Learning Techniques to Develop Control-Oriented Models in Positive Energy Districts",
+      "abstract": "The European Commission has formally introduced Positive Energy Districts (PEDs) as a promising solution to support global climate goals within the building sector. PEDs are defined as groups of buildings that achieve an annual positive energy balance by enhancing energy efficiency, maximizing local renewable energy production, and actively managing energy demand and consumption both within the district and in interaction with the wider energy system [1]. Achieving such dynamic operation requires advanced tools capable of accurately predicting energy flows and enabling informed control. White-box (physics-based) modelling approaches are commonly used to capture the complexity of PEDs and provide accurate predictions. However, the models are complex to develop and upscale. Recent advances in machine learning (ML) have the potential to transform building energy modelling, particularly when embedded in Digital Twins (DTs), where they can serve as powerful tools for simulating energy flow in PEDs and supporting control decisions. This paper adopts a combination of white-box and black-box methods to evaluate predictive performance and identify effective ML techniques. A case study is conducted on a simplified virtual PED consisting of nine buildings. First, white‑box models are developed in Modelica using the openIDEAS library to generate virtual data reflecting different energy performance levels and representative occupancy patterns. These virtual data are then used to train and evaluate several ML models with respect to accuracy and computational cost. The proposed framework supports the selection of ML models suitable for integration into DTs, potentially reducing complexity in advanced control strategies such as Model Predictive Control (MPC) and contributing to the development of sustainable and resilient PEDs.",
+      "authors": [
+        "Yuanlu Li",
+        "Ando Ludovic Andriamamonjy",
+        "Dorien Aerts",
+        "Dirk Saelens"
+      ],
+      "first_author_affiliation": "",
+      "corresponding_authors": [],
+      "venue": "Springer Link (Chiba Institute of Technology)",
+      "venue_id": "S4306400744",
+      "venue_issn_l": "",
+      "venue_type": "repository",
+      "year": 2026,
+      "date": "2026-11-20",
+      "date_precision": "day",
+      "url": "https://doi.org/10.1051/e3sconf/202675701002/pdf",
+      "cited_by_count": 0,
+      "concepts": [
+        "Computer science",
+        "Energy consumption",
+        "Energy (signal processing)",
+        "Machine learning",
+        "Modelica",
+        "Model predictive control",
+        "Efficient energy use",
+        "Energy modeling",
+        "Control (management)",
+        "Renewable energy",
+        "Artificial intelligence",
+        "Industrial engineering",
+        "Building energy simulation",
+        "Predictive modelling",
+        "Data mining",
+        "Model selection",
+        "Virtual machine",
+        "Occupancy"
+      ],
+      "categories": [],
+      "raw_type": "article",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "model predictive control"
+        ]
+      },
+      "llm": {
+        "priority": "Low",
+        "relevance_level": "Peripheral",
+        "read_action": "Background only",
+        "relevance_to_user": "该文用机器学习为建筑能源系统建立面向控制的代理模型，与FEA代理建模思路相通，但不涉及植入物力学或生物医学场景。",
+        "why_not_core": "It targets building-energy district control with Modelica/ML surrogate models and contains no FEA, no implant biomechanics, no RL/world-model methodology, and no biomedical context.",
+        "validation_kind": "simulation_case",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "surrogate_model",
+          "digital_twin",
+          "building_energy",
+          "model_predictive_control",
+          "no_engineering_simulation_fea"
+        ],
+        "summary_zh": {
+          "motivation": "正能源区需要能预测能流并支持控制的轻量模型。",
+          "method": "用Modelica白盒模型生成虚拟数据，训练并比较多种机器学习黑盒模型。",
+          "result": "评估了各模型精度与计算成本，给出可嵌入数字孪生的选型框架。",
+          "validation": "在九栋建筑的简化虚拟正能源区案例上仿真验证。"
+        },
+        "summary_en": {
+          "motivation": "Positive Energy Districts require lightweight predictive models that can support dynamic energy-flow control.",
+          "method": "White-box Modelica models generate virtual district data, which are then used to train and benchmark several machine-learning black-box models.",
+          "result": "The study compares model accuracy and computational cost and proposes a framework for selecting ML models suitable for digital-twin integration.",
+          "validation": "The framework is evaluated on a simulated case study of a simplified nine-building virtual district."
+        },
+        "key_terms": [
+          {
+            "en": "surrogate model",
+            "zh": "代理模型"
+          },
+          {
+            "en": "digital twin",
+            "zh": "数字孪生"
+          },
+          {
+            "en": "Model Predictive Control",
+            "zh": "模型预测控制"
+          },
+          {
+            "en": "white-box model",
+            "zh": "白盒模型"
+          },
+          {
+            "en": "Positive Energy District",
+            "zh": "正能源区"
+          },
+          {
+            "en": "Modelica",
+            "zh": "Modelica建模语言"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-11-24T22:35:14Z"
+    },
+    {
+      "source": "openalex",
+      "id": "https://openalex.org/W7238842683",
+      "doi": "10.53360/2788-7995-2026-3(23)-14",
+      "pmid": "",
+      "arxiv_id": "",
+      "title": "MATHEMATICAL MODELS OF CHLORELLA VULGARIS CULTIVATION IN CLOSED PHOTOBIOREACTORS USING AN AUTOMATED CONTROL SYSTEM",
+      "abstract": "This paper presents an analysis of modern mathematical models describing the growth of Chlorella vulgaris in closed photobioreactors used for the study, prediction, and control of microalgae cultivation processes. The main classes of models are considered, including empirical and kinetic growth models, light attenuation and light distribution models, photoacclimation models, and comprehensive dynamic models that account for the combined effects of light intensity, carbon dioxide concentration, CO₂ mass transfer, pH level, temperature, mixing conditions, and other technological factors. Particular attention is paid to evaluating the accuracy, computational complexity, and practical applicability of these models for automated control, culture monitoring, and process optimization. The possibilities of integrating mathematical models with optimal control methods, Model Predictive Control (MPC), and modern metaheuristic optimization algorithms are analyzed. A critical assessment of the advantages and limitations of existing approaches is performed, including issues related to parameter identification and model scaling from laboratory-scale systems to industrial photobioreactors. The analysis demonstrates that the use of comprehensive dynamic models combined with intelligent automated control systems can improve biomass productivity, process stability, reduce energy consumption, and enhance the overall efficiency of industrial Chlorella vulgaris cultivation. The results of this study can be applied to the development and improvement of advanced automated control systems for photobioreactors.",
+      "authors": [
+        "D. Bekkassimova",
+        "K. Y. Derbyshev",
+        "Adilet Sugirbay",
+        "Dinara Kozhakhmetova",
+        "A. V. Zolotov"
+      ],
+      "first_author_affiliation": "Shakarim University",
+      "corresponding_authors": [],
+      "venue": "Bulletin of Shakarim University Technical Sciences",
+      "venue_id": "S4210223520",
+      "venue_issn_l": "2788-7995",
+      "venue_type": "journal",
+      "year": 2026,
+      "date": "2026-11-20",
+      "date_precision": "day",
+      "url": "https://doi.org/10.53360/2788-7995-2026-3(23)-14",
+      "cited_by_count": 0,
+      "concepts": [
+        "Photobioreactor",
+        "Chlorella vulgaris",
+        "Mathematical model",
+        "Process (computing)",
+        "Biochemical engineering",
+        "Process engineering",
+        "Process control",
+        "Computer science",
+        "System identification",
+        "Biological system",
+        "Empirical modelling",
+        "Control system",
+        "Identification (biology)",
+        "Stability (learning theory)",
+        "Control engineering",
+        "Optimal control",
+        "Engineering",
+        "Model predictive control",
+        "Process modeling",
+        "Systems modeling",
+        "Linear model"
+      ],
+      "categories": [],
+      "raw_type": "article",
+      "directions": [
+        "rl_world_model"
+      ],
+      "direction": "rl_world_model",
+      "direction_name": "RL & World Models",
+      "routing_matches": {
+        "rl_world_model": [
+          "model predictive control"
+        ]
+      },
+      "llm": {
+        "priority": "Exclude",
+        "relevance_level": "Peripheral",
+        "read_action": "Ignore",
+        "relevance_to_user": "该文综述微藻光生物反应器的数学模型与MPC控制，与用户的生物打印、髋关节植入物、FEA代理模型和增材制造方向均无直接关联。",
+        "why_not_core": "This is a review of microalgae cultivation models and process control with no RL/world-model methodology, no engineering FEA or surrogate modeling, and no biomedical implant or bioprinting context.",
+        "validation_kind": "none",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": true
+        },
+        "tags": [
+          "photobioreactor",
+          "process_control",
+          "mathematical_modeling",
+          "review",
+          "no_engineering_simulation"
+        ],
+        "summary_zh": {
+          "motivation": "为提升封闭光生物反应器中微藻培养的预测与控制能力。",
+          "method": "综述经验、动力学、光衰减、光驯化及综合动态模型，并讨论与MPC和元启发式优化的结合。",
+          "result": "综合动态模型配合智能控制可提高生物量产率、稳定性并降低能耗。",
+          "validation": "文献综述与模型对比评估，无实验验证。"
+        },
+        "summary_en": {
+          "motivation": "To support prediction and control of Chlorella vulgaris cultivation in closed photobioreactors.",
+          "method": "The authors survey empirical, kinetic, light-attenuation, photoacclimation, and comprehensive dynamic models and analyze their integration with MPC and metaheuristic optimization.",
+          "result": "Comprehensive dynamic models coupled with intelligent control are argued to improve biomass productivity, process stability, and energy efficiency.",
+          "validation": "A critical literature review with comparative assessment of model accuracy and applicability, without experimental validation."
+        },
+        "key_terms": [
+          {
+            "en": "photobioreactor",
+            "zh": "光生物反应器"
+          },
+          {
+            "en": "model predictive control",
+            "zh": "模型预测控制"
+          },
+          {
+            "en": "kinetic growth model",
+            "zh": "动力学生长模型"
+          },
+          {
+            "en": "light attenuation",
+            "zh": "光衰减"
+          },
+          {
+            "en": "photoacclimation",
+            "zh": "光驯化"
+          },
+          {
+            "en": "parameter identification",
+            "zh": "参数辨识"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-11-24T22:35:14Z"
+    },
+    {
+      "source": "openalex",
+      "id": "https://openalex.org/W7238846065",
+      "doi": "10.1051/e3sconf/202675706004/pdf",
+      "pmid": "",
+      "arxiv_id": "",
+      "title": "Towards deployable demand-side management: A reinforcement-learning-enabled digital twin framework for single-family houses with Modelica-based validation",
+      "abstract": "This paper presents a digital twin-enabled demand-side management framework for single-family houses. The aim is to develop an integrated platform that can systematically coordinate heterogeneous residential energy resources and support real-time optimization of home energy management by responding to dynamic electricity pricing. The digital twin environment (DTE) includes a multi-zone building thermal model, photovoltaic (PV) generation, battery storage system (BSS), electric-vehicle (EV) model, and schedulable electric appliances. The Soft Actor-Critic (SAC) algorithm is adopted as the embedded reinforcement learning optimizer in the DTE to determine optimal control actions for these resources by minimizing cost and comfort deviation. The framework is linked to a Modelica-based high-fidelity building emulator for data generation and subsequent validation. Compared with a rule-based strategy, the results demonstrate that the proposed RL-digital twin framework can effectively manage flexible resources while saving the electricity cost. In addition, the RL-digital twin efficiently satisfies occupants’ needs on thermal comfort and domestic hot water, which are significantly compromised under the rule-based strategy. The obtained results demonstrate the RL-digital twin framework potential for real-world deployment in residential demand-side management.",
+      "authors": [
+        "Pengju Liu",
+        "Chanachok Chokwitthaya",
+        "Thomas Olofsson",
+        "Weizhuo Lu"
+      ],
+      "first_author_affiliation": "Intelligent Human-Buildings Interactions Lab , Department of Applied Physics and Electronics , Umeå University , Umeå 90187 , Sweden",
+      "corresponding_authors": [],
+      "venue": "Springer Link (Chiba Institute of Technology)",
+      "venue_id": "S4306400744",
+      "venue_issn_l": "",
+      "venue_type": "repository",
+      "year": 2026,
+      "date": "2026-11-20",
+      "date_precision": "day",
+      "url": "https://doi.org/10.1051/e3sconf/202675706004/pdf",
+      "cited_by_count": 0,
+      "concepts": [
+        "Software deployment",
+        "Photovoltaic system",
+        "Electricity",
+        "Energy management",
+        "Computer science",
+        "Engineering",
+        "Distributed generation",
+        "Electricity generation",
+        "Systems engineering",
+        "Thermal energy storage",
+        "Thermal comfort",
+        "Energy management system",
+        "Control (management)",
+        "Demand response",
+        "Load shifting",
+        "Battery (electricity)",
+        "Scheduling (production processes)",
+        "Energy consumption",
+        "Building automation"
+      ],
+      "categories": [],
+      "raw_type": "article",
+      "directions": [
+        "ai_bioprinting"
+      ],
+      "direction": "ai_bioprinting",
+      "direction_name": "AI for Bioprinting",
+      "routing_matches": {
+        "ai_bioprinting": [
+          "digital twin"
+        ]
+      },
+      "llm": {
+        "priority": "Exclude",
+        "relevance_level": "Peripheral",
+        "read_action": "Ignore",
+        "relevance_to_user": "该论文将强化学习与数字孪生用于住宅能源管理，与生物打印AI流程无直接关联，仅数字孪生框架概念可作背景参考。",
+        "why_not_core": "This paper addresses residential energy demand-side management with no bioprinting workflow, no bioink or tissue model, and no biological or biomedical validation.",
+        "validation_kind": "simulation_case",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "digital_twin",
+          "reinforcement_learning",
+          "energy_management",
+          "modelica"
+        ],
+        "summary_zh": {
+          "motivation": "住宅能源资源异构，需实时协调以响应动态电价。",
+          "method": "构建含热模型、光伏、电池、电动车与可调度电器的数字孪生环境，嵌入SAC强化学习优化器。",
+          "result": "相比规则策略，该框架降低电费并更好满足热舒适与热水需求。",
+          "validation": "通过Modelica高保真建筑仿真器生成数据并验证。"
+        },
+        "summary_en": {
+          "motivation": "Heterogeneous residential energy resources require coordinated real-time control under dynamic electricity pricing.",
+          "method": "A digital twin environment integrating building thermal, PV, battery, EV, and appliance models embeds a Soft Actor-Critic optimizer for resource scheduling.",
+          "result": "The reinforcement-learning digital twin reduces electricity cost while better satisfying thermal comfort and hot water demand than a rule-based baseline.",
+          "validation": "The framework is validated against a high-fidelity Modelica building emulator used for data generation and comparison."
+        },
+        "key_terms": [
+          {
+            "en": "digital twin",
+            "zh": "数字孪生"
+          },
+          {
+            "en": "reinforcement learning",
+            "zh": "强化学习"
+          },
+          {
+            "en": "demand-side management",
+            "zh": "需求侧管理"
+          },
+          {
+            "en": "Soft Actor-Critic",
+            "zh": "软演员-评论家算法"
+          },
+          {
+            "en": "Modelica",
+            "zh": "Modelica建模语言"
+          },
+          {
+            "en": "building thermal model",
+            "zh": "建筑热模型"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-11-24T22:35:14Z"
+    },
+    {
+      "source": "openalex",
+      "id": "https://openalex.org/W7238863169",
+      "doi": "10.31501/rbcm.v34i1.16972",
+      "pmid": "",
+      "arxiv_id": "",
+      "title": "Primeiros socorros na escola: desafios e possibilidades para a formação de profissionais da Educação Física",
+      "abstract": "The school environment is a dynamic setting characterized by intense interaction, where accidents and health emergencies should be understood as inherent possibilities of everyday institutional life. In this context, Physical Education teachers play a strategic role, since body movement activities increase exposure to risks that may require immediate intervention. Therefore, the present study aimed to analyze and reflect on the implications of implementing initial and continuing first aid training programs for Physical Education professionals working in school settings. This is a theoretical essay of a reflective and propositional nature, developed through bibliographic and documentary research using a qualitative approach, grounded in current legislation, international guidelines, and scientific literature in the field. Our interpretations indicate that, although there have been advances in the regulatory framework, such as the enactment of Law No. 13,722/2018 (Lucas Law) and the ongoing discussion of Bill No. 2,336/2022, significant gaps remain in professional training, particularly regarding the integration of technical knowledge, emergency decision-making, and the pedagogical application of first aid content. Basic Life Support is highlighted as the structural foundation of first aid, as well as the need for continuous, contextualized training programs based on active learning methodologies. In addition, the importance of incorporating first aid as a cross-curricular component in the school curriculum is emphasized, contributing to the development of a culture of prevention, safety, and health literacy. It is concluded that the qualification of Physical Education professionals, combined with the integration of education, health, and public policies, is a fundamental element for the consolidation of safer, more resilient school environments committed to preserving life.",
+      "authors": [
+        "Matheus Florindo de Deus",
+        "José Francisco Silva Sampaio",
+        "Geanderson S. Oliveira",
+        "Rodrigo Paiva",
+        "Roberta Luksevicius Rica",
+        "Danilo Sales Bocalini"
+      ],
+      "first_author_affiliation": "Polícia Militar do Estado do Espírito Santo",
+      "corresponding_authors": [],
+      "venue": "Revista Brasileira de Ciência e Movimento",
+      "venue_id": "S4210170075",
+      "venue_issn_l": "0103-1716",
+      "venue_type": "journal",
+      "year": 2026,
+      "date": "2026-11-20",
+      "date_precision": "day",
+      "url": "https://doi.org/10.31501/rbcm.v34i1.16972",
+      "cited_by_count": 0,
+      "concepts": [
+        "Curriculum",
+        "Pedagogy",
+        "Element (criminal law)",
+        "Consolidation (business)",
+        "Professional development",
+        "Sociology",
+        "Political science",
+        "Public relations",
+        "Physical education",
+        "Continuing education",
+        "Continuing professional development",
+        "Engineering ethics",
+        "Public health",
+        "Qualitative research",
+        "Public policy",
+        "Health professionals",
+        "Psychology",
+        "Interpretation (philosophy)",
+        "Basic education",
+        "Lifelong learning"
+      ],
+      "categories": [],
+      "raw_type": "article",
+      "directions": [
+        "fea_surrogate"
+      ],
+      "direction": "fea_surrogate",
+      "direction_name": "FEA & Surrogate Modelling",
+      "routing_matches": {
+        "fea_surrogate": [
+          "active learning"
+        ]
+      },
+      "llm": {
+        "priority": "Exclude",
+        "relevance_level": "Peripheral",
+        "read_action": "Ignore",
+        "relevance_to_user": "该文讨论学校体育教师急救培训，与FEA代理建模、生物力学仿真完全无关。",
+        "why_not_core": "This is a qualitative pedagogical essay on first aid training for Physical Education teachers with no simulation, surrogate modeling, optimization, or biomechanics content.",
+        "validation_kind": "none",
+        "flags": {
+          "has_experimental_validation": false,
+          "has_uncertainty_quantification": false,
+          "is_patient_specific": false,
+          "is_review": false
+        },
+        "tags": [
+          "first aid education",
+          "physical education",
+          "health policy",
+          "qualitative research"
+        ],
+        "summary_zh": {
+          "motivation": "探讨学校体育教师急救培训的实施困境与可能路径。",
+          "method": "采用理论随笔形式，结合文献与法规进行定性分析。",
+          "result": "指出法规虽有进展但培训仍存缺口，主张将急救纳入课程。",
+          "validation": "无实证验证，仅为文献与政策文本的反思性论述。"
+        },
+        "summary_en": {
+          "motivation": "The study addresses gaps in first aid preparedness among school Physical Education professionals given the injury risks of movement activities.",
+          "method": "A reflective theoretical essay drawing on legislation, international guidelines, and literature within a qualitative framework.",
+          "result": "Regulatory advances exist but training gaps persist, supporting continuous contextualized programs and cross-curricular first aid integration.",
+          "validation": "No empirical or computational validation; the work is a bibliographic and documentary reflection."
+        },
+        "key_terms": [
+          {
+            "en": "first aid training",
+            "zh": "急救培训"
+          },
+          {
+            "en": "Physical Education",
+            "zh": "体育教育"
+          },
+          {
+            "en": "Basic Life Support",
+            "zh": "基础生命支持"
+          },
+          {
+            "en": "health literacy",
+            "zh": "健康素养"
+          },
+          {
+            "en": "curriculum integration",
+            "zh": "课程整合"
+          }
+        ]
+      },
+      "schema_version": "v2",
+      "scorer_version": "v3",
+      "first_seen_at": "2026-11-24T22:35:14Z"
     }
   ],
   "counts": {
-    "fetched_total": 121,
+    "fetched_total": 139,
     "by_source": {
-      "openalex": 89,
+      "openalex": 99,
       "pubmed": 6,
-      "arxiv": 26
+      "arxiv": 34
     },
-    "after_dedup": 121,
-    "after_routing": 121,
+    "after_dedup": 139,
+    "after_routing": 139,
     "by_direction": {
-      "fea_surrogate": 58,
-      "ai_bioprinting": 13,
-      "am_biomedical": 17,
+      "fea_surrogate": 60,
+      "ai_bioprinting": 15,
+      "am_biomedical": 21,
       "hip_implant": 6,
-      "rl_world_model": 27
+      "rl_world_model": 37
     },
     "routed_by_source": {
-      "openalex": 89,
+      "openalex": 99,
       "pubmed": 6,
-      "arxiv": 26
+      "arxiv": 34
     },
-    "scored": 121,
+    "scored": 139,
     "priority_counts": {
-      "Low": 60,
-      "Exclude": 41,
-      "Medium": 20
+      "Low": 68,
+      "Exclude": 45,
+      "Medium": 26
     }
   }
 }
